@@ -1,0 +1,97 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hacs-persistence"
+version = "0.3.0"
+description = "Database and vector store persistence adapters for HACS"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "HACS Team", email = "support@hacs.dev" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Healthcare Industry",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+keywords = ["healthcare", "ai", "database", "vector-store", "fhir", "persistence"]
+requires-python = ">=3.11"
+dependencies = [
+    "hacs-core>=0.3.0",
+    "pydantic>=2.0.0",
+    "sqlalchemy>=2.0.0",
+]
+
+[project.optional-dependencies]
+postgresql = [
+    "psycopg[binary,async]>=3.0.0",
+]
+pinecone = [
+    "pinecone-client>=2.0.0",
+]
+qdrant = [
+    "qdrant-client>=1.0.0",
+]
+pgvector = [
+    "pgvector>=0.2.4",
+]
+all = [
+    "hacs-persistence[postgresql,pinecone,qdrant,pgvector]",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/solana-hacs/hacs"
+Documentation = "https://docs.hacs.dev"
+Repository = "https://github.com/solanovisitor/hacs-ai"
+"Bug Tracker" = "https://github.com/solana-hacs/hacs/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hacs_persistence"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "UP",   # pyupgrade
+]
+ignore = [
+    "E501",  # line too long, handled by formatter
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.isort]
+known-first-party = ["hacs_persistence", "hacs_core"] 
+
+[tool.poetry.dependencies]
+python = "^3.11"
+hacs-core = {path = "../hacs-core", develop = true} 

@@ -1,0 +1,84 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hacs-cli"
+version = "0.2.1"
+description = "Command-line interface for Healthcare Agent Communication Standard (HACS)"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.11"
+authors = [
+    { name = "Solano Todeschini", email = "solano.todeschini@gmail.com" }
+]
+maintainers = [
+    { name = "Solano Todeschini", email = "solano.todeschini@gmail.com" }
+]
+keywords = ["healthcare", "agents", "cli", "fhir", "ai"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed"
+]
+
+dependencies = [
+    "hacs-core>=0.3.0",
+    "hacs-utils>=0.3.0",
+    "click>=8.1.0",
+    "rich>=13.0.0",
+    "typer>=0.9.0",
+]
+
+[project.optional-dependencies]
+# Include tools for full CLI functionality
+tools = [
+    "hacs-tools>=0.3.0",
+]
+# Include persistence for data operations
+persistence = [
+    "hacs-persistence>=0.3.0",
+]
+all = [
+    "hacs-cli[tools,persistence]"
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.4.0",
+    "pyright>=1.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/solanovisitor/hacs"
+Documentation = "https://github.com/solanovisitor/hacs/blob/main/docs/README.md"
+Repository = "https://github.com/solanovisitor/hacs-ai"
+"Bug Tracker" = "https://github.com/solanovisitor/hacs/issues"
+Changelog = "https://github.com/solanovisitor/hacs/blob/main/docs/reference/changelog.md"
+
+[project.scripts]
+hacs = "hacs_cli.main:main"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501", "N806", "N803"]
+
+[tool.pyright]
+include = ["src"]
+exclude = ["**/node_modules", "**/__pycache__"]
+venvPath = "."
+venv = ".venv"

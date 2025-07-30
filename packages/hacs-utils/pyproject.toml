@@ -1,0 +1,131 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hacs-utils"
+version = "0.3.0"
+description = "External service integrations, utilities, and MCP server for HACS"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "HACS Contributors", email = "contributors@hacs.dev" }
+]
+maintainers = [
+    { name = "HACS Team", email = "support@hacs.dev" }
+]
+keywords = [
+    "healthcare",
+    "ai",
+    "agents",
+    "utils",
+    "openai",
+    "anthropic",
+    "pinecone",
+    "qdrant",
+    "langchain",
+    "langgraph",
+    "crewai",
+    "mcp",
+    "model-context-protocol"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Healthcare Industry",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed"
+]
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.7.0,<3.0.0",
+    "hacs-core>=0.3.0",
+    "requests>=2.31.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/solana-hacs/hacs"
+Documentation = "https://docs.hacs.dev"
+Repository = "https://github.com/solanovisitor/hacs-ai"
+Issues = "https://github.com/solanovisitor/hacs-ai/issues"
+Changelog = "https://github.com/solana-hacs/hacs/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+openai = [
+    "openai>=1.10.0",
+    "instructor>=1.3.0",
+]
+anthropic = [
+    "anthropic>=0.25.0",
+]
+pinecone = [
+    "pinecone-client>=3.0.0",
+]
+qdrant = [
+    "qdrant-client>=1.7.0",
+]
+langchain = [
+    "langchain>=0.1.0",
+    "langchain-community>=0.0.20",
+]
+langgraph = [
+    "langgraph>=0.0.30",
+]
+crewai = [
+    "crewai>=0.22.0",
+]
+postgres = [
+    "psycopg2-binary>=2.9.0",
+    "SQLAlchemy>=2.0.0",
+]
+# MCP server dependencies
+mcp = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.29.0",
+    "python-dotenv>=1.0.0",
+]
+# Agents and workflows
+agents = [
+    "langgraph>=0.2.0",
+    "langchain-core>=0.3.0",
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.29.0",
+]
+# Combined installation options
+ai = [
+    "hacs-utils[openai,anthropic]",
+]
+vector = [
+    "hacs-utils[pinecone,qdrant]",
+]
+workflows = [
+    "hacs-utils[langchain,langgraph,crewai]",
+]
+all = [
+    "hacs-utils[openai,anthropic,pinecone,qdrant,langchain,langgraph,crewai,postgres,mcp,agents]",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "ruff>=0.4.0",
+    "mypy>=1.8.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+]
+
+[project.scripts]
+hacs-mcp = "hacs_utils.mcp.cli:main"
+hacs-agent = "hacs_utils.agents.cli:main"
+hacs-chat = "hacs_utils.agents.chat:main"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.black]
+line-length = 100 

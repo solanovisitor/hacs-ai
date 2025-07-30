@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hacs-registry"
+version = "0.1.0"
+description = "HACS Registry - Model, prompt, and workflow definitions for healthcare AI"
+readme = "README.md"
+license = { file = "../../LICENSE" }
+authors = [
+    { name = "HACS Team", email = "team@hacs.dev" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Healthcare Industry",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+requires-python = ">=3.11"
+dependencies = [
+    "hacs-core>=0.3.0",
+    "pydantic>=2.7.0",
+]
+
+[project.urls]
+Homepage = "https://hacs.dev"
+Documentation = "https://docs.hacs.dev"
+Repository = "https://github.com/solanovisitor/hacs-ai"
+Issues = "https://github.com/solanovisitor/hacs-ai/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hacs_registry"] 
+
+[project.optional-dependencies]
+all = [
+    "hacs-registry",
+]
+dev = [
+    "pytest>=7.0.0",
+    "ruff>=0.4.0",
+    "mypy>=1.8.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+]
