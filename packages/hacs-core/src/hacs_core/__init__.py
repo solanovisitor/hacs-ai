@@ -53,6 +53,22 @@ from .models.encounter import Encounter, EncounterClass, EncounterStatus
 from .models.observation import Observation, ObservationStatus
 from .models.patient import Patient
 
+# Result Types - Standard results for all HACS operations
+from .results import (
+    HACSResult,
+    ResourceSchemaResult,
+    ResourceDiscoveryResult, 
+    FieldAnalysisResult,
+    DataQueryResult,
+    WorkflowResult,
+    GuidanceResult,
+    MemoryResult,
+    VersionResult,
+    ResourceStackResult,
+    ResourceTemplateResult,
+    VectorStoreResult,
+)
+
 __version__ = VersionManager.CORE_VERSION
 
 __all__ = [
@@ -108,4 +124,18 @@ __all__ = [
     "Observation",
     "ObservationStatus",
     "Patient",
+    
+    # Result Types - Standard results for all HACS operations
+    "HACSResult",
+    "ResourceSchemaResult",
+    "ResourceDiscoveryResult", 
+    "FieldAnalysisResult",
+    "DataQueryResult",
+    "WorkflowResult",
+    "GuidanceResult",
+    "MemoryResult",
+    "VersionResult",
+    "ResourceStackResult",
+    "ResourceTemplateResult",
+    "VectorStoreResult",
 ]
