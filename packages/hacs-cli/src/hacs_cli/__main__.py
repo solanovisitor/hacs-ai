@@ -1,8 +1,71 @@
 """
 HACS CLI - Healthcare Agent Communication Standard Command Line Interface
 
-This module provides comprehensive CLI commands for HACS operations including
-validation, conversion, memory operations, evidence management, and search.
+This module provides a comprehensive command-line interface for interacting with
+HACS (Healthcare Agent Communication Standard) resources. It offers healthcare
+organizations and developers a powerful tool for managing clinical data, AI agent
+communications, and FHIR-compliant healthcare workflows.
+
+Features:
+    🏥 Healthcare Resource Management
+        - Create, validate, and manage Patient, Observation, Encounter records
+        - Full support for HACS clinical data models
+        - FHIR compliance checking and validation
+
+    🤖 AI Agent Operations
+        - Memory storage and retrieval for healthcare AI agents
+        - Evidence collection and clinical reasoning support
+        - Actor-based permissions and role management
+
+    🔄 Data Conversion & Validation
+        - Convert between HACS and FHIR formats
+        - Multi-level validation (basic, strict, fhir)
+        - Batch processing for large datasets
+
+    📊 Rich Terminal Interface
+        - Interactive resource builder with guided prompts
+        - Beautiful tables and panels for data display
+        - Progress tracking for long-running operations
+
+Commands:
+    create      Create new healthcare resources (Patient, Observation, etc.)
+    validate    Validate existing resources against HACS/FHIR standards
+    convert     Convert between HACS and FHIR formats
+    memory      Store and retrieve memories for AI agents
+    evidence    Manage clinical evidence and reasoning
+    search      Search across healthcare resources and memories
+    interactive Launch interactive resource builder
+
+Usage Examples:
+    # Create a new patient record
+    hacs-cli create Patient --data '{"full_name": "John Doe", "birth_date": "1990-01-01"}'
+
+    # Validate a healthcare resource file
+    hacs-cli validate patient.json --level strict
+
+    # Convert HACS format to FHIR
+    hacs-cli convert patient.json fhir --output patient_fhir.json
+
+    # Interactive mode for guided resource creation
+    hacs-cli interactive --resource Patient
+
+    # Store a memory for an AI agent
+    hacs-cli memory store "Patient exhibits signs of hypertension" --type clinical
+
+    # Search for evidence related to a condition
+    hacs-cli search evidence --query "hypertension treatment"
+
+Requirements:
+    - Python 3.11+
+    - hacs-core package for resource models
+    - Rich terminal support for best experience
+    - Optional: hacs-tools for advanced MCP operations
+
+Author: HACS Development Team
+License: MIT
+Version: 0.3.0
+Repository: https://github.com/solanovisitor/hacs-ai
+Documentation: https://docs.hacs.dev
 """
 
 import json
@@ -15,9 +78,27 @@ from dotenv import load_dotenv
 
 # Import HACS modules
 from hacs_core import Actor, ActorRole, Evidence, EvidenceType, MemoryBlock
+from hacs_core.models import AgentMessage, Encounter, Observation, Patient
 
-# from hacs_fhir import from_fhir, to_fhir, validate_fhir_compliance
-# from hacs_models import AgentMessage, Encounter, Observation, Patient
+# Optional FHIR functionality (graceful degradation if not available)
+try:
+    from hacs_core.utils import from_fhir, to_fhir, validate_fhir_compliance
+    FHIR_AVAILABLE = True
+except ImportError:
+    # Provide placeholder functions for graceful degradation
+    def validate_fhir_compliance(resource: Any) -> list[str]:
+        """Placeholder FHIR validation when not available."""
+        return ["FHIR validation not available - install hacs-core with FHIR extras"]
+
+    def to_fhir(resource: Any) -> dict[str, Any]:
+        """Placeholder FHIR conversion when not available."""
+        return {"error": "FHIR conversion not available"}
+
+    def from_fhir(data: dict[str, Any]) -> Any:
+        """Placeholder FHIR conversion when not available."""
+        return {"error": "FHIR conversion not available"}
+
+    FHIR_AVAILABLE = False
 from hacs_tools import (
     create_evidence,
     recall_memory,

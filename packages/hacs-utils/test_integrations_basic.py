@@ -47,7 +47,7 @@ def test_crewai_integration():
         from hacs_utils import CrewAIAdapter, CrewAIAgentRole, CrewAITaskType
 
         # Test adapter creation
-        adapter = CrewAIAdapter()
+        _ = CrewAIAdapter()  # Just testing import/creation
         print("✓ CrewAI adapter created")
 
         # Test enums
@@ -72,12 +72,12 @@ def test_openai_integration():
             print("ℹ OpenAI integration not available (dependencies not installed)")
             return True
 
-        # Test that classes exist
-        from hacs_utils.integrations.openai import OpenAIEmbedding, OpenAIClient
+        # Test that classes exist (import-only test)
+        from hacs_utils.integrations.openai import OpenAIEmbedding, OpenAIClient  # noqa: F401
         print("✓ OpenAI classes imported")
 
-        # Test factory functions
-        from hacs_utils.integrations.openai import create_openai_client, create_openai_embedding
+        # Test factory functions (import-only test)  
+        from hacs_utils.integrations.openai import create_openai_client, create_openai_embedding  # noqa: F401
         print("✓ OpenAI factory functions available")
 
         return True
@@ -100,12 +100,12 @@ def test_pinecone_integration():
             print("ℹ Pinecone integration not available (dependencies not installed)")
             return True
 
-        # Test that classes exist
-        from hacs_utils.integrations.pinecone import PineconeVectorStore
+        # Test that classes exist (import-only test)
+        from hacs_utils.integrations.pinecone import PineconeVectorStore  # noqa: F401
         print("✓ Pinecone classes imported")
 
-        # Test factory functions
-        from hacs_utils.integrations.pinecone import create_pinecone_store
+        # Test factory functions (import-only test)
+        from hacs_utils.integrations.pinecone import create_pinecone_store  # noqa: F401
         print("✓ Pinecone factory functions available")
 
         return True
@@ -128,12 +128,12 @@ def test_qdrant_integration():
             print("ℹ Qdrant integration not available (dependencies not installed)")
             return True
 
-        # Test that classes exist
-        from hacs_utils.integrations.qdrant import QdrantVectorStore
+        # Test that classes exist (import-only test)
+        from hacs_utils.integrations.qdrant import QdrantVectorStore  # noqa: F401
         print("✓ Qdrant classes imported")
 
-        # Test factory functions
-        from hacs_utils.integrations.qdrant import create_qdrant_store
+        # Test factory functions (import-only test)
+        from hacs_utils.integrations.qdrant import create_qdrant_store  # noqa: F401
         print("✓ Qdrant factory functions available")
 
         return True

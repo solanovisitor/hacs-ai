@@ -123,7 +123,7 @@ def create_model_stack(
                     message=f"Extension model '{ext_model}' not found"
                 )
 
-            ext_class = getattr(hacs_core, ext_model)
+            _ = getattr(hacs_core, ext_model)
             dependencies.append(ext_model)
 
             # Handle field conflicts based on merge strategy

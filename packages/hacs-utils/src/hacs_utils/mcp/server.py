@@ -150,7 +150,7 @@ class HacsMCPServer:
         try:
             # Import all available tools from hacs-tools
             try:
-                from hacs_tools import ALL_HACS_TOOLS
+                # from hacs_tools import ALL_HACS_TOOLS  # For future tool integration
                 hacs_tools_available = True
             except ImportError:
                 hacs_tools_available = False

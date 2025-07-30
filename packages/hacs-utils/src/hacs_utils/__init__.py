@@ -105,6 +105,7 @@ except ImportError:
     generate_structured_list = None
     _has_structured = False
 
+
 # Core adapter (always available)
 from .adapter import AbstractAdapter, AdapterConfig
 

@@ -81,11 +81,12 @@ except ImportError:
 # Core HACS imports for persistence and models
 try:
     from hacs_core.actor import Actor
-    from hacs_core.base_resource import BaseResource
-    from hacs_core.memory import MemoryBlock
-    from hacs_persistence.adapter import PostgreSQLAdapter
-    from hacs_utils.integrations.openai.embedding import get_openai_embedding
-    from hacs_utils.integrations.qdrant.store import QdrantVectorStore
+    # Optional imports for enhanced functionality
+    # from hacs_core.base_resource import BaseResource
+    # from hacs_core.memory import MemoryBlock  
+    # from hacs_persistence.adapter import PostgreSQLAdapter
+    # from hacs_utils.integrations.openai.embedding import get_openai_embedding
+    # from hacs_utils.integrations.qdrant.store import QdrantVectorStore
 
     HACS_CORE_AVAILABLE = True
 except ImportError as e:
@@ -1019,7 +1020,7 @@ async def execute_create_memory(params: Dict[str, Any], db_adapter=None, vector_
 async def execute_describe_database_schema(params: Dict[str, Any], **kwargs) -> CallToolResult:
     """Execute database schema visualization tool."""
     try:
-        schema_type = params.get("schema_type", "all")
+        _ = params.get("schema_type", "all")  # For future enhancement
 
         schema_info = {
             "database_name": "hacs_db",
@@ -2507,7 +2508,7 @@ async def execute_analyze_table_relationships(params: Dict[str, Any], **kwargs) 
 async def execute_describe_database_schema(params: Dict[str, Any], **kwargs) -> CallToolResult:
     """Execute database schema visualization tool."""
     try:
-        schema_type = params.get("schema_type", "all")
+        _ = params.get("schema_type", "all")  # For future enhancement
 
         schema_info = {
             "database_name": "hacs_db",
