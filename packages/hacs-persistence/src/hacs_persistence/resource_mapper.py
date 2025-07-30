@@ -33,10 +33,12 @@ except ImportError:
             ContextSummary,
             Encounter,
             KnowledgeItem,
-            MemoryBlock as Memory,
             Observation,
             Patient,
             ScratchpadEntry,
+        )
+        from hacs_models import (
+            MemoryBlock as Memory,
         )
     except ImportError:
         # Create placeholder classes if neither is available

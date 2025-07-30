@@ -7,6 +7,7 @@ database adapters, schema management, data mapping, and migrations.
 
 # from hacs_tools.vectorization import VectorMetadata, VectorStore
 from .adapter import PostgreSQLAdapter, create_postgres_adapter
+
 # Optional granular adapter – depends on hacs_models package
 try:
     from .granular_adapter import GranularPostgreSQLAdapter  # noqa: F401
@@ -17,7 +18,8 @@ from .schema import HACSSchemaManager
 
 # Import migration functionality
 try:
-    from .migrations import HACSDatabaseMigration, run_migration, get_migration_status as _get_migration_status
+    from .migrations import HACSDatabaseMigration, run_migration
+    from .migrations import get_migration_status as _get_migration_status
     MIGRATIONS_AVAILABLE = True
 except ImportError:
     HACSDatabaseMigration = None

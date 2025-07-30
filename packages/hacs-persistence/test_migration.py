@@ -15,7 +15,7 @@ current_dir = Path(__file__).parent
 src_dir = current_dir / "src"
 sys.path.insert(0, str(src_dir))
 
-from hacs_persistence.migrations import run_migration, get_migration_status
+from hacs_persistence.migrations import get_migration_status, run_migration
 
 
 def test_migration():

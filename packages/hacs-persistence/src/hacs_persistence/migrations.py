@@ -9,7 +9,7 @@ import asyncio
 import logging
 import os
 import sys
-from typing import Dict, Any
+from typing import Any
 
 import psycopg
 from psycopg.rows import dict_row
@@ -1016,7 +1016,7 @@ async def run_migration(database_url: str = None) -> bool:
     return await migration.run_migration()
 
 
-async def get_migration_status(database_url: str = None) -> Dict[str, Any]:
+async def get_migration_status(database_url: str = None) -> dict[str, Any]:
     """Get migration status asynchronously."""
     if not database_url:
         database_url = os.getenv("DATABASE_URL")

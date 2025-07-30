@@ -244,7 +244,7 @@ def create_approval_workflow_node(
     """
     def approval_node(state):
         """LangGraph node for human approval of HACS resource operations."""
-        print(f"---🏥 HACS Resource Approval Required---")
+        print("---🏥 HACS Resource Approval Required---")
 
         # Store the action in state for later reference
         approval_state = {

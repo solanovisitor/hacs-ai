@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 
 # Import HACS modules
 from hacs_core import Actor, ActorRole, Evidence, EvidenceType, MemoryBlock
+
 # from hacs_fhir import from_fhir, to_fhir, validate_fhir_compliance
 # from hacs_models import AgentMessage, Encounter, Observation, Patient
 from hacs_tools import (

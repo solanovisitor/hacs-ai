@@ -8,7 +8,7 @@ model-driven clinical workflows.
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -213,7 +213,6 @@ def create_hacs_record(
     """
     try:
         from hacs_core.actor import Actor
-        from hacs_core.protocols import PersistenceProvider
 
         # Create actor instance
         actor = Actor(name=actor_name, role="physician")
@@ -243,7 +242,7 @@ def create_hacs_record(
         if validate_fhir and hasattr(resource, 'validate_fhir'):
             try:
                 resource.validate_fhir()
-            except Exception as e:
+            except Exception:
                 # Don't fail on FHIR validation, just warn
                 pass
 
@@ -546,7 +545,7 @@ def create_hacs_memory(
     except Exception as e:
         return MemoryResult(
             success=False,
-            message=f"Failed to create memory",
+            message="Failed to create memory",
             error=str(e)
         )
 
@@ -600,7 +599,7 @@ def search_hacs_memories(
     except Exception as e:
         return [MemoryResult(
             success=False,
-            message=f"Failed to search memories",
+            message="Failed to search memories",
             error=str(e)
         )]
 
@@ -651,7 +650,7 @@ def consolidate_memories(
     except Exception as e:
         return MemoryResult(
             success=False,
-            message=f"Failed to consolidate memories",
+            message="Failed to consolidate memories",
             error=str(e)
         )
 
@@ -703,7 +702,7 @@ def retrieve_context(
     except Exception as e:
         return [MemoryResult(
             success=False,
-            message=f"Failed to retrieve context",
+            message="Failed to retrieve context",
             error=str(e)
         )]
 
@@ -772,7 +771,7 @@ def analyze_memory_patterns(
     except Exception as e:
         return HACSResult(
             success=False,
-            message=f"Failed to analyze memory patterns",
+            message="Failed to analyze memory patterns",
             error=str(e)
         )
 
@@ -919,7 +918,7 @@ def create_knowledge_item(
     except Exception as e:
         return HACSResult(
             success=False,
-            message=f"Failed to create knowledge item",
+            message="Failed to create knowledge item",
             error=str(e)
         )
 
@@ -1679,7 +1678,7 @@ def update_resource_by_id(
             except Exception as validation_error:
                 return HACSResult(
                     success=False,
-                    message=f"Validation failed for updates",
+                    message="Validation failed for updates",
                     error=str(validation_error)
                 )
 

@@ -8,9 +8,7 @@ using psycopg (v3) for high-performance, non-blocking database operations.
 import json
 import logging
 from typing import Any
-import asyncio
 
-import psycopg
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 

@@ -11,6 +11,7 @@ from typing import Any
 
 import psycopg2
 import psycopg2.extras
+
 from hacs_core import (
     Actor,
     BaseAdapter,

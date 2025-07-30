@@ -7,7 +7,7 @@ name = "hacs-registry"
 version = "0.1.0"
 description = "HACS Registry - Model, prompt, and workflow definitions for healthcare AI"
 readme = "README.md"
-license = { file = "../../LICENSE" }
+license = { text = "MIT" }
 authors = [
     { name = "HACS Team", email = "team@hacs.dev" },
 ]

@@ -9,7 +9,6 @@ import asyncio
 import logging
 import os
 import sys
-from typing import Optional
 
 from .server import create_mcp_server
 from .transport import HTTPTransport
@@ -35,7 +34,7 @@ async def run_server_async(host: str, port: int, log_level: str = "INFO") -> Non
     logger.info("🏥 HACS MCP Server starting with enhanced persistence")
     logger.info(f"   📊 Database: {'✅ Connected' if status['database']['connected'] else '❌ Disconnected'}")
     logger.info(f"   🔍 Vector Store: {'✅ Connected' if status['vector_store']['connected'] else '❌ Disconnected'}")
-    logger.info(f"   🛡️ Security: ✅ Enabled")
+    logger.info("   🛡️ Security: ✅ Enabled")
     logger.info(f"   📋 CRUD Operations: {'✅ Available' if status['capabilities']['crud_operations'] else '❌ Unavailable'}")
 
     # Start HTTP transport

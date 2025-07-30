@@ -6,8 +6,7 @@ HACS tools package while adding persistence, vector store, and security capabili
 """
 
 import logging
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 import json
 
 
@@ -46,7 +45,7 @@ try:
         list_available_resources,
     )
     HACS_TOOLS_AVAILABLE = True
-except ImportError as e:
+except ImportError:
     # Create placeholder result models to avoid NameError
     from typing import Any, Dict, List
 
@@ -194,7 +193,7 @@ def _convert_hacs_result_to_mcp(
                     if operation_name in ["create_hacs_record", "create_resource"]:
                         resource_type = result.data.get('resource_type', 'Unknown')
                         resource_id = result.data.get('id', 'No ID')
-                        content += f"🎯 **Created Resource Summary:**\n"
+                        content += "🎯 **Created Resource Summary:**\n"
                         content += f"- **Type:** {resource_type}\n"
                         content += f"- **ID:** {resource_id}\n"
                         content += f"- **Fields:** {len(result.data)} total fields\n"
@@ -605,7 +604,7 @@ async def execute_get_resource_schema(params: Dict[str, Any], **kwargs) -> CallT
 
         if result.success:
             content = f"✅ **{resource_type} Schema Retrieved**\n\n"
-            content += f"📊 **Schema Overview:**\n"
+            content += "📊 **Schema Overview:**\n"
             content += f"- **Total Fields:** {result.field_count}\n"
             content += f"- **Required Fields:** {len(result.required_fields)}\n"
             content += f"- **Optional Fields:** {len(result.optional_fields)}\n\n"
@@ -613,7 +612,7 @@ async def execute_get_resource_schema(params: Dict[str, Any], **kwargs) -> CallT
             # Add examples if available in schema
             if "examples" in result.schema:
                 examples = result.schema["examples"]
-                content += f"🎯 **AGENT USAGE EXAMPLES:**\n\n"
+                content += "🎯 **AGENT USAGE EXAMPLES:**\n\n"
 
                 if "minimal_example" in examples:
                     content += f"**Minimal Valid {resource_type}:**\n"
@@ -624,7 +623,7 @@ async def execute_get_resource_schema(params: Dict[str, Any], **kwargs) -> CallT
                     content += f"```json\n{str(examples['complete_example'])}\n```\n\n"
 
                 if "validation_notes" in examples:
-                    content += f"⚠️ **CRITICAL VALIDATION RULES:**\n"
+                    content += "⚠️ **CRITICAL VALIDATION RULES:**\n"
                     for note in examples["validation_notes"]:
                         content += f"- {note}\n"
                     content += "\n"
@@ -635,23 +634,23 @@ async def execute_get_resource_schema(params: Dict[str, Any], **kwargs) -> CallT
 
             # Key field structure for Patient specifically
             if resource_type == "Patient":
-                content += f"🏗️ **PATIENT FIELD STRUCTURE (CRITICAL!):**\n\n"
-                content += f"✅ **Use DIRECT fields:**\n"
-                content += f"- `given: [\"John\"]` (array of given names)\n"
-                content += f"- `family: \"Doe\"` (family name as string)\n"
-                content += f"- `full_name: \"John Doe\"` (complete name)\n"
-                content += f"- `birth_date: \"1990-01-01\"` (YYYY-MM-DD format)\n"
-                content += f"- `email: \"john@example.com\"` (direct email field)\n"
-                content += f"- `phone: \"+1-555-0123\"` (direct phone field)\n\n"
-                content += f"❌ **DO NOT use FHIR nested structure:**\n"
-                content += f"- ~~`name: [{{\"given\": [\"John\"], \"family\": \"Doe\"}}]`~~ (Wrong!)\n"
-                content += f"- ~~`birthDate: \"1990-01-01\"`~~ (Use `birth_date`)\n"
-                content += f"- ~~`telecom: [{{\"system\": \"email\", \"value\": \"...\"}}]`~~ (Use `email`/`phone`)\n\n"
+                content += "🏗️ **PATIENT FIELD STRUCTURE (CRITICAL!):**\n\n"
+                content += "✅ **Use DIRECT fields:**\n"
+                content += "- `given: [\"John\"]` (array of given names)\n"
+                content += "- `family: \"Doe\"` (family name as string)\n"
+                content += "- `full_name: \"John Doe\"` (complete name)\n"
+                content += "- `birth_date: \"1990-01-01\"` (YYYY-MM-DD format)\n"
+                content += "- `email: \"john@example.com\"` (direct email field)\n"
+                content += "- `phone: \"+1-555-0123\"` (direct phone field)\n\n"
+                content += "❌ **DO NOT use FHIR nested structure:**\n"
+                content += "- ~~`name: [{\"given\": [\"John\"], \"family\": \"Doe\"}]`~~ (Wrong!)\n"
+                content += "- ~~`birthDate: \"1990-01-01\"`~~ (Use `birth_date`)\n"
+                content += "- ~~`telecom: [{\"system\": \"email\", \"value\": \"...\"}]`~~ (Use `email`/`phone`)\n\n"
 
-            content += f"🎯 **Next Steps for Agent:**\n"
-            content += f"- Use the examples above as templates for `create_hacs_record()`\n"
-            content += f"- Ensure all required fields are included\n"
-            content += f"- Follow the exact field names and structures shown\n"
+            content += "🎯 **Next Steps for Agent:**\n"
+            content += "- Use the examples above as templates for `create_hacs_record()`\n"
+            content += "- Ensure all required fields are included\n"
+            content += "- Follow the exact field names and structures shown\n"
 
             return CallToolResult(
                 content=[{"type": "text", "text": content}],

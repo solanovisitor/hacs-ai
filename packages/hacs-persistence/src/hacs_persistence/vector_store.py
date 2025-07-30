@@ -6,13 +6,13 @@ Uses direct async connections for simplicity and reliability.
 """
 import json
 import logging
-import numpy as np
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
+import numpy as np
 import psycopg
-from psycopg.rows import dict_row
 from pgvector.psycopg import register_vector_async
+from psycopg.rows import dict_row
 
 logger = logging.getLogger(__name__)
 
@@ -95,9 +95,9 @@ class HACSVectorStore:
     async def store_embedding(
         self,
         content: str,
-        embedding: List[float],
-        metadata: Optional[Dict[str, Any]] = None,
-        source: Optional[str] = None
+        embedding: list[float],
+        metadata: dict[str, Any] | None = None,
+        source: str | None = None
     ) -> str:
         """Store a single embedding with associated content and metadata asynchronously."""
         if not self._connection:
@@ -136,12 +136,12 @@ class HACSVectorStore:
 
     async def similarity_search(
         self,
-        query_embedding: List[float],
+        query_embedding: list[float],
         top_k: int = 5,
         distance_metric: str = "cosine",
-        metadata_filter: Optional[Dict[str, Any]] = None,
-        source_filter: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+        metadata_filter: dict[str, Any] | None = None,
+        source_filter: str | None = None
+    ) -> list[dict[str, Any]]:
         """Perform similarity search using vector embeddings asynchronously."""
         if not self._connection:
             await self.connect()
@@ -194,7 +194,7 @@ class HACSVectorStore:
             logger.error(f"Failed to perform similarity search: {e}")
             raise
 
-    async def get_collection_stats(self) -> Dict[str, Any]:
+    async def get_collection_stats(self) -> dict[str, Any]:
         """Get statistics about the vector collection asynchronously."""
         if not self._connection:
             await self.connect()
