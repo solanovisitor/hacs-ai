@@ -39,6 +39,13 @@ except ImportError:
         func._is_tool = True
         return func
 
+# Import tool descriptions
+from .descriptions import (
+    CREATE_RESOURCE_STACK_DESCRIPTION,
+    CREATE_CLINICAL_TEMPLATE_DESCRIPTION,
+    OPTIMIZE_RESOURCE_FOR_LLM_DESCRIPTION,
+)
+
 
 @tool
 def create_resource_stack(

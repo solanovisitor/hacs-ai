@@ -40,6 +40,15 @@ except ImportError:
         func._is_tool = True
         return func
 
+# Import tool descriptions
+from .descriptions import (
+    STORE_EMBEDDING_DESCRIPTION,
+    VECTOR_SIMILARITY_SEARCH_DESCRIPTION,
+    VECTOR_HYBRID_SEARCH_DESCRIPTION,
+    GET_VECTOR_COLLECTION_STATS_DESCRIPTION,
+    OPTIMIZE_VECTOR_COLLECTION_DESCRIPTION,
+)
+
 
 @tool
 def store_embedding(

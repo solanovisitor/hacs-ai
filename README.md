@@ -19,7 +19,7 @@
 
 ## 🎯 What is HACS?
 
-HACS (Healthcare Agent Communication Standard) is a **production-ready platform** that enables healthcare organizations to deploy AI agents with structured memory, clinical reasoning, and FHIR compliance. Built on the **Model Context Protocol (MCP)**, HACS provides 25+ specialized healthcare tools for patient data management, clinical workflows, and evidence-based reasoning.
+HACS (Healthcare Agent Communication Standard) is a **production-ready platform** that enables healthcare organizations to deploy AI agents with structured memory, clinical reasoning, and FHIR compliance. Built on the **Model Context Protocol (MCP)**, HACS provides **37+ specialized healthcare tools** across 9 comprehensive domains for patient data management, clinical workflows, and evidence-based reasoning.
 
 ### 🌟 Why HACS?
 
@@ -136,41 +136,61 @@ HACS is built as a **UV workspace** with focused packages for healthcare AI:
 
 ## 🛠️ Available Tools
 
-HACS provides **25 specialized healthcare tools** via the MCP server:
+HACS provides **37 specialized healthcare tools** across 9 comprehensive domains via the MCP server:
 
-### 🔍 **Resource Discovery & Development** (5 tools)
-- `discover_hacs_resources` - Explore healthcare resource schemas with metadata
-- `analyze_resource_fields` - Field analysis with validation rules
-- `compare_resource_schemas` - Schema comparison and integration
-- `create_clinical_template` - Generate clinical workflow templates
-- `create_model_stack` - Compose complex data structures
+### 🏥 **Resource Management** (6 tools)
+- `create_hacs_record` - Create FHIR-compliant healthcare records
+- `get_hacs_record` - Retrieve healthcare records with audit trails
+- `update_hacs_record` / `delete_hacs_record` - Full CRUD operations
+- `search_hacs_records` - Advanced clinical search and filtering
 
-### 📋 **Record Management** (8 tools)
-- `create_hacs_record` - Create FHIR-compliant healthcare record data
-- `get_hacs_record_by_id` / `update_hacs_record` / `delete_hacs_record` - Full CRUD
-- `validate_hacs_record_data` - Comprehensive validation
-- `list_available_hacs_resources` - Resource schema catalog
-- `find_hacs_records` - Advanced semantic search
-- `search_hacs_records` - Filtered record search
+### 🧠 **Clinical Workflows** (7 tools)
+- `execute_clinical_workflow` - Run structured clinical protocols
+- `get_clinical_guidance` - AI-powered clinical decision support
+- `query_with_datarequirement` - FHIR-compliant data queries
+- `validate_clinical_protocol` - Protocol compliance validation
 
-### 🧠 **Memory Management** (5 tools)
-- `create_memory` - Store episodic/procedural/executive memories
-- `search_memories` - Semantic memory retrieval
-- `consolidate_memories` - Merge related memories
+### 💭 **Memory Operations** (3 tools)
+- `create_hacs_memory` - Episodic/procedural/executive memory storage
+- `search_hacs_memories` - Semantic memory retrieval
+- `consolidate_memories` - Merge and optimize clinical memories
 - `retrieve_context` - Context-aware memory access
-- `analyze_memory_patterns` - Usage pattern analysis
+- `analyze_memory_patterns` - Memory usage analytics
 
-### ✅ **Validation & Schema** (3 tools)
-- `get_hacs_resource_schema` - JSON schema exploration
-- `create_view_resource_schema` - Custom view creation
-- `suggest_view_fields` - Intelligent field suggestions
+### 🔍 **Vector Search** (5 tools)
+- `store_embedding` - Healthcare-optimized vector storage
+- `vector_similarity_search` - Semantic clinical search
+- `vector_hybrid_search` - Combined keyword+semantic search
+- `get_vector_collection_stats` - Collection analytics
+- `optimize_vector_collection` - Performance optimization
 
-### 🎨 **Advanced Tools** (3 tools)
-- `optimize_resource_for_llm` - LLM-specific optimizations
-- `version_hacs_resource` - Resource versioning and tracking
+### 📊 **Schema Discovery** (4 tools)
+- `discover_hacs_resources` - Explore healthcare resource schemas
+- `get_hacs_resource_schema` - Detailed schema information
+- `analyze_resource_fields` - Field analysis and validation
+- `compare_resource_schemas` - Schema comparison and integration
 
-### 📚 **Knowledge Management** (1 tool)
-- `create_knowledge_item` - Clinical guidelines and protocols
+### 🛠️ **Development Tools** (4 tools)
+- `create_resource_stack` - Complex healthcare data composition
+- `create_clinical_template` - Pre-configured clinical templates
+- `optimize_resource_for_llm` - AI-optimized field selection
+
+### 🏥 **FHIR Integration** (5 tools)
+- `convert_to_fhir` - Healthcare data conversion to FHIR format
+- `validate_fhir_compliance` - FHIR compliance validation
+- `process_fhir_bundle` - Bulk FHIR operations
+- `lookup_fhir_terminology` - Medical terminology lookup
+
+### 📈 **Healthcare Analytics** (4 tools)
+- `calculate_quality_measures` - Clinical quality metrics (HEDIS, CMS)
+- `analyze_population_health` - Population health analytics
+- `generate_clinical_dashboard` - Interactive healthcare dashboards
+- `perform_risk_stratification` - Predictive risk analytics
+
+### 🤖 **AI/ML Integration** (3 tools)
+- `deploy_healthcare_ai_model` - AI model deployment for healthcare
+- `run_clinical_inference` - Real-time clinical AI predictions
+- `preprocess_medical_data` - Healthcare data preprocessing for ML
 
 ## ⚙️ Configuration
 

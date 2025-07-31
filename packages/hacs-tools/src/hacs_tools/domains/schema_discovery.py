@@ -44,6 +44,14 @@ except ImportError:
         func._is_tool = True
         return func
 
+# Import tool descriptions
+from .descriptions import (
+    DISCOVER_HACS_RESOURCES_DESCRIPTION,
+    GET_HACS_RESOURCE_SCHEMA_DESCRIPTION,
+    ANALYZE_RESOURCE_FIELDS_DESCRIPTION,
+    COMPARE_RESOURCE_SCHEMAS_DESCRIPTION,
+)
+
 
 @tool
 def discover_hacs_resources(

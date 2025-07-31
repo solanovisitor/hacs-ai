@@ -84,6 +84,23 @@ __all__ = [
     "create_clinical_template",
     "optimize_resource_for_llm",
     
+    # FHIR Integration Tools
+    "convert_to_fhir",
+    "validate_fhir_compliance",
+    "process_fhir_bundle",
+    "lookup_fhir_terminology",
+    
+    # Healthcare Analytics Tools
+    "calculate_quality_measures",
+    "analyze_population_health",
+    "generate_clinical_dashboard",
+    "perform_risk_stratification",
+    
+    # AI/ML Integration Tools
+    "deploy_healthcare_ai_model",
+    "run_clinical_inference",
+    "preprocess_medical_data",
+    
     # Backwards compatibility aliases
     "create_model_stack",
     "optimize_model_for_llm",

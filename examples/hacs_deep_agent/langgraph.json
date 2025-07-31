@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "admin_agent": "./agent.py:create_hacs_deep_agent"
+  },
+  "env": ".env"
+} 

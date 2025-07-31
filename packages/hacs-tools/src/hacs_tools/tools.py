@@ -33,6 +33,21 @@ Tool Categories:
         - Clinical template generation
         - LLM optimization
 
+    🏥 FHIR Integration (4 tools)
+        - FHIR conversion and validation
+        - Bundle processing and terminology lookup
+        - Healthcare standards compliance
+
+    📈 Healthcare Analytics (4 tools)
+        - Quality measures and population health
+        - Clinical dashboards and risk stratification
+        - Performance monitoring and insights
+
+    🤖 AI/ML Integration (3 tools)
+        - Healthcare AI model deployment
+        - Clinical inference and predictions
+        - Medical data preprocessing
+
 Healthcare Standards Compliance:
     - FHIR R4/R5 compatibility
     - Actor-based permissions
@@ -88,4 +103,28 @@ ALL_HACS_TOOLS = [
     create_resource_stack,
     create_clinical_template,
     optimize_resource_for_llm,
+    
+    # FHIR Integration Tools
+    convert_to_fhir,
+    validate_fhir_compliance,
+    process_fhir_bundle,
+    lookup_fhir_terminology,
+    
+    # Healthcare Analytics Tools
+    calculate_quality_measures,
+    analyze_population_health,
+    generate_clinical_dashboard,
+    perform_risk_stratification,
+    
+    # AI/ML Integration Tools
+    deploy_healthcare_ai_model,
+    run_clinical_inference,
+    preprocess_medical_data,
+    
+    # Admin Operations Tools
+    run_database_migration,
+    check_migration_status,
+    describe_database_schema,
+    get_table_structure,
+    test_database_connection,
 ]

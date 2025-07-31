@@ -41,6 +41,15 @@ except ImportError:
         func._is_tool = True
         return func
 
+# Import tool descriptions
+from .descriptions import (
+    CREATE_HACS_RECORD_DESCRIPTION,
+    GET_HACS_RECORD_DESCRIPTION,
+    UPDATE_HACS_RECORD_DESCRIPTION,
+    DELETE_HACS_RECORD_DESCRIPTION,
+    SEARCH_HACS_RECORDS_DESCRIPTION,
+)
+
 
 @tool
 def create_hacs_record(

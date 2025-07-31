@@ -41,6 +41,15 @@ except ImportError:
         func._is_tool = True
         return func
 
+# Import tool descriptions
+from .descriptions import (
+    CREATE_HACS_MEMORY_DESCRIPTION,
+    SEARCH_HACS_MEMORIES_DESCRIPTION,
+    CONSOLIDATE_MEMORIES_DESCRIPTION,
+    RETRIEVE_CONTEXT_DESCRIPTION,
+    ANALYZE_MEMORY_PATTERNS_DESCRIPTION,
+)
+
 
 @tool
 def create_hacs_memory(

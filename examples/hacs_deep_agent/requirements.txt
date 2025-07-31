@@ -1,0 +1,29 @@
+# HACS Deep Agent Requirements
+# Healthcare AI Agent with LangGraph and HACS Tools Integration
+
+# Core LangGraph and LangChain dependencies
+langchain>=0.1.0
+langgraph>=0.0.60
+langchain-core>=0.1.0
+
+# Data validation and type safety
+pydantic>=2.0.0
+typing-extensions>=4.0.0
+
+# AI Model Providers (choose one or both)
+# Anthropic Claude (recommended for healthcare)
+langchain-anthropic>=0.1.0
+
+# OpenAI GPT models (alternative)
+langchain-openai>=0.1.0
+
+# Optional: Development and testing tools
+# Uncomment if needed for development
+# pytest>=7.0.0
+# pytest-asyncio>=0.21.0
+# black>=23.0.0
+# ruff>=0.1.0
+# mypy>=1.0.0
+
+# Note: HACS packages (hacs-core, hacs-tools) should be installed
+# from the main HACS workspace using `uv sync` in the project root 

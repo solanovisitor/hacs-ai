@@ -21,13 +21,17 @@ License: MIT
 Version: 0.3.0
 """
 
-# Import all domain-specific tools
+# Import from all domain modules to make tools available
 from .resource_management import *
 from .clinical_workflows import *
 from .memory_operations import *
 from .vector_search import *
 from .schema_discovery import *
 from .development_tools import *
+from .fhir_integration import *
+from .healthcare_analytics import *
+from .ai_integrations import *
+from .admin_operations import *
 
 __all__ = [
     # Resource Management Tools (CRUD operations)
@@ -67,4 +71,28 @@ __all__ = [
     "create_resource_stack",
     "create_clinical_template",
     "optimize_resource_for_llm",
+    
+    # FHIR Integration Tools
+    "convert_to_fhir",
+    "validate_fhir_compliance",
+    "process_fhir_bundle",
+    "lookup_fhir_terminology",
+    
+    # Healthcare Analytics Tools
+    "calculate_quality_measures",
+    "analyze_population_health",
+    "generate_clinical_dashboard",
+    "perform_risk_stratification",
+    
+    # AI/ML Integration Tools
+    "deploy_healthcare_ai_model",
+    "run_clinical_inference",
+    "preprocess_medical_data",
+    
+    # Admin Operations Tools
+    "run_database_migration",
+    "check_migration_status",
+    "describe_database_schema", 
+    "get_table_structure",
+    "test_database_connection",
 ] 

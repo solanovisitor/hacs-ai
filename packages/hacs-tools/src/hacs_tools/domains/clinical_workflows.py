@@ -46,6 +46,14 @@ except ImportError:
         func._is_tool = True
         return func
 
+# Import tool descriptions
+from .descriptions import (
+    EXECUTE_CLINICAL_WORKFLOW_DESCRIPTION,
+    GET_CLINICAL_GUIDANCE_DESCRIPTION,
+    QUERY_WITH_DATAREQUIREMENT_DESCRIPTION,
+    VALIDATE_CLINICAL_PROTOCOL_DESCRIPTION,
+)
+
 
 @tool
 def execute_clinical_workflow(
