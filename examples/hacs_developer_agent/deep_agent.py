@@ -63,16 +63,16 @@ def _create_hacs_task_tool(
             state_schema=state_schema
         )
     
-    # Create sub-agent descriptions for the main agent
-    subagent_descriptions = []
-    for subagent in subagents:
-        subagent_descriptions.append(f"- {subagent['name']}: {subagent['description']}")
+    # Create other agents string
+    other_agents_string = [
+        f"- {subagent['name']}: {subagent['description']}" for subagent in subagents
+    ]
     
     task_description = f"""Launch a specialized HACS admin sub-agent to handle complex, multi-step administrative tasks.
 
 Available HACS admin sub-agents:
 - general-purpose: General-purpose HACS admin agent for basic operations and coordination
-{chr(10).join(subagent_descriptions)}
+{chr(10).join(other_agents_string)}
 
 ## When to Use HACS Admin Sub-Agents:
 
@@ -138,42 +138,20 @@ Available HACS admin sub-agents:
         # Get the specialized sub-agent
         sub_agent = agents[subagent_type]
         
-        # Prepare state for sub-agent (inherit context)
-        sub_state = dict(state)
-        sub_state["messages"] = [{"role": "user", "content": description}]
-        
-        # Execute sub-agent
-        try:
-            result = sub_agent.invoke(sub_state)
-            
-            # Extract response and update state
-            response_content = result["messages"][-1].content if result.get("messages") else "Sub-agent completed task."
-            
-            return Command(
-                update={
-                    "files": result.get("files", {}),
-                    "todos": result.get("todos", []),
-                    "last_operation_result": result.get("last_operation_result"),
-                    "messages": [
-                        ToolMessage(
-                            f"Sub-agent '{subagent_type}' completed task:\n{response_content}",
-                            tool_call_id=tool_call_id
-                        )
-                    ],
-                }
-            )
-            
-        except Exception as e:
-            return Command(
-                update={
-                    "messages": [
-                        ToolMessage(
-                            f"Sub-agent '{subagent_type}' failed: {str(e)}",
-                            tool_call_id=tool_call_id
-                        )
-                    ],
-                }
-            )
+        # Prepare state for sub-agent (matching reference pattern)
+        sub_agent = agents[subagent_type]
+        state["messages"] = [{"role": "user", "content": description}]
+        result = sub_agent.invoke(state)
+        return Command(
+            update={
+                "files": result.get("files", {}),
+                "messages": [
+                    ToolMessage(
+                        result["messages"][-1].content, tool_call_id=tool_call_id
+                    )
+                ],
+            }
+        )
     
     return task
 

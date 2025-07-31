@@ -93,79 +93,106 @@ Perfect for:
     return content
 
 
-@tool
 def write_file(
     file_path: str,
     content: str,
     state: Annotated[HACSDeepAgentState, InjectedState],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
-    """Write admin configuration files, scripts, or documentation to the workspace.
-
-Perfect for creating:
-- Database configuration files
-- Migration scripts
-- Admin procedures and runbooks
-- Environment setup files
-- System documentation
-- Deployment scripts"""
-    # Get existing files and add the new one
-    files = state.get("files", {}).copy() if state.get("files") else {}
+    """Write admin configuration files, scripts, or documentation to the workspace."""
+    files = state.get("files", {})
     files[file_path] = content
     return Command(
         update={
             "files": files,
             "messages": [
-                ToolMessage(
-                    f"Updated file {file_path}",
-                    tool_call_id=tool_call_id
-                )
+                ToolMessage(f"Updated file {file_path}", tool_call_id=tool_call_id)
             ],
         }
     )
 
 
-async def _edit_file(
+@tool
+def edit_file(
     file_path: str,
-    content: str,
+    old_string: str,
+    new_string: str,
     state: Annotated[HACSDeepAgentState, InjectedState],
     tool_call_id: Annotated[str, InjectedToolCallId],
+    replace_all: bool = False,
 ) -> Command:
-    """Edit existing admin file content."""
-    files = state.get("files", {})
+    """Edit admin configuration files using search and replace.
+    
+Useful for:
+- Updating database connection strings
+- Modifying migration scripts  
+- Updating admin procedures
+- Editing configuration files
+- Updating documentation"""
+    mock_filesystem = state.get("files", {})
+    
+    # Check if file exists in mock filesystem
+    if file_path not in mock_filesystem:
+        return Command(
+            update={
+                "messages": [
+                    ToolMessage(f"Error: File '{file_path}' not found", tool_call_id=tool_call_id)
+                ],
+            }
+        )
 
-    if file_path not in files:
-        # File doesn't exist, create it
-        action = "Created new"
+    # Get current file content
+    content = mock_filesystem[file_path]
+
+    # Check if old_string exists in the file
+    if old_string not in content:
+        return Command(
+            update={
+                "messages": [
+                    ToolMessage(f"Error: String not found in file: '{old_string}'", tool_call_id=tool_call_id)
+                ],
+            }
+        )
+
+    # If not replace_all, check for uniqueness
+    if not replace_all:
+        occurrences = content.count(old_string)
+        if occurrences > 1:
+            return Command(
+                update={
+                    "messages": [
+                        ToolMessage(f"Error: String '{old_string}' appears {occurrences} times in file. Use replace_all=True to replace all instances, or provide a more specific string with surrounding context.", tool_call_id=tool_call_id)
+                    ],
+                }
+            )
+        elif occurrences == 0:
+            return Command(
+                update={
+                    "messages": [
+                        ToolMessage(f"Error: String not found in file: '{old_string}'", tool_call_id=tool_call_id)
+                    ],
+                }
+            )
+
+    # Perform the replacement
+    if replace_all:
+        new_content = content.replace(old_string, new_string)
+        replacement_count = content.count(old_string)
+        result_msg = f"Successfully replaced {replacement_count} instance(s) of the string in '{file_path}'"
     else:
-        action = "Updated"
+        new_content = content.replace(old_string, new_string, 1)  # Replace only first occurrence
+        result_msg = f"Successfully replaced string in '{file_path}'"
 
+    # Update the mock filesystem
+    mock_filesystem[file_path] = new_content
     return Command(
         update={
-            "files": {file_path: content},
+            "files": mock_filesystem,
             "messages": [
-                ToolMessage(
-                    f"{action} admin file: {file_path} ({len(content)} chars)", 
-                    tool_call_id=tool_call_id
-                )
+                ToolMessage(result_msg, tool_call_id=tool_call_id)
             ],
         }
     )
-
-edit_file = StructuredTool.from_function(
-    _edit_file,
-    name="edit_file",
-    description="""Edit existing admin configuration files, scripts, or 
-documentation.
-
-Useful for:
-- Updating database connection strings
-- Modifying migration scripts
-- Updating admin procedures
-- Editing configuration files
-- Updating documentation""",
-    coroutine=_edit_file
-)
 
 
 # ============================================================================
