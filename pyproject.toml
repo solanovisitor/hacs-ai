@@ -14,7 +14,7 @@ dev-dependencies = [
 [tool.uv.workspace]
 members = [
     "packages/hacs-core",
-    "packages/hacs-tools", 
+    "packages/hacs-tools",
     "packages/hacs-utils",
     "packages/hacs-persistence",
     "packages/hacs-registry",
