@@ -5,20 +5,21 @@ Includes planning tools, file system tools, and HACS-specific admin tools.
 """
 
 from typing import Annotated, List, Optional
-from langchain_core.tools import tool, InjectedToolCallId
-from langchain_core.messages import ToolMessage
-from langgraph.types import Command
-from langgraph.prebuilt import InjectedState
 
-from state import Todo, HACSDeepAgentState, AdminOperationResult
+from langchain_core.messages import ToolMessage
+from langchain_core.runnables import RunnableConfig
+from langchain_core.tools import tool, StructuredTool, InjectedToolArg, InjectedToolCallId
+from langgraph.prebuilt import InjectedState
+from langgraph.types import Command
+
+from state import AdminOperationResult, HACSDeepAgentState, Todo
 
 # Import real HACS admin tools
 from tools import (
-    run_hacs_database_migration,
     check_hacs_migration_status,
     describe_hacs_database_schema,
-    create_admin_hacs_record,
     discover_hacs_resources,
+    run_hacs_database_migration,
 )
 
 
@@ -26,56 +27,47 @@ from tools import (
 # PLANNING TOOLS (adapted for HACS admin)
 # ============================================================================
 
-@tool(description="""Use this tool to create and manage a structured task list for your current HACS admin work session. 
-
-This helps you track progress, organize complex admin operations, and demonstrate thoroughness.
-
-## When to Use This Tool for HACS Admin:
-- Complex database migrations requiring multiple steps
-- System setup operations across multiple components
-- Resource management tasks involving multiple resources
-- Troubleshooting operations requiring systematic approach
-- User requests multiple admin operations
-
-## HACS Admin Task Examples:
-- "Set up HACS database schema" 
-- "Migrate existing data to new schema version"
-- "Validate system configuration and connectivity"
-- "Create test resources and verify functionality"
-- "Generate admin reports and documentation"
-
-## Task States:
-- pending: Not yet started
-- in_progress: Currently working on (ONLY ONE at a time)
-- completed: Successfully finished
-
-Mark tasks complete IMMEDIATELY after finishing. Only have ONE task in_progress at any time.""")
+@tool
 def write_todos(
-    todos: List[Todo], 
+    todos: List[Todo],
     tool_call_id: Annotated[str, InjectedToolCallId]
 ) -> Command:
-    """Write or update the admin task list."""
+    """Use this tool to create and manage a structured task list for 
+your current HACS admin work session.
+
+This helps you track progress, organize complex admin operations, and demonstrate thoroughness."""
     return Command(
         update={
             "todos": todos,
             "messages": [
-                ToolMessage(f"Updated admin task list: {len(todos)} tasks", tool_call_id=tool_call_id)
+                ToolMessage(
+                    f"Updated admin task list: {len(todos)} tasks", 
+                    tool_call_id=tool_call_id
+                )
             ],
         }
     )
+
+
 
 
 # ============================================================================
 # FILE SYSTEM TOOLS (adapted for HACS admin)
 # ============================================================================
 
-@tool
 def ls(state: Annotated[HACSDeepAgentState, InjectedState]) -> List[str]:
     """List all files in the admin workspace."""
     return list(state.get("files", {}).keys())
 
 
-@tool(description="""Read admin configuration files, scripts, or documentation.
+@tool
+def read_file(
+    file_path: str,
+    state: Annotated[HACSDeepAgentState, InjectedState],
+    offset: int = 0,
+    limit: int = 2000,
+) -> str:
+    """Read admin configuration files, scripts, or documentation.
 
 Perfect for:
 - Database configuration files
@@ -83,14 +75,7 @@ Perfect for:
 - Admin documentation
 - Environment files
 - Log files
-- Schema definitions""")
-def read_file(
-    file_path: str,
-    state: Annotated[HACSDeepAgentState, InjectedState],
-    offset: int = 0,
-    limit: int = 2000,
-) -> str:
-    """Read admin file content."""
+- Schema definitions"""
     files = state.get("files", {})
     if file_path not in files:
         return f"Error: Admin file '{file_path}' not found"
@@ -99,154 +84,114 @@ def read_file(
     if not content or content.strip() == "":
         return "File exists but has empty contents"
 
-    lines = content.splitlines()
-    start_idx = offset
-    end_idx = min(start_idx + limit, len(lines))
+    if offset or limit != 2000:
+        # Handle offset and limit for large files
+        lines = content.split('\n')
+        selected_lines = lines[offset:offset + limit] if limit > 0 else lines[offset:]
+        return '\n'.join(selected_lines)
 
-    if start_idx >= len(lines):
-        return f"Error: Line offset {offset} exceeds file length ({len(lines)} lines)"
-
-    result_lines = []
-    for i in range(start_idx, end_idx):
-        line_content = lines[i]
-        if len(line_content) > 2000:
-            line_content = line_content[:2000]
-        line_number = i + 1
-        result_lines.append(f"{line_number:6d}\t{line_content}")
-
-    return "\n".join(result_lines)
+    return content
 
 
-@tool(description="""Write admin files like configuration, scripts, or documentation.
-
-Common admin files:
-- database_config.json - Database connection settings
-- migration_script.sql - Custom migration scripts  
-- admin_checklist.md - Admin operation checklists
-- environment_setup.sh - Environment setup scripts
-- backup_config.yaml - Backup configuration
-- monitoring_config.json - System monitoring setup""")
+@tool
 def write_file(
     file_path: str,
     content: str,
     state: Annotated[HACSDeepAgentState, InjectedState],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
-    """Write content to an admin file."""
-    files = state.get("files", {})
+    """Write admin configuration files, scripts, or documentation to the workspace.
+
+Perfect for creating:
+- Database configuration files
+- Migration scripts
+- Admin procedures and runbooks
+- Environment setup files
+- System documentation
+- Deployment scripts"""
+    # Get existing files and add the new one
+    files = state.get("files", {}).copy() if state.get("files") else {}
     files[file_path] = content
     return Command(
         update={
             "files": files,
             "messages": [
-                ToolMessage(f"Created admin file: {file_path}", tool_call_id=tool_call_id)
+                ToolMessage(
+                    f"Updated file {file_path}",
+                    tool_call_id=tool_call_id
+                )
             ],
         }
     )
 
 
-@tool(description="""Edit existing admin files with precise string replacement.
-
-Use this to modify:
-- Configuration files (update settings)
-- Scripts (fix bugs, add features)
-- Documentation (update procedures)
-- Environment files (change variables)
-
-Always read the file first before editing.""")
-def edit_file(
+async def _edit_file(
     file_path: str,
-    old_string: str,
-    new_string: str,
+    content: str,
     state: Annotated[HACSDeepAgentState, InjectedState],
     tool_call_id: Annotated[str, InjectedToolCallId],
-    replace_all: bool = False,
 ) -> Command:
-    """Edit admin file with string replacement."""
+    """Edit existing admin file content."""
     files = state.get("files", {})
-    
+
     if file_path not in files:
-        return Command(
-            update={
-                "messages": [
-                    ToolMessage(f"Error: Admin file '{file_path}' not found", tool_call_id=tool_call_id)
-                ]
-            }
-        )
-
-    content = files[file_path]
-
-    if old_string not in content:
-        return Command(
-            update={
-                "messages": [
-                    ToolMessage(f"Error: String not found in {file_path}: '{old_string}'", tool_call_id=tool_call_id)
-                ]
-            }
-        )
-
-    if not replace_all:
-        occurrences = content.count(old_string)
-        if occurrences > 1:
-            return Command(
-                update={
-                    "messages": [
-                        ToolMessage(f"Error: String '{old_string}' appears {occurrences} times. Use replace_all=True or be more specific.", tool_call_id=tool_call_id)
-                    ]
-                }
-            )
-
-    # Perform replacement
-    if replace_all:
-        new_content = content.replace(old_string, new_string)
-        replacement_count = content.count(old_string)
-        msg = f"Replaced {replacement_count} instance(s) in {file_path}"
+        # File doesn't exist, create it
+        action = "Created new"
     else:
-        new_content = content.replace(old_string, new_string, 1)
-        msg = f"Successfully updated {file_path}"
+        action = "Updated"
 
-    files[file_path] = new_content
     return Command(
         update={
-            "files": files,
+            "files": {file_path: content},
             "messages": [
-                ToolMessage(msg, tool_call_id=tool_call_id)
+                ToolMessage(
+                    f"{action} admin file: {file_path} ({len(content)} chars)", 
+                    tool_call_id=tool_call_id
+                )
             ],
         }
     )
 
+edit_file = StructuredTool.from_function(
+    _edit_file,
+    name="edit_file",
+    description="""Edit existing admin configuration files, scripts, or 
+documentation.
+
+Useful for:
+- Updating database connection strings
+- Modifying migration scripts
+- Updating admin procedures
+- Editing configuration files
+- Updating documentation""",
+    coroutine=_edit_file
+)
+
 
 # ============================================================================
-# HACS ADMIN OPERATION TOOLS (wrapped for deep agent)
+# HACS ADMIN OPERATION TOOLS
 # ============================================================================
 
-@tool(description="""Run HACS database migration to set up or update database schemas.
-
-This is a REAL admin operation that performs actual database migrations.
-Use this for:
-- Initial HACS database setup
-- Schema updates and migrations
-- Database structure validation
-
-IMPORTANT: This operation requires database access and may take time.""")
-async def admin_database_migration(
+async def _admin_database_migration(
     database_url: Optional[str] = None,
     force_migration: bool = False,
     state: Annotated[HACSDeepAgentState, InjectedState] = None,
     tool_call_id: Annotated[str, InjectedToolCallId] = None,
+    config: Annotated[RunnableConfig, InjectedToolArg] = None,
 ) -> Command:
     """Execute database migration operation."""
-    
+
     # Use database_url from state if not provided
     if not database_url and state:
         database_url = state.get("database_url")
-    
+
     try:
         result_text = await run_hacs_database_migration(
             database_url=database_url,
-            force_migration=force_migration
+            force_migration=force_migration,
+            config=config
         )
-        
+
         success = "✅" in result_text
         operation_result = AdminOperationResult(
             operation_type="database_migration",
@@ -257,16 +202,20 @@ async def admin_database_migration(
                 "force_migration": force_migration
             }
         )
-        
+
+        migration_status = "completed" if success else "failed"
         return Command(
             update={
                 "last_operation_result": operation_result,
                 "messages": [
-                    ToolMessage(f"Migration {'completed' if success else 'failed'}: {result_text[:200]}...", tool_call_id=tool_call_id)
+                    ToolMessage(
+                        f"Migration {migration_status}: {result_text[:200]}...", 
+                        tool_call_id=tool_call_id
+                    )
                 ],
             }
         )
-        
+
     except Exception as e:
         error_result = AdminOperationResult(
             operation_type="database_migration",
@@ -274,54 +223,69 @@ async def admin_database_migration(
             message=f"Migration failed: {str(e)}",
             error=str(e)
         )
-        
+
         return Command(
             update={
                 "last_operation_result": error_result,
                 "messages": [
-                    ToolMessage(f"Migration error: {str(e)}", tool_call_id=tool_call_id)
+                    ToolMessage(f"Migration failed: {str(e)}", tool_call_id=tool_call_id)
                 ],
             }
         )
 
+admin_database_migration = StructuredTool.from_function(
+    _admin_database_migration,
+    name="admin_database_migration",
+    description="""Run HACS database migration to set up or update database schemas.
 
-@tool(description="""Check current HACS database migration status and history.
+This is a critical admin operation that:
+- Sets up required database tables and indexes
+- Applies schema migrations for HACS components
+- Validates database connectivity and permissions
+- Updates schema version tracking
 
-Use this to:
-- Verify database setup status  
-- Check migration history
-- Validate database connectivity
-- Troubleshoot migration issues""")
-async def admin_migration_status(
+IMPORTANT: This operation requires database access and may take time.""",
+    coroutine=_admin_database_migration
+)
+
+
+async def _admin_migration_status(
     database_url: Optional[str] = None,
     state: Annotated[HACSDeepAgentState, InjectedState] = None,
     tool_call_id: Annotated[str, InjectedToolCallId] = None,
+    config: Annotated[RunnableConfig, InjectedToolArg] = None,
 ) -> Command:
     """Check database migration status."""
-    
+
+    # Use database_url from state if not provided
     if not database_url and state:
         database_url = state.get("database_url")
-    
+
     try:
-        result_text = await check_hacs_migration_status(database_url=database_url)
-        success = "✅" in result_text
-        
+        result_text = await check_hacs_migration_status(
+            database_url=database_url,
+            config=config
+        )
+
         operation_result = AdminOperationResult(
             operation_type="migration_status",
-            success=success,
+            success=True,
             message=result_text,
-            data={"operation": "status_check"}
+            data={"database_url_provided": bool(database_url)}
         )
-        
+
         return Command(
             update={
                 "last_operation_result": operation_result,
                 "messages": [
-                    ToolMessage(f"Status check: {result_text[:200]}...", tool_call_id=tool_call_id)
+                    ToolMessage(
+                        f"Migration status: {result_text[:150]}...", 
+                        tool_call_id=tool_call_id
+                    )
                 ],
             }
         )
-        
+
     except Exception as e:
         error_result = AdminOperationResult(
             operation_type="migration_status",
@@ -329,50 +293,73 @@ async def admin_migration_status(
             message=f"Status check failed: {str(e)}",
             error=str(e)
         )
-        
+
         return Command(
             update={
                 "last_operation_result": error_result,
                 "messages": [
-                    ToolMessage(f"Status error: {str(e)}", tool_call_id=tool_call_id)
+                    ToolMessage(f"Status check failed: {str(e)}", tool_call_id=tool_call_id)
                 ],
             }
         )
 
+admin_migration_status = StructuredTool.from_function(
+    _admin_migration_status,
+    name="admin_migration_status",
+    description="""Check the current database migration status and schema version.
 
-@tool(description="""Inspect HACS database schema, tables, and structures.
+This admin operation:
+- Checks database connectivity
+- Reports current schema version
+- Lists pending migrations
+- Validates database health
+- Reports any migration issues""",
+    coroutine=_admin_migration_status
+)
 
-Use this for:
-- Database structure analysis
-- Schema validation
-- Table inspection
-- Relationship mapping""")
-async def admin_schema_inspection(
-    schema_name: str = "hacs_core",
+
+async def _admin_schema_inspection(
+    database_url: Optional[str] = None,
+    table_filter: Optional[str] = None,
+    state: Annotated[HACSDeepAgentState, InjectedState] = None,
     tool_call_id: Annotated[str, InjectedToolCallId] = None,
+    config: Annotated[RunnableConfig, InjectedToolArg] = None,
 ) -> Command:
     """Inspect database schema."""
-    
+
+    # Use database_url from state if not provided
+    if not database_url and state:
+        database_url = state.get("database_url")
+
     try:
-        result_text = await describe_hacs_database_schema(schema_name=schema_name)
-        success = "✅" in result_text
-        
+        result_text = await describe_hacs_database_schema(
+            database_url=database_url,
+            table_filter=table_filter,
+            config=config
+        )
+
         operation_result = AdminOperationResult(
             operation_type="schema_inspection",
-            success=success,
+            success=True,
             message=result_text,
-            data={"schema_name": schema_name}
+            data={
+                "database_url_provided": bool(database_url),
+                "table_filter": table_filter
+            }
         )
-        
+
         return Command(
             update={
                 "last_operation_result": operation_result,
                 "messages": [
-                    ToolMessage(f"Schema inspection: {result_text[:200]}...", tool_call_id=tool_call_id)
+                    ToolMessage(
+                        f"Schema inspection: {len(result_text)} chars of schema info", 
+                        tool_call_id=tool_call_id
+                    )
                 ],
             }
         )
-        
+
     except Exception as e:
         error_result = AdminOperationResult(
             operation_type="schema_inspection",
@@ -380,50 +367,70 @@ async def admin_schema_inspection(
             message=f"Schema inspection failed: {str(e)}",
             error=str(e)
         )
-        
+
         return Command(
             update={
                 "last_operation_result": error_result,
                 "messages": [
-                    ToolMessage(f"Schema error: {str(e)}", tool_call_id=tool_call_id)
+                    ToolMessage(
+                        f"Schema inspection failed: {str(e)}", 
+                        tool_call_id=tool_call_id
+                    )
                 ],
             }
         )
 
+admin_schema_inspection = StructuredTool.from_function(
+    _admin_schema_inspection,
+    name="admin_schema_inspection",
+    description="""Inspect the current database schema and get detailed schema 
+information.
 
-@tool(description="""Discover available HACS resource types and their capabilities.
+This admin operation:
+- Lists all database tables and columns
+- Shows indexes and constraints
+- Reports table relationships
+- Provides schema documentation
+- Helps with troubleshooting and planning""",
+    coroutine=_admin_schema_inspection
+)
 
-Use this to:
-- Explore available HACS resources
-- Understand resource schemas  
-- Plan resource creation
-- Validate resource types""")
-async def admin_resource_discovery(
+
+async def _admin_resource_discovery(
     category_filter: Optional[str] = None,
+    state: Annotated[HACSDeepAgentState, InjectedState] = None,
     tool_call_id: Annotated[str, InjectedToolCallId] = None,
+    config: Annotated[RunnableConfig, InjectedToolArg] = None,
 ) -> Command:
     """Discover HACS resources."""
-    
+
     try:
-        result_text = await discover_hacs_resources(category_filter=category_filter)
-        success = "✅" in result_text
-        
+        result_text = await discover_hacs_resources(
+            category_filter=category_filter,
+            config=config
+        )
+
         operation_result = AdminOperationResult(
             operation_type="resource_discovery",
-            success=success,
+            success=True,
             message=result_text,
-            data={"category_filter": category_filter}
+            data={
+                "category_filter": category_filter,
+            }
         )
-        
+
         return Command(
             update={
                 "last_operation_result": operation_result,
                 "messages": [
-                    ToolMessage(f"Resource discovery: Found HACS resources", tool_call_id=tool_call_id)
+                    ToolMessage(
+                        f"Resource discovery: {result_text[:150]}...", 
+                        tool_call_id=tool_call_id
+                    )
                 ],
             }
         )
-        
+
     except Exception as e:
         error_result = AdminOperationResult(
             operation_type="resource_discovery",
@@ -431,28 +438,41 @@ async def admin_resource_discovery(
             message=f"Resource discovery failed: {str(e)}",
             error=str(e)
         )
-        
+
         return Command(
             update={
                 "last_operation_result": error_result,
                 "messages": [
-                    ToolMessage(f"Discovery error: {str(e)}", tool_call_id=tool_call_id)
+                    ToolMessage(
+                        f"Resource discovery failed: {str(e)}", 
+                        tool_call_id=tool_call_id
+                    )
                 ],
             }
         )
 
+admin_resource_discovery = StructuredTool.from_function(
+    _admin_resource_discovery,
+    name="admin_resource_discovery",
+    description="Discover and analyze HACS resource schemas and models. This admin operation scans for available HACS resource schemas, reports model types and categories, shows model capabilities and structure, helps with understanding available HACS models, and supports filtering by category. Available categories: clinical, administrative, reasoning. Common model types: Patient, Observation, Condition, Medication, etc.",
+    coroutine=_admin_resource_discovery
+)
 
-# List of all HACS deep agent tools
+
+# ============================================================================
+# EXPORTED TOOLS LIST
+# ============================================================================
+
 HACS_DEEP_AGENT_TOOLS = [
     # Planning tools
     write_todos,
-    
-    # File system tools  
+
+    # File system tools
     ls,
     read_file,
     write_file,
     edit_file,
-    
+
     # HACS admin operation tools
     admin_database_migration,
     admin_migration_status,

@@ -4,11 +4,10 @@ Built on the deep agents framework with HACS-specific admin functionality.
 Includes planning tools, file system, and specialized sub-agents.
 """
 
-from typing import Any, Dict, List, Optional, Literal, Annotated, NotRequired
+from typing import Any, Dict, List, Optional, Literal, Annotated
 from typing_extensions import TypedDict
-
-from langgraph.graph import MessagesState
-from langgraph.prebuilt.chat_agent_executor import AgentState
+from langchain_core.messages import AnyMessage
+from langgraph.graph.message import add_messages
 from pydantic import BaseModel, Field
 
 
@@ -27,77 +26,22 @@ class AdminOperationResult(BaseModel):
     error: Optional[str] = Field(default=None, description="Error message if failed")
 
 
-def file_reducer(left, right):
-    """Reducer for file system state."""
-    if left is None:
-        return right
-    elif right is None:
-        return left
-    else:
-        return {**left, **right}
-
-
-class HACSDeepAgentState(AgentState):
+class HACSDeepAgentState(TypedDict, total=False):
     """Deep agent state for HACS admin operations.
-
-    Extends LangGraph's AgentState with HACS-specific admin functionality:
-    - Planning through todos
-    - File system for configs/scripts
-    - Admin operation tracking
-    - Sub-agent coordination
-
-    Inherits from AgentState to ensure compatibility with create_react_agent.
+    
+    Following deepagents framework pattern with proper LangGraph message handling.
     """
-
-    # Deep Agent Framework Components
-    todos: NotRequired[List[Todo]]
-    files: Annotated[NotRequired[Dict[str, str]], file_reducer]
-
-    # HACS Admin-Specific State (all optional)
-    session_id: NotRequired[Optional[str]]
-    database_url: NotRequired[Optional[str]]
-    last_operation_result: NotRequired[Optional[AdminOperationResult]]
-    admin_context: NotRequired[Optional[Dict[str, Any]]]
-
-
-# Simplified input/output states for external API
-class InputState(MessagesState):
-    """Input state for HACS Deep Admin Agent - what developers provide."""
-
-    admin_operation_type: Optional[str] = Field(
-        default=None,
-        description="Type of admin operation requested"
-    )
-
-    operation_params: Optional[Dict[str, Any]] = Field(
-        default=None,
-        description="Parameters for the admin operation"
-    )
-
-    database_url: Optional[str] = Field(
-        default=None,
-        description="Database URL (optional, can use environment variable)"
-    )
-
-
-class OutputState(MessagesState):
-    """Output state for admin operations - what developers get back."""
-
-    operation_result: AdminOperationResult = Field(
-        description="Result of the admin operation"
-    )
-
-    todos_completed: Optional[List[str]] = Field(
-        default=None,
-        description="List of completed admin tasks"
-    )
-
-    files_created: Optional[List[str]] = Field(
-        default=None,
-        description="List of files created during operation"
-    )
-
-    recommended_next_steps: Optional[List[str]] = Field(
-        default=None,
-        description="Suggested next admin actions"
-    )
+    
+    # Core LangGraph state (required fields)
+    messages: Annotated[list[AnyMessage], add_messages]
+    remaining_steps: int  # Required by create_react_agent
+    
+    # Deep Agent Framework Components (optional with total=False)
+    todos: List[Todo]
+    files: Dict[str, str]
+    
+    # HACS Admin-Specific State (optional with total=False)
+    session_id: str
+    database_url: str
+    last_operation_result: AdminOperationResult
+    admin_context: Dict[str, Any]

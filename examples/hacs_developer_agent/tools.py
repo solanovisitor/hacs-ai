@@ -62,8 +62,6 @@ async def call_mcp_server(params: Dict[str, Any], config: RunnableConfig) -> Dic
 
 async def discover_hacs_resources(
     category_filter: Optional[str] = None,
-    model_type: Optional[str] = None,
-    include_deprecated: bool = False,
     *,
     config: Annotated[RunnableConfig, InjectedToolArg]
 ) -> str:

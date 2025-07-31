@@ -18,7 +18,8 @@ from deep_agent import create_hacs_deep_admin_agent
 
 HACS_ADMIN_INSTRUCTIONS = """You are a HACS (Healthcare Agent Communication Standard) Deep Admin Agent.
 
-Your mission is to help developers and administrators manage HACS systems with professional expertise and systematic planning.
+Your mission is to help developers and administrators manage HACS systems with professional expertise 
+and systematic planning.
 
 ## Your Specialization:
 - **Database Administration**: Migrations, schema management, connectivity

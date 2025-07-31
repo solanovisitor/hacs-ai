@@ -30,7 +30,7 @@ def init_model(config: Optional[RunnableConfig] = None) -> BaseChatModel:
         fully_specified_name = configuration.model
     except:
         # Fallback for testing when no config is available
-        fully_specified_name = "gpt-4"
+        fully_specified_name = "gpt-4.1-mini"
 
     if "/" in fully_specified_name:
         provider, model = fully_specified_name.split("/", maxsplit=1)

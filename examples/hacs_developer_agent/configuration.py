@@ -29,6 +29,14 @@ class Configuration:
         },
     )
 
+    # HACS MCP Server Configuration
+    hacs_mcp_server_url: str = field(
+        default_factory=lambda: os.getenv("HACS_MCP_SERVER_URL", "http://localhost:8090"),
+        metadata={
+            "description": "URL for the HACS MCP server running in Docker container."
+        },
+    )
+
     # Admin Operation Limits
     max_admin_operations: int = field(
         default=3,
