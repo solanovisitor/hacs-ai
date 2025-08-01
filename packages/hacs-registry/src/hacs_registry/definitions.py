@@ -7,11 +7,15 @@ This module provides the schema and structure definitions for HACS resources.
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Callable, Union
+import inspect
+import logging
 
 from pydantic import Field
 
 from hacs_core import BaseResource
+
+logger = logging.getLogger(__name__)
 
 
 class DefinitionStatus(str, Enum):
@@ -146,6 +150,147 @@ class WorkflowDefinition(BaseResource):
     )
 
     tags: List[str] = Field(default_factory=list, description="Searchable tags")
+
+
+class ToolDefinition(BaseResource):
+    """
+    Definition for a HACS tool with metadata and capabilities.
+    
+    This represents a discoverable tool that can be used by AI agents,
+    with comprehensive metadata about its purpose, parameters, and usage.
+    """
+    
+    resource_type: str = Field(default="ToolDefinition", description="Type identifier")
+    
+    name: str = Field(description="Tool name (must be unique)")
+    version: str = Field(default="1.0.0", description="Tool version")
+    description: str = Field(description="Human-readable description of tool purpose")
+    
+    # Tool function and execution
+    function: Optional[Callable] = Field(
+        default=None,
+        description="The actual tool function (not serialized)",
+        exclude=True
+    )
+    
+    module_path: str = Field(description="Full module path where tool is defined")
+    function_name: str = Field(description="Name of the function")
+    
+    # Categorization and discovery
+    category: str = Field(
+        description="Primary category (resource_management, clinical_workflows, etc.)"
+    )
+    
+    domain: str = Field(
+        description="Domain module where tool is defined"
+    )
+    
+    tags: List[str] = Field(
+        default_factory=list,
+        description="Searchable tags for categorization"
+    )
+    
+    # Tool metadata
+    input_schema: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="JSON schema for tool inputs"
+    )
+    
+    output_schema: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="JSON schema for tool outputs"
+    )
+    
+    # Usage and capabilities
+    requires_actor: bool = Field(
+        default=False,
+        description="Whether tool requires actor_name parameter"
+    )
+    
+    requires_db: bool = Field(
+        default=False,
+        description="Whether tool requires database adapter"
+    )
+    
+    requires_vector_store: bool = Field(
+        default=False,
+        description="Whether tool requires vector store"
+    )
+    
+    is_async: bool = Field(
+        default=False,
+        description="Whether tool function is async"
+    )
+    
+    # Documentation and examples
+    examples: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Usage examples with inputs and expected outputs"
+    )
+    
+    use_cases: List[str] = Field(
+        default_factory=list,
+        description="Common use cases for this tool"
+    )
+    
+    # Framework compatibility
+    supports_langchain: bool = Field(
+        default=True,
+        description="Whether tool can be used with LangChain"
+    )
+    
+    supports_mcp: bool = Field(
+        default=True,
+        description="Whether tool can be used with MCP"
+    )
+    
+    # Status and lifecycle
+    status: DefinitionStatus = Field(
+        default=DefinitionStatus.PUBLISHED,
+        description="Current status of this tool"
+    )
+    
+    deprecated_in_favor_of: Optional[str] = Field(
+        default=None,
+        description="Name of replacement tool if deprecated"
+    )
+    
+    def get_signature(self) -> Optional[inspect.Signature]:
+        """Get the function signature if function is available."""
+        if self.function:
+            return inspect.signature(self.function)
+        return None
+    
+    def get_parameters(self) -> Dict[str, Any]:
+        """Get parameter information from function signature."""
+        if not self.function:
+            return {}
+        
+        sig = inspect.signature(self.function)
+        params = {}
+        
+        for name, param in sig.parameters.items():
+            param_info = {
+                "name": name,
+                "required": param.default == inspect.Parameter.empty,
+                "default": param.default if param.default != inspect.Parameter.empty else None,
+                "annotation": str(param.annotation) if param.annotation != inspect.Parameter.empty else None
+            }
+            params[name] = param_info
+        
+        return params
+    
+    def is_compatible_with(self, framework: str) -> bool:
+        """Check if tool is compatible with a specific framework."""
+        framework_lower = framework.lower()
+        if framework_lower == "langchain":
+            return self.supports_langchain
+        elif framework_lower == "mcp":
+            return self.supports_mcp
+        return True
+    
+    class Config:
+        arbitrary_types_allowed = True
 
 
 # Backwards compatibility alias

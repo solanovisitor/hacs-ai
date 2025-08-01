@@ -1,7 +1,13 @@
 {
-    "dependencies": ["."],
+    "dependencies": [
+        "langchain_anthropic",
+        "langchain_openai", 
+        "langchain_core",
+        "langgraph",
+        "."
+    ],
     "graphs": {
-      "hacs_developer_agent": "./graph.py:graph"
+        "hacs_developer_agent": "./agent.py:get_workflow"
     },
     "env": ".env"
-  } 
+} 

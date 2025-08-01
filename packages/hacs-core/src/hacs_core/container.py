@@ -182,7 +182,10 @@ class AdapterRegistry:
             try:
                 # from hacs_pinecone.adapter import create_pinecone_adapter
                 # self.register_factory(VectorStore, lambda: create_pinecone_adapter(**settings.get_pinecone_config()))
-                pass  # Placeholder - would implement when Pinecone adapter is ready
+                # TODO: Implement Pinecone vector store adapter
+                # from hacs_pinecone.adapter import create_pinecone_adapter
+                # self.register_factory(VectorStore, lambda: create_pinecone_adapter(**settings.get_pinecone_config()))
+                pass
             except ImportError:
                 pass
 
@@ -191,7 +194,10 @@ class AdapterRegistry:
             try:
                 # from hacs_qdrant.adapter import create_qdrant_adapter
                 # self.register_factory(VectorStore, lambda: create_qdrant_adapter(**settings.get_qdrant_config()))
-                pass  # Placeholder - would implement when Qdrant adapter is ready
+                # TODO: Implement Qdrant vector store adapter
+                # from hacs_qdrant.adapter import create_qdrant_adapter
+                # self.register_factory(VectorStore, lambda: create_qdrant_adapter(**settings.get_qdrant_config()))
+                pass
             except ImportError:
                 pass
 

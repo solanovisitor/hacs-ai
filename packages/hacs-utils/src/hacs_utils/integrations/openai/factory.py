@@ -7,7 +7,7 @@ from .embedding import OpenAIEmbedding
 
 
 def create_openai_client(
-    model: str = "gpt-4o", api_key: str | None = None, base_url: str | None = None, **kwargs
+    model: str = "gpt-4.1-mini", api_key: str | None = None, base_url: str | None = None, **kwargs
 ) -> OpenAIClient:
     """Create an OpenAI client with default configuration."""
     return OpenAIClient(model=model, api_key=api_key, base_url=base_url, **kwargs)

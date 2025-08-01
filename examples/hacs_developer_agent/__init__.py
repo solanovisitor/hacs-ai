@@ -1,1 +1,0 @@
-"""HACS Developer Agent package."""

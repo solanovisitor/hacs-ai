@@ -41,8 +41,10 @@ except ImportError:
             MemoryBlock as Memory,
         )
     except ImportError:
-        # Create placeholder classes if neither is available
+        # TODO: Implement proper model imports or create actual model definitions
+        # The following models need proper implementations:
         class _PlaceholderModel:
+            """Placeholder model - TODO: implement proper model definitions."""
             pass
 
         AgentMessage = _PlaceholderModel

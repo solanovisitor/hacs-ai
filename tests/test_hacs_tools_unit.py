@@ -477,7 +477,7 @@ class TestHACSAdvancedTools:
             result = optimize_resource_for_llm(
                 resource_type="Patient",
                 optimization_target="generation",
-                llm_model="gpt-4"
+                llm_model="gpt-4.1-mini"
             )
             
             assert isinstance(result, dict)

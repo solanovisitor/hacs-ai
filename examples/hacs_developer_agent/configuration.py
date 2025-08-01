@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field, fields
-from typing import Annotated, Dict, List, Optional
+from typing import Annotated, Optional
 
 from langchain_core.runnables import RunnableConfig, ensure_config
 
@@ -14,26 +14,45 @@ class Configuration:
     """The configuration for the HACS admin agent."""
 
     model: Annotated[str, {"__template_metadata__": {"kind": "llm"}}] = field(
-        default="openai/gpt-4o-mini",
+        default="openai/gpt-4.1-mini",
         metadata={
             "description": "The name of the language model to use for the agent. "
             "Should be in the form: provider/model-name."
         },
     )
 
-    # Database Configuration for Admin Operations
-    database_url: str = field(
-        default_factory=lambda: os.getenv("DATABASE_URL", ""),
+    # Database Configuration for Admin Operations (loaded from secrets)
+    database_url: Optional[str] = field(
+        default=None,
         metadata={
-            "description": "PostgreSQL database URL for HACS admin operations."
+            "description": "PostgreSQL database URL for HACS admin operations. "
+            "Loaded from runtime config secrets as __database_url."
         },
     )
 
-    # HACS MCP Server Configuration
-    hacs_mcp_server_url: str = field(
-        default_factory=lambda: os.getenv("HACS_MCP_SERVER_URL", "http://localhost:8090"),
+    # HACS MCP Server Configuration (loaded from secrets)
+    hacs_mcp_server_url: Optional[str] = field(
+        default=None,
         metadata={
-            "description": "URL for the HACS MCP server running in Docker container."
+            "description": "URL for the HACS MCP server running in Docker container. "
+            "Loaded from runtime config secrets as __hacs_mcp_server_url."
+        },
+    )
+
+    # API Keys (loaded from secrets)
+    anthropic_api_key: Optional[str] = field(
+        default=None,
+        metadata={
+            "description": "Anthropic API key for Claude models. "
+            "Loaded from runtime config secrets as __anthropic_api_key."
+        },
+    )
+
+    openai_api_key: Optional[str] = field(
+        default=None,
+        metadata={
+            "description": "OpenAI API key for GPT models. "
+            "Loaded from runtime config secrets as __openai_api_key."
         },
     )
 
@@ -100,7 +119,8 @@ class Configuration:
     max_resource_results: int = field(
         default=50,
         metadata={
-            "description": "The maximum number of HACS resources to return in admin operations."
+            "description": "The maximum number of HACS resources to return in "
+            "admin operations."
         },
     )
 
@@ -108,11 +128,52 @@ class Configuration:
     def from_runnable_config(
         cls, config: Optional[RunnableConfig] = None
     ) -> Configuration:
-        """Load configuration with defaults for the given invocation."""
+        """Load configuration with defaults for the given invocation.
+
+        Runtime secrets are passed with __ prefix in configurable to prevent
+        tracing. Example: {"configurable": {"__database_url": "postgresql://...",
+        "model": "openai/gpt-4"}}
+        """
         config = ensure_config(config)
         configurable = config.get("configurable") or {}
         _fields = {f.name for f in fields(cls) if f.init}
-        return cls(**{k: v for k, v in configurable.items() if k in _fields})
+
+        # Build configuration values from both regular and secret fields
+        config_values = {}
+
+        # Add regular configuration fields (no __ prefix)
+        for k, v in configurable.items():
+            if k in _fields and not k.startswith("__"):
+                config_values[k] = v
+
+        # Add secret fields (with __ prefix, map to field without prefix)
+        secret_mappings = {
+            "__database_url": "database_url",
+            "__hacs_mcp_server_url": "hacs_mcp_server_url",
+            "__anthropic_api_key": "anthropic_api_key",
+            "__openai_api_key": "openai_api_key",
+        }
+
+        for secret_key, field_name in secret_mappings.items():
+            if secret_key in configurable and field_name in _fields:
+                config_values[field_name] = configurable[secret_key]
+
+        # Fallback to environment variables for missing secrets
+        env_fallbacks = {
+            "database_url": os.getenv("DATABASE_URL"),
+            "hacs_mcp_server_url": os.getenv(
+                "HACS_MCP_SERVER_URL", "http://localhost:8000"
+            ),
+            "anthropic_api_key": os.getenv("ANTHROPIC_API_KEY"),
+            "openai_api_key": os.getenv("OPENAI_API_KEY"),
+        }
+
+        for field_name, env_value in env_fallbacks.items():
+            if (field_name not in config_values and env_value and 
+                field_name in _fields):
+                config_values[field_name] = env_value
+
+        return cls(**config_values)
 
 
 # Private configuration data that was previously in state

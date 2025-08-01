@@ -56,11 +56,25 @@ def create_document_processor(chunk_size: int = 1000, chunk_overlap: int = 200) 
     return create_langchain_adapter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
 
+from .tools import (
+    get_hacs_tools,
+    get_hacs_tool,
+    get_hacs_tools_by_category,
+    HACSToolRegistry,
+    validate_tool_inputs,
+)
+
 __all__ = [
     "LangChainDocumentAdapter",
-    "LangChainDocumentProcessor",
+    "LangChainDocumentProcessor", 
     "create_langchain_adapter",
     "create_document_processor",
     "Document",
     "RecursiveCharacterTextSplitter",
+    # HACS Tools Integration
+    "get_hacs_tools",
+    "get_hacs_tool",
+    "get_hacs_tools_by_category", 
+    "HACSToolRegistry",
+    "validate_tool_inputs",
 ]

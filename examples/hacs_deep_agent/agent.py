@@ -419,7 +419,7 @@ def create_hacs_deep_agent(
         except ImportError:
             try:
                 from langchain_openai import ChatOpenAI
-                model = ChatOpenAI(model="gpt-4")
+                model = ChatOpenAI(model="gpt-4.1-mini")
             except ImportError:
                 raise ImportError("Please install either langchain-anthropic or langchain-openai")
     

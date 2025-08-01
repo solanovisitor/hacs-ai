@@ -1,7 +1,7 @@
-"""State definitions for HACS Deep Admin Agent.
+"""State definitions for HACS Agent.
 
-Built on the deep agents framework with HACS-specific admin functionality.
-Includes planning tools, file system, and specialized sub-agents.
+State management for HACS development and administration workflows.
+Includes planning tools, file system, and task tracking.
 """
 
 from typing import Any, Dict, List, Optional, Literal, Annotated
@@ -26,22 +26,27 @@ class AdminOperationResult(BaseModel):
     error: Optional[str] = Field(default=None, description="Error message if failed")
 
 
-class HACSDeepAgentState(TypedDict, total=False):
-    """Deep agent state for HACS admin operations.
+class HACSAgentState(TypedDict, total=False):
+    """Agent state for HACS operations.
     
-    Following deepagents framework pattern with proper LangGraph message handling.
+    Core state management for HACS development and administration workflows.
     """
     
     # Core LangGraph state (required fields)
     messages: Annotated[list[AnyMessage], add_messages]
     remaining_steps: int  # Required by create_react_agent
     
-    # Deep Agent Framework Components (optional with total=False)
+    # Agent Framework Components (optional with total=False)
     todos: List[Todo]
     files: Dict[str, str]
     
-    # HACS Admin-Specific State (optional with total=False)
+    # HACS-Specific State (optional with total=False)
     session_id: str
     database_url: str
     last_operation_result: AdminOperationResult
     admin_context: Dict[str, Any]
+    delegation_depth: int  # For sub-agent recursion prevention
+
+
+# Alias for backward compatibility
+HACSDeepAgentState = HACSAgentState

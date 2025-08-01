@@ -87,15 +87,18 @@ try:
 except ImportError:
     # Provide placeholder functions for graceful degradation
     def validate_fhir_compliance(resource: Any) -> list[str]:
-        """Placeholder FHIR validation when not available."""
+        """FHIR validation unavailable - install FHIR dependencies."""
+        # TODO: Implement proper FHIR validation or install required dependencies
         return ["FHIR validation not available - install hacs-core with FHIR extras"]
     
     def to_fhir(resource: Any) -> dict[str, Any]:
-        """Placeholder FHIR conversion when not available."""
+        """FHIR conversion unavailable - install FHIR dependencies."""
+        # TODO: Implement proper FHIR conversion or install required dependencies
         return {"error": "FHIR conversion not available"}
     
     def from_fhir(data: dict[str, Any]) -> Any:
-        """Placeholder FHIR conversion when not available."""
+        """FHIR conversion unavailable - install FHIR dependencies."""
+        # TODO: Implement proper FHIR conversion or install required dependencies
         return {"error": "FHIR conversion not available"}
     
     FHIR_AVAILABLE = False

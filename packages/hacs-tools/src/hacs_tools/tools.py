@@ -62,7 +62,68 @@ Repository: https://github.com/solanovisitor/hacs-ai
 """
 
 # Import all tools from organized domain modules
-from .domains import *
+from .domains.resource_management import (
+    create_hacs_record,
+    get_hacs_record,
+    update_hacs_record,
+    delete_hacs_record,
+    search_hacs_records,
+)
+from .domains.clinical_workflows import (
+    execute_clinical_workflow,
+    get_clinical_guidance,
+    query_with_datarequirement,
+    validate_clinical_protocol,
+)
+from .domains.memory_operations import (
+    create_hacs_memory,
+    search_hacs_memories,
+    consolidate_memories,
+    retrieve_context,
+    analyze_memory_patterns,
+)
+from .domains.vector_search import (
+    store_embedding,
+    vector_similarity_search,
+    vector_hybrid_search,
+    get_vector_collection_stats,
+    optimize_vector_collection,
+)
+from .domains.schema_discovery import (
+    discover_hacs_resources,
+    get_hacs_resource_schema,
+    analyze_resource_fields,
+    compare_resource_schemas,
+)
+from .domains.development_tools import (
+    create_resource_stack,
+    create_clinical_template,
+    optimize_resource_for_llm,
+)
+from .domains.fhir_integration import (
+    convert_to_fhir,
+    validate_fhir_compliance,
+    process_fhir_bundle,
+    lookup_fhir_terminology,
+)
+from .domains.healthcare_analytics import (
+    calculate_quality_measures,
+    analyze_population_health,
+    generate_clinical_dashboard,
+    perform_risk_stratification,
+)
+from .domains.ai_integrations import (
+    deploy_healthcare_ai_model,
+    run_clinical_inference,
+    preprocess_medical_data,
+)
+from .domains.admin_operations import (
+    run_database_migration,
+    check_migration_status,
+    describe_database_schema,
+    get_table_structure,
+    test_database_connection,
+)
 
 # Re-export all tools for backwards compatibility
 ALL_HACS_TOOLS = [

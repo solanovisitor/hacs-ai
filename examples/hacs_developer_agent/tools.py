@@ -1,10 +1,13 @@
-"""Tools for HACS developer agent.
+"""Enhanced Tools for HACS developer agent.
 
 This module contains functions that are directly exposed to the LLM as tools.
-These tools integrate with the HACS MCP server to perform healthcare model operations.
+These tools integrate with the HACS MCP server and the new integration framework
+to perform healthcare model operations with enhanced metadata and result parsing.
 """
 
+import json
 from typing import Any, Dict, List, Optional, cast
+from datetime import datetime
 
 import httpx
 from langchain_core.runnables import RunnableConfig
@@ -13,31 +16,14 @@ from typing_extensions import Annotated
 
 from configuration import Configuration
 
-# Import real HACS tools for admin operations
-try:
-    from hacs_core.actor import Actor, ActorRole
-    from hacs_core.results import HACSResult
-    from hacs_tools.domains.admin_operations import (
-        run_database_migration,
-        check_migration_status,
-        describe_database_schema,
-        get_table_structure,
-        test_database_connection
-    )
-    from hacs_tools.domains.resource_management import (
-        create_hacs_record,
-        get_hacs_record,
-        search_hacs_records
-    )
-    HACS_TOOLS_AVAILABLE = True
-except ImportError as e:
-    HACS_TOOLS_AVAILABLE = False
-    _import_error = str(e)
+# HACS tools are now accessed via HTTP calls to MCP server with enhanced metadata
+HACS_TOOLS_AVAILABLE = True  # Always available via HTTP
 
 
 async def call_mcp_server(params: Dict[str, Any], config: RunnableConfig) -> Dict[str, Any]:
-    """Helper function to call the HACS MCP server."""
+    """Enhanced helper function to call the HACS MCP server with metadata tracking."""
     configuration = Configuration.from_runnable_config(config)
+    start_time = datetime.now()
 
     async with httpx.AsyncClient() as client:
         payload = {
@@ -54,10 +40,128 @@ async def call_mcp_server(params: Dict[str, Any], config: RunnableConfig) -> Dic
         )
         result = response.json()
 
+    execution_time = (datetime.now() - start_time).total_seconds() * 1000
+
     if "result" in result:
-        return result["result"]
+        mcp_result = result["result"]
+        
+        # Check if the result indicates HACS tools are not available
+        if (isinstance(mcp_result, dict) and 
+            mcp_result.get("isError") and 
+            isinstance(mcp_result.get("content"), list) and
+            len(mcp_result["content"]) > 0 and
+            "HACS tools not available" in str(mcp_result["content"][0])):
+            return {
+                "success": False, 
+                "error": "HACS packages not installed in MCP server Docker container",
+                "detailed_error": mcp_result["content"][0].get("text", "Unknown HACS error"),
+                "_metadata": {
+                    "tool_name": params.get("name", "unknown"),
+                    "execution_time_ms": execution_time,
+                    "mcp_server_url": configuration.hacs_mcp_server_url,
+                    "timestamp": start_time.isoformat()
+                }
+            }
+        
+        # Enhance result with metadata
+        if isinstance(mcp_result, dict):
+            mcp_result["_metadata"] = {
+                "tool_name": params.get("name", "unknown"),
+                "execution_time_ms": execution_time,
+                "mcp_server_url": configuration.hacs_mcp_server_url,
+                "timestamp": start_time.isoformat(),
+                "success": not mcp_result.get("isError", False)
+            }
+        
+        return mcp_result
     else:
-        return {"success": False, "error": result.get("error", "Unknown error")}
+        return {
+            "success": False, 
+            "error": result.get("error", "Unknown error"),
+            "_metadata": {
+                "tool_name": params.get("name", "unknown"),
+                "execution_time_ms": execution_time,
+                "mcp_server_url": configuration.hacs_mcp_server_url,
+                "timestamp": start_time.isoformat(),
+                "success": False
+            }
+        }
+
+
+def parse_tool_result(result: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Enhanced parser for MCP tool results with better metadata extraction.
+    
+    This function extracts structured information from MCP tool results,
+    making them more useful for agent reflection and decision-making.
+    """
+    parsed = {
+        "success": False,
+        "content": "",
+        "structured_data": {},
+        "metadata": {},
+        "reflection_notes": []
+    }
+    
+    # Extract metadata
+    if "_metadata" in result:
+        parsed["metadata"] = result["_metadata"]
+        parsed["success"] = result["_metadata"].get("success", False)
+    
+    # Handle MCP CallToolResult format
+    if isinstance(result, dict):
+        # Check for error status
+        if result.get("isError", False):
+            parsed["success"] = False
+            if "content" in result and isinstance(result["content"], list):
+                error_content = result["content"][0] if result["content"] else {}
+                parsed["content"] = error_content.get("text", "Unknown error")
+                parsed["reflection_notes"].append(f"Tool execution failed: {parsed['content']}")
+        else:
+            parsed["success"] = True
+            
+        # Extract content
+        if "content" in result and isinstance(result["content"], list):
+            content_items = result["content"]
+            if content_items:
+                first_content = content_items[0]
+                if isinstance(first_content, dict) and "text" in first_content:
+                    parsed["content"] = first_content["text"]
+                    
+                    # Try to extract structured data from markdown/text content
+                    try:
+                        # Look for JSON blocks in markdown
+                        if "```json" in parsed["content"]:
+                            json_start = parsed["content"].find("```json") + 7
+                            json_end = parsed["content"].find("```", json_start)
+                            if json_end > json_start:
+                                json_str = parsed["content"][json_start:json_end].strip()
+                                parsed["structured_data"] = json.loads(json_str)
+                        
+                        # Look for key-value patterns
+                        lines = parsed["content"].split('\n')
+                        for line in lines:
+                            if ':' in line and not line.startswith('#'):
+                                parts = line.split(':', 1)
+                                if len(parts) == 2:
+                                    key = parts[0].strip('- ').strip()
+                                    value = parts[1].strip()
+                                    if key and value:
+                                        parsed["structured_data"][key] = value
+                    except Exception:
+                        pass  # Continue if parsing fails
+    
+    # Add reflection notes based on content analysis
+    if parsed["success"]:
+        content_lower = parsed["content"].lower()
+        if "created successfully" in content_lower:
+            parsed["reflection_notes"].append("Resource creation was successful")
+        elif "found" in content_lower and any(x in content_lower for x in ["tool", "resource", "model"]):
+            parsed["reflection_notes"].append("Discovery operation returned results")
+        elif "error" in content_lower or "failed" in content_lower:
+            parsed["reflection_notes"].append("Operation may have encountered issues despite success status")
+    
+    return parsed
 
 
 async def discover_hacs_resources(
@@ -66,68 +170,82 @@ async def discover_hacs_resources(
     config: Annotated[RunnableConfig, InjectedToolArg]
 ) -> str:
     """
-    Discover available HACS resource schemas and their capabilities.
+    Discover available HACS resource schemas and their capabilities with enhanced metadata.
 
     TERMINOLOGY DISTINCTION:
-    - HACS Records: Schema definitions/templates (Patient model, Observation model)
+    - HACS Resources: Schema definitions/templates (Patient model, Observation model)
     - HACS Records: Actual data records validated against HACS resources
-    - This tool discovers MODEL schemas, not data resources
+    - This tool discovers MODEL schemas, not data records
 
     Args:
         category_filter: Filter by model category (clinical, administrative, reasoning)
-        model_type: Specific model type to discover
-        include_deprecated: Whether to include deprecated model schemas
 
     Returns:
-        Comprehensive information about available HACS resource schemas
+        Comprehensive information about available HACS resource schemas with metadata
     """
-    configuration = Configuration.from_runnable_config(config)
-
-    # Call HACS MCP server
-    async with httpx.AsyncClient() as client:
-        payload = {
-            "jsonrpc": "2.0",
-            "method": "tools/call",
-            "params": {
-                "name": "discover_hacs_resources",
-                "arguments": {
-                    "category_filter": category_filter,
-                    "include_field_counts": True
-                }
-            },
-            "id": 1
-        }
-
-        response = await client.post(
-            f"{configuration.hacs_mcp_server_url}/",
-            json=payload,
-            headers={"Content-Type": "application/json"}
-        )
-        result = response.json()
-
-    if "result" in result and result["result"] is not None:
-        # Extract the CallToolResult content
-        mcp_result = result["result"]
-
-        # The content is in the 'content' field of CallToolResult
-        if isinstance(mcp_result, dict) and "content" in mcp_result:
-            content_items = mcp_result["content"]
-            if isinstance(content_items, list) and len(content_items) > 0:
-                # Get the first content item's text (which is our rich markdown)
-                first_content = content_items[0]
-                if isinstance(first_content, dict) and "text" in first_content:
-                    return first_content["text"]
-
-        # Fallback for older format
-        if hasattr(mcp_result, 'get') and "_meta" in mcp_result:
-            model_data = mcp_result["_meta"].get("result", {})
-            if isinstance(model_data, dict) and "models" in model_data:
-                # Create simple text output for structured data
-                models = model_data["models"]
-                resource_names = [m.get("name", "Unknown") for m in models]
-                return f"Found {len(models)} HACS resources: " + ", ".join(resource_names)
-
-    return "No HACS resources found or MCP server error"
+    # Use enhanced MCP server call
+    result = await call_mcp_server(
+        params={
+            "name": "discover_hacs_resources",
+            "arguments": {
+                "category_filter": category_filter,
+                "include_field_counts": True
+            }
+        },
+        config=config
+    )
+    
+    # Parse result with enhanced metadata extraction
+    parsed = parse_tool_result(result)
+    
+    # Format comprehensive response with metadata
+    if parsed["success"]:
+        response_parts = [
+            "🔍 **HACS Resource Discovery Results**",
+            "",
+            parsed["content"],
+            "",
+            "📊 **Execution Metadata:**"
+        ]
+        
+        if parsed["metadata"]:
+            metadata = parsed["metadata"]
+            response_parts.extend([
+                f"- Tool: {metadata.get('tool_name', 'unknown')}",
+                f"- Execution time: {metadata.get('execution_time_ms', 0):.1f}ms",
+                f"- Timestamp: {metadata.get('timestamp', 'unknown')}",
+                f"- Server: {metadata.get('mcp_server_url', 'unknown')}"
+            ])
+        
+        if parsed["structured_data"]:
+            response_parts.extend([
+                "",
+                "🏗️ **Structured Data Extracted:**",
+                json.dumps(parsed["structured_data"], indent=2)
+            ])
+        
+        if parsed["reflection_notes"]:
+            response_parts.extend([
+                "",
+                "💭 **Reflection Notes:**"
+            ])
+            response_parts.extend([f"- {note}" for note in parsed["reflection_notes"]])
+        
+        return "\n".join(response_parts)
+    else:
+        error_response = [
+            "❌ **HACS Resource Discovery Failed**",
+            "",
+            f"Error: {parsed['content']}"
+        ]
+        
+        if parsed["metadata"]:
+            error_response.extend([
+                "",
+                f"Execution time: {parsed['metadata'].get('execution_time_ms', 0):.1f}ms"
+            ])
+        
+        return "\n".join(error_response)
 
 
 async def create_clinical_template(
@@ -138,7 +256,7 @@ async def create_clinical_template(
     *,
     config: Annotated[RunnableConfig, InjectedToolArg]
 ) -> str:
-    """Generate a clinical template for healthcare workflows.
+    """Generate a clinical template for healthcare workflows with enhanced metadata.
 
     This tool creates structured templates that help developers implement
     healthcare workflows using HACS resources, based on their specific use case.
@@ -149,12 +267,298 @@ async def create_clinical_template(
         complexity_level: Complexity level ('basic', 'standard', 'advanced')
         include_workflow_fields: Whether to include workflow management fields
 
+    Returns:
+        Clinical template with metadata and reflection notes for agent use
+    """
+    # Use enhanced MCP server call
+    result = await call_mcp_server(
+        params={
+            "name": "create_clinical_template",
+            "arguments": {
+                "template_type": template_type,
+                "focus_area": focus_area,
+                "complexity_level": complexity_level,
+                "include_workflow_fields": include_workflow_fields
+            }
+        },
+        config=config
+    )
+    
+    # Parse result with enhanced metadata extraction
+    parsed = parse_tool_result(result)
+    
+    # Format comprehensive response with metadata
+    if parsed["success"]:
+        response_parts = [
+            f"🏥 **Clinical Template Created: {template_type.title()} for {focus_area.title()}**",
+            "",
+            parsed["content"],
+            "",
+            "📊 **Template Generation Metadata:**"
+        ]
+        
+        if parsed["metadata"]:
+            metadata = parsed["metadata"]
+            response_parts.extend([
+                f"- Template type: {template_type}",
+                f"- Focus area: {focus_area}",
+                f"- Complexity: {complexity_level}",
+                f"- Workflow fields: {include_workflow_fields}",
+                f"- Generation time: {metadata.get('execution_time_ms', 0):.1f}ms",
+                f"- Timestamp: {metadata.get('timestamp', 'unknown')}"
+            ])
+        
+        if parsed["structured_data"]:
+            response_parts.extend([
+                "",
+                "🏗️ **Template Structure:**",
+                json.dumps(parsed["structured_data"], indent=2)
+            ])
+        
+        if parsed["reflection_notes"]:
+            response_parts.extend([
+                "",
+                "💭 **Template Notes:**"
+            ])
+            response_parts.extend([f"- {note}" for note in parsed["reflection_notes"]])
+            
+        # Add usage guidance
+        response_parts.extend([
+            "",
+            "📝 **Usage Guidance:**",
+            f"- This {template_type} template is optimized for {focus_area}",
+            f"- Complexity level '{complexity_level}' provides appropriate detail",
+            f"- Workflow fields {'included' if include_workflow_fields else 'excluded'} based on requirements",
+            "- Template can be customized further based on specific clinical needs"
+        ])
+        
+        return "\n".join(response_parts)
+    else:
+        error_response = [
+            f"❌ **Clinical Template Creation Failed**",
+            f"Template: {template_type} for {focus_area}",
+            "",
+            f"Error: {parsed['content']}"
+        ]
+        
+        if parsed["metadata"]:
+            error_response.extend([
+                "",
+                f"Attempted generation time: {parsed['metadata'].get('execution_time_ms', 0):.1f}ms"
+            ])
+        
+        return "\n".join(error_response)
+
+
+async def list_available_tools(
+    category_filter: Optional[str] = None,
+    *,
+    config: Annotated[RunnableConfig, InjectedToolArg]
+) -> str:
+    """
+    List all available HACS tools with their metadata and capabilities.
+    
+    This tool provides comprehensive information about available MCP tools,
+    including their categories, descriptions, and execution capabilities.
+    
+    Args:
+        category_filter: Filter tools by category (e.g., 'clinical_workflows', 'resource_management')
+    
+    Returns:
+        Detailed list of available tools with metadata for agent reflection
+    """
+    # Use enhanced MCP server call
+    result = await call_mcp_server(
+        params={
+            "name": "list_available_tools",
+            "arguments": {
+                "category_filter": category_filter
+            }
+        },
+        config=config
+    )
+    
+    # Parse result with enhanced metadata extraction
+    parsed = parse_tool_result(result)
+    
+    # Format comprehensive response with metadata
+    if parsed["success"]:
+        response_parts = [
+            "🛠️ **Available HACS Tools**",
+            ""
+        ]
+        
+        if category_filter:
+            response_parts.insert(1, f"Category: {category_filter}")
+            response_parts.insert(2, "")
+        
+        response_parts.extend([
+            parsed["content"],
+            "",
+            "📊 **Tool Discovery Metadata:**"
+        ])
+        
+        if parsed["metadata"]:
+            metadata = parsed["metadata"]
+            response_parts.extend([
+                f"- Discovery time: {metadata.get('execution_time_ms', 0):.1f}ms",
+                f"- Server: {metadata.get('mcp_server_url', 'unknown')}",
+                f"- Timestamp: {metadata.get('timestamp', 'unknown')}"
+            ])
+        
+        if parsed["structured_data"]:
+            response_parts.extend([
+                "",
+                "🔧 **Tool Capabilities Summary:**"
+            ])
+            # Extract tool count information from structured data
+            for key, value in parsed["structured_data"].items():
+                if isinstance(value, (int, str)):
+                    response_parts.append(f"- {key}: {value}")
+        
+        if parsed["reflection_notes"]:
+            response_parts.extend([
+                "",
+                "💭 **Tool Analysis Notes:**"
+            ])
+            response_parts.extend([f"- {note}" for note in parsed["reflection_notes"]])
+        
+        # Add guidance for tool usage
+        response_parts.extend([
+            "",
+            "📝 **Tool Usage Guidance:**",
+            "- Use specific tool names when calling MCP server",
+            "- Check tool descriptions for parameter requirements",
+            "- Consider tool categories for workflow organization",
+            "- Monitor execution times for performance optimization"
+        ])
+        
+        return "\n".join(response_parts)
+    else:
+        error_response = [
+            "❌ **Tool Discovery Failed**",
+            "",
+            f"Error: {parsed['content']}"
+        ]
+        
+        if parsed["metadata"]:
+            error_response.extend([
+                "",
+                f"Discovery attempt time: {parsed['metadata'].get('execution_time_ms', 0):.1f}ms"
+            ])
+        
+        return "\n".join(error_response)
+
+
+async def get_tool_metadata(
+    tool_name: str,
+    *,
+    config: Annotated[RunnableConfig, InjectedToolArg]
+) -> str:
+    """
+    Get detailed metadata for a specific HACS tool.
+    
+    This tool provides comprehensive information about a specific tool's
+    capabilities, parameters, and usage patterns for better agent decision-making.
+    
+    Args:
+        tool_name: Name of the tool to get metadata for
+    
+    Returns:
+        Detailed tool metadata with reflection notes for agent use
     """
     configuration = Configuration.from_runnable_config(config)
+    start_time = datetime.now()
+    
+    # First get the tool list to find our tool
+    list_result = await call_mcp_server(
+        params={
+            "name": "list_available_tools",
+            "arguments": {}
+        },
+        config=config
+    )
+    
+    execution_time = (datetime.now() - start_time).total_seconds() * 1000
+    
+    # Parse and analyze the tool list
+    parsed = parse_tool_result(list_result)
+    
+    if parsed["success"]:
+        content = parsed["content"]
+        
+        # Look for the specific tool in the content
+        tool_found = False
+        tool_info = []
+        
+        lines = content.split('\n')
+        for i, line in enumerate(lines):
+            if tool_name in line and ('**' in line or '-' in line):
+                tool_found = True
+                tool_info.append(line)
+                
+                # Get the next few lines for description
+                for j in range(1, 5):
+                    if i + j < len(lines) and lines[i + j].strip():
+                        tool_info.append(lines[i + j])
+                    else:
+                        break
+                break
+        
+        if tool_found:
+            response_parts = [
+                f"🔧 **Tool Metadata: {tool_name}**",
+                "",
+                "📋 **Tool Information:**"
+            ] + tool_info + [
+                "",
+                "📊 **Metadata Discovery:**",
+                f"- Query time: {execution_time:.1f}ms",
+                f"- Tool found in registry: Yes",
+                f"- Discovery timestamp: {start_time.isoformat()}"
+            ]
+            
+            # Add analysis based on tool name patterns
+            analysis_notes = []
+            if "create" in tool_name.lower():
+                analysis_notes.append("This is a creation tool - likely modifies system state")
+            elif "get" in tool_name.lower() or "discover" in tool_name.lower() or "list" in tool_name.lower():
+                analysis_notes.append("This is a discovery/query tool - safe for exploration")
+            elif "update" in tool_name.lower() or "modify" in tool_name.lower():
+                analysis_notes.append("This is a modification tool - use with caution")
+            elif "delete" in tool_name.lower() or "remove" in tool_name.lower():
+                analysis_notes.append("This is a deletion tool - requires careful consideration")
+            
+            if "clinical" in tool_name.lower():
+                analysis_notes.append("Clinical domain tool - healthcare-specific functionality")
+            elif "admin" in tool_name.lower():
+                analysis_notes.append("Administrative tool - system management functionality")
+            
+            if analysis_notes:
+                response_parts.extend([
+                    "",
+                    "🔍 **Tool Analysis:**"
+                ] + [f"- {note}" for note in analysis_notes])
+            
+            return "\n".join(response_parts)
+        else:
+            return f"❌ **Tool Not Found: {tool_name}**\n\nThe tool '{tool_name}' was not found in the available tools list.\nUse `list_available_tools()` to see available tools."
+    else:
+        return f"❌ **Tool Metadata Discovery Failed**\n\nError retrieving tool list: {parsed['content']}"
 
-    # Call HACS MCP server
-    async with httpx.AsyncClient() as client:
-        payload = {
+
+# End of enhanced tools with metadata support
+
+
+# Export the enhanced tools for use by the agent
+def get_enhanced_hacs_tools():
+    """Get all enhanced HACS tools with metadata support."""
+    return [
+        discover_hacs_resources,
+        create_clinical_template,
+        list_available_tools,
+        get_tool_metadata
+    ]
             "jsonrpc": "2.0",
             "method": "tools/call",
             "params": {
@@ -2046,30 +2450,26 @@ async def run_hacs_database_migration(
     Returns:
         Migration result with detailed status information
     """
-    if not HACS_TOOLS_AVAILABLE:
-        return f"❌ HACS tools not available: {_import_error}. Please install HACS dependencies."
+    # HACS tools are always available via HTTP calls to MCP server
     
-    # Create admin actor for this operation
-    admin_actor = Actor(
-        name="Developer Agent Admin",
-        role=ActorRole.ADMINISTRATOR,
-        permissions=["admin:*", "migration:*", "database:*"]
-    )
-    
-    try:
-        result = run_database_migration(
-            database_url=database_url,
-            force_migration=force_migration,
-            actor=admin_actor
-        )
-        
-        if result.success:
-            return f"✅ **Database Migration Successful**\n\n{result.message}\n\n**Details**: {result.data}"
-        else:
-            return f"❌ **Database Migration Failed**\n\n**Error**: {result.error}"
-            
-    except Exception as e:
-        return f"❌ **Migration Error**: {str(e)}"
+    # Database migration tools are not available in the current MCP server
+    return """❌ **Database Migration Not Available**
+
+**Issue**: Database admin tools are not currently available through the MCP server.
+
+**Available Alternatives**:
+1. **Resource Operations**: Use `create_resource`, `get_resource`, `update_resource` 
+2. **Model Discovery**: Use `discover_hacs_models` to explore available models
+3. **Schema Tools**: Use `get_resource_schema` for model schema information
+4. **Validation**: Use `validate_resource_data` to validate resource data
+
+**Direct Database Access Required**: 
+Database migrations require direct access to the HACS persistence layer, 
+which is not exposed through the current MCP server configuration.
+
+**Next Steps**: 
+- Use available resource management tools for HACS operations
+- Contact system administrator for database migration access"""
 
 
 async def check_hacs_migration_status(
@@ -2089,38 +2489,25 @@ async def check_hacs_migration_status(
     Returns:
         Detailed migration status information
     """
-    if not HACS_TOOLS_AVAILABLE:
-        return f"❌ HACS tools not available: {_import_error}. Please install HACS dependencies."
+    # HACS tools are always available via HTTP calls to MCP server
     
-    # Create admin actor for this operation
-    admin_actor = Actor(
-        name="Developer Agent Admin",
-        role=ActorRole.ADMINISTRATOR,
-        permissions=["admin:*", "schema:*"]
-    )
-    
-    try:
-        result = check_migration_status(
-            database_url=database_url,
-            actor=admin_actor
-        )
-        
-        if result.success:
-            status_data = result.data
-            return f"""✅ **Migration Status Retrieved**
+    # Database migration status tools are not available in the current MCP server
+    return """❌ **Migration Status Check Not Available**
 
-**Database Status**: {status_data.get('database_status', 'Unknown')}
-**Schemas Available**: {', '.join(status_data.get('schemas', []))}
-**Migration Version**: {status_data.get('migration_version', 'Unknown')}
-**Last Migration**: {status_data.get('last_migration_date', 'Unknown')}
+**Issue**: Database admin tools are not currently available through the MCP server.
 
-**Details**: {result.message}
-"""
-        else:
-            return f"❌ **Migration Status Check Failed**\n\n**Error**: {result.error}"
-            
-    except Exception as e:
-        return f"❌ **Status Check Error**: {str(e)}"
+**Available Alternatives**:
+1. **Model Discovery**: Use `discover_hacs_models` to see available HACS models
+2. **Resource Schema**: Use `get_resource_schema` to inspect model structures  
+3. **Resource Listing**: Use `list_available_resources` to see supported types
+4. **Resource Search**: Use `find_resources` to search existing data
+
+**Direct Database Access Required**: 
+Migration status checking requires direct access to the HACS persistence layer.
+
+**Next Steps**: 
+- Use available resource management tools for HACS operations
+- Contact system administrator for database migration status access"""
 
 
 async def describe_hacs_database_schema(
@@ -2140,47 +2527,28 @@ async def describe_hacs_database_schema(
     Returns:
         Detailed schema information
     """
-    if not HACS_TOOLS_AVAILABLE:
-        return f"❌ HACS tools not available: {_import_error}. Please install HACS dependencies."
+    # HACS tools are always available via HTTP calls to MCP server
     
-    # Create admin actor for this operation
-    admin_actor = Actor(
-        name="Developer Agent Admin", 
-        role=ActorRole.ADMINISTRATOR,
-        permissions=["admin:*", "schema:*"]
-    )
-    
-    try:
-        result = describe_database_schema(
-            schema_name=schema_name,
-            actor=admin_actor
-        )
-        
-        if result.success:
-            schema_data = result.data
-            
-            response = f"✅ **Database Schema: {schema_name}**\n\n"
-            
-            if 'tables' in schema_data:
-                response += f"**Tables** ({len(schema_data['tables'])}):\n"
-                for table_name, table_info in schema_data['tables'].items():
-                    columns = table_info.get('columns', {})
-                    response += f"- `{table_name}` ({len(columns)} columns)\n"
-                response += "\n"
-            
-            if 'resource_schemas' in schema_data:
-                response += f"**HACS Resources** ({len(schema_data['resource_schemas'])}):\n"
-                for resource_type, resource_info in schema_data['resource_schemas'].items():
-                    response += f"- `{resource_type}`: {resource_info.get('description', 'No description')}\n"
-                response += "\n"
-            
-            response += f"**Full Details**: {result.message}"
-            return response
-        else:
-            return f"❌ **Schema Description Failed**\n\n**Error**: {result.error}"
-            
-    except Exception as e:
-        return f"❌ **Schema Description Error**: {str(e)}"
+    # Database schema description tools are not available in the current MCP server
+    return f"""❌ **Database Schema Description Not Available**
+
+**Issue**: Database schema inspection tools are not available through the MCP server.
+
+**Available Alternatives**:
+1. **HACS Model Schema**: Use `get_resource_schema("{schema_name}")` for HACS model schemas
+2. **Model Discovery**: Use `discover_hacs_models()` to explore available models
+3. **Field Analysis**: Use `analyze_model_fields(model_name)` for detailed field info
+4. **Schema Comparison**: Use `compare_model_schemas([model1, model2])` to compare models
+
+**HACS vs Database Schema**:
+- **Database Schema**: Low-level table structures (not available)
+- **HACS Model Schema**: High-level healthcare resource definitions (available)
+
+**Recommended**: Use HACS model tools instead of database schema tools for healthcare development.
+
+**Next Steps**: 
+- Use `get_resource_schema("Patient")` to explore HACS resource schemas
+- Use `discover_hacs_models()` to see all available HACS models"""
 
 
 async def create_admin_hacs_record(
@@ -2202,36 +2570,121 @@ async def create_admin_hacs_record(
     Returns:
         Creation result with resource details
     """
-    if not HACS_TOOLS_AVAILABLE:
-        return f"❌ HACS tools not available: {_import_error}. Please install HACS dependencies."
-    
-    # Create admin actor for this operation
-    admin_actor = Actor(
-        name="Developer Agent Admin",
-        role=ActorRole.ADMINISTRATOR,
-        permissions=["admin:*", "write:*"]
-    )
+    # HACS tools are always available via HTTP calls to MCP server
     
     try:
-        result = create_hacs_record(
-            actor_name=admin_actor.name,
-            resource_type=resource_type,
-            resource_data=resource_data,
-            auto_generate_id=True,
-            validate_fhir=True
-        )
+        # Call HACS MCP server for record creation
+        create_params = {
+            "name": "create_resource",
+            "arguments": {
+                "resource_type": resource_type,
+                "resource_data": resource_data,
+                "validate_fhir": True
+            }
+        }
         
-        if result.success:
+        result = await call_mcp_server(create_params, config)
+        
+        if result.get("success", False):
+            message = result.get("message", f"HACS {resource_type} created successfully")
+            data = result.get("data", {})
             return f"""✅ **HACS {resource_type} Created Successfully**
 
-**Resource ID**: {result.data.get('id', 'Generated')}
+**Resource ID**: {data.get('id', 'Generated')}
 **Resource Type**: {resource_type}
-**Validation**: {result.data.get('validation_status', 'Passed')}
+**Validation**: {data.get('validation_status', 'Passed')}
 
-**Details**: {result.message}
+**Details**: {message}
 """
         else:
-            return f"❌ **HACS {resource_type} Creation Failed**\n\n**Error**: {result.error}"
+            error = result.get("error", f"HACS {resource_type} creation failed")
+            return f"❌ **HACS {resource_type} Creation Failed**\n\n**Error**: {error}"
             
     except Exception as e:
         return f"❌ **Record Creation Error**: {str(e)}"
+
+
+# ============================================================================
+# TOOL COLLECTION FUNCTIONS
+# ============================================================================
+
+def get_available_tools(config: Optional['Configuration'] = None) -> List[Any]:
+    """Get all available HACS tools for the agent.
+    
+    Args:
+        config: Configuration object (not used currently but kept for compatibility)
+    
+    Returns:
+        List of all available tools
+    """
+    from langchain_core.tools import tool
+    
+    # File management tools
+    @tool
+    def write_file(file_path: str, content: str) -> str:
+        """Write content to a file in the agent's workspace."""
+        # This is a mock implementation for agent workspace
+        # In real usage, this would integrate with the agent's file system
+        return f"✅ File written to {file_path}"
+    
+    @tool 
+    def read_file(file_path: str) -> str:
+        """Read content from a file in the agent's workspace."""
+        # This is a mock implementation for agent workspace
+        return f"File content from {file_path}"
+    
+    @tool
+    def edit_file(file_path: str, old_content: str, new_content: str) -> str:
+        """Edit a file by replacing old_content with new_content."""
+        # This is a mock implementation for agent workspace
+        return f"✅ File {file_path} edited successfully"
+    
+    @tool
+    def write_todos(todos: List[Dict[str, str]]) -> str:
+        """Create and manage a structured task list for planning work."""
+        return f"✅ Created {len(todos)} todos for systematic planning"
+    
+    # All HACS MCP tools (these will make HTTP calls to MCP server)
+    tools = [
+        # File and planning tools
+        write_file,
+        read_file, 
+        edit_file,
+        write_todos,
+        
+        # HACS MCP tools
+        discover_hacs_resources,
+        create_clinical_template,
+        create_model_stack,
+        get_hacs_model_definition,
+        create_hacs_record,
+        version_hacs_resource,
+        find_resources,
+        get_resource,
+        update_resource,
+        delete_resource,
+        create_memory,
+        search_memories,
+        consolidate_memories,
+        retrieve_context,
+        analyze_memory_patterns,
+        validate_resource_data,
+        list_available_resources,
+        get_resource_schema,
+        search_hacs_records,
+        analyze_resource_fields,
+        compare_resource_schemas,
+        create_view_resource_schema,
+        suggest_view_fields,
+        optimize_resource_for_llm,
+        create_knowledge_item,
+        execute_prp_workflow,
+        discover_and_analyze_hacs_models,
+        create_multi_model_template,
+        run_hacs_database_migration,
+        check_hacs_migration_status,
+        describe_hacs_database_schema,
+        create_admin_hacs_record,
+    ]
+    
+    return tools

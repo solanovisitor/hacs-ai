@@ -1,0 +1,10 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "hacs_hybrid_agent": {
+      "path": "./agent_hybrid_mcp.py:get_hybrid_workflow",
+      "description": "Hybrid HACS Developer Agent with MCP Integration and HTTP Fallback"
+    }
+  },
+  "env": ".env"
+}

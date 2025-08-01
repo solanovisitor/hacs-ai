@@ -1,10 +1,37 @@
-# HACS Examples
+`# HACS Examples
 
 This directory contains comprehensive examples and implementations demonstrating how to use HACS (Healthcare Agent Communication Standard) for various healthcare AI applications and workflows.
 
 ## 🏥 Available Examples
 
-### 1. HACS Deep Agent (`hacs_deep_agent/`)
+### 1. HACS Developer Agent (`hacs_developer_agent/`)
+
+A production-ready LangGraph agent specialized for HACS system administration and database management:
+
+- **Real Database Operations** - Migrations, schema inspection, connection testing
+- **Administrative Tools** - Resource management, system monitoring, configuration
+- **Deep Agent Framework** - Planning tools, file system, specialized sub-agents
+- **Healthcare Template Generation** - Clinical consultation templates
+- **Simplified State Architecture** - Developer-focused interface
+
+**Key Features:**
+- 🗄️ Database Administration - Real HACS database operations
+- 🔧 Resource Management - HACS record creation and management  
+- 📋 Template Generation - Clinical consultation templates
+- 🎯 Planning Tools - Systematic task management
+- 📁 File Operations - Configuration and documentation management
+- 🔐 Security & Audit - Proper permissions and audit trails
+
+**Use Cases:**
+- HACS system setup and administration
+- Database migration and schema management
+- Clinical template generation and management
+- System monitoring and troubleshooting
+- Developer workflow automation
+
+[View HACS Developer Agent Documentation →](hacs_developer_agent/README.md)
+
+### 2. HACS Deep Agent (`hacs_deep_agent/`)
 
 A comprehensive LangGraph-based healthcare AI agent that demonstrates advanced HACS capabilities:
 
@@ -57,6 +84,25 @@ cd examples
 ```
 
 ### Running Examples
+
+#### HACS Developer Agent Example
+
+```bash
+cd hacs_developer_agent
+
+# Install dependencies
+uv sync
+
+# Set up environment variables
+export ANTHROPIC_API_KEY="your-api-key"
+export DATABASE_URL="postgresql://user:pass@localhost:5432/hacs"
+
+# Run the LangGraph development server
+uv run langgraph dev --allow-blocking
+
+# Access via browser at http://127.0.0.1:2024
+# Or interact via LangGraph Studio
+```
 
 #### HACS Deep Agent Example
 

@@ -154,7 +154,7 @@ class AgentMessage(BaseResource):
         description="Provenance information about message generation",
         examples=[
             {
-                "agent_model": "gpt-4-healthcare",
+                "agent_model": "gpt-4.1-mini",
                 "agent_version": "1.2.0",
                 "generation_method": "reasoning_chain",
                 "input_tokens": 1500,
