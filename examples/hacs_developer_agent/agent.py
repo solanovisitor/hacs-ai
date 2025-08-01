@@ -430,7 +430,7 @@ async def create_hacs_agent(
     
     # Initialize configuration
     if config is None:
-        config = Configuration()
+        config = Configuration.from_runnable_config()
     
     # Initialize model
     if model is None:
@@ -511,9 +511,6 @@ Use your tools and subagents to provide comprehensive healthcare AI assistance!"
         tools=all_tools,
         state_schema=HACSAgentState,
     )
-    
-    # Store manager reference for cleanup
-    agent._mcp_manager = mcp_manager
     
     return agent
 
