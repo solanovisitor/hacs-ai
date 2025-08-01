@@ -1,249 +1,356 @@
-"""HACS Agent Sub-Agents.
+"""HACS Specialized Subagents with MCP Tool Integration.
 
-Specialized sub-agents for different aspects of HACS development and administration.
-Each sub-agent has focused expertise and tools for specific domains.
+Specialized subagents for different aspects of HACS development and administration.
+Each subagent has focused expertise and access to specific HACS MCP tools for their domain.
 """
 
-from typing import List, Dict, Any, Optional, Union, Annotated
-from typing_extensions import TypedDict, NotRequired
+import asyncio
+from typing import List, Dict, Any, Optional, Annotated
 
 from langchain_core.language_models import LanguageModelLike
-from langchain_core.tools import BaseTool, tool, InjectedToolCallId
-from langchain_core.messages import ToolMessage
-from langgraph.types import Command
-from langgraph.prebuilt import create_react_agent, InjectedState
+from langchain_core.tools import BaseTool
+from langchain_core.messages import AnyMessage
+from langgraph.graph.message import add_messages
+from langgraph.prebuilt import create_react_agent
+from typing_extensions import TypedDict
 
 from prompts import (
-    DATABASE_ADMIN_PROMPT,
-    RESOURCE_ADMIN_PROMPT,
-    SYSTEM_INTEGRATION_PROMPT,
-    TROUBLESHOOTING_PROMPT,
-    DOCUMENTATION_PROMPT
+    CLINICAL_OPERATIONS_PROMPT,
+    RESOURCE_MANAGEMENT_PROMPT, 
+    SEARCH_DISCOVERY_PROMPT,
+    MEMORY_KNOWLEDGE_PROMPT,
+    SYSTEM_ADMIN_PROMPT
 )
 
 
-class SubAgent(TypedDict):
-    """Sub-agent definition for HACS operations."""
-    name: str
-    description: str
-    prompt: str
-    tools: NotRequired[List[str]]
+# ============================================================================
+# SUBAGENT STATE AND CONFIGURATION
+# ============================================================================
+
+class SubAgentState(TypedDict, total=False):
+    """State for HACS subagents."""
+    messages: Annotated[list[AnyMessage], add_messages]
+    context: Dict[str, Any]
+    domain_expertise: str
+    available_tools: List[str]
+    execution_history: List[Dict[str, Any]]
 
 
 # ============================================================================
-# SUB-AGENT DEFINITIONS
+# TOOL ORGANIZATION BY DOMAIN
 # ============================================================================
 
-def get_subagents() -> List[SubAgent]:
-    """Get all available HACS sub-agents."""
-    return [
-        {
-            "name": "database-admin",
-            "description": "Database operations, migrations, and schema management",
-            "prompt": DATABASE_ADMIN_PROMPT,
-            "tools": [
-                "write_todos",
-                "write_file", 
-                "read_file", 
-                "edit_file",
-                "discover_hacs_resources",
-                "get_resource_schema",
-                "create_hacs_record"
-            ]
-        },
-        {
-            "name": "resource-admin", 
-            "description": "HACS resource management, schema analysis, and FHIR compliance",
-            "prompt": RESOURCE_ADMIN_PROMPT,
-            "tools": [
-                "write_todos",
-                "write_file",
-                "read_file", 
-                "edit_file",
-                "discover_hacs_resources",
-                "get_resource_schema", 
-                "create_hacs_record",
-                "validate_resource_data",
-                "find_resources",
-                "create_clinical_template"
-            ]
-        },
-        {
-            "name": "system-integration",
-            "description": "Complete system setup, integration, and operational readiness", 
-            "prompt": SYSTEM_INTEGRATION_PROMPT,
-            # Uses all available tools
-        },
-        {
-            "name": "troubleshooting",
-            "description": "Problem diagnosis, error analysis, and solution development",
-            "prompt": TROUBLESHOOTING_PROMPT,
-            # Uses all available tools for comprehensive troubleshooting
-        },
-        {
-            "name": "documentation",
-            "description": "Knowledge management, procedure documentation, and training materials",
-            "prompt": DOCUMENTATION_PROMPT,
-            "tools": [
-                "write_todos",
-                "write_file",
-                "read_file",
-                "edit_file",
-                "discover_hacs_resources",
-                "get_resource_schema"
-            ]
-        }
-    ]
+CLINICAL_OPERATIONS_TOOLS = [
+    # Patient and clinical data management
+    "hacs_create_resource",           # Create clinical resources
+    "hacs_get_resource",              # Retrieve patient/clinical data
+    "hacs_update_resource",           # Update clinical records
+    "hacs_delete_resource",           # Remove clinical data
+    "hacs_validate_resource_data",    # Validate clinical data
+    "hacs_create_clinical_template",  # Generate clinical templates
+    "hacs_find_resources",            # Search clinical resources
+]
+
+RESOURCE_MANAGEMENT_TOOLS = [
+    # Resource lifecycle and schema management
+    "hacs_list_available_resources",  # List available resource types
+    "hacs_get_hacs_resource_schema",  # Get resource schemas
+    "hacs_get_resource_schema",       # Get detailed schemas
+    "hacs_analyze_resource_fields",   # Analyze resource fields
+    "hacs_compare_resource_schemas",  # Compare schemas
+    "hacs_validate_resource_data",    # Validate resource data
+    "hacs_version_hacs_resource",     # Version management
+    "hacs_create_model_stack",        # Build complex models
+]
+
+SEARCH_DISCOVERY_TOOLS = [
+    # Discovery and search capabilities  
+    "hacs_discover_hacs_resources",   # Discover available models
+    "hacs_search_hacs_records",       # Search HACS records
+    "hacs_find_resources",            # Advanced resource search
+    "hacs_optimize_resource_for_llm", # Optimize for LLM use
+    "hacs_suggest_view_fields",       # Suggest optimal fields
+    "hacs_create_view_resource_schema", # Create custom views
+]
+
+MEMORY_KNOWLEDGE_TOOLS = [
+    # Memory and knowledge management
+    "hacs_create_memory",             # Store knowledge blocks
+    "hacs_search_memories",           # Search stored memories
+    "hacs_consolidate_memories",      # Merge related memories
+    "hacs_retrieve_context",          # Get relevant context
+    "hacs_analyze_memory_patterns",   # Analyze memory usage
+    "hacs_create_knowledge_item",     # Create structured knowledge
+]
+
+SYSTEM_ADMIN_TOOLS = [
+    # System administration and monitoring
+    "hacs_list_available_resources",  # System resource inventory
+    "hacs_get_hacs_resource_schema",  # System schema management
+    "hacs_validate_resource_data",    # System validation
+    "hacs_analyze_resource_fields",   # System analysis
+    "hacs_version_hacs_resource",     # Version control
+]
 
 
 # ============================================================================
-# TASK DELEGATION TOOL
+# SUBAGENT DEFINITIONS
 # ============================================================================
 
-def create_task_delegation_tool(
-    tools: List[BaseTool],
-    instructions: str,
-    subagents: List[SubAgent],
+class SubAgentDefinition:
+    """Definition for a specialized HACS subagent."""
+    
+    def __init__(self, name: str, description: str, prompt: str, tools: List[str]):
+        self.name = name
+        self.description = description
+        self.prompt = prompt
+        self.tools = tools
+
+
+SUBAGENT_DEFINITIONS = [
+    SubAgentDefinition(
+        name="clinical_operations",
+        description="Patient data management, clinical workflows, and healthcare operations",
+        prompt=CLINICAL_OPERATIONS_PROMPT,
+        tools=CLINICAL_OPERATIONS_TOOLS
+    ),
+    SubAgentDefinition(
+        name="resource_management", 
+        description="Resource lifecycle, schema management, and model optimization",
+        prompt=RESOURCE_MANAGEMENT_PROMPT,
+        tools=RESOURCE_MANAGEMENT_TOOLS
+    ),
+    SubAgentDefinition(
+        name="search_discovery",
+        description="Advanced search, resource discovery, and data analysis",
+        prompt=SEARCH_DISCOVERY_PROMPT,
+        tools=SEARCH_DISCOVERY_TOOLS
+    ),
+    SubAgentDefinition(
+        name="memory_knowledge",
+        description="Memory management, knowledge creation, and context retrieval",
+        prompt=MEMORY_KNOWLEDGE_PROMPT,
+        tools=MEMORY_KNOWLEDGE_TOOLS
+    ),
+    SubAgentDefinition(
+        name="system_admin",
+        description="System administration, monitoring, and maintenance",
+        prompt=SYSTEM_ADMIN_PROMPT,
+        tools=SYSTEM_ADMIN_TOOLS
+    )
+]
+
+
+# ============================================================================
+# SUBAGENT FACTORY
+# ============================================================================
+
+async def create_subagent(
+    definition: SubAgentDefinition,
     model: LanguageModelLike,
-    state_schema: Any
-) -> BaseTool:
-    """Create the task delegation tool for HACS sub-agents."""
+    available_tools: List[BaseTool]
+) -> Any:
+    """Create a specialized subagent with domain-specific tools."""
     
-    # Create sub-agent instances
-    agents = {
-        "general-purpose": create_react_agent(
-            model, 
-            prompt=instructions, 
-            tools=tools,
-            state_schema=state_schema
-        )
-    }
+    # Filter tools for this subagent's domain
+    subagent_tools = []
+    for tool in available_tools:
+        if any(tool.name == domain_tool for domain_tool in definition.tools):
+            subagent_tools.append(tool)
     
-    # Map tools by name for sub-agent tool selection
-    tools_by_name = {}
-    for tool_ in tools:
-        if not isinstance(tool_, BaseTool):
-            tool_ = tool(tool_)
-        tools_by_name[tool_.name] = tool_
+    # Enhanced prompt with domain context
+    enhanced_prompt = f"""{definition.prompt}
+
+## 🎯 **Domain Expertise: {definition.name.title()}**
+
+### 🛠️ **Available Domain Tools:**
+{chr(10).join([f"- **{tool.name}**: {getattr(tool, 'description', 'HACS tool')[:60]}..." for tool in subagent_tools[:10]])}
+{f"- ... and {len(subagent_tools) - 10} more tools" if len(subagent_tools) > 10 else ""}
+
+### 📋 **Your Role:**
+{definition.description}
+
+### 🔧 **Tool Usage Guidelines:**
+- Use domain-specific tools for optimal results
+- Provide comprehensive metadata and reflection
+- Leverage your specialized expertise for complex tasks
+- Coordinate with other subagents when needed
+
+### 💡 **Key Capabilities:**
+- {len(subagent_tools)} specialized HACS tools
+- Domain-optimized workflows
+- Intelligent error handling and fallbacks
+- Rich metadata tracking for all operations
+
+Focus on your domain expertise and use the appropriate tools for each task!"""
+
+    # Create specialized subagent
+    subagent = create_react_agent(
+        model,
+        prompt=enhanced_prompt,
+        tools=subagent_tools,
+        state_schema=SubAgentState,
+    )
     
-    # Create specialized sub-agents
-    for subagent in subagents:
-        if "tools" in subagent:
-            # Use only specified tools for this sub-agent
-            sub_tools = [tools_by_name[t] for t in subagent["tools"] if t in tools_by_name]
-        else:
-            # Use all available tools
-            sub_tools = tools
-            
-        agents[subagent["name"]] = create_react_agent(
-            model,
-            prompt=subagent["prompt"],
-            tools=sub_tools,
-            state_schema=state_schema
-        )
+    # Add metadata
+    subagent._domain = definition.name
+    subagent._description = definition.description
+    subagent._tool_count = len(subagent_tools)
     
-    # Create other agents string for documentation
-    other_agents_string = [
-        f"- {subagent['name']}: {subagent['description']}" for subagent in subagents
-    ]
+    return subagent
+
+
+# ============================================================================
+# SUBAGENT REGISTRY
+# ============================================================================
+
+class SubAgentRegistry:
+    """Registry for managing HACS subagents."""
     
-    task_description = f"""Launch a specialized HACS sub-agent to handle complex, multi-step tasks.
-
-Available HACS sub-agents:
-- general-purpose: General-purpose HACS agent for basic operations and coordination
-{chr(10).join(other_agents_string)}
-
-## When to Use HACS Sub-Agents:
-
-**database-admin**: Use for all database-related operations
-- Database migrations and schema updates
-- Database connectivity troubleshooting
-- Schema inspection and validation
-- Database performance issues
-
-**resource-admin**: Use for HACS resource management
-- Resource discovery and exploration
-- Resource schema analysis
-- Resource template creation
-- FHIR compliance validation
-
-**system-integration**: Use for complete system setup
-- Full HACS system installation and configuration  
-- Multi-component integration workflows
-- Environment preparation and validation
-- Operational procedure development
-
-**troubleshooting**: Use for problem diagnosis
-- Systematic issue investigation
-- Error analysis and resolution
-- Problem documentation and solutions
-- Diagnostic procedure development
-
-**documentation**: Use for knowledge management
-- Administrative procedure documentation
-- Configuration guides and runbooks
-- Training materials and knowledge bases
-- Procedure organization and structure
-
-**general-purpose**: Use for basic coordination and simple operations
-
-## Usage Guidelines:
-1. Choose the most specialized sub-agent for the task domain
-2. Provide detailed task descriptions for autonomous execution
-3. Specify exactly what information you need back
-4. Sub-agents can create files, run tools, and plan systematically
-5. Each sub-agent has expertise-focused tools and approaches
-
-## Example Usage:
-- "Set up a new HACS database" → use **system-integration**
-- "Troubleshoot migration failures" → use **troubleshooting**  
-- "Create admin documentation" → use **documentation**
-- "Explore available resources" → use **resource-admin**
-- "Create a clinical template" → use **resource-admin**"""
-
-    @tool(description=task_description)
-    def task(
-        description: str,
-        subagent_type: str,
-        state: Annotated[Any, InjectedState],
-        tool_call_id: Annotated[str, InjectedToolCallId],
-    ):
-        """Delegate tasks to specialized HACS sub-agents."""
+    def __init__(self):
+        self._subagents: Dict[str, Any] = {}
+        self._initialized = False
+    
+    async def initialize(self, model: LanguageModelLike, available_tools: List[BaseTool]):
+        """Initialize all subagents with available tools."""
+        if self._initialized:
+            return
         
-        if subagent_type not in agents:
-            allowed_types = list(agents.keys())
-            return f"Error: Unknown sub-agent type '{subagent_type}'. Available types: {allowed_types}"
+        for definition in SUBAGENT_DEFINITIONS:
+            subagent = await create_subagent(definition, model, available_tools)
+            self._subagents[definition.name] = subagent
         
-        # Prevent infinite recursion by limiting delegation depth
-        current_depth = state.get("delegation_depth", 0)
-        if current_depth >= 3:
-            return "Error: Maximum delegation depth reached. Please perform the task directly or simplify the request."
-        
-        # Get the specialized sub-agent
-        sub_agent = agents[subagent_type]
-        
-        # Prepare clean state for sub-agent to prevent recursion
-        sub_state = {
-            "messages": [{"role": "user", "content": description}],
-            "files": state.get("files", {}),
-            "delegation_depth": current_depth + 1,
-            "remaining_steps": 10  # Limit sub-agent steps
+        self._initialized = True
+    
+    def get_subagent(self, name: str) -> Optional[Any]:
+        """Get a subagent by name."""
+        return self._subagents.get(name)
+    
+    def list_subagents(self) -> List[Dict[str, Any]]:
+        """List all available subagents."""
+        result = []
+        for definition in SUBAGENT_DEFINITIONS:
+            subagent = self._subagents.get(definition.name)
+            result.append({
+                "name": definition.name,
+                "description": definition.description,
+                "tool_count": getattr(subagent, '_tool_count', 0) if subagent else 0,
+                "available": subagent is not None
+            })
+        return result
+    
+    def get_tools_by_domain(self, domain: str) -> List[str]:
+        """Get tools available for a specific domain."""
+        domain_map = {
+            "clinical_operations": CLINICAL_OPERATIONS_TOOLS,
+            "resource_management": RESOURCE_MANAGEMENT_TOOLS,
+            "search_discovery": SEARCH_DISCOVERY_TOOLS,
+            "memory_knowledge": MEMORY_KNOWLEDGE_TOOLS,
+            "system_admin": SYSTEM_ADMIN_TOOLS,
         }
+        return domain_map.get(domain, [])
+
+
+# Global registry instance
+_subagent_registry = SubAgentRegistry()
+
+
+# ============================================================================
+# PUBLIC API
+# ============================================================================
+
+async def initialize_subagents(model: LanguageModelLike, available_tools: List[BaseTool]):
+    """Initialize all HACS subagents."""
+    await _subagent_registry.initialize(model, available_tools)
+
+
+async def get_subagent_executor(subagent_name: str) -> Optional[Any]:
+    """Get a subagent executor by name."""
+    return _subagent_registry.get_subagent(subagent_name)
+
+
+def list_available_subagents() -> List[Dict[str, Any]]:
+    """List all available subagents and their capabilities."""
+    return _subagent_registry.list_subagents()
+
+
+def get_domain_tools(domain: str) -> List[str]:
+    """Get tools available for a specific domain."""
+    return _subagent_registry.get_tools_by_domain(domain)
+
+
+async def delegate_task(subagent_name: str, task: str, context: Optional[Dict] = None) -> str:
+    """Delegate a task to a specific subagent."""
+    try:
+        subagent = await get_subagent_executor(subagent_name)
+        if not subagent:
+            return f"❌ Subagent '{subagent_name}' not found"
         
-        try:
-            result = sub_agent.invoke(sub_state)
-            return Command(
-                update={
-                    "files": {**state.get("files", {}), **result.get("files", {})},
-                    "messages": [
-                        ToolMessage(
-                            result["messages"][-1].content if result.get("messages") else "Sub-agent completed task.",
-                            tool_call_id=tool_call_id
-                        )
-                    ],
-                }
-            )
-        except Exception as e:
-            return f"Error: Sub-agent failed: {str(e)}. Please try performing the task directly."
+        # Execute task
+        result = await subagent.ainvoke({
+            "messages": [{"role": "user", "content": task}],
+            "context": context or {},
+            "domain_expertise": subagent_name,
+        })
+        
+        return f"""✅ **Subagent '{subagent_name}' Task Complete**
+
+🎯 **Task**: {task}
+
+📋 **Result**: 
+{result.get('output', result)}
+
+🔧 **Domain**: {subagent_name.replace('_', ' ').title()}
+💭 **Tools Used**: {subagent._tool_count} domain-specific tools available"""
+        
+    except Exception as e:
+        return f"❌ Subagent '{subagent_name}' execution failed: {str(e)}"
+
+
+# ============================================================================
+# TESTING AND VALIDATION
+# ============================================================================
+
+async def test_subagent_integration() -> bool:
+    """Test subagent integration and tool availability."""
+    try:
+        # Check if subagents are initialized
+        subagents = list_available_subagents()
+        
+        if not subagents:
+            print("⚠️ No subagents available - need initialization")
+            return False
+        
+        print(f"✅ Found {len(subagents)} subagents:")
+        for subagent in subagents:
+            status = "✅" if subagent['available'] else "❌"
+            print(f"   {status} {subagent['name']}: {subagent['tool_count']} tools")
+        
+        return all(s['available'] for s in subagents)
+        
+    except Exception as e:
+        print(f"❌ Subagent integration test failed: {e}")
+        return False
+
+
+async def test_domain_tools():
+    """Test domain tool organization."""
+    print("🔧 Testing domain tool organization...")
     
-    return task
+    domains = ["clinical_operations", "resource_management", "search_discovery", 
+               "memory_knowledge", "system_admin"]
+    
+    for domain in domains:
+        tools = get_domain_tools(domain)
+        print(f"📋 {domain}: {len(tools)} tools")
+        for tool in tools[:3]:  # Show first 3
+            print(f"   • {tool}")
+        if len(tools) > 3:
+            print(f"   ... and {len(tools) - 3} more")
+    
+    return True
+
+
+if __name__ == "__main__":
+    # Test subagent functionality
+    asyncio.run(test_domain_tools())
