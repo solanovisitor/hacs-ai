@@ -370,6 +370,9 @@ async def execute_tool(
         if HACS_INTEGRATION_AVAILABLE and hacs_integration_manager:
             from hacs_registry import ExecutionContext
             
+            # Apply tool name mapping before execution
+            actual_tool_name = TOOL_NAME_MAPPING.get(tool_name, tool_name)
+            
             # Create execution context
             context = ExecutionContext(
                 actor_name=actor.name if actor else None,
@@ -379,8 +382,8 @@ async def execute_tool(
                 metadata={"mcp_server": True}
             )
             
-            # Execute using the integration framework
-            result = await hacs_integration_manager.execute_tool(tool_name, params, context)
+            # Execute using the integration framework with mapped tool name
+            result = await hacs_integration_manager.execute_tool(actual_tool_name, params, context)
             
             # Convert to CallToolResult
             if result.success:
