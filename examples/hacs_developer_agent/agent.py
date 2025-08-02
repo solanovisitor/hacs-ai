@@ -226,7 +226,7 @@ class HybridMCPManager:
                 return f"❌ Tool execution failed: {str(e)} (time: {execution_time:.1f}ms)"
         
         # Set tool metadata
-        http_tool.name = f"hacs_{tool_def.get('name', 'unknown')}"
+        http_tool.name = tool_def.get('name', 'unknown')
         http_tool.description = f"HACS Tool: {tool_def.get('description', 'No description')}"
         
         return http_tool
