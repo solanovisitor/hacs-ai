@@ -47,7 +47,6 @@ class HACSAgentState(TypedDict, total=False):
     database_url: str
     admin_context: Dict[str, Any]
     delegation_depth: int
-    mcp_tools: List[BaseTool]  # Cache MCP tools
     tool_execution_history: List[Dict[str, Any]]  # Track tool executions
     discovered_tools: Dict[str, Dict[str, Any]]  # Cache discovered tools
     reflection_notes: List[str]  # Agent's reflection notes
