@@ -28,6 +28,73 @@ from .messages import CallToolResult
 logger = logging.getLogger(__name__)
 
 
+# Tool name mapping between exposed names (MCP server) and actual function names (HACS tools)
+TOOL_NAME_MAPPING = {
+    # Resource Management Tools
+    "create_resource": "create_hacs_record",
+    "get_resource": "get_hacs_record",
+    "update_resource": "update_hacs_record",
+    "delete_resource": "delete_hacs_record",
+    "search_resources": "search_hacs_records",
+
+    # Clinical Workflow Tools (these match)
+    "execute_clinical_workflow": "execute_clinical_workflow",
+    "get_clinical_guidance": "get_clinical_guidance",
+    "query_with_datarequirement": "query_with_datarequirement",
+    "validate_clinical_protocol": "validate_clinical_protocol",
+
+    # Memory Operations Tools (these match)
+    "create_memory": "create_hacs_memory",
+    "search_memories": "search_hacs_memories",
+    "consolidate_memories": "consolidate_memories",
+    "retrieve_context": "retrieve_context",
+    "analyze_memory_patterns": "analyze_memory_patterns",
+
+    # Vector Search Tools (these match)
+    "store_embedding": "store_embedding",
+    "vector_similarity_search": "vector_similarity_search",
+    "vector_hybrid_search": "vector_hybrid_search",
+    "get_vector_collection_stats": "get_vector_collection_stats",
+    "optimize_vector_collection": "optimize_vector_collection",
+
+    # Schema Discovery Tools (these match)
+    "discover_hacs_resources": "discover_hacs_resources",
+    "get_hacs_resource_schema": "get_hacs_resource_schema",
+    "analyze_resource_fields": "analyze_resource_fields",
+    "compare_resource_schemas": "compare_resource_schemas",
+
+    # Development Tools
+    "create_model_stack": "create_resource_stack",
+    "create_clinical_template": "create_clinical_template",
+    "optimize_resource_for_llm": "optimize_resource_for_llm",
+    "version_hacs_resource": "create_resource_stack",  # Version management via stacking
+
+    # FHIR Integration Tools (these match)
+    "convert_to_fhir": "convert_to_fhir",
+    "validate_fhir_compliance": "validate_fhir_compliance",
+    "process_fhir_bundle": "process_fhir_bundle",
+    "lookup_fhir_terminology": "lookup_fhir_terminology",
+
+    # Healthcare Analytics Tools (these match)
+    "calculate_quality_measures": "calculate_quality_measures",
+    "analyze_population_health": "analyze_population_health",
+    "generate_clinical_dashboard": "generate_clinical_dashboard",
+    "perform_risk_stratification": "perform_risk_stratification",
+
+    # AI/ML Integration Tools (these match)
+    "deploy_healthcare_ai_model": "deploy_healthcare_ai_model",
+    "run_clinical_inference": "run_clinical_inference",
+    "preprocess_medical_data": "preprocess_medical_data",
+
+    # Admin Operations Tools (these match)
+    "run_database_migration": "run_database_migration",
+    "check_migration_status": "check_migration_status",
+    "describe_database_schema": "describe_database_schema",
+    "get_table_structure": "get_table_structure",
+    "test_database_connection": "test_database_connection",
+}
+
+
 def _initialize_langchain_compatibility():
     """Initialize LangChain compatibility shims to allow HACS tools to import."""
     # Create langchain_core.tools compatibility shim
@@ -61,12 +128,15 @@ _initialize_langchain_compatibility()
 # Import the centralized HACS integration framework
 HACS_TOOLS_AVAILABLE = False
 HACS_INTEGRATION_AVAILABLE = False
+HACS_REGISTRY_AVAILABLE = False
 hacs_integration_manager = None
+hacs_registry = None
 
 try:
     from hacs_registry import get_integration_manager, FrameworkType
     hacs_integration_manager = get_integration_manager()
     HACS_INTEGRATION_AVAILABLE = True
+    HACS_REGISTRY_AVAILABLE = True
     HACS_TOOLS_AVAILABLE = True
     stats = hacs_integration_manager.get_integration_stats()
     logger.info(f"✅ HACS integration framework loaded successfully - {stats['registry_stats']['total_tools']} tools available")
@@ -77,10 +147,12 @@ except ImportError as e:
     try:
         from hacs_registry import get_global_registry
         hacs_registry = get_global_registry()
+        HACS_REGISTRY_AVAILABLE = True
         HACS_TOOLS_AVAILABLE = True
         logger.info(f"✅ HACS registry loaded successfully - {len(hacs_registry.get_all_tools())} tools available")
     except ImportError as e2:
         logger.warning(f"⚠️ Failed to import HACS registry: {e2}")
+        HACS_REGISTRY_AVAILABLE = False
 
 # Fallback: Import all HACS tools directly - with LangChain dependency workaround
 ALL_HACS_TOOLS = []
@@ -243,21 +315,24 @@ def _create_success_result(operation_name: str, result: Any) -> CallToolResult:
 
 
 def _get_tool_function(tool_name: str):
-    """Get the actual tool function from HACS tools."""
+    """Get the actual tool function from HACS tools using name mapping."""
     if not HACS_TOOLS_AVAILABLE:
         return None
 
+    # Map exposed tool name to actual function name
+    actual_function_name = TOOL_NAME_MAPPING.get(tool_name, tool_name)
+
     # Use the integration framework if available
     if HACS_INTEGRATION_AVAILABLE and hacs_integration_manager:
-        tool_def = hacs_integration_manager.registry.get_tool(tool_name)
+        tool_def = hacs_integration_manager.registry.get_tool(actual_function_name)
         return tool_def.function if tool_def else None
     
     # Fallback to registry access
     if 'hacs_registry' in locals() and hacs_registry:
-        return hacs_registry.get_tool_function(tool_name)
+        return hacs_registry.get_tool_function(actual_function_name)
     
     # Final fallback to direct module access
-    return getattr(hacs_tools_module, tool_name, None)
+    return getattr(hacs_tools_module, actual_function_name, None)
 
 
 async def execute_tool(
@@ -333,13 +408,15 @@ async def _execute_tool_fallback(
     """Fallback implementation for tool execution."""
     start_time = datetime.now()
 
-    # Get the tool function
+    # Get the tool function using name mapping
     tool_func = _get_tool_function(tool_name)
     if tool_func is None:
-        available_tools = [tool.__name__ for tool in ALL_HACS_TOOLS] if ALL_HACS_TOOLS else []
+        # Show available exposed tool names (what the agent should call)
+        exposed_tools = list(TOOL_NAME_MAPPING.keys())
+        actual_tools = [tool.__name__ for tool in ALL_HACS_TOOLS] if ALL_HACS_TOOLS else []
         return _create_error_result(
             tool_name,
-            f"Tool '{tool_name}' not found. Available tools: {', '.join(available_tools[:10])}"
+            f"Tool '{tool_name}' not found. Available tools: {', '.join(exposed_tools[:10])}... (Mapped from: {', '.join(actual_tools[:5])}...)"
         )
 
     # Prepare parameters
