@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "hacs-infrastructure"
-version = "0.3.0"
+version = "0.3.1"
 description = "Infrastructure components for HACS (Healthcare Agent Communication Standard) - DI container, configuration, and service management"
 readme = "README.md"  
 license = { text = "MIT" }
@@ -44,8 +44,8 @@ dependencies = [
     "pydantic-settings>=2.7.0",
     "psutil>=6.1.0",
     "aiohttp>=3.11.10",
-    "hacs-models>=0.3.0",
-    "hacs-auth>=0.3.0",
+    "hacs-models>=0.3.1",
+    "hacs-auth>=0.3.1",
 ]
 
 [project.optional-dependencies]

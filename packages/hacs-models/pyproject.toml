@@ -1,6 +1,6 @@
 [project]
 name = "hacs-models"
-version = "0.3.0"
+version = "0.3.1"
 description = "HACS Healthcare Data Models - Pure Pydantic models for FHIR-compliant healthcare data"
 readme = "README.md"
 license = {text = "MIT"}

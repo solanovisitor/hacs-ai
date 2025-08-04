@@ -1,6 +1,6 @@
 [project]
 name = "hacs-core"
-version = "0.3.0"
+version = "0.3.1"
 description = "Core models and base classes for Healthcare Agent Communication Standard"
 readme = "README.md"
 license = { text = "MIT" }
@@ -37,8 +37,8 @@ requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.11.7,<3.0.0",
     "PyJWT>=2.8.0",
-    "hacs-infrastructure>=0.1.0",
-    "hacs-models>=0.1.0",
+    "hacs-infrastructure>=0.3.1",
+    "hacs-models>=0.3.1",
 ]
 
 [project.urls]

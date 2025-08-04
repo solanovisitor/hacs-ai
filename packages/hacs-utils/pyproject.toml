@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "hacs-utils"
-version = "0.3.0"
+version = "0.3.1"
 description = "External service integrations, utilities, and MCP server for HACS"
 readme = "README.md"
 license = { text = "MIT" }
@@ -44,8 +44,8 @@ classifiers = [
 requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.11.0,<3.0.0",
-    "hacs-core>=0.3.0",
-    "hacs-registry>=0.3.0",
+    "hacs-core>=0.3.1",
+    "hacs-registry>=0.3.1",
     "requests>=2.32.4",
     "fastapi>=0.116.1",
     "uvicorn[standard]>=0.35.0",

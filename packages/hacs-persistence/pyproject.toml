@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "hacs-persistence"
-version = "0.3.0"
+version = "0.3.1"
 description = "Database and vector store persistence adapters for HACS"
 readme = "README.md"
 license = { text = "MIT" }
@@ -28,7 +28,7 @@ classifiers = [
 keywords = ["healthcare", "ai", "database", "vector-store", "fhir", "persistence"]
 requires-python = ">=3.11"
 dependencies = [
-    "hacs-core>=0.3.0",
+    "hacs-core>=0.3.1",
     "pydantic>=2.11.7",
     "sqlalchemy>=2.0.0",
 ]
