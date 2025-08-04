@@ -20,14 +20,21 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual environments
+# Virtual environments & Environment files
 .env
+.env.local
 .venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Sensitive data
+*.key
+*.pem
+secrets/
+config/local/
 
 # Testing
 .pytest_cache/
@@ -37,6 +44,9 @@ htmlcov/
 coverage.xml
 *.cover
 .hypothesis/
+test_report_*.json
+test_summary_*.md
+coverage-*.json
 
 # IDE
 .vscode/
@@ -65,3 +75,4 @@ build/
 
 # Docs
 docs/_build/
+claude.md

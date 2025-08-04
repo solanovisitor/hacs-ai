@@ -14,12 +14,12 @@ from psycopg_pool import AsyncConnectionPool
 
 from hacs_core import (
     Actor,
+    AdapterNotFoundError,
     BaseAdapter,
     BaseResource,
     PersistenceProvider,
     get_settings,
 )
-from hacs_core.container import AdapterNotFoundError
 
 logger = logging.getLogger(__name__)
 

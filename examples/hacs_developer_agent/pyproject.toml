@@ -1,0 +1,48 @@
+[project]
+name = "hacs_developer_agent"
+version = "0.1.0"
+description = "HACS Developer Guidance Agent - A LangGraph application for healthcare AI development"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "langgraph>=0.6.2",
+    "langchain-core>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "langchain-anthropic>=0.2.0",
+    "pydantic>=2.11.7",
+    "httpx>=0.25.0",
+    "langchain-mcp-adapters>=0.1.9",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "ruff>=0.1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.0.0",
+    "ruff>=0.1.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.uv.sources]
+hacs-core = { workspace = true }
+hacs-tools = { workspace = true }
+hacs-utils = { workspace = true }
+hacs-registry = { workspace = true }
+hacs-persistence = { workspace = true } 

@@ -14,12 +14,12 @@ import psycopg2.extras
 
 from hacs_core import (
     Actor,
+    AdapterNotFoundError,
     BaseAdapter,
     BaseResource,
     PersistenceProvider,
     get_settings,
 )
-from hacs_core.container import AdapterNotFoundError
 from hacs_core.models import (
     AgentMessage,
     ContextSummary,

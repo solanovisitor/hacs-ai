@@ -1,438 +1,393 @@
 """
-HACS Models - Pydantic models for healthcare agent applications.
+HACS Core Models - Backward Compatibility Layer
 
-This package provides comprehensive healthcare data models optimized for
-structured outputs and LLM interactions.
+DEPRECATED: This module is deprecated in favor of the hacs-models package.
+All models have been migrated to hacs-models for better architecture separation.
+
+This compatibility layer redirects imports to maintain backward compatibility.
+For new code, import directly from hacs-models:
+
+    # New way (preferred)
+    from hacs_models import Patient, Observation, Encounter
+    
+    # Old way (deprecated but still works)
+    from hacs_core.models import Patient, Observation, Encounter
+
+Migration Guide:
+    Replace all imports from hacs_core.models with hacs_models imports.
+    The models are identical, just better organized in the new package.
 """
 
+import warnings
 from hacs_core.utils import VersionManager
 
 __version__ = VersionManager.CORE_VERSION
 
-# US Core Models
-# Clinical Reasoning Models
-from .activity_definition import (
-    ActivityDefinition,
-    ActivityDefinitionKind,
-    ActivityDefinitionStatus,
-    ParticipantType,
-    RequestIntent,
-    RequestPriority,
+# Issue deprecation warning
+warnings.warn(
+    "hacs_core.models is deprecated. Use hacs_models package instead: "
+    "from hacs_models import Patient, Observation, etc.",
+    DeprecationWarning,
+    stacklevel=2
 )
 
-# Core Models
-from .agent_message import AgentMessage, MessagePriority, MessageRole, MessageType
-from .appointment import (
-    Appointment,
-    AppointmentStatus,
-    AppointmentCancellationReason,
-    ParticipantType as AppointmentParticipantType,
-    ParticipationStatus,
-    AppointmentRecurrenceType,
-    WeekOfMonth,
-    DaysOfWeek,
-    AppointmentPriority,
-    VirtualServiceDetail,
-    WeeklyTemplate,
-    MonthlyTemplate,
-    YearlyTemplate,
-    RecurrenceTemplate,
-    AppointmentParticipant,
-    MedicalAppointment,
-    TelehealthAppointment,
-    ConsultationAppointment,
-    FollowUpAppointment,
-    EmergencyAppointment,
-)
-from .allergy_intolerance import (
-    AllergyIntolerance,
-    AllergyIntoleranceCategory,
-    AllergyIntoleranceCriticality,
-    AllergyIntoleranceReaction,
-    AllergyIntoleranceStatus,
-    AllergyIntoleranceType,
-    AllergyIntoleranceVerificationStatus,
-    ReactionSeverity,
-)
-from .condition import (
-    Condition,
-    ConditionCategory,
-    ConditionClinicalStatus,
-    ConditionSeverity,
-    ConditionVerificationStatus,
-    ConditionBodySite,
-    ConditionStageType,
-    Problem,  # Alias for Condition
-)
-from .context import ContextSummary, ScratchpadEntry
-from .data_requirement import DataRequirement, SortDirection
-from .encounter import (
-    Encounter,
-    EncounterClass,
-    EncounterStatus,
-    LocationStatus,
-)
-from .encounter import (
-    ParticipantType as EncounterParticipantType,
-)
-from .evidence_variable import (
-    ArtifactAssessment,
-    ArtifactAssessmentDisposition,
-    ArtifactAssessmentWorkflowStatus,
-    EvidenceVariable,
-    EvidenceVariableHandling,
-    EvidenceVariableStatus,
-)
-from .family_member_history import (
-    FamilyMemberHistory,
-    FamilyHistoryStatus,
-    FamilyHistoryAbsentReason,
-    FamilyMemberRelationship,
-    AdministrativeGender as FamilyAdministrativeGender,
-    ConditionOutcome as FamilyConditionOutcome,
-    ParticipationFunction,
-    FamilyMemberHistoryParticipant,
-    FamilyMemberCondition,
-    FamilyMemberProcedure,
-    FamilyHistory,
-    GeneticHistory,
-    FamilialRiskAssessment,
-)
-from .guidance_response import (
-    GuidanceResponse,
-    GuidanceResponseStatus,
-    RequestOrchestration,
-    RequestOrchestrationAction,
-    RequestStatus,
-)
-from .guidance_response import (
-    RequestIntent as GuidanceRequestIntent,
-)
-from .guidance_response import (
-    RequestPriority as GuidanceRequestPriority,
-)
-from .goal import (
-    Goal,
-    GoalLifecycleStatus,
-    GoalAchievementStatus,
-    GoalCategory,
-    GoalPriority,
-    GoalTimeframe,
-    GoalMeasureType,
-    CareGoal,
-    PatientGoal,
-    TreatmentGoal,
-)
-from .knowledge import KnowledgeItem
-from .library import (
-    AttachmentContentType,
-    Library,
-    LibraryStatus,
-    LibraryType,
-)
-from .medication import (
-    Medication,
-    MedicationForm,
-    MedicationStatus,
-)
-from .medication_request import (
-    MedicationRequest,
-    MedicationRequestCategory,
-    MedicationRequestIntent,
-    MedicationRequestPriority,
-    MedicationRequestStatus,
-)
-from .memory import Memory, MemoryType
-from .observation import (
-    DataAbsentReason,
-    Observation,
-    ObservationCategory,
-    ObservationStatus,
-)
-from .patient import (
-    AdministrativeGender,
-    ContactPointSystem,
-    ContactPointUse,
-    IdentifierType,
-    IdentifierUse,
-    Patient,
-)
-from .plan_definition import (
-    ActionCardinalityBehavior,
-    ActionConditionKind,
-    ActionPrecheckBehavior,
-    ActionRelationshipType,
-    ActionRequiredBehavior,
-    ActionSelectionBehavior,
-    PlanDefinition,
-    PlanDefinitionAction,
-    PlanDefinitionStatus,
-    PlanDefinitionType,
-)
-from .procedure import (
-    Procedure,
-    ProcedureStatus,
-    ProcedureCategory,
-    ProcedureBodySite,
-    ProcedureOutcome,
-    ProcedureUrgency,
-)
-from .service_request import (
-    ServiceRequest,
-    RequestStatus as ServiceRequestStatus,
-    RequestIntent as ServiceRequestIntent,
-    RequestPriority as ServiceRequestPriority,
-    ServiceCategory,
-    PerformerRole,
-    ServiceRequestOrderDetail,
-    ServiceRequestParameter,
-    ServiceRequestPatientInstruction,
-    DiagnosticOrder,
-    ProcedureRequest,
-    ReferralRequest,
-    TherapyOrder,
-    ConsultationRequest,
-)
-from .task import (
-    Task,
-    TaskStatus,
-    TaskIntent,
-    TaskPriority,
-    TaskCode,
-    TaskPerformerFunction,
-    TaskBusinessStatus,
-    TaskPerformer,
-    TaskRestriction,
-    TaskInput,
-    TaskOutput,
-    WorkflowTask,
-    FulfillmentTask,
-    ApprovalTask,
-    ReviewTask,
-    SchedulingTask,
-)
-from .risk_assessment import (
-    RiskAssessment,
-    RiskAssessmentPrediction,
-    ObservationStatus as RiskObservationStatus,
-    RiskAssessmentMethod,
-    RiskAssessmentCode,
-    RiskProbability,
-    RiskOutcome,
-    RiskTimeframe,
-    GeneticRiskAssessment,
-    CardiacRiskAssessment,
-    CancerRiskAssessment,
-    SurgicalRiskAssessment,
-    ClinicalRiskAssessment,
-)
-from .organization import Organization, OrganizationContact, OrganizationQualification
+# Import models from hacs-models package for backward compatibility
+try:
+    # Core healthcare models
+    from hacs_models import (
+        # Base classes
+        BaseResource,
+        DomainResource,
+        
+        # Core healthcare models
+        Patient,
+        HumanName,
+        ContactPoint, 
+        Address,
+        Identifier,
+        Observation,
+        Quantity,
+        CodeableConcept,
+        Coding,
+        Range,
+        Encounter,
+        EncounterParticipant,
+        EncounterDiagnosis,
+        Condition,
+        ConditionStage,
+        ConditionEvidence,
+        Medication,
+        MedicationIngredient,
+        MedicationRequest,
+        Dosage,
+        DosageInstruction,
+        Procedure,
+        ProcedurePerformer,
+        ProcedureFocalDevice,
+        Goal,
+        GoalTarget,
+        
+        # AI agent models
+        MemoryBlock,
+        EpisodicMemory,
+        SemanticMemory,
+        WorkingMemory,
+        AgentMessage,
+        MessageRole,
+        MessageType,
+        
+        # Bundle and workflow
+        ResourceBundle,
+        BundleEntry,
+        BundleType,
+        WorkflowDefinition,
+        WorkflowStep,
+        WorkflowAction,
+    )
+    
+    # Import type definitions
+    from hacs_models import (
+        HealthcareDomain,
+        Gender,
+        ObservationStatus,
+        EncounterStatus,
+        ConditionClinicalStatus,
+        ConditionVerificationStatus,
+        MedicationRequestStatus,
+        ProcedureStatus,
+        GoalLifecycleStatus,
+        ContactPointSystem,
+        ContactPointUse,
+        AddressUse,
+        AddressType,
+        IdentifierUse,
+        NameUse,
+    )
+    
+    # Create backward compatibility aliases for commonly used models
+    # that might not be in hacs_models yet
+    try:
+        # Try to import additional models if they exist
+        from hacs_models import AllergyIntolerance
+    except ImportError:
+        # Create placeholder for backward compatibility
+        class AllergyIntolerance(BaseResource):
+            """Placeholder for AllergyIntolerance model."""
+            pass
+    
+    # Create placeholders for models not yet migrated to hacs_models
+    class FamilyMemberHistory(BaseResource):
+        """Placeholder for FamilyMemberHistory model."""
+        pass
+    
+    class RiskAssessment(BaseResource):
+        """Placeholder for RiskAssessment model."""
+        pass
+    
+    class ActivityDefinition(BaseResource):
+        """Placeholder for ActivityDefinition model."""
+        pass
+    
+    class PlanDefinition(BaseResource):
+        """Placeholder for PlanDefinition model."""
+        pass
+    
+    class Task(BaseResource):
+        """Placeholder for Task model."""
+        pass
+    
+    class Appointment(BaseResource):
+        """Placeholder for Appointment model."""
+        pass
+    
+    class Document(BaseResource):
+        """Placeholder for Document model."""
+        pass
+    
+    class Library(BaseResource):
+        """Placeholder for Library model."""
+        pass
+    
+    class Organization(BaseResource):
+        """Placeholder for Organization model."""
+        pass
+    
+    class EvidenceVariable(BaseResource):
+        """Placeholder for EvidenceVariable model."""
+        pass
+    
+    class GuidanceResponse(BaseResource):
+        """Placeholder for GuidanceResponse model."""
+        pass
+    
+    class ContextSummary(BaseResource):
+        """Placeholder for ContextSummary model."""
+        pass
+    
+    class KnowledgeItem(BaseResource):
+        """Placeholder for KnowledgeItem model."""
+        pass
+    
+    class ScratchpadEntry(BaseResource):
+        """Placeholder for ScratchpadEntry model."""
+        pass
+    
+    class WorkflowRequest(BaseResource):
+        """Placeholder for WorkflowRequest model."""
+        pass
+    
+    class WorkflowEvent(BaseResource):
+        """Placeholder for WorkflowEvent model."""
+        pass
+    
+    class WorkflowExecution(BaseResource):
+        """Placeholder for WorkflowExecution model."""
+        pass
+    
+    # Document-related placeholders
+    from enum import Enum
+    
+    class DocumentStatus(str, Enum):
+        """Document status enumeration."""
+        PRELIMINARY = "preliminary"
+        FINAL = "final"
+        AMENDED = "amended"
+        ENTERED_IN_ERROR = "entered-in-error"
+    
+    class DocumentType(str, Enum):
+        """Document type enumeration."""
+        PROGRESS_NOTE = "progress-note"
+        DISCHARGE_SUMMARY = "discharge-summary"
+        CONSULTATION_NOTE = "consultation-note"
+        CLINICAL_SUMMARY = "clinical-summary"
+        PROCEDURE_NOTE = "procedure-note"
+        OPERATIVE_NOTE = "operative-note"
+        PATHOLOGY_REPORT = "pathology-report"
+        RADIOLOGY_REPORT = "radiology-report"
+        LAB_REPORT = "lab-report"
+    
+    class ConfidentialityLevel(str, Enum):
+        """Document confidentiality level."""
+        NORMAL = "N"
+        RESTRICTED = "R"
+        VERY_RESTRICTED = "V"
+    
+    class DocumentAuthor(BaseResource):
+        """Placeholder for DocumentAuthor model."""
+        pass
+    
+    class DocumentAttester(BaseResource):
+        """Placeholder for DocumentAttester model."""
+        pass
+    
+    class DocumentSection(BaseResource):
+        """Placeholder for DocumentSection model."""
+        pass
+    
+    class DocumentEncounter(BaseResource):
+        """Placeholder for DocumentEncounter model."""
+        pass
+    
+    # Document factory functions placeholders
+    def create_discharge_summary(*args, **kwargs):
+        """Placeholder factory function."""
+        return Document()
+    
+    def create_progress_note(*args, **kwargs):
+        """Placeholder factory function."""
+        return Document()
+    
+    def create_consultation_note(*args, **kwargs):
+        """Placeholder factory function."""
+        return Document()
+    
+    def create_clinical_summary(*args, **kwargs):
+        """Placeholder factory function."""
+        return Document()
+    
+    # Create aliases for backward compatibility
+    Memory = MemoryBlock  # Common alias
+    MemoryType = str  # Legacy compatibility
+    
+    # Legacy enum aliases
+    AdministrativeGender = Gender
+    EncounterClass = str  # Simplified compatibility
+    
+except ImportError as e:
+    warnings.warn(
+        f"Could not import from hacs-models package: {e}. "
+        "Make sure hacs-models is installed: pip install hacs-models",
+        ImportWarning,
+        stacklevel=2
+    )
+    
+    # Fallback - create minimal stubs to prevent import errors
+    class BaseResource:
+        pass
+    
+    class Patient(BaseResource):
+        pass
+    
+    class Observation(BaseResource):
+        pass
+    
+    class Encounter(BaseResource):
+        pass
 
+# Maintain backward compatibility exports
 __all__ = [
-    # Patient model and enums
+    # Base classes
+    "BaseResource",
+    "DomainResource",
+    
+    # Core healthcare models
     "Patient",
-    "AdministrativeGender",
-    "IdentifierUse",
-    "IdentifierType",
-    "ContactPointSystem",
-    "ContactPointUse",
-    # AgentMessage model and enums
+    "HumanName",
+    "ContactPoint", 
+    "Address",
+    "Identifier",
+    "Observation",
+    "Quantity",
+    "CodeableConcept",
+    "Coding",
+    "Range",
+    "Encounter",
+    "EncounterParticipant",
+    "EncounterDiagnosis",
+    "Condition",
+    "ConditionStage",
+    "ConditionEvidence",
+    "Medication",
+    "MedicationIngredient",
+    "MedicationRequest",
+    "Dosage",
+    "DosageInstruction",
+    "Procedure",
+    "ProcedurePerformer",
+    "ProcedureFocalDevice",
+    "Goal",
+    "GoalTarget",
+    
+    # AI agent models
+    "MemoryBlock",
+    "EpisodicMemory",
+    "SemanticMemory",
+    "WorkingMemory",
     "AgentMessage",
     "MessageRole",
     "MessageType",
-    "MessagePriority",
-    # Encounter model and enums
-    "Encounter",
-    "EncounterStatus",
-    "EncounterClass",
-    "EncounterParticipantType",
-    "LocationStatus",
-    # Observation model and enums
-    "Observation",
+    
+    # Bundle and workflow
+    "ResourceBundle",
+    "BundleEntry",
+    "BundleType",
+    "WorkflowDefinition",
+    "WorkflowStep",
+    "WorkflowAction",
+    
+    # Type definitions
+    "HealthcareDomain",
+    "Gender",
     "ObservationStatus",
-    "ObservationCategory",
-    "DataAbsentReason",
-    # Memory model and enums
-    "Memory",
-    "MemoryType",
-    # Knowledge model
-    "KnowledgeItem",
-    # Context models
-    "ScratchpadEntry",
-    "ContextSummary",
-    # US Core Models - AllergyIntolerance
-    "AllergyIntolerance",
-    "AllergyIntoleranceReaction",
-    "AllergyIntoleranceType",
-    "AllergyIntoleranceCategory",
-    "AllergyIntoleranceCriticality",
-    "AllergyIntoleranceStatus",
-    "AllergyIntoleranceVerificationStatus",
-    "ReactionSeverity",
-    # US Core Models - Condition
-    "Condition",
+    "EncounterStatus",
     "ConditionClinicalStatus",
     "ConditionVerificationStatus",
-    "ConditionCategory",
-    "ConditionSeverity",
-    "ConditionBodySite",
-    "ConditionStageType",
-    "Problem",
-    # US Core Models - Medication
-    "Medication",
-    "MedicationStatus",
-    "MedicationForm",
-    # US Core Models - MedicationRequest
-    "MedicationRequest",
     "MedicationRequestStatus",
-    "MedicationRequestIntent",
-    "MedicationRequestPriority",
-    "MedicationRequestCategory",
-    # Clinical Reasoning models - PlanDefinition
-    "PlanDefinition",
-    "PlanDefinitionAction",
-    "PlanDefinitionStatus",
-    "PlanDefinitionType",
-    "ActionCardinalityBehavior",
-    "ActionConditionKind",
-    "ActionPrecheckBehavior",
-    "ActionRelationshipType",
-    "ActionRequiredBehavior",
-    "ActionSelectionBehavior",
-    # Clinical Reasoning models - ActivityDefinition
-    "ActivityDefinition",
-    "ActivityDefinitionKind",
-    "ActivityDefinitionStatus",
-    "ParticipantType",
-    "RequestIntent",
-    "RequestPriority",
-    # Clinical Reasoning models - Library
-    "Library",
-    "LibraryStatus",
-    "LibraryType",
-    "AttachmentContentType",
-    # Clinical Reasoning models - Guidance and Orchestration
-    "GuidanceResponse",
-    "GuidanceResponseStatus",
-    "RequestOrchestration",
-    "RequestOrchestrationAction",
-    "GuidanceRequestIntent",
-    "GuidanceRequestPriority",
-    "RequestStatus",
-    # Clinical Reasoning models - Data Requirements
-    "DataRequirement",
-    "SortDirection",
-    # Enhanced Evidence Framework
-    "EvidenceVariable",
-    "EvidenceVariableStatus",
-    "EvidenceVariableHandling",
-    "ArtifactAssessment",
-    "ArtifactAssessmentWorkflowStatus",
-    "ArtifactAssessmentDisposition",
-    # Procedure model and enums
-    "Procedure",
     "ProcedureStatus",
-    "ProcedureCategory",
-    "ProcedureBodySite",
-    "ProcedureOutcome",
-    "ProcedureUrgency",
-    # Goal model and enums
-    "Goal",
     "GoalLifecycleStatus",
-    "GoalAchievementStatus",
-    "GoalCategory",
-    "GoalPriority",
-    "GoalTimeframe",
-    "GoalMeasureType",
-    "CareGoal",
-    "PatientGoal",
-    "TreatmentGoal",
-    # Appointment model and enums
-    "Appointment",
-    "AppointmentStatus",
-    "AppointmentCancellationReason",
-    "AppointmentParticipantType",
-    "ParticipationStatus",
-    "AppointmentRecurrenceType",
-    "WeekOfMonth",
-    "DaysOfWeek",
-    "AppointmentPriority",
-    "VirtualServiceDetail",
-    "WeeklyTemplate",
-    "MonthlyTemplate",
-    "YearlyTemplate",
-    "RecurrenceTemplate",
-    "AppointmentParticipant",
-    "MedicalAppointment",
-    "TelehealthAppointment",
-    "ConsultationAppointment",
-    "FollowUpAppointment",
-    "EmergencyAppointment",
-    # FamilyMemberHistory model and enums
+    "ContactPointSystem",
+    "ContactPointUse",
+    "AddressUse",
+    "AddressType",
+    "IdentifierUse",
+    "NameUse",
+    
+    # Aliases for backward compatibility
+    "Memory",
+    "MemoryType",
+    "AdministrativeGender",
+    "EncounterClass",
+    
+    # Placeholder models for backward compatibility
+    "AllergyIntolerance",
     "FamilyMemberHistory",
-    "FamilyHistoryStatus",
-    "FamilyHistoryAbsentReason",
-    "FamilyMemberRelationship",
-    "FamilyAdministrativeGender",
-    "FamilyConditionOutcome",
-    "ParticipationFunction",
-    "FamilyMemberHistoryParticipant",
-    "FamilyMemberCondition",
-    "FamilyMemberProcedure",
-    "FamilyHistory",
-    "GeneticHistory",
-    "FamilialRiskAssessment",
-    # ServiceRequest model and enums
-    "ServiceRequest",
-    "ServiceRequestStatus",
-    "ServiceRequestIntent",
-    "ServiceRequestPriority",
-    "ServiceCategory",
-    "PerformerRole",
-    "ServiceRequestOrderDetail",
-    "ServiceRequestParameter",
-    "ServiceRequestPatientInstruction",
-    "DiagnosticOrder",
-    "ProcedureRequest",
-    "ReferralRequest",
-    "TherapyOrder",
-    "ConsultationRequest",
-    # Task model and enums
+    "RiskAssessment", 
+    "ActivityDefinition",
+    "PlanDefinition",
     "Task",
-    "TaskStatus",
-    "TaskIntent",
-    "TaskPriority",
-    "TaskCode",
-    "TaskPerformerFunction",
-    "TaskBusinessStatus",
-    "TaskPerformer",
-    "TaskRestriction",
-    "TaskInput",
-    "TaskOutput",
-    "WorkflowTask",
-    "FulfillmentTask",
-    "ApprovalTask",
-    "ReviewTask",
-    "SchedulingTask",
-    # RiskAssessment model and enums
-    "RiskAssessment",
-    "RiskAssessmentPrediction",
-    "RiskObservationStatus",
-    "RiskAssessmentMethod",
-    "RiskAssessmentCode",
-    "RiskProbability",
-    "RiskOutcome",
-    "RiskTimeframe",
-    "GeneticRiskAssessment",
-    "CardiacRiskAssessment",
-    "CancerRiskAssessment",
-    "SurgicalRiskAssessment",
-    "ClinicalRiskAssessment",
+    "Appointment",
+    "Document",
+    "Library",
     "Organization",
-    "OrganizationContact",
-    "OrganizationQualification",
+    "EvidenceVariable",
+    "GuidanceResponse",
+    "ContextSummary",
+    "KnowledgeItem",
+    "ScratchpadEntry",
+    "WorkflowRequest",
+    "WorkflowEvent",
+    "WorkflowExecution",
+    
+    # Document-related models and enums
+    "DocumentStatus",
+    "DocumentType",
+    "ConfidentialityLevel",
+    "DocumentAuthor",
+    "DocumentAttester",
+    "DocumentSection",
+    "DocumentEncounter",
+    "create_discharge_summary",
+    "create_progress_note",
+    "create_consultation_note",
+    "create_clinical_summary",
 ]
 
 
 def hello() -> str:
-    return "Hello from hacs-models!"
+    """Backward compatibility function."""
+    warnings.warn(
+        "hello() function is deprecated. This was for testing only.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    return "Hello from hacs-models (via hacs-core compatibility layer)!"

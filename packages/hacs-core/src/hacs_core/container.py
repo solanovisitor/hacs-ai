@@ -1,14 +1,16 @@
 """
 HACS Dependency Injection Container
 
-This module provides a simple dependency injection container for managing
-HACS adapters and their dependencies.
+This module provides dependency injection container integration for managing
+HACS adapters and their dependencies using the hacs-infrastructure DI container.
 """
 
 import logging
-from typing import TypeVar
+import warnings
+from typing import TypeVar, Optional
 
 from .config import get_settings
+from .exceptions import AdapterNotFoundError as _AdapterNotFoundError
 from .protocols import (
     AgentFramework,
     BaseAdapter,
@@ -17,24 +19,63 @@ from .protocols import (
     VectorStore,
 )
 
+# Import the new DI container from hacs-infrastructure
+try:
+    from hacs_infrastructure import Container, get_container, Injectable
+    _INFRASTRUCTURE_AVAILABLE = True
+except ImportError:
+    _INFRASTRUCTURE_AVAILABLE = False
+    Container = None
+    get_container = None
+    Injectable = None
+
 T = TypeVar("T", bound=BaseAdapter)
 
 logger = logging.getLogger(__name__)
 
 
-class AdapterNotFoundError(Exception):
-    """Raised when a requested adapter is not found."""
+# DEPRECATED: Use hacs_core.AdapterNotFoundError instead
+class AdapterNotFoundError(_AdapterNotFoundError):
+    """
+    DEPRECATED: Raised when a requested adapter is not found.
+    
+    This class is deprecated. Import AdapterNotFoundError from hacs_core instead:
+    from hacs_core import AdapterNotFoundError
+    """
 
-    pass
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "AdapterNotFoundError from hacs_core.container is deprecated. "
+            "Import from hacs_core instead: from hacs_core import AdapterNotFoundError",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        super().__init__(*args, **kwargs)
 
 
 class AdapterRegistry:
-    """Registry for HACS adapters with dependency injection."""
+    """
+    DEPRECATED: Registry for HACS adapters with dependency injection.
+    
+    This class is deprecated in favor of the hacs-infrastructure Container.
+    Use hacs_infrastructure.Container for new code.
+    """
 
-    def __init__(self):
+    def __init__(self, container: Optional[Container] = None):
+        warnings.warn(
+            "AdapterRegistry is deprecated. Use hacs_infrastructure.Container instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         self._adapters: dict[type, BaseAdapter] = {}
         self._factories: dict[type, callable] = {}
         self._initialized = False
+        
+        # Use new DI container if available
+        if _INFRASTRUCTURE_AVAILABLE and container is None:
+            self._container = get_container()
+        else:
+            self._container = container
 
     def register_adapter(self, protocol: type[T], adapter: T) -> None:
         """Register an adapter instance for a protocol.
@@ -44,6 +85,10 @@ class AdapterRegistry:
             adapter: The adapter instance implementing the protocol
         """
         self._adapters[protocol] = adapter
+        
+        # Also register with new DI container if available
+        if _INFRASTRUCTURE_AVAILABLE and self._container:
+            self._container.register_instance(protocol, adapter)
 
     def register_factory(self, protocol: type[T], factory: callable) -> None:
         """Register a factory function for creating adapters.
@@ -53,6 +98,10 @@ class AdapterRegistry:
             factory: A callable that returns an adapter instance
         """
         self._factories[protocol] = factory
+        
+        # Also register with new DI container if available
+        if _INFRASTRUCTURE_AVAILABLE and self._container:
+            self._container.register_factory(protocol, factory)
 
     def get_adapter(self, protocol: type[T]) -> T:
         """Get an adapter for the specified protocol.
@@ -66,6 +115,14 @@ class AdapterRegistry:
         Raises:
             AdapterNotFoundError: If no adapter is registered for the protocol
         """
+        # Try new DI container first if available
+        if _INFRASTRUCTURE_AVAILABLE and self._container:
+            try:
+                return self._container.get(protocol)
+            except Exception:
+                # Fall back to legacy registry
+                pass
+        
         # Return existing adapter if available
         if protocol in self._adapters:
             return self._adapters[protocol]
@@ -182,7 +239,10 @@ class AdapterRegistry:
             try:
                 # from hacs_pinecone.adapter import create_pinecone_adapter
                 # self.register_factory(VectorStore, lambda: create_pinecone_adapter(**settings.get_pinecone_config()))
-                pass  # Placeholder - would implement when Pinecone adapter is ready
+                # TODO: Implement Pinecone vector store adapter
+                # from hacs_pinecone.adapter import create_pinecone_adapter
+                # self.register_factory(VectorStore, lambda: create_pinecone_adapter(**settings.get_pinecone_config()))
+                pass
             except ImportError:
                 pass
 
@@ -191,7 +251,10 @@ class AdapterRegistry:
             try:
                 # from hacs_qdrant.adapter import create_qdrant_adapter
                 # self.register_factory(VectorStore, lambda: create_qdrant_adapter(**settings.get_qdrant_config()))
-                pass  # Placeholder - would implement when Qdrant adapter is ready
+                # TODO: Implement Qdrant vector store adapter
+                # from hacs_qdrant.adapter import create_qdrant_adapter
+                # self.register_factory(VectorStore, lambda: create_qdrant_adapter(**settings.get_qdrant_config()))
+                pass
             except ImportError:
                 pass
 
@@ -235,35 +298,75 @@ class AdapterRegistry:
         self._initialized = False
 
 
-# Global adapter registry
+# DEPRECATED: Global adapter registry - DO NOT USE FOR NEW CODE
+# Use hacs_infrastructure.get_container() instead
 _registry: AdapterRegistry | None = None
 
 
 def get_registry() -> AdapterRegistry:
-    """Get the global adapter registry.
+    """
+    DEPRECATED: Get the global adapter registry.
+    
+    Use hacs_infrastructure.get_container() for new code.
 
     Returns:
         The global adapter registry instance
     """
+    warnings.warn(
+        "get_registry() is deprecated. Use hacs_infrastructure.get_container() instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
     global _registry
     if _registry is None:
-        _registry = AdapterRegistry()
+        # Create with new DI container if available
+        container = None
+        if _INFRASTRUCTURE_AVAILABLE:
+            container = get_container()
+        _registry = AdapterRegistry(container)
         _registry.initialize_default_adapters()
     return _registry
 
 
-def reset_registry() -> None:
-    """Reset the global adapter registry.
+def get_container_instance() -> Optional[Container]:
+    """
+    Get the new DI container instance.
+    
+    Returns:
+        Container instance if hacs-infrastructure is available, None otherwise
+    """
+    if _INFRASTRUCTURE_AVAILABLE:
+        return get_container()
+    return None
 
+
+def reset_registry() -> None:
+    """
+    DEPRECATED: Reset the global adapter registry.
+    
+    Use hacs_infrastructure.reset_container() for new code.
     Useful for testing or when configuration changes.
     """
+    warnings.warn(
+        "reset_registry() is deprecated. Use hacs_infrastructure.reset_container() instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
     global _registry
     if _registry:
         _registry.clear()
     _registry = None
+    
+    # Also reset new container if available
+    if _INFRASTRUCTURE_AVAILABLE:
+        try:
+            from hacs_infrastructure import reset_container
+            reset_container()
+        except ImportError:
+            pass
 
 
-# Convenience functions for getting adapters
+# Convenience functions for getting adapters (with DI container integration)
 def get_llm_provider(provider: str = "auto") -> LLMProvider:
     """Get an LLM provider adapter.
 
@@ -273,6 +376,15 @@ def get_llm_provider(provider: str = "auto") -> LLMProvider:
     Returns:
         LLM provider adapter
     """
+    # Try new DI container first
+    container = get_container_instance()
+    if container and provider == "auto":
+        try:
+            return container.get(LLMProvider)
+        except Exception:
+            # Fall back to legacy registry
+            pass
+    
     return get_registry().get_llm_provider(provider)
 
 
@@ -285,6 +397,15 @@ def get_vector_store(store: str = "auto") -> VectorStore:
     Returns:
         Vector store adapter
     """
+    # Try new DI container first
+    container = get_container_instance()
+    if container and store == "auto":
+        try:
+            return container.get(VectorStore)
+        except Exception:
+            # Fall back to legacy registry
+            pass
+    
     return get_registry().get_vector_store(store)
 
 
@@ -297,6 +418,15 @@ def get_agent_framework(framework: str = "auto") -> AgentFramework:
     Returns:
         Agent framework adapter
     """
+    # Try new DI container first
+    container = get_container_instance()
+    if container and framework == "auto":
+        try:
+            return container.get(AgentFramework)
+        except Exception:
+            # Fall back to legacy registry
+            pass
+    
     return get_registry().get_agent_framework(framework)
 
 
@@ -307,16 +437,26 @@ def get_persistence_provider() -> PersistenceProvider:
     Returns:
         The persistence provider adapter.
     """
+    # Try new DI container first  
+    container = get_container_instance()
+    if container:
+        try:
+            return container.get(PersistenceProvider)
+        except Exception:
+            # Fall back to legacy registry
+            pass
+    
     return get_registry().get_adapter(PersistenceProvider)
 
 
 __all__ = [
-    "AdapterRegistry",
-    "AdapterNotFoundError",
-    "get_registry",
-    "reset_registry",
+    "AdapterRegistry",  # Deprecated
+    "AdapterNotFoundError",  # Deprecated  
+    "get_registry",  # Deprecated
+    "reset_registry",  # Deprecated
+    "get_container_instance",  # New
     "get_llm_provider",
-    "get_vector_store",
+    "get_vector_store", 
     "get_agent_framework",
     "get_persistence_provider",
 ]

@@ -11,17 +11,17 @@ Features:
         - Create, validate, and manage Patient, Observation, Encounter records
         - Full support for HACS clinical data models
         - FHIR compliance checking and validation
-
-    🤖 AI Agent Operations
+    
+    🤖 AI Agent Operations  
         - Memory storage and retrieval for healthcare AI agents
         - Evidence collection and clinical reasoning support
         - Actor-based permissions and role management
-
+    
     🔄 Data Conversion & Validation
         - Convert between HACS and FHIR formats
         - Multi-level validation (basic, strict, fhir)
         - Batch processing for large datasets
-
+    
     📊 Rich Terminal Interface
         - Interactive resource builder with guided prompts
         - Beautiful tables and panels for data display
@@ -39,20 +39,20 @@ Commands:
 Usage Examples:
     # Create a new patient record
     hacs-cli create Patient --data '{"full_name": "John Doe", "birth_date": "1990-01-01"}'
-
+    
     # Validate a healthcare resource file
     hacs-cli validate patient.json --level strict
-
+    
     # Convert HACS format to FHIR
     hacs-cli convert patient.json fhir --output patient_fhir.json
-
+    
     # Interactive mode for guided resource creation
     hacs-cli interactive --resource Patient
-
+    
     # Store a memory for an AI agent
     hacs-cli memory store "Patient exhibits signs of hypertension" --type clinical
-
-    # Search for evidence related to a condition
+    
+    # Search for evidence related to a condition  
     hacs-cli search evidence --query "hypertension treatment"
 
 Requirements:
@@ -87,24 +87,27 @@ try:
 except ImportError:
     # Provide placeholder functions for graceful degradation
     def validate_fhir_compliance(resource: Any) -> list[str]:
-        """Placeholder FHIR validation when not available."""
+        """FHIR validation unavailable - install FHIR dependencies."""
+        # TODO: Implement proper FHIR validation or install required dependencies
         return ["FHIR validation not available - install hacs-core with FHIR extras"]
-
+    
     def to_fhir(resource: Any) -> dict[str, Any]:
-        """Placeholder FHIR conversion when not available."""
+        """FHIR conversion unavailable - install FHIR dependencies."""
+        # TODO: Implement proper FHIR conversion or install required dependencies
         return {"error": "FHIR conversion not available"}
-
+    
     def from_fhir(data: dict[str, Any]) -> Any:
-        """Placeholder FHIR conversion when not available."""
+        """FHIR conversion unavailable - install FHIR dependencies."""
+        # TODO: Implement proper FHIR conversion or install required dependencies
         return {"error": "FHIR conversion not available"}
-
+    
     FHIR_AVAILABLE = False
 from hacs_tools import (
-    create_evidence,
-    recall_memory,
-    search_evidence,
-    store_memory,
-    validate_before_create,
+    create_hacs_memory,
+    search_hacs_memories,
+    search_hacs_records,
+    vector_similarity_search,
+    validate_fhir_compliance,
 )
 from pydantic import ValidationError
 from rich.console import Console
@@ -255,7 +258,7 @@ def validate(
 
             if level in ["basic", "standard", "strict"]:
                 if resource_type in ["Patient", "Observation", "Encounter", "AgentMessage"]:
-                    result = validate_before_create(resource, actor)
+                    result = validate_hacs_resource(resource, actor)
                     validation_results.append(
                         {
                             "type": "business_rules",
@@ -622,7 +625,8 @@ def memory_store(
             progress.update(task, description="Storing memory...")
 
             # Store memory
-            memory_id = store_memory(memory_block, actor)
+            result = create_hacs_memory(memory_block, actor)
+            memory_id = result.data.get('id', 'unknown') if result.success else None
 
         console.print("[green]✅ Memory stored successfully![/green]")
         console.print(f"[blue]Memory ID:[/blue] {memory_id}")
@@ -663,7 +667,8 @@ def memory_recall(
             progress.add_task("Searching memories...", total=None)
 
             # Search memories
-            memories = recall_memory(memory_type or "all", query, actor)
+            result = search_hacs_memories(query, memory_type or "all", actor)
+            memories = result.data if result.success else []
 
             # Filter by importance if specified
             if min_importance > 0.0:
@@ -742,8 +747,13 @@ def evidence_create(
         ) as progress:
             progress.add_task("Creating evidence...", total=None)
 
-            # Create evidence
-            evidence = create_evidence(citation, content, actor)
+            # Create evidence directly
+            evidence = Evidence(
+                citation=citation,
+                content=content,
+                actor_id=actor.id if actor else "unknown",
+                evidence_type=EvidenceType.CLINICAL_NOTE
+            )
 
             # Update evidence properties
             if evidence_type:
@@ -806,7 +816,9 @@ def evidence_search(
             progress.add_task("Searching evidence...", total=None)
 
             # Search evidence
-            evidence_list = search_evidence(query, level, actor)
+            # Search for evidence using vector search
+            result = vector_similarity_search(query, actor)
+            evidence_list = result.data if result.success else []
 
             # Filter by confidence and quality
             filtered_evidence = []

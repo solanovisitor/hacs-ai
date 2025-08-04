@@ -27,7 +27,7 @@ class OpenAIClient:
 
     def __init__(
         self,
-        model: str = "gpt-4o",
+        model: str = "gpt-4.1-mini",
         api_key: str | None = None,
         base_url: str | None = None,
         organization: str | None = None,
@@ -185,7 +185,7 @@ class OpenAIStructuredGenerator:
     def __init__(
         self,
         client: OpenAIClient | None = None,
-        model: str = "gpt-4o",
+        model: str = "gpt-4.1-mini",
         temperature: float = 0.3,  # Lower temperature for structured output
         system_prompt: str | None = None,
     ):
