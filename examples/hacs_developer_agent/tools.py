@@ -559,57 +559,9 @@ def get_enhanced_hacs_tools():
         list_available_tools,
         get_tool_metadata
     ]
-            "jsonrpc": "2.0",
-            "method": "tools/call",
-            "params": {
-                "name": "create_clinical_template",
-                "arguments": {
-                    "template_type": template_type,
-                    "focus_area": focus_area,
-                    "complexity_level": complexity_level,
-                    "template_name": f"{focus_area}_{template_type}_{complexity_level}",
-                    "base_models": ["Patient", "Observation", "Encounter"]
-                }
-            },
-            "id": 2
-        }
 
-        response = await client.post(
-            f"{configuration.hacs_mcp_server_url}/",
-            json=payload,
-            headers={"Content-Type": "application/json"}
-        )
-        result = response.json()
 
-    if "result" in result and result["result"] is not None:
-        # Extract the CallToolResult content
-        mcp_result = result["result"]
-
-        # The content is in the 'content' field of CallToolResult
-        if isinstance(mcp_result, dict) and "content" in mcp_result:
-            content_items = mcp_result["content"]
-            if isinstance(content_items, list) and len(content_items) > 0:
-                # Get the first content item's text (which is our rich markdown)
-                first_content = content_items[0]
-                if isinstance(first_content, dict) and "text" in first_content:
-                    return first_content["text"]
-
-        # Fallback for older format or error response
-        if isinstance(mcp_result, dict):
-            if "template" in mcp_result:
-                template_data = mcp_result["template"]
-                return f"Created clinical template: {template_data.get('name', 'Unknown')}"
-            elif "message" in mcp_result:
-                return mcp_result["message"]
-            elif "_meta" in mcp_result:
-                # Check if there's rich content in _meta
-                meta_data = mcp_result["_meta"]
-                if isinstance(meta_data, dict) and "formatted" in meta_data and meta_data["formatted"]:
-                    # This indicates rich content was generated but may be in a different location
-                    return (f"Created clinical template for {focus_area} {template_type} "
-                           f"with detailed structure")
-
-    return f"Created clinical template for {focus_area} {template_type} (basic confirmation)"
+# Enhanced HACS tools are now available via the main functions above
 
 
 async def create_model_stack(
@@ -1028,7 +980,7 @@ async def update_resource(
                 "arguments": {
                     "resource_type": resource_type,
                     "resource_id": resource_id,
-                    "data": resource_data
+                    "updates": resource_data
                 }
             },
             "id": 1
@@ -2620,24 +2572,7 @@ def get_available_tools(config: Optional['Configuration'] = None) -> List[Any]:
     from langchain_core.tools import tool
     
     # File management tools
-    @tool
-    def write_file(file_path: str, content: str) -> str:
-        """Write content to a file in the agent's workspace."""
-        # This is a mock implementation for agent workspace
-        # In real usage, this would integrate with the agent's file system
-        return f"✅ File written to {file_path}"
-    
-    @tool 
-    def read_file(file_path: str) -> str:
-        """Read content from a file in the agent's workspace."""
-        # This is a mock implementation for agent workspace
-        return f"File content from {file_path}"
-    
-    @tool
-    def edit_file(file_path: str, old_content: str, new_content: str) -> str:
-        """Edit a file by replacing old_content with new_content."""
-        # This is a mock implementation for agent workspace
-        return f"✅ File {file_path} edited successfully"
+# File system tools are implemented in agent.py with proper file I/O operations
     
     @tool
     def write_todos(todos: List[Dict[str, str]]) -> str:
@@ -2646,10 +2581,7 @@ def get_available_tools(config: Optional['Configuration'] = None) -> List[Any]:
     
     # All HACS MCP tools (these will make HTTP calls to MCP server)
     tools = [
-        # File and planning tools
-        write_file,
-        read_file, 
-        edit_file,
+        # Planning tools (file tools are implemented in agent.py)
         write_todos,
         
         # HACS MCP tools

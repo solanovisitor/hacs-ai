@@ -25,19 +25,9 @@ import logging
 from typing import Any, Dict, List
 
 from hacs_core.results import ResourceStackResult, ResourceTemplateResult
+from hacs_core.tool_protocols import healthcare_tool, ToolCategory
 
 logger = logging.getLogger(__name__)
-
-# Import langchain tool decorator with graceful fallback
-try:
-    from langchain_core.tools import tool
-    _has_langchain = True
-except ImportError:
-    _has_langchain = False
-    def tool(func):
-        """Placeholder tool decorator when langchain is not available."""
-        func._is_tool = True
-        return func
 
 # Import tool descriptions
 from .descriptions import (
@@ -46,8 +36,13 @@ from .descriptions import (
     OPTIMIZE_RESOURCE_FOR_LLM_DESCRIPTION,
 )
 
-
-@tool
+@healthcare_tool(
+    name="create_resource_stack",
+    description="Create a stacked healthcare resource by layering multiple resources or views",
+    category=ToolCategory.DEVELOPMENT_TOOLS,
+    healthcare_domains=['resource_management'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def create_resource_stack(
     base_resource: str,
     extensions: List[Dict[str, Any]],
@@ -232,8 +227,13 @@ def create_resource_stack(
             message=f"Failed to create healthcare resource stack: {str(e)}"
         )
 
-
-@tool
+@healthcare_tool(
+    name="create_clinical_template",
+    description="Generate pre-configured clinical templates for common healthcare scenarios",
+    category=ToolCategory.DEVELOPMENT_TOOLS,
+    healthcare_domains=['clinical_data'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def create_clinical_template(
     template_type: str,
     focus_area: str,
@@ -567,8 +567,13 @@ def create_clinical_template(
             message=f"Failed to create clinical template: {str(e)}"
         )
 
-
-@tool
+@healthcare_tool(
+    name="optimize_resource_for_llm",
+    description="Optimize a HACS healthcare resource for LLM interactions by intelligent field selection",
+    category=ToolCategory.DEVELOPMENT_TOOLS,
+    healthcare_domains=['resource_management'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def optimize_resource_for_llm(
     resource_name: str,
     optimization_goal: str = "token_efficiency",
@@ -787,7 +792,6 @@ def optimize_resource_for_llm(
             message=f"Failed to optimize resource: {str(e)}"
         )
 
-
 # === UTILITY FUNCTIONS ===
 
 def _count_clinical_fields(fields: List[str], resource_type: str) -> int:
@@ -802,7 +806,6 @@ def _count_clinical_fields(fields: List[str], resource_type: str) -> int:
         if any(pattern in field.lower() for pattern in clinical_patterns):
             count += 1
     return count
-
 
 def _generate_clinical_use_cases(base_resource: str, dependencies: List[str], stack_name: str) -> List[str]:
     """Generate clinical use cases for a resource stack."""
@@ -825,7 +828,6 @@ def _generate_clinical_use_cases(base_resource: str, dependencies: List[str], st
     use_cases.append(f"Integrated healthcare workflow using {stack_name}")
     
     return use_cases
-
 
 __all__ = [
     "create_resource_stack",

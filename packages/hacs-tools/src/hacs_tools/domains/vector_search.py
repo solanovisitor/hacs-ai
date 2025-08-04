@@ -26,19 +26,9 @@ from typing import Any, Dict, List, Optional
 
 from hacs_core import Actor
 from hacs_core.results import VectorStoreResult, HACSResult
+from hacs_core.tool_protocols import healthcare_tool, ToolCategory
 
 logger = logging.getLogger(__name__)
-
-# Import langchain tool decorator with graceful fallback
-try:
-    from langchain_core.tools import tool
-    _has_langchain = True
-except ImportError:
-    _has_langchain = False
-    def tool(func):
-        """Placeholder tool decorator when langchain is not available."""
-        func._is_tool = True
-        return func
 
 # Import tool descriptions
 from .descriptions import (
@@ -49,8 +39,13 @@ from .descriptions import (
     OPTIMIZE_VECTOR_COLLECTION_DESCRIPTION,
 )
 
-
-@tool
+@healthcare_tool(
+    name="store_embedding",
+    description="Store healthcare content as vector embeddings for semantic search",
+    category=ToolCategory.VECTOR_SEARCH,
+    healthcare_domains=['general_healthcare'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def store_embedding(
     actor_name: str,
     content: str,
@@ -131,8 +126,13 @@ def store_embedding(
             message=f"Failed to store healthcare embedding: {str(e)}"
         )
 
-
-@tool
+@healthcare_tool(
+    name="vector_similarity_search",
+    description="Perform semantic similarity search on healthcare vector embeddings",
+    category=ToolCategory.VECTOR_SEARCH,
+    healthcare_domains=['data_search'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def vector_similarity_search(
     actor_name: str,
     query: str,
@@ -249,8 +249,13 @@ def vector_similarity_search(
             message=f"Failed to perform healthcare vector search: {str(e)}"
         )
 
-
-@tool
+@healthcare_tool(
+    name="vector_hybrid_search",
+    description="Perform hybrid search combining keyword and semantic vector search",
+    category=ToolCategory.VECTOR_SEARCH,
+    healthcare_domains=['data_search'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def vector_hybrid_search(
     actor_name: str,
     query: str,
@@ -357,8 +362,13 @@ def vector_hybrid_search(
             message=f"Failed to perform hybrid healthcare search: {str(e)}"
         )
 
-
-@tool
+@healthcare_tool(
+    name="get_vector_collection_stats",
+    description="Get statistics and metadata for a healthcare vector collection",
+    category=ToolCategory.VECTOR_SEARCH,
+    healthcare_domains=['general_healthcare'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def get_vector_collection_stats(
     actor_name: str,
     collection_name: str = "healthcare_general",
@@ -442,8 +452,13 @@ def get_vector_collection_stats(
             message=f"Failed to get collection statistics: {str(e)}"
         )
 
-
-@tool
+@healthcare_tool(
+    name="optimize_vector_collection",
+    description="Optimize vector collection for improved clinical search performance",
+    category=ToolCategory.VECTOR_SEARCH,
+    healthcare_domains=['general_healthcare'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def optimize_vector_collection(
     actor_name: str,
     collection_name: str,
@@ -503,7 +518,6 @@ def optimize_vector_collection(
             message=f"Failed to optimize vector collection: {str(e)}",
             error=str(e)
         )
-
 
 __all__ = [
     "store_embedding",

@@ -24,22 +24,17 @@ from typing import Any, Dict, List, Optional, Union
 
 from hacs_core import Actor
 from hacs_core.results import HACSResult
+from hacs_core.tool_protocols import healthcare_tool, ToolCategory
 
 logger = logging.getLogger(__name__)
 
-# Import langchain tool decorator with graceful fallback
-try:
-    from langchain_core.tools import tool
-    _has_langchain = True
-except ImportError:
-    _has_langchain = False
-    def tool(func):
-        """Placeholder tool decorator when langchain is not available."""
-        func._is_tool = True
-        return func
-
-
-@tool
+@healthcare_tool(
+    name="deploy_healthcare_ai_model",
+    description="Deploy AI/ML models for healthcare applications with clinical validation",
+    category=ToolCategory.AI_INTEGRATIONS,
+    healthcare_domains=['general_healthcare'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def deploy_healthcare_ai_model(
     actor_name: str,
     model_name: str,
@@ -136,8 +131,13 @@ def deploy_healthcare_ai_model(
             actor_id=actor_name
         )
 
-
-@tool
+@healthcare_tool(
+    name="run_clinical_inference",
+    description="Run AI inference on healthcare data for clinical decision support",
+    category=ToolCategory.AI_INTEGRATIONS,
+    healthcare_domains=['clinical_data'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def run_clinical_inference(
     actor_name: str,
     model_name: str,
@@ -233,8 +233,13 @@ def run_clinical_inference(
             actor_id=actor_name
         )
 
-
-@tool
+@healthcare_tool(
+    name="preprocess_medical_data",
+    description="Preprocess medical data for AI/ML applications with healthcare-specific transformations",
+    category=ToolCategory.AI_INTEGRATIONS,
+    healthcare_domains=['general_healthcare'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def preprocess_medical_data(
     actor_name: str,
     raw_data: Dict[str, Any],
@@ -337,7 +342,6 @@ def preprocess_medical_data(
             error=str(e),
             actor_id=actor_name
         )
-
 
 __all__ = [
     "deploy_healthcare_ai_model",

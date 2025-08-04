@@ -32,19 +32,9 @@ from hacs_core.results import (
     DataQueryResult,
     HACSResult
 )
+from hacs_core.tool_protocols import healthcare_tool, ToolCategory
 
 logger = logging.getLogger(__name__)
-
-# Import langchain tool decorator with graceful fallback
-try:
-    from langchain_core.tools import tool
-    _has_langchain = True
-except ImportError:
-    _has_langchain = False
-    def tool(func):
-        """Placeholder tool decorator when langchain is not available."""
-        func._is_tool = True
-        return func
 
 # Import tool descriptions
 from .descriptions import (
@@ -54,8 +44,13 @@ from .descriptions import (
     VALIDATE_CLINICAL_PROTOCOL_DESCRIPTION,
 )
 
-
-@tool
+@healthcare_tool(
+    name="execute_clinical_workflow",
+    description="Execute a clinical workflow using FHIR PlanDefinition specifications",
+    category=ToolCategory.CLINICAL_WORKFLOWS,
+    healthcare_domains=['clinical_data', 'clinical_workflows'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def execute_clinical_workflow(
     actor_name: str,
     plan_definition_id: str,
@@ -171,8 +166,13 @@ def execute_clinical_workflow(
             execution_duration_ms=0.0
         )
 
-
-@tool
+@healthcare_tool(
+    name="get_clinical_guidance",
+    description="Generate AI-powered clinical decision support and guidance",
+    category=ToolCategory.CLINICAL_WORKFLOWS,
+    healthcare_domains=['clinical_data'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def get_clinical_guidance(
     actor_name: str,
     patient_id: str,
@@ -289,8 +289,13 @@ def get_clinical_guidance(
             urgency_level=urgency_level
         )
 
-
-@tool
+@healthcare_tool(
+    name="query_with_datarequirement",
+    description="Execute structured healthcare data queries using FHIR DataRequirement specifications",
+    category=ToolCategory.CLINICAL_WORKFLOWS,
+    healthcare_domains=['general_healthcare'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def query_with_datarequirement(
     actor_name: str,
     data_requirement_spec: Dict[str, Any],
@@ -383,8 +388,13 @@ def query_with_datarequirement(
             execution_time_ms=0.0
         )
 
-
-@tool
+@healthcare_tool(
+    name="validate_clinical_protocol",
+    description="Validate clinical protocols and care pathways for compliance and completeness",
+    category=ToolCategory.CLINICAL_WORKFLOWS,
+    healthcare_domains=['clinical_data'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def validate_clinical_protocol(
     actor_name: str,
     protocol_data: Dict[str, Any],
@@ -452,7 +462,6 @@ def validate_clinical_protocol(
             message=f"Failed to validate clinical protocol: {str(e)}",
             error=str(e)
         )
-
 
 __all__ = [
     "execute_clinical_workflow",

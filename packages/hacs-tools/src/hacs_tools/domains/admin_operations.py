@@ -16,22 +16,32 @@ from langchain_core.tools import tool
 
 from hacs_core.actor import Actor
 from hacs_core.results import HACSResult
+from hacs_core.tool_protocols import healthcare_tool, ToolCategory
 
 # Gracefully handle missing database dependencies
 try:
-    from hacs_persistence import (
-        HACSDatabaseMigration, 
-        run_migration,
-        get_migration_status,
-        HACSSchemaManager,
-        PostgreSQLAdapter,
-        create_postgres_adapter
-    )
+    # Use lazy imports to avoid circular dependencies
+    import hacs_persistence
     PERSISTENCE_AVAILABLE = True
+    
+    def get_persistence_components():
+        """Lazy loader for persistence components."""
+        return {
+            'HACSDatabaseMigration': hacs_persistence.HACSDatabaseMigration,
+            'run_migration': hacs_persistence.run_migration,
+            'get_migration_status': hacs_persistence.get_migration_status,
+            'HACSSchemaManager': hacs_persistence.HACSSchemaManager,
+            'PostgreSQLAdapter': hacs_persistence.PostgreSQLAdapter,
+            'create_postgres_adapter': hacs_persistence.create_postgres_adapter
+        }
+        
 except ImportError as e:
     PERSISTENCE_AVAILABLE = False
     _persistence_error = str(e)
-
+    
+    def get_persistence_components():
+        """Fallback when persistence not available."""
+        return {}
 
 def _check_admin_permission(actor: Optional[Actor], operation: str) -> bool:
     """Check if actor has permission for admin operations."""
@@ -48,7 +58,6 @@ def _check_admin_permission(actor: Optional[Actor], operation: str) -> bool:
     perms = required_permissions.get(operation, ["admin:*"])
     return any(actor.has_permission(perm) for perm in perms)
 
-
 def _check_persistence_available() -> HACSResult:
     """Check if persistence layer is available."""
     if not PERSISTENCE_AVAILABLE:
@@ -58,8 +67,13 @@ def _check_persistence_available() -> HACSResult:
         )
     return HACSResult(success=True)
 
-
-@tool
+@healthcare_tool(
+    name="run_database_migration",
+    description="Run HACS database migration to set up or update database schemas",
+    category=ToolCategory.ADMIN_OPERATIONS,
+    healthcare_domains=['general_healthcare'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def run_database_migration(
     database_url: Optional[str] = None,
     force_migration: bool = False,
@@ -101,6 +115,14 @@ def run_database_migration(
                 )
         
         # Run migration asynchronously
+        components = get_persistence_components()
+        run_migration = components.get('run_migration')
+        if not run_migration:
+            return HACSResult(
+                success=False,
+                message="Database migration components not available",
+                error="hacs_persistence package not installed"
+            )
         success = asyncio.run(run_migration(database_url))
         
         if success:
@@ -124,8 +146,13 @@ def run_database_migration(
             actor_id=actor.id if actor else "system"
         )
 
-
-@tool 
+@healthcare_tool(
+    name="check_migration_status",
+    description="Check the current status of HACS database migrations",
+    category=ToolCategory.ADMIN_OPERATIONS,
+    healthcare_domains=['general_healthcare'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+) 
 def check_migration_status(
     database_url: Optional[str] = None,
     actor: Optional[Actor] = None
@@ -181,8 +208,13 @@ def check_migration_status(
             actor_id=actor.id if actor else "system"
         )
 
-
-@tool
+@healthcare_tool(
+    name="describe_database_schema",
+    description="Get detailed information about HACS database schemas and tables",
+    category=ToolCategory.ADMIN_OPERATIONS,
+    healthcare_domains=['general_healthcare'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def describe_database_schema(
     schema_name: str = "hacs_core",
     actor: Optional[Actor] = None
@@ -213,6 +245,14 @@ def describe_database_schema(
         )
     
     try:
+        components = get_persistence_components()
+        HACSSchemaManager = components.get('HACSSchemaManager')
+        if not HACSSchemaManager:
+            return HACSResult(
+                success=False,
+                message="Schema management components not available",
+                error="hacs_persistence package not installed"  
+            )
         schema_manager = HACSSchemaManager(schema_name)
         
         # Get available resource schemas
@@ -245,8 +285,13 @@ def describe_database_schema(
             actor_id=actor.id if actor else "system"
         )
 
-
-@tool
+@healthcare_tool(
+    name="get_table_structure",
+    description="Get detailed table structure for a specific HACS resource type",
+    category=ToolCategory.ADMIN_OPERATIONS,
+    healthcare_domains=['general_healthcare'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def get_table_structure(
     resource_type: str,
     schema_name: str = "hacs_core",
@@ -279,6 +324,14 @@ def get_table_structure(
         )
     
     try:
+        components = get_persistence_components()
+        HACSSchemaManager = components.get('HACSSchemaManager')
+        if not HACSSchemaManager:
+            return HACSResult(
+                success=False,
+                message="Schema management components not available",
+                error="hacs_persistence package not installed"  
+            )
         schema_manager = HACSSchemaManager(schema_name)
         
         if resource_type not in schema_manager.resource_schemas:
@@ -311,8 +364,13 @@ def get_table_structure(
             actor_id=actor.id if actor else "system"
         )
 
-
-@tool
+@healthcare_tool(
+    name="test_database_connection",
+    description="Test connection to the HACS database and verify accessibility",
+    category=ToolCategory.ADMIN_OPERATIONS,
+    healthcare_domains=['general_healthcare'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def test_database_connection(
     database_url: Optional[str] = None,
     actor: Optional[Actor] = None
@@ -374,7 +432,6 @@ def test_database_connection(
             error=f"Database connection test failed: {str(e)}",
             actor_id=actor.id if actor else "system"
         )
-
 
 # Export admin tools - conditionally based on availability
 if PERSISTENCE_AVAILABLE:

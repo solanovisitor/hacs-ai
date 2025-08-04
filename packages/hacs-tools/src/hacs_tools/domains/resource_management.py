@@ -27,19 +27,9 @@ from typing import Any, Dict, List, Optional
 
 from hacs_core import Actor
 from hacs_core.results import HACSResult, ResourceSchemaResult
+from hacs_core.tool_protocols import healthcare_tool, ToolCategory
 
 logger = logging.getLogger(__name__)
-
-# Import langchain tool decorator with graceful fallback
-try:
-    from langchain_core.tools import tool
-    _has_langchain = True
-except ImportError:
-    _has_langchain = False
-    def tool(func):
-        """Placeholder tool decorator when langchain is not available."""
-        func._is_tool = True
-        return func
 
 # Import tool descriptions
 from .descriptions import (
@@ -51,7 +41,13 @@ from .descriptions import (
 )
 
 
-@tool
+@healthcare_tool(
+    name="create_hacs_record",
+    description="Create a new healthcare resource record with FHIR compliance validation",
+    category=ToolCategory.RESOURCE_MANAGEMENT,
+    healthcare_domains=["clinical_data", "resource_management"],
+    fhir_resources=["Patient", "Observation", "Encounter", "Condition", "MedicationRequest", "Medication", "Procedure", "Goal"]
+)
 def create_hacs_record(
     actor_name: str,
     resource_type: str,
@@ -167,7 +163,13 @@ def create_hacs_record(
         )
 
 
-@tool
+@healthcare_tool(
+    name="get_hacs_record",
+    description="Retrieve a healthcare resource record by ID with audit trail support",
+    category=ToolCategory.RESOURCE_MANAGEMENT,
+    healthcare_domains=["clinical_data", "resource_retrieval"],
+    fhir_resources=["Patient", "Observation", "Encounter", "Condition", "MedicationRequest", "Medication", "Procedure", "Goal"]
+)
 def get_hacs_record(
     actor_name: str,
     resource_type: str,
@@ -248,7 +250,13 @@ def get_hacs_record(
         )
 
 
-@tool
+@healthcare_tool(
+    name="update_hacs_record",
+    description="Update an existing healthcare resource record with validation",
+    category=ToolCategory.RESOURCE_MANAGEMENT,
+    healthcare_domains=["clinical_data", "resource_management"],
+    fhir_resources=["Patient", "Observation", "Encounter", "Condition", "MedicationRequest", "Medication", "Procedure", "Goal"]
+)
 def update_hacs_record(
     actor_name: str,
     resource_type: str,
@@ -326,7 +334,13 @@ def update_hacs_record(
         )
 
 
-@tool
+@healthcare_tool(
+    name="delete_hacs_record",
+    description="Delete a healthcare resource record with audit trail preservation",
+    category=ToolCategory.RESOURCE_MANAGEMENT,
+    healthcare_domains=["clinical_data", "resource_management"],
+    fhir_resources=["Patient", "Observation", "Encounter", "Condition", "MedicationRequest", "Medication", "Procedure", "Goal"]
+)
 def delete_hacs_record(
     actor_name: str,
     resource_type: str,
@@ -397,7 +411,13 @@ def delete_hacs_record(
         )
 
 
-@tool
+@healthcare_tool(
+    name="search_hacs_records",
+    description="Search healthcare resource records with advanced filtering capabilities",
+    category=ToolCategory.RESOURCE_MANAGEMENT,
+    healthcare_domains=["clinical_data", "resource_search"],
+    fhir_resources=["Patient", "Observation", "Encounter", "Condition", "MedicationRequest", "Medication", "Procedure", "Goal"]
+)
 def search_hacs_records(
     actor_name: str,
     resource_type: str,

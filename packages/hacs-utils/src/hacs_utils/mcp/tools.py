@@ -161,8 +161,11 @@ hacs_tools_module = None
 if not HACS_REGISTRY_AVAILABLE:
     # Strategy 1: Try importing from main tools module (with compatibility shims in place)
     try:
-        from hacs_tools.tools import ALL_HACS_TOOLS
-        from hacs_tools import tools as hacs_tools_module
+        # Lazy import to avoid circular dependencies
+        import hacs_tools.tools
+        import hacs_tools
+        ALL_HACS_TOOLS = hacs_tools.tools.ALL_HACS_TOOLS
+        hacs_tools_module = hacs_tools.tools
         HACS_TOOLS_AVAILABLE = True
         logger.info(f"✅ HACS tools loaded successfully - {len(ALL_HACS_TOOLS)} tools available")
     except ImportError as e:
@@ -171,9 +174,17 @@ if not HACS_REGISTRY_AVAILABLE:
         # Strategy 2: Try importing directly from domain modules
         try:
             # Import tools directly from domain modules
-            from hacs_tools.domains import resource_management, clinical_workflows, schema_discovery
-            from hacs_tools.domains import memory_operations, vector_search, development_tools
-            from hacs_tools.domains import fhir_integration, healthcare_analytics, ai_integrations, admin_operations
+            # Lazy imports to avoid circular dependencies
+            import hacs_tools.domains.resource_management as resource_management
+            import hacs_tools.domains.clinical_workflows as clinical_workflows
+            import hacs_tools.domains.schema_discovery as schema_discovery
+            import hacs_tools.domains.memory_operations as memory_operations
+            import hacs_tools.domains.vector_search as vector_search
+            import hacs_tools.domains.development_tools as development_tools
+            import hacs_tools.domains.fhir_integration as fhir_integration
+            import hacs_tools.domains.healthcare_analytics as healthcare_analytics
+            import hacs_tools.domains.ai_integrations as ai_integrations
+            import hacs_tools.domains.admin_operations as admin_operations
 
             # Collect all tools from domains
             domain_modules = [
@@ -465,12 +476,53 @@ async def _execute_tool_fallback(
             valid_params = {k: v for k, v in execution_params.items() if k in sig.parameters}
             logger.info(f"Retrying {tool_name} with reduced params: {list(valid_params.keys())}")
 
-            if asyncio.iscoroutinefunction(tool_func):
-                result = await tool_func(**valid_params)
-            else:
-                result = tool_func(**valid_params)
+            try:
+                if asyncio.iscoroutinefunction(tool_func):
+                    result = await tool_func(**valid_params)
+                else:
+                    result = tool_func(**valid_params)
+            except Exception as retry_error:
+                logger.error(f"Retry also failed for {tool_name}: {retry_error}")
+                return _create_error_result(
+                    tool_name, 
+                    f"Parameter mismatch: {str(e)}. Retry with valid parameters also failed: {str(retry_error)}"
+                )
         else:
-            raise
+            return _create_error_result(
+                tool_name,
+                f"Invalid parameters for {tool_name}: {str(e)}"
+            )
+    except ValueError as e:
+        logger.error(f"Value error in {tool_name}: {e}")
+        return _create_error_result(
+            tool_name,
+            f"Invalid input data: {str(e)}"
+        )
+    except PermissionError as e:
+        logger.error(f"Permission denied for {tool_name}: {e}")
+        return _create_error_result(
+            tool_name,
+            f"Access denied: {str(e)}"
+        )
+    except ConnectionError as e:
+        logger.error(f"Connection error in {tool_name}: {e}")
+        return _create_error_result(
+            tool_name,
+            f"Database or service connection failed: {str(e)}"
+        )
+    except TimeoutError as e:
+        logger.error(f"Timeout in {tool_name}: {e}")
+        return _create_error_result(
+            tool_name,
+            f"Operation timed out: {str(e)}"
+        )
+    except Exception as e:
+        # Catch all other errors
+        logger.error(f"Unexpected error in {tool_name}: {e}", exc_info=True)
+        return _create_error_result(
+            tool_name,
+            f"Unexpected error: {str(e)}"
+        )
 
     # Log execution time
     execution_time = (datetime.now() - start_time).total_seconds()

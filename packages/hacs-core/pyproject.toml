@@ -5,10 +5,10 @@ description = "Core models and base classes for Healthcare Agent Communication S
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
-    { name = "HACS Contributors", email = "contributors@hacs.dev" }
+    { name = "Solano Nocetti", email = "solanovisitor@gmail.com" }
 ]
 maintainers = [
-    { name = "HACS Team", email = "support@hacs.dev" }
+    { name = "Solano Nocetti", email = "solanovisitor@gmail.com" }
 ]
 keywords = [
     "healthcare",
@@ -35,17 +35,18 @@ classifiers = [
 ]
 requires-python = ">=3.11"
 dependencies = [
-    "pydantic>=2.7.0,<3.0.0",
+    "pydantic>=2.11.7,<3.0.0",
     "PyJWT>=2.8.0",
+    "hacs-infrastructure>=0.1.0",
+    "hacs-models>=0.1.0",
 ]
 
 [project.urls]
-Homepage = "https://github.com/solana-hacs/hacs"
-Documentation = "https://docs.hacs.dev"
+Homepage = "https://github.com/solanovisitor/hacs-ai"
+Documentation = "https://github.com/solanovisitor/hacs-ai/blob/main/docs/"
 Repository = "https://github.com/solanovisitor/hacs-ai"
 Issues = "https://github.com/solanovisitor/hacs-ai/issues"
-Changelog = "https://github.com/solana-hacs/hacs/blob/main/CHANGELOG.md"
-
+Changelog = "https://github.com/solanovisitor/hacs-ai/blob/main/CHANGELOG.md"
 [project.optional-dependencies]
 auth = [
     "cryptography>=41.0.0",  # For additional JWT features

@@ -157,26 +157,56 @@ class HybridMCPManager:
     
     def create_http_tool_wrapper(self, tool_def: Dict[str, Any]) -> BaseTool:
         """Create a LangChain tool wrapper for HTTP-based tool execution."""
+        from langchain_core.tools import StructuredTool
+        from pydantic import BaseModel, Field, create_model
         
-        @tool
-        async def http_tool(*args, **kwargs) -> str:
+        # Get tool metadata
+        tool_name = tool_def.get('name', 'unknown')
+        tool_description = tool_def.get('description', 'No description')
+        input_schema = tool_def.get('inputSchema', {})
+        
+        # Create Pydantic input model from MCP schema
+        fields = {}
+        properties = input_schema.get('properties', {})
+        required_fields = set(input_schema.get('required', []))
+        
+        for field_name, field_schema in properties.items():
+            field_type = str  # Default to string
+            field_description = field_schema.get('description', '')
+            field_default = ...  # Required by default
+            
+            # Map JSON schema types to Python types
+            if field_schema.get('type') == 'object':
+                field_type = dict
+            elif field_schema.get('type') == 'boolean':
+                field_type = bool
+            elif field_schema.get('type') == 'integer':
+                field_type = int
+            elif field_schema.get('type') == 'array':
+                field_type = list
+            
+            # Set default if not required
+            if field_name not in required_fields and 'default' in field_schema:
+                field_default = field_schema['default']
+            elif field_name not in required_fields:
+                field_default = None
+                
+            fields[field_name] = (field_type, Field(default=field_default, description=field_description))
+        
+        # Create dynamic Pydantic model
+        InputModel = create_model(f"{tool_name}Input", **fields)
+        
+        async def execute_tool(**kwargs) -> str:
             """Execute tool via HTTP fallback."""
             import time
             from datetime import datetime
             
             start_time = time.time()
             timestamp = datetime.now().isoformat()
-            tool_name = tool_def.get('name', 'unknown')
             
             try:
-                # Prepare tool execution request
-                tool_input = {}
-                
-                # Extract parameters from kwargs or args
-                if kwargs:
-                    tool_input.update(kwargs)
-                elif args and len(args) == 1 and isinstance(args[0], dict):
-                    tool_input.update(args[0])
+                # Use kwargs directly as tool parameters
+                tool_params = kwargs
                 
                 # Execute via HTTP
                 async with httpx.AsyncClient(timeout=30.0) as client:
@@ -187,7 +217,7 @@ class HybridMCPManager:
                             "method": "tools/call",
                             "params": {
                                 "name": tool_name,
-                                "arguments": tool_input
+                                "arguments": tool_params
                             },
                             "id": 2
                         },
@@ -225,11 +255,14 @@ class HybridMCPManager:
                 execution_time = (time.time() - start_time) * 1000
                 return f"❌ Tool execution failed: {str(e)} (time: {execution_time:.1f}ms)"
         
-        # Set tool metadata
-        http_tool.name = tool_def.get('name', 'unknown')
-        http_tool.description = f"HACS Tool: {tool_def.get('description', 'No description')}"
-        
-        return http_tool
+        # Create StructuredTool with proper schema and async support
+        return StructuredTool(
+            name=tool_name,
+            description=f"HACS Tool: {tool_description}",
+            args_schema=InputModel,
+            func=execute_tool,
+            coroutine=execute_tool  # Specify async function
+        )
     
     async def get_tools(self) -> List[BaseTool]:
         """Get tools via MCP adapters or HTTP fallback."""
@@ -329,7 +362,15 @@ def edit_file(file_path: str, search_text: str, replace_text: str) -> str:
 async def delegate_to_subagent(subagent_name: str, task: str, context: Optional[Dict] = None) -> str:
     """Delegate a task to a specialized HACS subagent."""
     try:
-        from subagents import get_subagent_executor
+        # Load subagents module explicitly
+        import os
+        import importlib.util
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        subagents_path = os.path.join(current_dir, "subagents.py")
+        spec = importlib.util.spec_from_file_location("subagents", subagents_path)
+        subagents_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(subagents_module)
+        get_subagent_executor = subagents_module.get_subagent_executor
         
         # Get subagent executor
         executor = await get_subagent_executor(subagent_name)
@@ -550,7 +591,14 @@ async def test_agent():
         print("✅ HACS agent created successfully")
         
         # Test MCP connection
-        from subagents import test_subagent_integration
+        import os
+        import importlib.util
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        subagents_path = os.path.join(current_dir, "subagents.py")
+        spec = importlib.util.spec_from_file_location("subagents", subagents_path)
+        subagents_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(subagents_module)
+        test_subagent_integration = subagents_module.test_subagent_integration
         result = await test_subagent_integration()
         print(f"🔧 Subagent integration: {'✅ Working' if result else '❌ Failed'}")
         

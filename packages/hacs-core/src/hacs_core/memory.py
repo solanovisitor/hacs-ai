@@ -21,6 +21,16 @@ class MemoryBlock(BaseResource):
     - Episodic: Specific events and experiences
     - Procedural: Skills, habits, and how-to knowledge
     - Executive: High-level goals, plans, and decision-making context
+    - Semantic: General knowledge and facts
+
+    New implementations should use structured fields:
+    - tags: for categorization
+    - confidence_score: for accuracy rating  
+    - context_metadata: for structured context data
+    - importance_score: for memory prioritization
+    
+    The deprecated 'metadata' field is maintained for backward compatibility
+    but will be removed in a future version.
     """
 
     resource_type: Literal["MemoryBlock"] = Field(
@@ -47,16 +57,15 @@ class MemoryBlock(BaseResource):
         examples=["Patient concerned about chest pain.", "BMI calculation formula."],
     )
 
-    metadata: dict[str, Any] = Field(
+    # Context metadata - use structured fields for new implementations
+    context_metadata: dict[str, Any] = Field(
         default_factory=dict,
-        description="DEPRECATED: Use specific fields like `tags` and `confidence_score` instead. "
-        "Additional structured metadata about this memory.",
+        description="Structured context metadata for this memory (patient_id, encounter_id, etc.)",
         examples=[
             {
                 "patient_id": "pat-001",
                 "encounter_id": "enc-001",
-                "confidence": 0.95,
-                "tags": ["chest_pain", "cardiology"],
+                "session_id": "sess-123",
             }
         ],
     )
@@ -123,13 +132,73 @@ class MemoryBlock(BaseResource):
             raise ValueError("Memory content cannot be empty")
         return v.strip()
 
-    @field_validator("metadata")
+    @field_validator("context_metadata")
     @classmethod
-    def validate_metadata(cls, v: dict[str, Any]) -> dict[str, Any]:
-        """Ensure metadata is a valid dictionary."""
+    def validate_context_metadata(cls, v: dict[str, Any]) -> dict[str, Any]:
+        """Ensure context_metadata is a valid dictionary."""
         if not isinstance(v, dict):
-            raise ValueError("Metadata must be a dictionary")
+            raise ValueError("Context metadata must be a dictionary")
         return v
+
+    @property
+    def metadata(self) -> dict[str, Any]:
+        """
+        DEPRECATED: Backward compatibility property for metadata field.
+        Use context_metadata, tags, confidence_score, and other structured fields instead.
+        """
+        import warnings
+        warnings.warn(
+            "MemoryBlock.metadata is deprecated. Use context_metadata, tags, "
+            "confidence_score, and other structured fields instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return self.context_metadata.copy()
+
+    @metadata.setter
+    def metadata(self, value: dict[str, Any]) -> None:
+        """
+        DEPRECATED: Backward compatibility setter for metadata field.
+        """
+        import warnings
+        warnings.warn(
+            "MemoryBlock.metadata is deprecated. Use context_metadata, tags, "
+            "confidence_score, and other structured fields instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        self.context_metadata = value
+
+    @classmethod
+    def migrate_from_metadata(cls, memory_data: dict[str, Any]) -> dict[str, Any]:
+        """
+        Migrate memory data from old metadata format to new structured format.
+        
+        Args:
+            memory_data: Memory data with old metadata field
+            
+        Returns:
+            Migrated memory data with structured fields
+        """
+        if "metadata" not in memory_data:
+            return memory_data
+        
+        migrated = memory_data.copy()
+        old_metadata = migrated.pop("metadata", {})
+        
+        # Migrate confidence from old metadata
+        if "confidence" in old_metadata and "confidence_score" not in migrated:
+            migrated["confidence_score"] = old_metadata.pop("confidence")
+        
+        # Migrate tags from old metadata  
+        if "tags" in old_metadata and "tags" not in migrated:
+            migrated["tags"] = old_metadata.pop("tags")
+        
+        # Move remaining metadata to context_metadata
+        if old_metadata:
+            migrated["context_metadata"] = old_metadata
+            
+        return migrated
 
     @property
     def linked_memories(self) -> list[str]:

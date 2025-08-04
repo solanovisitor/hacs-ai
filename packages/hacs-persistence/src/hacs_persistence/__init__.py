@@ -27,11 +27,8 @@ except ImportError:
     _get_migration_status = None
     MIGRATIONS_AVAILABLE = False
 
-# Vector store integration (conditional import to avoid errors)
-try:
-    from hacs_utils.integrations.qdrant.store import QdrantVectorStore
-except ImportError:
-    QdrantVectorStore = None
+# Vector store integration (conditional import to avoid circular dependencies)
+QdrantVectorStore = None  # Available via dependency injection
 
 # pgvector integration
 try:

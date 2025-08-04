@@ -30,19 +30,9 @@ from hacs_core.results import (
     FieldAnalysisResult,
     HACSResult
 )
+from hacs_core.tool_protocols import healthcare_tool, ToolCategory
 
 logger = logging.getLogger(__name__)
-
-# Import langchain tool decorator with graceful fallback
-try:
-    from langchain_core.tools import tool
-    _has_langchain = True
-except ImportError:
-    _has_langchain = False
-    def tool(func):
-        """Placeholder tool decorator when langchain is not available."""
-        func._is_tool = True
-        return func
 
 # Import tool descriptions
 from .descriptions import (
@@ -52,8 +42,13 @@ from .descriptions import (
     COMPARE_RESOURCE_SCHEMAS_DESCRIPTION,
 )
 
-
-@tool
+@healthcare_tool(
+    name="discover_hacs_resources",
+    description="Discover all available HACS healthcare resources with comprehensive metadata",
+    category=ToolCategory.SCHEMA_DISCOVERY,
+    healthcare_domains=['resource_management'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def discover_hacs_resources(
     category_filter: Optional[str] = None,
     include_field_counts: bool = True,
@@ -167,8 +162,13 @@ def discover_hacs_resources(
             message=f"Failed to discover healthcare resources: {str(e)}"
         )
 
-
-@tool
+@healthcare_tool(
+    name="get_hacs_resource_schema",
+    description="Get comprehensive schema information for a healthcare resource type",
+    category=ToolCategory.SCHEMA_DISCOVERY,
+    healthcare_domains=['resource_management'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def get_hacs_resource_schema(
     resource_type: str,
     include_examples: bool = True,
@@ -257,8 +257,13 @@ def get_hacs_resource_schema(
             message=f"Failed to get schema for {resource_type}: {str(e)}"
         )
 
-
-@tool
+@healthcare_tool(
+    name="analyze_resource_fields",
+    description="Perform detailed analysis of healthcare resource fields for clinical usage",
+    category=ToolCategory.SCHEMA_DISCOVERY,
+    healthcare_domains=['resource_management'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def analyze_resource_fields(
     resource_type: str,
     focus_area: str = "all",
@@ -369,8 +374,13 @@ def analyze_resource_fields(
             message=f"Failed to analyze fields for {resource_type}: {str(e)}"
         )
 
-
-@tool
+@healthcare_tool(
+    name="compare_resource_schemas",
+    description="Compare schemas between two healthcare resource types for integration analysis",
+    category=ToolCategory.SCHEMA_DISCOVERY,
+    healthcare_domains=['resource_management'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def compare_resource_schemas(
     resource_type_1: str,
     resource_type_2: str,
@@ -451,7 +461,6 @@ def compare_resource_schemas(
             error=str(e)
         )
 
-
 # === UTILITY FUNCTIONS ===
 
 def _get_resource_class(resource_type: str):
@@ -483,7 +492,6 @@ def _get_resource_class(resource_type: str):
     except ImportError:
         return None
 
-
 def _get_clinical_context(resource_type: str) -> str:
     """Get clinical context description for a resource type."""
     clinical_contexts = {
@@ -501,7 +509,6 @@ def _get_clinical_context(resource_type: str) -> str:
     }
     return clinical_contexts.get(resource_type, f"Healthcare resource for {resource_type} operations")
 
-
 def _is_clinical_field(field_name: str, resource_type: str) -> bool:
     """Determine if a field has clinical significance."""
     clinical_patterns = [
@@ -510,7 +517,6 @@ def _is_clinical_field(field_name: str, resource_type: str) -> bool:
         "medical", "health", "care", "therapy", "assessment"
     ]
     return any(pattern in field_name.lower() for pattern in clinical_patterns)
-
 
 def _is_fhir_required(field_name: str, resource_type: str) -> bool:
     """Determine if a field is required for FHIR compliance."""
@@ -522,13 +528,11 @@ def _is_fhir_required(field_name: str, resource_type: str) -> bool:
     }
     return field_name in fhir_required_fields.get(resource_type, [])
 
-
 def _is_ai_optimized(field_name: str, field_info) -> bool:
     """Determine if a field is optimized for AI agent usage."""
     ai_friendly_types = ["str", "bool", "int", "float"]
     field_type_str = str(field_info.annotation).lower()
     return any(ai_type in field_type_str for ai_type in ai_friendly_types)
-
 
 def _generate_field_recommendations(resource_type: str, field_analysis: Dict, focus_area: str) -> List[str]:
     """Generate field usage recommendations based on analysis."""
@@ -550,7 +554,6 @@ def _generate_field_recommendations(resource_type: str, field_analysis: Dict, fo
             recommendations.append(f"Ensure {fhir_count} FHIR-required fields are populated for compliance")
 
     return recommendations
-
 
 __all__ = [
     "discover_hacs_resources",

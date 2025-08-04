@@ -24,19 +24,9 @@ from typing import Any, Dict, List, Optional
 
 from hacs_core import Actor
 from hacs_core.results import HACSResult
+from hacs_core.tool_protocols import healthcare_tool, ToolCategory
 
 logger = logging.getLogger(__name__)
-
-# Import langchain tool decorator with graceful fallback
-try:
-    from langchain_core.tools import tool
-    _has_langchain = True
-except ImportError:
-    _has_langchain = False
-    def tool(func):
-        """Placeholder tool decorator when langchain is not available."""
-        func._is_tool = True
-        return func
 
 # Import tool descriptions
 from .descriptions import (
@@ -46,8 +36,13 @@ from .descriptions import (
     LOOKUP_FHIR_TERMINOLOGY_DESCRIPTION,
 )
 
-
-@tool
+@healthcare_tool(
+    name="convert_to_fhir",
+    description="Convert healthcare resource data to FHIR-compliant format",
+    category=ToolCategory.FHIR_INTEGRATION,
+    healthcare_domains=['general_healthcare'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def convert_to_fhir(
     actor_name: str,
     resource_data: Dict[str, Any],
@@ -152,8 +147,13 @@ def convert_to_fhir(
             actor_id=actor_name
         )
 
-
-@tool
+@healthcare_tool(
+    name="validate_fhir_compliance",
+    description="Validate FHIR resource compliance against healthcare standards",
+    category=ToolCategory.FHIR_INTEGRATION,
+    healthcare_domains=['general_healthcare'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def validate_fhir_compliance(
     actor_name: str,
     fhir_resource: Dict[str, Any],
@@ -250,8 +250,13 @@ def validate_fhir_compliance(
             actor_id=actor_name
         )
 
-
-@tool
+@healthcare_tool(
+    name="process_fhir_bundle",
+    description="Process FHIR Bundle operations for bulk healthcare data transactions",
+    category=ToolCategory.FHIR_INTEGRATION,
+    healthcare_domains=['general_healthcare'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def process_fhir_bundle(
     actor_name: str,
     fhir_bundle: Dict[str, Any],
@@ -374,8 +379,13 @@ def process_fhir_bundle(
             actor_id=actor_name
         )
 
-
-@tool
+@healthcare_tool(
+    name="lookup_fhir_terminology",
+    description="Lookup and validate FHIR terminology codes and code systems",
+    category=ToolCategory.FHIR_INTEGRATION,
+    healthcare_domains=['general_healthcare'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def lookup_fhir_terminology(
     actor_name: str,
     code_system: str,
@@ -478,7 +488,6 @@ def lookup_fhir_terminology(
             error=str(e),
             actor_id=actor_name
         )
-
 
 __all__ = [
     "convert_to_fhir",

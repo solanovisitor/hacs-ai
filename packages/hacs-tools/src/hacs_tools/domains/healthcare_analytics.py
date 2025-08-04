@@ -24,19 +24,9 @@ from typing import Any, Dict, List, Optional
 
 from hacs_core import Actor
 from hacs_core.results import HACSResult
+from hacs_core.tool_protocols import healthcare_tool, ToolCategory
 
 logger = logging.getLogger(__name__)
-
-# Import langchain tool decorator with graceful fallback
-try:
-    from langchain_core.tools import tool
-    _has_langchain = True
-except ImportError:
-    _has_langchain = False
-    def tool(func):
-        """Placeholder tool decorator when langchain is not available."""
-        func._is_tool = True
-        return func
 
 # Import tool descriptions
 from .descriptions import (
@@ -46,8 +36,13 @@ from .descriptions import (
     PERFORM_RISK_STRATIFICATION_DESCRIPTION,
 )
 
-
-@tool
+@healthcare_tool(
+    name="calculate_quality_measures",
+    description="Calculate clinical quality measures for healthcare performance monitoring",
+    category=ToolCategory.HEALTHCARE_ANALYTICS,
+    healthcare_domains=['general_healthcare'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def calculate_quality_measures(
     actor_name: str,
     measure_set: str,
@@ -137,8 +132,13 @@ def calculate_quality_measures(
             actor_id=actor_name
         )
 
-
-@tool
+@healthcare_tool(
+    name="analyze_population_health",
+    description="Analyze population health patterns, trends, and outcomes for healthcare management",
+    category=ToolCategory.HEALTHCARE_ANALYTICS,
+    healthcare_domains=['general_healthcare'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def analyze_population_health(
     actor_name: str,
     population_criteria: Dict[str, Any],
@@ -235,8 +235,13 @@ def analyze_population_health(
             actor_id=actor_name
         )
 
-
-@tool
+@healthcare_tool(
+    name="generate_clinical_dashboard",
+    description="Generate interactive clinical dashboards for healthcare performance monitoring",
+    category=ToolCategory.HEALTHCARE_ANALYTICS,
+    healthcare_domains=['clinical_data'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def generate_clinical_dashboard(
     actor_name: str,
     dashboard_type: str,
@@ -322,8 +327,13 @@ def generate_clinical_dashboard(
             actor_id=actor_name
         )
 
-
-@tool
+@healthcare_tool(
+    name="perform_risk_stratification",
+    description="Perform patient risk stratification and predictive analytics for proactive care",
+    category=ToolCategory.HEALTHCARE_ANALYTICS,
+    healthcare_domains=['general_healthcare'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def perform_risk_stratification(
     actor_name: str,
     patient_population: List[str],
@@ -407,7 +417,6 @@ def perform_risk_stratification(
             error=str(e),
             actor_id=actor_name
         )
-
 
 __all__ = [
     "calculate_quality_measures",

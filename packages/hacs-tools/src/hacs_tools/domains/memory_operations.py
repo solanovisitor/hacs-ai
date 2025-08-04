@@ -27,19 +27,9 @@ from typing import Any, Dict, List, Optional
 
 from hacs_core import Actor, MemoryBlock
 from hacs_core.results import MemoryResult, HACSResult
+from hacs_core.tool_protocols import healthcare_tool, ToolCategory
 
 logger = logging.getLogger(__name__)
-
-# Import langchain tool decorator with graceful fallback
-try:
-    from langchain_core.tools import tool
-    _has_langchain = True
-except ImportError:
-    _has_langchain = False
-    def tool(func):
-        """Placeholder tool decorator when langchain is not available."""
-        func._is_tool = True
-        return func
 
 # Import tool descriptions
 from .descriptions import (
@@ -50,8 +40,13 @@ from .descriptions import (
     ANALYZE_MEMORY_PATTERNS_DESCRIPTION,
 )
 
-
-@tool
+@healthcare_tool(
+    name="create_hacs_memory",
+    description="Store a new memory for healthcare AI agents with clinical context",
+    category=ToolCategory.MEMORY_OPERATIONS,
+    healthcare_domains=['memory_management'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def create_hacs_memory(
     actor_name: str,
     memory_content: str,
@@ -137,8 +132,13 @@ def create_hacs_memory(
             clinical_context=clinical_context
         )
 
-
-@tool
+@healthcare_tool(
+    name="search_hacs_memories",
+    description="Search healthcare AI agent memories using semantic similarity",
+    category=ToolCategory.MEMORY_OPERATIONS,
+    healthcare_domains=['data_search'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def search_hacs_memories(
     actor_name: str,
     query: str,
@@ -245,8 +245,13 @@ def search_hacs_memories(
             clinical_context=clinical_context
         )
 
-
-@tool
+@healthcare_tool(
+    name="consolidate_memories",
+    description="Consolidate related healthcare memories to reduce redundancy and enhance knowledge",
+    category=ToolCategory.MEMORY_OPERATIONS,
+    healthcare_domains=['general_healthcare'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def consolidate_memories(
     actor_name: str,
     memory_ids: List[str],
@@ -310,8 +315,13 @@ def consolidate_memories(
             memory_count=0
         )
 
-
-@tool
+@healthcare_tool(
+    name="retrieve_context",
+    description="Retrieve contextual memories for healthcare decision support",
+    category=ToolCategory.MEMORY_OPERATIONS,
+    healthcare_domains=['general_healthcare'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def retrieve_context(
     actor_name: str,
     context_query: str,
@@ -383,8 +393,13 @@ def retrieve_context(
             memory_count=0
         )
 
-
-@tool
+@healthcare_tool(
+    name="analyze_memory_patterns",
+    description="Analyze patterns in healthcare AI agent memory usage and content",
+    category=ToolCategory.MEMORY_OPERATIONS,
+    healthcare_domains=['memory_management'],
+    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+)
 def analyze_memory_patterns(
     actor_name: str,
     analysis_scope: str = "all",
@@ -465,7 +480,6 @@ def analyze_memory_patterns(
             operation_type="analyze",
             memory_count=0
         )
-
 
 __all__ = [
     "create_hacs_memory",

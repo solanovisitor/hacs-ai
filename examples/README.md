@@ -31,33 +31,16 @@ A production-ready LangGraph agent specialized for HACS system administration an
 
 [View HACS Developer Agent Documentation →](hacs_developer_agent/README.md)
 
-### 2. HACS Deep Agent (`hacs_deep_agent/`)
+*LangChain integration has been moved to the main package:* `packages/hacs-utils/src/hacs_utils/integrations/langchain/`
 
-A comprehensive LangGraph-based healthcare AI agent that demonstrates advanced HACS capabilities:
+For LangChain integration examples and documentation, see:
+```bash
+cd packages/hacs-utils/src/hacs_utils/integrations/langchain/
+```
 
-- **37+ HACS Healthcare Tools** across 9 comprehensive domains
-- **7 Specialized Clinical Subagents** for domain expertise
-- **Healthcare Workflow Management** with clinical context preservation
-- **HACS Resource State Management** using structured healthcare data
-- **Iterative Tool Execution** for complex healthcare scenarios
-
-**Key Features:**
-- 🏥 Resource Management - Patient records, clinical data, healthcare operations
-- 🧠 Clinical Workflows - Decision support, protocols, evidence-based care
-- 💭 Memory Operations - Clinical knowledge, institutional learning
-- 🔍 Vector Search - Medical knowledge retrieval, semantic search
-- 📊 Healthcare Analytics - Quality measures, population health
-- 🏥 FHIR Integration - Healthcare interoperability, standards compliance
-- 🤖 AI/ML Integration - Healthcare AI deployment, clinical inference
-
-**Use Cases:**
-- Clinical care coordination across multiple providers
-- Evidence-based clinical decision support
-- Population health analytics and quality reporting
-- Healthcare AI model deployment and management
-- FHIR compliance and healthcare interoperability
-
-[View HACS Deep Agent Documentation →](hacs_deep_agent/README.md)
+- **Examples**: `examples/` directory with demos and tests
+- **Documentation**: `README.md` and technical reports
+- **Integration**: Direct import from `hacs_utils.integrations.langchain`
 
 ## 🚀 Getting Started
 

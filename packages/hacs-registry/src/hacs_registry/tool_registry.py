@@ -26,9 +26,45 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Callable, Union
 from pathlib import Path
 
-from .definitions import ToolDefinition, DefinitionStatus
+from .resource_registry import ResourceStatus as DefinitionStatus, get_global_registry
+from .plugin_discovery import discover_hacs_plugins, plugin_registry, PluginRegistry
+from hacs_core import BaseResource
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
+
+
+class ToolDefinition(BaseResource):
+    """Tool definition for the registry - simplified version that works with new architecture."""
+    
+    resource_type: str = Field(default="ToolDefinition", description="Resource type")
+    name: str = Field(description="Tool name")
+    version: str = Field(description="Tool version")
+    description: str = Field(description="Tool description")
+    function: Optional[Callable] = Field(default=None, description="Tool function")
+    
+    # Tool metadata fields
+    module_path: Optional[str] = Field(default=None, description="Module path where tool is defined")
+    function_name: Optional[str] = Field(default=None, description="Function name")
+    category: Optional[str] = Field(default="general", description="Tool category")
+    domain: Optional[str] = Field(default="general", description="Tool domain")
+    tags: List[str] = Field(default_factory=list, description="Tool tags")
+    
+    # Tool requirements
+    requires_actor: bool = Field(default=False, description="Whether tool requires actor authentication")
+    requires_db: bool = Field(default=False, description="Whether tool requires database")
+    requires_vector_store: bool = Field(default=False, description="Whether tool requires vector store")
+    is_async: bool = Field(default=False, description="Whether tool is async")
+    
+    # Tool status
+    status: Optional[str] = Field(default="published", description="Tool status")
+    
+    # Framework support
+    supports_langchain: bool = Field(default=True, description="Whether tool supports LangChain")
+    supports_mcp: bool = Field(default=True, description="Whether tool supports MCP")
+    
+    class Config:
+        arbitrary_types_allowed = True
 
 
 class HACSToolRegistry:
@@ -134,29 +170,51 @@ class HACSToolRegistry:
     
     def _extract_tool_metadata(self, func: Callable, module_path: str, domain: str) -> Dict[str, Any]:
         """Extract comprehensive metadata from a tool function."""
-        sig = inspect.signature(func)
+        # Handle LangChain StructuredTool objects
+        if hasattr(func, 'func') and hasattr(func, 'name'):
+            # This is a LangChain StructuredTool
+            actual_func = func.func
+            tool_name = func.name
+            tool_description = getattr(func, 'description', f"HACS tool: {tool_name}")
+        else:
+            # This is a regular function
+            actual_func = func
+            tool_name = getattr(func, '__name__', 'unknown_tool')
+            tool_description = func.__doc__ or f"HACS tool: {tool_name}"
         
-        # Analyze parameters
-        requires_actor = "actor_name" in sig.parameters
-        requires_db = any(param in sig.parameters for param in ["db_adapter", "database"])
-        requires_vector_store = "vector_store" in sig.parameters
-        is_async = asyncio.iscoroutinefunction(func)
+        try:
+            sig = inspect.signature(actual_func)
+        except (ValueError, TypeError):
+            # Fallback for tools where signature inspection fails
+            sig = None
+            
+        # Analyze parameters if signature is available
+        if sig:
+            requires_actor = "actor_name" in sig.parameters
+            requires_db = any(param in sig.parameters for param in ["db_adapter", "database"])
+            requires_vector_store = "vector_store" in sig.parameters
+            is_async = asyncio.iscoroutinefunction(actual_func)
+        else:
+            # Fallback analysis
+            requires_actor = "actor" in tool_name.lower()
+            requires_db = "db" in tool_name.lower() or "database" in tool_name.lower()
+            requires_vector_store = "vector" in tool_name.lower()
+            is_async = False
         
-        # Extract description
-        description = func.__doc__ or f"HACS tool: {func.__name__}"
-        if description:
-            description = description.strip().split('\n')[0]  # First line only
+        # Clean up description
+        if tool_description:
+            tool_description = tool_description.strip().split('\n')[0]  # First line only
         
         # Extract tags from docstring and function name
         tags = []
-        name_parts = func.__name__.split('_')
+        name_parts = tool_name.split('_')
         tags.extend(name_parts)
         
-        if "clinical" in description.lower() or "healthcare" in description.lower():
+        if "clinical" in tool_description.lower() or "healthcare" in tool_description.lower():
             tags.append("clinical")
-        if "fhir" in description.lower():
+        if "fhir" in tool_description.lower():
             tags.append("fhir")
-        if "workflow" in description.lower():
+        if "workflow" in tool_description.lower():
             tags.append("workflow")
         
         return {
@@ -164,9 +222,10 @@ class HACSToolRegistry:
             "requires_db": requires_db,
             "requires_vector_store": requires_vector_store,
             "is_async": is_async,
-            "description": description,
+            "description": tool_description,
             "tags": list(set(tags)),  # Remove duplicates
-            "signature": sig
+            "signature": sig,
+            "tool_name": tool_name  # Add tool name to metadata
         }
     
     def discover_tools_from_module(self, module_name: str) -> int:
@@ -201,14 +260,16 @@ class HACSToolRegistry:
                         
                         try:
                             metadata = self._extract_tool_metadata(attr, module_name, domain)
-                            category = self._determine_category(attr_name)
+                            tool_name = metadata["tool_name"]
+                            category = self._determine_category(tool_name)
                             
                             tool_def = ToolDefinition(
-                                name=attr_name,
+                                name=tool_name,
+                                version="1.0.0",  # Default version for discovered tools
                                 description=metadata["description"],
                                 function=attr,
                                 module_path=module_name,
-                                function_name=attr_name,
+                                function_name=tool_name,
                                 category=category,
                                 domain=domain,
                                 tags=metadata["tags"],
@@ -232,9 +293,12 @@ class HACSToolRegistry:
             logger.warning(f"Could not import module {module_name}: {e}")
             return 0
     
-    def auto_discover_hacs_tools(self) -> int:
+    def auto_discover_hacs_tools(self, base_packages: List[str] = None) -> int:
         """
-        Automatically discover all HACS tools from known domains.
+        Automatically discover all HACS tools using the plugin system.
+        
+        Args:
+            base_packages: Base packages to search (defaults to ["hacs_tools"])
         
         Returns:
             Total number of tools discovered and registered
@@ -243,29 +307,94 @@ class HACSToolRegistry:
             logger.info("Registry already initialized, skipping auto-discovery")
             return len(self._tools)
         
+        # Use plugin discovery system
+        if base_packages is None:
+            base_packages = ["hacs_tools"]
+        
+        # Discover plugins
+        registry = discover_hacs_plugins(base_packages)
+        plugins = registry.get_all_plugins()
+        
         total_discovered = 0
         
-        # Known HACS tool domains
-        domains = [
-            "hacs_tools.domains.resource_management",
-            "hacs_tools.domains.clinical_workflows", 
-            "hacs_tools.domains.schema_discovery",
-            "hacs_tools.domains.memory_operations",
-            "hacs_tools.domains.vector_search",
-            "hacs_tools.domains.development_tools",
-            "hacs_tools.domains.fhir_integration",
-            "hacs_tools.domains.healthcare_analytics",
-            "hacs_tools.domains.ai_integrations",
-            "hacs_tools.domains.admin_operations"
-        ]
-        
-        for domain in domains:
-            discovered = self.discover_tools_from_module(domain)
-            total_discovered += discovered
+        # Register discovered plugins as tools
+        for plugin_name, plugin in plugins.items():
+            try:
+                tool_def = ToolDefinition(
+                    name=plugin.metadata.name,
+                    version=plugin.metadata.version,
+                    description=plugin.metadata.description,
+                    function=plugin.function,
+                    module_path=plugin.module_path,
+                    function_name=plugin.metadata.name,
+                    category=self._determine_category(plugin.metadata.name),
+                    domain=plugin.metadata.domain,
+                    tags=plugin.metadata.tags,
+                    requires_actor=self._check_requires_actor(plugin.function),
+                    requires_db=self._check_requires_db(plugin.function),
+                    requires_vector_store=self._check_requires_vector_store(plugin.function),
+                    is_async=asyncio.iscoroutinefunction(plugin.function),
+                    status=DefinitionStatus.PUBLISHED
+                )
+                
+                self.register_tool(tool_def)
+                total_discovered += 1
+                
+            except Exception as e:
+                logger.warning(f"Failed to register plugin {plugin_name}: {e}")
         
         self._initialized = True
-        logger.info(f"Auto-discovery complete: {total_discovered} total tools registered")
+        logger.info(f"Plugin-based auto-discovery complete: {total_discovered} total tools registered")
+        
+        # Print discovery statistics
+        stats = registry.get_statistics()
+        logger.info(f"Discovery stats: {stats['total_plugins']} plugins across {stats['total_domains']} domains")
+        for domain, count in stats['domain_counts'].items():
+            logger.info(f"  {domain}: {count} tools")
+        
         return total_discovered
+    
+    def _check_requires_actor(self, func: Callable) -> bool:
+        """Check if function requires actor parameter."""
+        try:
+            # Handle LangChain StructuredTool objects
+            if hasattr(func, 'func'):
+                actual_func = func.func
+            else:
+                actual_func = func
+                
+            sig = inspect.signature(actual_func)
+            return "actor_name" in sig.parameters
+        except (ValueError, TypeError):
+            return False
+    
+    def _check_requires_db(self, func: Callable) -> bool:
+        """Check if function requires database parameter."""
+        try:
+            # Handle LangChain StructuredTool objects
+            if hasattr(func, 'func'):
+                actual_func = func.func
+            else:
+                actual_func = func
+                
+            sig = inspect.signature(actual_func)
+            return any(param in sig.parameters for param in ["db_adapter", "database"])
+        except (ValueError, TypeError):
+            return False
+    
+    def _check_requires_vector_store(self, func: Callable) -> bool:
+        """Check if function requires vector store parameter."""
+        try:
+            # Handle LangChain StructuredTool objects
+            if hasattr(func, 'func'):
+                actual_func = func.func
+            else:
+                actual_func = func
+                
+            sig = inspect.signature(actual_func)
+            return "vector_store" in sig.parameters
+        except (ValueError, TypeError):
+            return False
     
     def register_tool(self, tool: ToolDefinition) -> None:
         """Register a tool in the registry."""

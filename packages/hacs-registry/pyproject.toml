@@ -4,12 +4,15 @@ build-backend = "hatchling.build"
 
 [project]
 name = "hacs-registry"
-version = "0.1.0"
+version = "0.3.0"
 description = "HACS Registry - Model, prompt, and workflow definitions for healthcare AI"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
-    { name = "HACS Team", email = "team@hacs.dev" },
+    { name = "Solano Nocetti", email = "solanovisitor@gmail.com" }
+]
+maintainers = [
+    { name = "Solano Nocetti", email = "solanovisitor@gmail.com" }
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -27,15 +30,15 @@ classifiers = [
 requires-python = ">=3.11"
 dependencies = [
     "hacs-core>=0.3.0",
-    "pydantic>=2.7.0",
+    "pydantic>=2.11.7",
 ]
 
 [project.urls]
-Homepage = "https://hacs.dev"
-Documentation = "https://docs.hacs.dev"
+Homepage = "https://github.com/solanovisitor/hacs-ai"
+Documentation = "https://github.com/solanovisitor/hacs-ai/blob/main/docs/"
 Repository = "https://github.com/solanovisitor/hacs-ai"
 Issues = "https://github.com/solanovisitor/hacs-ai/issues"
-
+Changelog = "https://github.com/solanovisitor/hacs-ai/blob/main/CHANGELOG.md"
 [tool.hatch.build.targets.wheel]
 packages = ["src/hacs_registry"] 
 
