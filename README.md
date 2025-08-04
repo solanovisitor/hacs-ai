@@ -157,11 +157,19 @@ def gather_patient_info(state):
 
 def clinical_assessment(state):
     """AI generates clinical assessment using HACS memory"""
-    # Build clinical context from HACS models
+    # Build clinical context using efficient HACS data selection
     clinical_context = {
-        "patient": state["patient"].model_dump(),
-        "recent_observations": [obs.model_dump() for obs in state["clinical_findings"][-5:]],
-        "relevant_memories": [mem.content for mem in state["clinical_memories"] if mem.importance_score > 0.7]
+        "patient": state["patient"].model_dump(include={
+            "full_name", "birth_date", "gender", "agent_context"
+        }),
+        "recent_observations": [
+            obs.model_dump(include={"status", "code", "value_quantity", "effective_date_time"})
+            for obs in state["clinical_findings"][-5:]
+        ],
+        "relevant_memories": [
+            mem.model_dump(include={"content", "importance_score", "tags"})
+            for mem in state["clinical_memories"] if mem.importance_score > 0.7
+        ]
     }
     
     prompt = f"""
@@ -192,8 +200,14 @@ def create_care_plan(state):
     """Generate structured care plan using HACS tools"""
     care_plan_result = llm.invoke_tool("generate_care_plan", {
         "patient_id": state['patient'].id,
-        "assessment": state["assessment"].content,
-        "clinical_findings": [obs.model_dump() for obs in state["clinical_findings"]],
+        "patient_summary": state["patient"].get_text_summary(),
+        "assessment": state["assessment"].model_dump(include={
+            "content", "importance_score", "tags"
+        }),
+        "clinical_findings": [
+            obs.model_dump(include={"status", "code", "value_quantity"})
+            for obs in state["clinical_findings"]
+        ],
         "goals": ["optimize_diabetes_control", "improve_medication_adherence"]
     })
     
@@ -246,6 +260,13 @@ print(f"✅ Patient: {result['patient'].full_name}")
 print(f"📊 Clinical findings: {len(result['clinical_findings'])} observations")
 print(f"🧠 Assessment: {result['assessment'].content[:100]}...")
 print(f"📋 Care plan: {len(result['care_plan'])} recommendations")
+
+# Access efficient data summaries for downstream processing
+patient_summary = result['patient'].get_text_summary()
+essential_data = result['patient'].model_dump(include={
+    "full_name", "birth_date", "agent_context"
+})
+print(f"💡 Efficient access: {patient_summary}, {len(essential_data)} core fields")
 ```
 
 ## Features
@@ -305,7 +326,7 @@ working_memory = MemoryBlock(
 
 ### 🛠️ Medical Tools Registry
 
-37+ healthcare tools working seamlessly with HACS models:
+37+ healthcare tools with efficient HACS data selection patterns:
 
 ```python
 from hacs_models import Patient, Observation
@@ -318,26 +339,32 @@ patient = Patient(
     agent_context={"chief_complaint": "Diabetes management"}
 )
 
-# Resource management with HACS models
+# Resource management with efficient HACS data selection
 patient_result = call_hacs_tool("create_hacs_record", {
     "resource_type": "Patient",
-    "resource_data": patient.model_dump()
+    "resource_data": patient.model_dump(exclude={
+        "text", "contained", "extension", "modifier_extension"
+    })
 })
 
-# Semantic search across healthcare records
+# Semantic search with structured output formatting
 search_results = call_hacs_tool("search_hacs_records", {
     "query": "diabetes patients with elevated HbA1c",
     "resource_types": ["Patient", "Observation"],
-    "filters": {"importance_score": {"min": 0.7}}
+    "filters": {"importance_score": {"min": 0.7}},
+    "output_format": "summary"  # Request lightweight summaries
 })
 
-# Clinical workflow execution with rich context
+# Clinical workflow execution with optimized context
 workflow_result = call_hacs_tool("execute_clinical_workflow", {
     "workflow_type": "diabetes_assessment",
-    "patient": patient.model_dump(),
+    "patient_summary": patient.get_text_summary(),
+    "patient_context": patient.model_dump(include={
+        "full_name", "birth_date", "agent_context"
+    }),
     "clinical_context": {
-        "recent_observations": [],
-        "current_medications": patient.agent_context.get("medications", [])
+        "medications": patient.agent_context.get("medications", []),
+        "chief_complaint": patient.agent_context.get("chief_complaint")
     }
 })
 
@@ -351,6 +378,45 @@ memory_result = call_hacs_tool("create_memory", {
     },
     "tags": ["diabetes", "care_plan_update"]
 })
+
+# Efficient data selection for API responses
+patient_api_response = patient.model_dump(include={
+    "id", "full_name", "birth_date", "gender"  # Only essential fields
+})
+
+# Text summaries for LLM context
+patient_summary_text = patient.get_text_summary()  # "Patient patient-abc123"
+```
+
+### ⚡ Efficient Data Selection Patterns
+
+HACS models provide multiple ways to optimize data handling:
+
+```python
+# 1. Include only needed fields (reduces token usage)
+lightweight_patient = patient.model_dump(include={
+    "full_name", "birth_date", "agent_context"
+})
+
+# 2. Exclude large/unnecessary fields (faster serialization)  
+clean_patient = patient.model_dump(exclude={
+    "text", "contained", "extension", "modifier_extension"
+})
+
+# 3. Text summaries for efficient LLM context
+patient_reference = patient.get_text_summary()  # Just "Patient patient-id"
+
+# 4. Memory-efficient observation handling
+essential_vitals = [
+    obs.model_dump(include={"status", "code", "value_quantity"})
+    for obs in recent_observations
+]
+
+# 5. Selective memory context
+relevant_memories = [
+    mem.model_dump(include={"content", "importance_score"})
+    for mem in clinical_memories if mem.importance_score > 0.8
+]
 ```
 
 ### 🔒 Healthcare Actor Security
