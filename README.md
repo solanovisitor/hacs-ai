@@ -110,7 +110,7 @@ print(f"⚠️ Action needed: {clinical_assessment.context_metadata['action_need
 
 ### With LangGraph Integration
 
-Build sophisticated healthcare agents using LangGraph's workflow engine:
+Build sophisticated healthcare agents using LangGraph's workflow engine, powered by HACS healthcare models:
 
 ```python
 from langgraph.graph import StateGraph, END
@@ -123,45 +123,81 @@ llm = HACSLangChainAdapter(
     tools_registry="http://localhost:8001"
 )
 
-# Agent state with clinical context
+# Agent state with HACS healthcare models
+from hacs_models import Patient, Observation, MemoryBlock, Encounter
+from hacs_core.memory import ClinicalMemoryManager
+from typing import List, Optional
+
 class HealthcareState:
-    patient_data: dict
-    clinical_findings: list
-    assessment: str
-    care_plan: list
+    patient: Optional[Patient] = None
+    clinical_findings: List[Observation] = []
+    clinical_memories: List[MemoryBlock] = []
+    current_encounter: Optional[Encounter] = None
+    assessment: Optional[MemoryBlock] = None
+    care_plan: dict = {}
 
 def gather_patient_info(state):
-    """Search for patient history and current data"""
-    search_result = llm.invoke_tool("search_hacs_records", {
-        "query": f"patient:{state['patient_data']['name']}",
+    """Search for patient history using HACS infrastructure"""
+    # Search for patient using HACS tools
+    patient_search = llm.invoke_tool("search_hacs_records", {
+        "query": f"patient:{state['patient'].full_name}",
         "resource_types": ["Patient", "Observation", "MemoryBlock"]
     })
     
-    state["clinical_findings"] = search_result["results"]
+    # Parse results into HACS models
+    for result in patient_search["results"]:
+        if result["resource_type"] == "Observation":
+            obs = Observation(**result["data"])
+            state["clinical_findings"].append(obs)
+        elif result["resource_type"] == "MemoryBlock":
+            memory = MemoryBlock(**result["data"])
+            state["clinical_memories"].append(memory)
+    
     return state
 
 def clinical_assessment(state):
-    """AI generates clinical assessment"""
+    """AI generates clinical assessment using HACS memory"""
+    # Build clinical context from HACS models
+    clinical_context = {
+        "patient": state["patient"].model_dump(),
+        "recent_observations": [obs.model_dump() for obs in state["clinical_findings"][-5:]],
+        "relevant_memories": [mem.content for mem in state["clinical_memories"] if mem.importance_score > 0.7]
+    }
+    
     prompt = f"""
-    Patient: {state['patient_data']['name']}
-    Clinical findings: {state['clinical_findings']}
+    Patient: {state['patient'].full_name}
+    Clinical Context: {clinical_context}
     
     Provide clinical assessment and recommendations.
     """
     
-    assessment = llm.invoke(prompt)
-    state["assessment"] = assessment.content
+    assessment_content = llm.invoke(prompt)
+    
+    # Store assessment as HACS MemoryBlock
+    assessment_memory = MemoryBlock(
+        memory_type="episodic",
+        content=assessment_content.content,
+        importance_score=0.9,
+        tags=["clinical_assessment", "ai_generated"],
+        context_metadata={
+            "patient_id": state["patient"].id,
+            "encounter_id": state["current_encounter"].id if state["current_encounter"] else None
+        }
+    )
+    
+    state["assessment"] = assessment_memory
     return state
 
 def create_care_plan(state):
-    """Generate structured care plan"""
-    care_plan = llm.invoke_tool("generate_care_plan", {
-        "patient_id": state['patient_data']['id'],
-        "assessment": state["assessment"],
+    """Generate structured care plan using HACS tools"""
+    care_plan_result = llm.invoke_tool("generate_care_plan", {
+        "patient_id": state['patient'].id,
+        "assessment": state["assessment"].content,
+        "clinical_findings": [obs.model_dump() for obs in state["clinical_findings"]],
         "goals": ["optimize_diabetes_control", "improve_medication_adherence"]
     })
     
-    state["care_plan"] = care_plan["recommendations"]
+    state["care_plan"] = care_plan_result["plan"]
     return state
 
 # Build healthcare agent workflow  
@@ -178,15 +214,38 @@ workflow.add_edge("plan", END)
 # Compile and run healthcare agent
 healthcare_agent = workflow.compile()
 
+# Initialize with HACS Patient model
+patient = Patient(
+    full_name="John Smith",
+    birth_date="1980-01-15",
+    agent_context={
+        "chief_complaint": "Diabetes follow-up",
+        "current_medications": ["metformin 1000mg BID"],
+        "last_hba1c": "7.2%"
+    }
+)
+
+# Create encounter for this session
+encounter = Encounter(
+    status="in-progress",
+    **{"class": "ambulatory"},  # 'class' is a Python keyword, so use dict unpacking
+    subject=f"Patient/{patient.id}"
+)
+
+# Execute healthcare agent with HACS models
 result = healthcare_agent.invoke({
-    "patient_data": {"name": "John Smith", "id": "patient-123"},
+    "patient": patient,
     "clinical_findings": [],
-    "assessment": "",
-    "care_plan": []
+    "clinical_memories": [],
+    "current_encounter": encounter,
+    "assessment": None,
+    "care_plan": {}
 })
 
-print(f"✅ Assessment: {result['assessment'][:100]}...")
-print(f"📋 Care Plan: {len(result['care_plan'])} recommendations")
+print(f"✅ Patient: {result['patient'].full_name}")
+print(f"📊 Clinical findings: {len(result['clinical_findings'])} observations")
+print(f"🧠 Assessment: {result['assessment'].content[:100]}...")
+print(f"📋 Care plan: {len(result['care_plan'])} recommendations")
 ```
 
 ## Features
@@ -246,24 +305,52 @@ working_memory = MemoryBlock(
 
 ### 🛠️ Medical Tools Registry
 
-37+ healthcare tools organized by clinical domain:
+37+ healthcare tools working seamlessly with HACS models:
 
 ```python
-# Resource management
-create_hacs_record(resource_type="Patient", resource_data={...})
-search_hacs_records(query="diabetes patients", resource_types=["Patient"])
+from hacs_models import Patient, Observation
+from hacs_tools import call_hacs_tool
 
-# Clinical workflows  
-execute_clinical_workflow(workflow_type="diabetes_assessment", patient_context={...})
-generate_care_plan(patient_id="patient-123", primary_conditions=["diabetes"])
+# Create patient using HACS models
+patient = Patient(
+    full_name="Maria Garcia",
+    birth_date="1985-03-20",
+    agent_context={"chief_complaint": "Diabetes management"}
+)
 
-# Memory operations
-create_memory(content="Clinical reasoning", memory_type="episodic")
-search_memories(query="medication side effects", similarity_threshold=0.8)
+# Resource management with HACS models
+patient_result = call_hacs_tool("create_hacs_record", {
+    "resource_type": "Patient",
+    "resource_data": patient.model_dump()
+})
 
-# Healthcare analytics
-calculate_quality_measures(measure_set="diabetes_care", time_period="last_12_months")
-risk_stratification(patient_cohort="diabetes_patients", risk_factors=["hba1c"])
+# Semantic search across healthcare records
+search_results = call_hacs_tool("search_hacs_records", {
+    "query": "diabetes patients with elevated HbA1c",
+    "resource_types": ["Patient", "Observation"],
+    "filters": {"importance_score": {"min": 0.7}}
+})
+
+# Clinical workflow execution with rich context
+workflow_result = call_hacs_tool("execute_clinical_workflow", {
+    "workflow_type": "diabetes_assessment",
+    "patient": patient.model_dump(),
+    "clinical_context": {
+        "recent_observations": [],
+        "current_medications": patient.agent_context.get("medications", [])
+    }
+})
+
+# Memory operations preserving clinical context
+memory_result = call_hacs_tool("create_memory", {
+    "content": f"Patient {patient.full_name}: Diabetes management plan updated",
+    "memory_type": "episodic",
+    "context_metadata": {
+        "patient_id": patient.id,
+        "clinical_specialty": "endocrinology"
+    },
+    "tags": ["diabetes", "care_plan_update"]
+})
 ```
 
 ### 🔒 Healthcare Actor Security
