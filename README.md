@@ -37,332 +37,446 @@ Healthcare AI systems built on **generic frameworks** (LangChain, OpenAI APIs) r
 
 ## Quick Start
 
+### 1. Install HACS
+
 ```bash
-pip install hacs-core hacs-auth hacs-tools hacs-utils
+pip install hacs-core hacs-auth hacs-tools hacs-utils hacs-registry
 ```
 
-## Healthcare AI Examples
+### 2. Start Healthcare Infrastructure
 
-### 🩺 Clinical Documentation Agent
-*Actor validation → Patient search → Clinical reasoning → Memory persistence*
+```bash
+# Start PostgreSQL + pgvector + MCP server + Registry
+docker-compose up -d
+
+# Verify services
+curl http://localhost:8000/  # MCP server with 37+ healthcare tools
+curl http://localhost:8001/  # HACS registry for customization
+```
+
+### 3. Complete Healthcare AI Agent
+
+*Actor creation → Tool customization → Clinical workflow → Memory persistence → Registry integration*
 
 ```python
 from hacs_auth import Actor, ActorRole
 from hacs_models import Patient, Observation, MemoryBlock, CodeableConcept, Quantity
 from hacs_models.types import ObservationStatus
+from hacs_registry import HACSToolRegistry, WorkflowRegistry
+from hacs_utils.mcp.tools import call_hacs_tool
 
-# 1. Create & validate healthcare actor
-physician = Actor(
-    name="Dr. Sarah Chen",
-    role=ActorRole.PHYSICIAN,
+# 1. Create healthcare AI agent with specialized permissions
+clinical_ai = Actor(
+    name="Clinical Documentation AI",
+    role=ActorRole.AGENT,
     organization="General Hospital",
-    permissions=["patient:read", "observation:write", "memory:write"]
+    permissions=[
+        "patient:read", "patient:write", 
+        "observation:write", "memory:write",
+        "workflow:execute", "tools:customize"
+    ]
 )
 
-# 2. Search for patient (via MCP tool)
-search_result = call_hacs_tool("search_hacs_records", {
-    "query": "John Smith diabetes",
-    "resource_types": ["Patient"],
-    "actor": physician.id
+# 2. Register custom clinical prompt templates
+tool_registry = HACSToolRegistry()
+tool_registry.register_prompt_template("clinical_assessment", {
+    "system_prompt": """You are a clinical documentation AI. Focus on:
+    - Clinical reasoning and differential diagnosis
+    - Evidence-based recommendations
+    - Risk stratification and follow-up needs
+    - Medication adherence and side effects""",
+    "user_template": "Patient: {patient_name}, Chief complaint: {chief_complaint}, Findings: {clinical_findings}",
+    "output_schema": {
+        "assessment": "string",
+        "plan": "array",
+        "risk_level": "enum:low,moderate,high",
+        "follow_up_needed": "boolean"
+    }
 })
 
-# 3. Get patient with clinical context
+# 3. Create custom clinical workflow
+workflow_registry = WorkflowRegistry()
+workflow_registry.register_workflow("diabetes_documentation", {
+    "steps": [
+        {"action": "search_patient_history", "tools": ["search_hacs_records"]},
+        {"action": "analyze_glucose_trends", "tools": ["analyze_time_series"]},
+        {"action": "assess_medication_adherence", "tools": ["search_memories"]},
+        {"action": "generate_clinical_note", "tools": ["clinical_assessment"]},
+        {"action": "create_follow_up_plan", "tools": ["create_care_plan"]}
+    ],
+    "memory_integration": True,
+    "fhir_compliance": True
+})
+
+# 4. Execute customized healthcare workflow
 patient = Patient(
-    full_name="John Smith",
-    birth_date="1980-01-15", 
+    full_name="Maria Rodriguez",
+    birth_date="1975-08-20",
     agent_context={
-        "last_visit": "2024-06-15",
-        "current_medications": ["metformin 1000mg BID"],
-        "hba1c_trend": "7.8% → 7.2% → 6.9%"
+        "chief_complaint": "Diabetes follow-up, reports better glucose control",
+        "last_hba1c": "7.1%",
+        "medications": ["metformin 1000mg BID", "glipizide 5mg daily"]
     }
 )
 
-# 4. Record structured clinical observation
-bp_obs = Observation(
+# Search patient history with custom filters
+history_result = call_hacs_tool("search_hacs_records", {
+    "query": f"patient:{patient.full_name} diabetes glucose",
+    "resource_types": ["Observation", "MemoryBlock"],
+    "date_range": {"last_months": 6},
+    "actor": clinical_ai.id
+})
+
+# Record new clinical findings
+hba1c_obs = Observation(
     status=ObservationStatus.FINAL,
-    code=CodeableConcept(text="Blood Pressure"),
+    code=CodeableConcept(text="Hemoglobin A1c"),
     subject=f"Patient/{patient.id}",
-    value_quantity=Quantity(value=128.0, unit="mmHg"),
-    performer=[f"Practitioner/{physician.id}"]
+    value_quantity=Quantity(value=6.8, unit="%"),
+    performer=[f"Practitioner/{clinical_ai.id}"]
 )
 
-# 5. AI clinical reasoning with episodic memory
+# Execute custom diabetes documentation workflow
+workflow_result = call_hacs_tool("execute_workflow", {
+    "workflow_name": "diabetes_documentation",
+    "context": {
+        "patient_id": patient.id,
+        "current_hba1c": 6.8,
+        "previous_hba1c": 7.1,
+        "medication_list": patient.agent_context["medications"]
+    },
+    "actor": clinical_ai.id
+})
+
+# Generate AI clinical assessment using custom prompt
+assessment_result = call_hacs_tool("generate_structured_output", {
+    "prompt_template": "clinical_assessment",
+    "context": {
+        "patient_name": patient.full_name,
+        "chief_complaint": patient.agent_context["chief_complaint"],
+        "clinical_findings": f"HbA1c improved from 7.1% to 6.8%, patient reports good adherence"
+    },
+    "actor": clinical_ai.id
+})
+
+# Create episodic memory with clinical reasoning
 clinical_memory = MemoryBlock(
     memory_type="episodic",
-    content=f"Patient {patient.full_name}: BP improved to 128 mmHg, HbA1c trending down to 6.9%. Continue current regimen, excellent diabetes control.",
-    importance_score=0.85,
-    tags=["diabetes_management", "bp_control", "medication_adherence"],
+    content=f"Patient {patient.full_name}: HbA1c excellent improvement 7.1% → 6.8%. Target achieved (<7%). Continue current regimen. Patient demonstrates excellent adherence and glucose monitoring.",
+    importance_score=0.9,
+    tags=["diabetes_success", "target_achieved", "medication_adherence"],
     context_metadata={
         "patient_id": patient.id,
-        "provider_id": physician.id,
-        "outcome": "improved_control"
+        "provider_id": clinical_ai.id,
+        "outcome": "target_achieved",
+        "next_visit": "3_months"
     }
 )
 
-# 6. Persist to database (via MCP)
-memory_result = call_hacs_tool("create_memory", clinical_memory.model_dump())
-obs_result = call_hacs_tool("create_hacs_record", {
-    "resource_type": "Observation",
-    "resource_data": bp_obs.model_dump(),
-    "actor": physician.id
-})
-
-print(f"✅ Clinical encounter documented for {patient.full_name}")
-print(f"📊 BP: {bp_obs.get_value_summary()}")
-print(f"🧠 Memory stored: {memory_result['memory_id']}")
-```
-
-### 🔬 Medical Research Agent  
-*Knowledge retrieval → Evidence analysis → Semantic search → Research synthesis*
-
-```python
-# 1. Research agent with specialized permissions
-research_ai = Actor(
-    name="Medical Research AI",
-    role=ActorRole.AGENT,
-    permissions=["knowledge:search", "memory:semantic", "analytics:population"]
-)
-
-# 2. Search medical knowledge base
-knowledge_search = call_hacs_tool("search_clinical_knowledge", {
-    "query": "ACE inhibitors cardiovascular outcomes diabetes",
-    "evidence_level": "high",
-    "limit": 10,
-    "actor": research_ai.id
-})
-
-# 3. Analyze population data patterns  
-population_analysis = call_hacs_tool("generate_population_insights", {
-    "population_criteria": {
-        "conditions": ["diabetes", "hypertension"],
-        "medications": ["ace_inhibitor"]
-    },
-    "analysis_type": "outcome_correlation",
-    "actor": research_ai.id
-})
-
-# 4. Create semantic memory with evidence scoring
-research_memory = MemoryBlock(
-    memory_type="semantic",
-    content="ACE inhibitors reduce cardiovascular events by 22% in diabetic patients (95% CI: 15-28%). Strongest benefit in patients with proteinuria. NNT=45 over 3 years.",
-    confidence_score=0.92,
-    tags=["ace_inhibitors", "diabetes", "cardiovascular_outcomes", "evidence_based"],
-    context_metadata={
-        "evidence_level": "1A",
-        "study_count": 8,
-        "total_patients": 15420,
-        "nnt": 45
-    }
-)
-
-# 5. Persist research findings
-research_result = call_hacs_tool("create_memory", research_memory.model_dump())
-
-print(f"🔬 Research synthesis complete: {research_result['memory_id']}")
-print(f"📈 Evidence strength: {research_memory.confidence_score}")
-```
-
-### 🏥 Clinical Workflow Agent
-*Protocol retrieval → Patient risk assessment → Workflow execution → Quality monitoring*
-
-```python
-# 1. Clinical workflow agent
-workflow_ai = Actor(
-    name="Clinical Protocol AI",
-    role=ActorRole.AGENT,
-    permissions=["workflow:execute", "risk:assess", "quality:monitor"]
-)
-
-# 2. Retrieve procedural memory for chest pain protocol
-protocol_search = call_hacs_tool("search_memories", {
-    "query": "emergency chest pain protocol",
-    "memory_type": "procedural",
-    "actor": workflow_ai.id
-})
-
-# 3. Execute clinical workflow with patient context
-workflow_result = call_hacs_tool("execute_clinical_workflow", {
-    "workflow_type": "emergency_chest_pain", 
-    "patient_context": {
-        "age": 58,
-        "symptoms": "crushing chest pain 45min",
-        "risk_factors": ["diabetes", "smoking", "family_hx"]
-    },
-    "priority": "critical",
-    "actor": workflow_ai.id
-})
-
-# 4. Risk stratification analysis
-risk_assessment = call_hacs_tool("risk_stratification", {
-    "patient_data": {
-        "age": 58,
-        "conditions": ["diabetes"],
-        "presenting_symptoms": ["chest_pain"]
-    },
-    "risk_model": "cardiac_risk_score",
-    "actor": workflow_ai.id
-})
-
-# 5. Generate structured care plan
-care_plan = {
-    "immediate_actions": ["12-lead ECG", "cardiac_enzymes", "aspirin 325mg"],
-    "monitoring": ["continuous_telemetry", "serial_enzymes"],
-    "risk_level": risk_assessment.get("risk_category", "high"),
-    "disposition": "cardiac_unit_admission"
+# Persist all clinical data
+results = {
+    "observation": call_hacs_tool("create_hacs_record", {
+        "resource_type": "Observation",
+        "resource_data": hba1c_obs.model_dump(),
+        "actor": clinical_ai.id
+    }),
+    "memory": call_hacs_tool("create_memory", clinical_memory.model_dump()),
+    "workflow": workflow_result,
+    "assessment": assessment_result
 }
 
-# 6. Create executive memory for clinical decision
-decision_memory = MemoryBlock(
-    memory_type="executive",
-    content=f"High-risk chest pain patient: Age 58, diabetic. Executed emergency protocol. Risk score: {risk_assessment.get('score', 'high')}. Plan: {care_plan['immediate_actions']}",
-    importance_score=0.95,
-    tags=["emergency_protocol", "chest_pain", "high_risk", "clinical_decision"],
-    context_metadata={
-        "risk_score": risk_assessment.get("score"),
-        "protocol_executed": "emergency_chest_pain",
-        "decision_support": True
-    }
-)
-
-print(f"🏥 Clinical workflow executed: {workflow_result['workflow_id']}")
-print(f"⚠️ Risk level: {risk_assessment.get('risk_category')}")
+print(f"✅ Healthcare AI workflow complete for {patient.full_name}")
+print(f"📊 HbA1c: {hba1c_obs.get_value_summary()}")
+print(f"🧠 Clinical reasoning: {assessment_result.get('assessment', 'Generated')}")
+print(f"📋 Follow-up: {assessment_result.get('follow_up_needed', False)}")
 ```
 
-### 💊 Pharmacy Intelligence Agent
-*Drug interaction analysis → Clinical validation → Alert generation → Monitoring recommendations*
+## Customizing HACS for Your Healthcare Domain
+
+### Tool Customization
 
 ```python
-# 1. Pharmacy AI with medication permissions
-pharmacy_ai = Actor(
-    name="Pharmacy Intelligence AI",
-    role=ActorRole.PHARMACIST,
-    permissions=["medication:analyze", "interaction:check", "alert:clinical"]
-)
+from hacs_registry import HACSToolRegistry
 
-# 2. Analyze complex medication regimen
-medication_analysis = call_hacs_tool("analyze_drug_interactions", {
-    "current_medications": [
-        {"name": "warfarin", "dose": "5mg daily", "indication": "atrial_fibrillation"},
-        {"name": "metformin", "dose": "1000mg BID", "indication": "diabetes"}
-    ],
-    "proposed_medication": {
-        "name": "fluconazole", 
-        "dose": "200mg daily", 
-        "indication": "fungal_infection"
+registry = HACSToolRegistry()
+
+# Register custom healthcare tool
+registry.register_tool("calculate_cardiac_risk", {
+    "description": "Calculate 10-year cardiovascular risk using Framingham score",
+    "parameters": {
+        "age": {"type": "integer", "required": True},
+        "gender": {"type": "string", "enum": ["male", "female"]},
+        "cholesterol": {"type": "number", "unit": "mg/dL"},
+        "hdl": {"type": "number", "unit": "mg/dL"},
+        "blood_pressure": {"type": "number", "unit": "mmHg"},
+        "diabetes": {"type": "boolean"},
+        "smoking": {"type": "boolean"}
     },
-    "patient_context": {"age": 72, "renal_function": "normal"},
-    "actor": pharmacy_ai.id
+    "implementation": "custom_cardiac_calculator",
+    "output_schema": {
+        "risk_percentage": "number",
+        "risk_category": "enum:low,intermediate,high",
+        "recommendations": "array"
+    },
+    "fhir_mappings": ["RiskAssessment"]
 })
 
-# 3. Generate clinical alert if interaction found
-if medication_analysis.get("severity") == "critical":
-    alert_result = call_hacs_tool("create_clinical_alert", {
-        "alert_type": "drug_interaction",
-        "severity": "critical",
-        "message": "CRITICAL: Fluconazole increases warfarin levels 2-3x. Monitor INR daily.",
-        "recommendations": [
-            "Consider alternative antifungal (terbinafine)",
-            "If fluconazole required: Reduce warfarin dose 50%",
-            "Monitor INR daily x 7 days"
-        ],
-        "actor": pharmacy_ai.id
-    })
-
-# 4. Create procedural memory for future reference
-pharmacy_memory = MemoryBlock(
-    memory_type="procedural",
-    content="Warfarin-fluconazole interaction protocol: Fluconazole inhibits CYP2C9, increasing warfarin levels 2-3x. Reduce warfarin 50%, monitor INR daily. Alternative: terbinafine (no interaction).",
-    importance_score=0.9,
-    tags=["drug_interaction", "warfarin", "fluconazole", "cyp2c9"],
-    context_metadata={
-        "interaction_mechanism": "CYP2C9_inhibition",
-        "monitoring_required": "INR_daily",
-        "alternative_drug": "terbinafine"
-    }
-)
-
-# 5. Persist pharmacy intelligence
-pharmacy_result = call_hacs_tool("create_memory", pharmacy_memory.model_dump())
-
-print(f"💊 Drug interaction analysis complete")
-print(f"⚠️ Severity: {medication_analysis.get('severity')}")
-print(f"📋 Recommendations: {len(medication_analysis.get('recommendations', []))}")
+# Customize existing tool behavior
+registry.customize_tool("search_hacs_records", {
+    "default_filters": ["active_patients_only"],
+    "enhanced_ranking": "clinical_relevance",
+    "memory_integration": True
+})
 ```
 
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                Your Healthcare AI App                   │
-├─────────────────────────────────────────────────────────┤
-│  🔧 hacs-utils    │  LangChain/OpenAI/Claude adapters   │
-│  🏥 hacs-tools    │  37+ healthcare tools (MCP server)  │ 
-├─────────────────────────────────────────────────────────┤
-│  🔒 hacs-auth     │  Healthcare actors + permissions    │
-│  💾 hacs-persistence │ FHIR data + vector memory      │
-├─────────────────────────────────────────────────────────┤
-│  🧠 hacs-core     │  Clinical reasoning protocols       │
-│  📋 hacs-models   │  FHIR-compliant healthcare models   │
-└─────────────────────────────────────────────────────────┘
-```
-
-## Healthcare Tools (37+)
-
-| **Domain** | **Examples** |
-|------------|-------------|
-| **🔍 Resource Management** | `create_hacs_record`, `search_hacs_records`, `validate_resource_data` |
-| **🧠 Memory Operations** | `create_memory`, `search_memories`, `retrieve_context` |
-| **📊 Clinical Workflows** | `execute_clinical_workflow`, `create_clinical_template` |
-| **💊 Drug Intelligence** | `analyze_drug_interactions`, `check_contraindications` |
-| **📈 Healthcare Analytics** | `calculate_quality_measures`, `risk_stratification` |
-
-[**Complete Tools Reference →**](docs/healthcare-tools.md)
-
-## Production Setup
-
-```bash
-# Start HACS infrastructure
-docker-compose up -d  # PostgreSQL + pgvector + MCP server
-
-# Healthcare tools available at http://localhost:8000/
-curl -X POST http://localhost:8000/ -d '{
-  "jsonrpc": "2.0",
-  "method": "tools/call",
-  "params": {
-    "name": "create_hacs_record",
-    "arguments": {"resource_type": "Patient", "resource_data": {...}}
-  }
-}'
-```
-
-## Integration
-
-Works with your existing AI stack:
+### Clinical Workflow Templates
 
 ```python
-# LangChain
-from hacs_utils.integrations.langchain import HACSLangChainAdapter
-hacs_llm = HACSLangChainAdapter(ChatOpenAI(model="gpt-4"))
+from hacs_registry import WorkflowRegistry
 
-# Direct API
-import openai
-from hacs_models import Patient
-patient_context = Patient(full_name="...", agent_context={...})
-# Use patient_context in your AI prompts
+workflows = WorkflowRegistry()
+
+# Register specialty-specific workflow
+workflows.register_workflow("cardiology_consult", {
+    "specialty": "cardiology",
+    "steps": [
+        {
+            "name": "gather_cardiac_history",
+            "tools": ["search_memories", "search_hacs_records"],
+            "filters": ["cardiovascular", "chest_pain", "dyspnea"]
+        },
+        {
+            "name": "calculate_risk_scores", 
+            "tools": ["calculate_cardiac_risk", "assess_heart_failure_risk"],
+            "parallel": True
+        },
+        {
+            "name": "generate_recommendations",
+            "tools": ["clinical_decision_support"],
+            "depends_on": ["gather_cardiac_history", "calculate_risk_scores"]
+        }
+    ],
+    "memory_types": ["episodic", "procedural"],
+    "quality_measures": ["door_to_balloon_time", "guideline_adherence"]
+})
 ```
 
-## Enterprise Ready
+### Prompt Engineering for Healthcare
 
-- ✅ **HIPAA Compliance**: Built-in patterns and audit trails
-- ✅ **FHIR R4**: Healthcare interoperability standards  
-- ✅ **Actor Security**: Role-based permissions (Physician, Nurse, AI Agent)
-- ✅ **Production Tested**: Used in clinical documentation and research platforms
+```python
+from hacs_registry import PromptRegistry
+
+prompts = PromptRegistry()
+
+# Clinical documentation prompts
+prompts.register_template("soap_note", {
+    "system": """Generate SOAP note format for clinical documentation.
+    Focus on clinical reasoning, differential diagnosis, and evidence-based plans.""",
+    "user": """Patient: {patient_name}
+    Chief Complaint: {chief_complaint}
+    History: {history}
+    Physical Exam: {physical_exam}
+    Labs/Studies: {diagnostic_results}
+    
+    Generate structured SOAP note.""",
+    "schema": {
+        "subjective": "detailed patient history and complaints",
+        "objective": "physical exam findings and vital signs", 
+        "assessment": "clinical reasoning and differential diagnosis",
+        "plan": "evidence-based treatment and follow-up plan"
+    }
+})
+
+# Medication counseling prompts
+prompts.register_template("medication_counseling", {
+    "system": """You are a clinical pharmacist providing medication counseling.
+    Focus on safety, adherence, side effects, and drug interactions.""",
+    "context_enrichment": ["patient_allergies", "current_medications", "renal_function"],
+    "safety_checks": ["drug_interactions", "contraindications", "dosing_appropriateness"]
+})
+```
+
+### Healthcare Memory Patterns
+
+```python
+from hacs_core.memory import MemoryManager
+
+memory_manager = MemoryManager()
+
+# Configure clinical memory patterns
+memory_manager.configure_patterns({
+    "episodic_retention": {
+        "critical_events": "permanent",
+        "routine_visits": "2_years", 
+        "medication_changes": "5_years"
+    },
+    "semantic_knowledge": {
+        "clinical_guidelines": "update_on_revision",
+        "drug_information": "continuous_update",
+        "patient_preferences": "permanent"
+    },
+    "procedural_protocols": {
+        "emergency_protocols": "high_priority_cache",
+        "routine_procedures": "standard_cache",
+        "specialty_protocols": "context_dependent"
+    }
+})
+
+# Custom memory consolidation
+memory_manager.register_consolidation_rule("diabetes_management", {
+    "trigger": "patient_encounter",
+    "consolidate": ["glucose_trends", "medication_adherence", "lifestyle_factors"],
+    "output_format": "clinical_summary",
+    "importance_weighting": "outcome_based"
+})
+```
+
+## Production Healthcare Services
+
+### Docker Compose Setup
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  hacs-postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: hacs
+      POSTGRES_USER: hacs_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      
+  hacs-mcp-server:
+    image: hacs/mcp-server:latest
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://hacs_user:${DB_PASSWORD}@hacs-postgres:5432/hacs
+      HEALTHCARE_DOMAIN: ${HEALTHCARE_DOMAIN}
+      
+  hacs-registry:
+    image: hacs/registry:latest
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./custom_tools:/app/custom_tools
+      - ./workflows:/app/workflows
+      
+  hacs-vector-search:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+    volumes:
+      - ./qdrant_data:/qdrant/storage
+```
+
+### Environment Configuration
+
+```bash
+# .env
+DATABASE_URL=postgresql://hacs_user:secure_password@localhost:5432/hacs
+HEALTHCARE_DOMAIN=general_medicine
+ORGANIZATION_NAME=Your Healthcare System
+
+# LLM Providers (choose one or more)
+ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-...
+
+# Healthcare compliance
+AUDIT_LOGGING=true
+HIPAA_COMPLIANCE=true
+ENCRYPTION_AT_REST=true
+
+# Custom tool paths
+CUSTOM_TOOLS_PATH=./healthcare_tools
+WORKFLOW_TEMPLATES_PATH=./clinical_workflows
+PROMPT_TEMPLATES_PATH=./clinical_prompts
+```
+
+### Launch Healthcare Development Environment
+
+```bash
+# 1. Start all HACS services
+docker-compose up -d
+
+# 2. Initialize healthcare registry
+python -m hacs_registry init --domain=cardiology --templates=clinical
+
+# 3. Load custom tools and workflows
+python -m hacs_registry load --path=./custom_healthcare_tools
+
+# 4. Verify setup
+python -c "
+from hacs_utils.mcp.tools import call_hacs_tool
+result = call_hacs_tool('list_tools', {})
+print(f'Available tools: {len(result[\"tools\"])}')
+"
+
+# 5. Start developing your healthcare AI
+python your_healthcare_agent.py
+```
+
+## Integration Examples
+
+### LangChain Integration
+
+```python
+from langchain_openai import ChatOpenAI
+from hacs_utils.integrations.langchain import HACSLangChainAdapter
+
+# Wrap LLM with HACS healthcare capabilities
+llm = ChatOpenAI(model="gpt-4")
+hacs_llm = HACSLangChainAdapter(
+    llm=llm,
+    tools_registry="http://localhost:8001",
+    healthcare_domain="cardiology"
+)
+
+# Get healthcare-specific tools
+healthcare_tools = hacs_llm.get_healthcare_tools()
+# Returns: 37+ tools customized for your healthcare domain
+```
+
+### Direct API Integration
+
+```python
+import openai
+from hacs_models import Patient, MemoryBlock
+from hacs_utils.context import HealthcareContextBuilder
+
+# Build rich healthcare context
+context_builder = HealthcareContextBuilder()
+clinical_context = context_builder.build_context(
+    patient=patient,
+    recent_memories=recent_clinical_memories,
+    relevant_guidelines=clinical_guidelines
+)
+
+# Use with any LLM
+response = openai.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": "You are a clinical AI assistant."},
+        {"role": "user", "content": f"Clinical context: {clinical_context}\n\nQuestion: {user_question}"}
+    ]
+)
+```
+
+## Enterprise Healthcare Deployment
+
+- ✅ **HIPAA Compliance**: Built-in patterns, audit trails, encryption
+- ✅ **FHIR R4**: Healthcare interoperability standards
+- ✅ **Multi-tenant**: Organization-level isolation and customization  
+- ✅ **Scalable**: Microservices architecture with container orchestration
+- ✅ **Monitoring**: Healthcare-specific metrics and alerting
 
 ## Documentation
 
-- **[5-Minute Quick Start](docs/quick-start.md)** 
-- **[Complete Tools Reference](docs/healthcare-tools.md)**
-- **[Integration Guide](docs/integrations.md)**
+- **[5-Minute Quick Start](docs/quick-start.md)** - Get running immediately
+- **[Healthcare Tools Reference](docs/healthcare-tools.md)** - All 37+ tools
+- **[Registry & Customization](docs/registry.md)** - Tool and workflow customization
+- **[Clinical Workflows](docs/workflows.md)** - Specialty-specific patterns
+- **[Integration Guide](docs/integrations.md)** - Connect with existing systems
 
 **Enterprise Support:** [solanovisitor@gmail.com](mailto:solanovisitor@gmail.com)
 
@@ -372,6 +486,6 @@ patient_context = Patient(full_name="...", agent_context={...})
 
 **Stop rebuilding healthcare infrastructure. Start building healthcare solutions.**
 
-[🚀 Get Started](docs/quick-start.md) • [🛠️ Tools](docs/healthcare-tools.md) • [💬 Discussions](https://github.com/solanovisitor/hacs-ai/discussions)
+[🚀 Get Started](docs/quick-start.md) • [🛠️ Customize Tools](docs/registry.md) • [💬 Discussions](https://github.com/solanovisitor/hacs-ai/discussions)
 
 </div>
