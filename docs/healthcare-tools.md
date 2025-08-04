@@ -1,25 +1,31 @@
 # HACS Healthcare Tools Reference
 
-Complete reference for all 37+ healthcare tools available through HACS MCP server.
+**Context Engineering Operations for Medical AI**
 
-## Tool Categories
+Complete reference for 37+ healthcare tools implementing context engineering strategies (**Write**, **Select**, **Compress**, **Isolate**) for medical AI agents.
+
+## Context Engineering Tool Categories
+
+Each tool category implements specific context engineering strategies optimized for healthcare AI:
 
 ### 🔍 Resource Management (8 tools)
 
-Core CRUD operations for healthcare resources with FHIR compliance.
+**🎯 SELECT + 🔒 ISOLATE Strategies**: Healthcare resource operations with selective data access and compliance boundaries.
+
+Core CRUD operations implementing context selection and isolation for healthcare AI agents:
 
 #### `create_hacs_record`
-Create new healthcare resources (Patient, Observation, Encounter, etc.)
+**🎯 SELECT**: Create healthcare resources with selective data extraction
 
 ```python
-# Create patient
+# SELECT: Create patient with only essential clinical context
+patient_data = patient.model_dump(exclude={
+    "text", "contained", "extension", "modifier_extension"  # Exclude FHIR overhead
+})
+
 result = call_tool("create_hacs_record", {
     "resource_type": "Patient",
-    "resource_data": {
-        "full_name": "Maria Garcia",
-        "birth_date": "1990-03-20",
-        "gender": "female"
-    }
+    "resource_data": patient_data  # Optimized clinical context only
 })
 ```
 
@@ -110,20 +116,26 @@ records = call_tool("search_hacs_records", {
 
 ### 🧠 Memory Operations (5 tools)
 
-Clinical memory management for AI agent cognition.
+**🖊️ WRITE + 🎯 SELECT Strategies**: Clinical memory generation and selective retrieval for healthcare AI cognition.
+
+Clinical memory operations implementing context writing and selective memory access:
 
 #### `create_memory`
-Store clinical memories with context
+**🖊️ WRITE**: Generate clinical memories with structured context metadata
 
 ```python
+# WRITE: Generate clinical context with comprehensive metadata
 memory = call_tool("create_memory", {
-    "content": "Patient reports improved sleep after medication adjustment",
+    "content": "Patient reports 75% reduction in chest pain after metoprolol initiation. Excellent medication tolerance.",
     "memory_type": "episodic",
-    "importance_score": 0.8,
-    "tags": ["medication", "sleep", "improvement"],
+    "importance_score": 0.9,  # High clinical significance
+    "tags": ["medication_response", "chest_pain", "improvement", "metoprolol"],
     "context_metadata": {
         "patient_id": "patient-123",
-        "encounter_type": "follow_up"
+        "encounter_type": "follow_up",
+        "medication_change": "metoprolol_start",
+        "outcome_measure": "symptom_improvement",
+        "context_strategies_used": ["write", "select"]  # Track context engineering
     }
 })
 ```
@@ -226,17 +238,23 @@ care_plan = call_tool("generate_care_plan", {
 
 ### 🔍 Vector Search (3 tools)
 
-Semantic search across healthcare knowledge.
+**🗜️ COMPRESS + 🎯 SELECT Strategies**: Semantic search with compressed clinical context and selective retrieval.
+
+Vector operations implementing context compression and selective similarity matching for healthcare AI:
 
 #### `semantic_search_records`
-Search healthcare records by semantic similarity
+**🗜️ COMPRESS + 🎯 SELECT**: Semantic search with compressed queries and selective results
 
 ```python
+# COMPRESS: Use compressed clinical query
+# SELECT: Filter by similarity threshold and importance
 results = call_tool("semantic_search_records", {
-    "query": "patients with uncontrolled diabetes",
+    "query": "uncontrolled diabetes HbA1c >8% medication non-adherence",  # COMPRESS clinical concepts
     "resource_types": ["Patient", "Observation"],
-    "similarity_threshold": 0.8,
-    "limit": 20
+    "similarity_threshold": 0.85,  # SELECT highly relevant only
+    "importance_filter": {"min": 0.7},  # SELECT clinically significant
+    "output_format": "compressed_summary",  # COMPRESS results for efficiency
+    "limit": 15
 })
 ```
 
@@ -467,7 +485,81 @@ evaluation = call_tool("evaluate_model_performance", {
 })
 ```
 
-## Usage Patterns
+## Context Engineering Usage Patterns
+
+### Multi-Strategy Context Engineering
+
+Combine multiple context engineering strategies for optimal healthcare AI performance:
+
+```python
+def context_engineered_clinical_workflow(patient_id, clinical_query):
+    """Demonstrate all four context engineering strategies in tool usage"""
+    
+    # 🔒 ISOLATE: Setup healthcare AI with scoped permissions
+    clinical_context = {
+        "actor_permissions": ["patient:read", "observation:write", "memory:write"],
+        "compliance_boundaries": ["hipaa_compliant", "audit_logged"]
+    }
+    
+    # 🎯 SELECT: Search with selective criteria
+    search_results = call_tool("search_hacs_records", {
+        "query": clinical_query,
+        "resource_types": ["Patient", "Observation", "MemoryBlock"],
+        "importance_threshold": 0.7,  # SELECT high-importance only
+        "time_window": "last_12_months",  # SELECT relevant timeframe
+        "limit": 10
+    })
+    
+    # 🗜️ COMPRESS: Generate compressed clinical context
+    for result in search_results["results"]:
+        if result["resource_type"] == "Patient":
+            # COMPRESS: Use text summary instead of full patient data
+            patient_summary = result["data"]["text_summary"]
+            
+            # SELECT: Extract only essential observations
+            recent_obs = [
+                obs for obs in result.get("related_observations", [])
+                if obs.get("importance_score", 0) > 0.8
+            ]
+            
+            # COMPRESS: Generate clinical summary
+            clinical_summary = f"{patient_summary} | Recent: {len(recent_obs)} significant findings"
+    
+    # 🖊️ WRITE: Generate clinical context with comprehensive metadata
+    clinical_memory = call_tool("create_memory", {
+        "content": f"Clinical analysis for {clinical_query}: {clinical_summary}",
+        "memory_type": "episodic",
+        "importance_score": 0.9,
+        "tags": ["context_engineered", "clinical_analysis", "ai_generated"],
+        "context_metadata": {
+            "patient_id": patient_id,
+            "context_strategies_applied": ["isolate", "select", "compress", "write"],
+            "query_complexity": "multi_resource",
+            "clinical_significance": "high",
+            "compression_efficiency": 0.3  # Reduced to 30% of original context
+        }
+    })
+    
+    return {
+        "selected_results": search_results,
+        "compressed_summary": clinical_summary,
+        "written_context": clinical_memory,
+        "context_isolation": clinical_context
+    }
+```
+
+### Context Strategy Selection Guide
+
+Choose appropriate context engineering strategies based on your healthcare AI use case:
+
+| **Use Case** | **Primary Strategy** | **Secondary Strategy** | **Tool Examples** |
+|--------------|---------------------|----------------------|-------------------|
+| **Clinical Documentation** | 🖊️ WRITE | 🎯 SELECT | `create_memory`, `create_hacs_record` |
+| **Patient Search** | 🎯 SELECT | 🗜️ COMPRESS | `search_hacs_records`, `find_similar_cases` |
+| **Real-time Clinical Decision** | 🗜️ COMPRESS | 🎯 SELECT | `semantic_search_records`, `retrieve_context` |
+| **Population Health Analytics** | 🗜️ COMPRESS | 🔒 ISOLATE | `calculate_quality_measures`, `risk_stratification` |
+| **Care Plan Generation** | 🖊️ WRITE | 🗜️ COMPRESS | `generate_care_plan`, `execute_clinical_workflow` |
+| **Regulatory Compliance** | 🔒 ISOLATE | 🎯 SELECT | `validate_fhir_compliance`, `create_hacs_record` |
 
 ### Error Handling
 

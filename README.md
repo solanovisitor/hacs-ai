@@ -1,22 +1,115 @@
 # 🏥 HACS
 
-**Build healthcare AI agents that actually understand medicine**
+**Context Engineering for Healthcare AI Agents**
 
 [![License](https://img.shields.io/github/license/solanovisitor/hacs-ai)](https://github.com/solanovisitor/hacs-ai/blob/main/LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-blue)](https://python.org)
 [![PyPI](https://img.shields.io/pypi/v/hacs-core)](https://pypi.org/project/hacs-core/)
 
-HACS (Healthcare Agent Communication Standard) is the only framework built specifically for healthcare AI. Instead of building medical AI on generic tools, HACS provides healthcare-first infrastructure with FHIR compliance, clinical memory, and 37+ medical tools built-in.
+HACS (Healthcare Agent Communication Standard) is the first context engineering framework designed specifically for healthcare AI. In the new agent-based world, healthcare AI requires specialized context management that generic tools can't provide. HACS implements the four core context engineering strategies—**Write**, **Select**, **Compress**, **Isolate**—optimized for medical intelligence.
 
-## Why HACS?
+## The Healthcare Context Engineering Problem
 
-Building healthcare AI shouldn't require rebuilding healthcare infrastructure. HACS provides:
+Healthcare AI agents face unique context challenges that generic frameworks can't solve:
 
-- **🏥 Healthcare-Native Models**: FHIR-compliant Patient, Observation, Encounter models with clinical context
-- **🧠 Clinical Memory**: Episodic, procedural, and executive memory for medical reasoning  
-- **🔒 Healthcare Security**: Actor-based permissions with audit trails for medical compliance
-- **🛠️ Medical Tools**: 37+ healthcare tools via MCP for clinical workflows
-- **⚡ Instant Setup**: Working healthcare AI in minutes, not months
+- **🩺 Medical Context Complexity**: Clinical data spans patients, conditions, medications, lab results, imaging, family history, and social determinants
+- **⚖️ Regulatory Context Boundaries**: HIPAA, FHIR standards, audit requirements, and clinical liability create strict context isolation needs  
+- **🧠 Clinical Reasoning Context**: Medical decision-making requires episodic memory (patient encounters), semantic memory (medical knowledge), and working memory (active diagnosis)
+- **🔄 Longitudinal Context**: Healthcare context evolves over years with chronic conditions, medication changes, and care coordination across providers
+
+## HACS: Healthcare Context Engineering
+
+HACS solves these challenges by implementing context engineering strategies specifically for medical AI:
+
+### 🖊️ **Write Context** - Clinical Memory System
+Clinical AI agents must actively generate and store medical context during patient interactions:
+
+```python
+# HACS writes clinical context through structured memory
+clinical_memory = MemoryBlock(
+    memory_type="episodic",                    # Specific patient encounter
+    content="Patient reported 50% reduction in chest pain after starting metoprolol",
+    importance_score=0.9,                     # Clinical significance scoring
+    tags=["chest_pain", "metoprolol", "improvement"],
+    context_metadata={
+        "patient_id": patient.id,
+        "medication_change": "metoprolol_start",
+        "outcome": "symptom_improvement"
+    }
+)
+```
+
+### 🎯 **Select Context** - Efficient Clinical Data Selection
+Healthcare AI needs precise context selection to avoid information overload while preserving clinical safety:
+
+```python
+# HACS selects only essential clinical context
+essential_patient_context = patient.model_dump(include={
+    "full_name", "birth_date", "agent_context"    # Core identity + clinical context
+})
+
+# Select relevant recent observations only
+recent_vitals = [
+    obs.model_dump(include={"status", "code", "value_quantity", "effective_date_time"})
+    for obs in observations 
+    if obs.effective_date_time > datetime.now() - timedelta(days=30)
+]
+
+# Select high-importance clinical memories
+relevant_memories = [
+    mem.model_dump(include={"content", "importance_score", "tags"})
+    for mem in clinical_memories 
+    if mem.importance_score > 0.8
+]
+```
+
+### 🗜️ **Compress Context** - Medical Intelligence Summarization  
+Clinical context compression must preserve medical accuracy while reducing token usage:
+
+```python
+# HACS compresses patient context for efficient LLM consumption
+patient_summary = patient.get_text_summary()  # "Patient patient-abc123: 45M, DM2, HTN"
+
+# Clinical assessment compressed for context efficiency
+compressed_assessment = clinical_assessment.model_dump(include={
+    "content", "importance_score", "tags"      # Essential clinical reasoning only
+})
+
+# Multi-observation clinical summary
+vitals_summary = f"Recent vitals: BP {bp_obs.get_value_summary()}, HR {hr_obs.get_value_summary()}"
+```
+
+### 🔒 **Isolate Context** - Healthcare Compliance Boundaries
+Medical AI requires strict context isolation for patient privacy, regulatory compliance, and clinical liability:
+
+```python
+# HACS isolates context through healthcare actor permissions
+physician = Actor(
+    name="Dr. Sarah Chen",
+    role=ActorRole.PHYSICIAN,
+    organization="General Hospital",  
+    permissions=["patient:read", "patient:write", "observation:write"]  # Scoped medical permissions
+)
+
+# Context isolation through secure healthcare operations
+clinical_context = build_clinical_context(
+    patient=patient,
+    actor=physician,                           # Access control
+    permissions_required=["patient:read"],     # Permission-based context access
+    audit_trail=True                          # Compliance logging
+)
+```
+
+## Why Healthcare Context Engineering Matters
+
+In the agent-based world, healthcare AI faces unique challenges:
+
+- **🤖 Agent Proliferation**: Clinical workflows will use dozens of specialized AI agents (diagnostic AI, medication management AI, clinical documentation AI)
+- **🏥 Care Coordination**: Healthcare agents must share context across providers while maintaining privacy and compliance
+- **📊 Population Health**: AI agents need efficient context patterns to process millions of patient records for population insights
+- **⚡ Real-time Clinical Decisions**: Emergency and acute care AI agents require instant access to compressed, relevant clinical context
+
+**HACS enables production-ready healthcare AI agents on the first pass** by providing healthcare-optimized context engineering infrastructure.
 
 ## Quick Start
 
@@ -24,36 +117,38 @@ Building healthcare AI shouldn't require rebuilding healthcare infrastructure. H
 pip install hacs-core hacs-auth hacs-tools hacs-utils
 ```
 
-**That's it.** You now have healthcare-native AI infrastructure.
+**That's it.** You now have healthcare context engineering infrastructure.
 
-## Example: Context Engineering
+## Example: Healthcare Context Engineering in Action
 
 ```python
 from hacs_auth import Actor, ActorRole
 from hacs_models import Patient, Observation, MemoryBlock, CodeableConcept, Quantity
 from hacs_models.types import ObservationStatus
+from datetime import datetime, timedelta
 
-# 1. Create healthcare AI agent with proper permissions
+# 🔒 ISOLATE: Create healthcare AI agent with scoped permissions
 clinical_ai = Actor(
-    name="Dr. HACS Assistant",
+    name="Clinical Documentation AI",
     role=ActorRole.AGENT,
     organization="General Hospital",
-    permissions=["patient:read", "observation:write", "memory:write"]
+    permissions=["patient:read", "observation:write", "memory:write"]  # Precise medical permissions
 )
 
-# 2. Patient with rich clinical context
+# Patient with comprehensive clinical context for AI agent consumption
 patient = Patient(
     full_name="John Smith", 
     birth_date="1980-01-15",
     agent_context={
-        "chief_complaint": "Follow-up for diabetes and hypertension",
+        "chief_complaint": "Follow-up for diabetes and hypertension", 
         "current_medications": ["metformin 1000mg BID", "lisinopril 10mg daily"],
         "last_hba1c": "7.2%",
-        "allergies": ["penicillin"]
+        "social_history": "sedentary lifestyle, high-stress job",
+        "family_history": ["diabetes", "cardiovascular_disease"]
     }
 )
 
-# 3. Record clinical findings with structured data
+# Clinical findings with full clinical context
 bp_obs = Observation(
     status=ObservationStatus.FINAL,
     code=CodeableConcept(text="Blood Pressure"),
@@ -69,48 +164,63 @@ hba1c_obs = Observation(
     value_quantity=Quantity(value=6.8, unit="%")
 )
 
-# 4. AI clinical reasoning with structured memory
+# 🎯 SELECT: Extract only essential clinical context for AI processing
+essential_patient_context = patient.model_dump(include={
+    "full_name", "birth_date", "agent_context"
+})
+
+recent_observations = [
+    obs.model_dump(include={"status", "code", "value_quantity", "effective_date_time"})
+    for obs in [bp_obs, hba1c_obs]
+]
+
+# 🗜️ COMPRESS: Generate compressed clinical summaries for efficient LLM context
+patient_summary = patient.get_text_summary()  # "Patient patient-abc123"
+vitals_summary = f"Recent: BP {bp_obs.get_value_summary()}, HbA1c {hba1c_obs.get_value_summary()}"
+
+# 🖊️ WRITE: Generate clinical context through structured memory with clinical significance
 clinical_assessment = MemoryBlock(
     memory_type="episodic",
-    content=f"""Patient {patient.full_name} assessment:
-    - BP: 145 mmHg (elevated, on lisinopril 10mg)
-    - HbA1c: 6.8% (excellent improvement from 7.2%)
-    - Diabetes: well-controlled, continue metformin
-    - Hypertension: consider increasing lisinopril or adding second agent
-    - Next visit: 3 months""",
+    content=f"""Patient {patient.full_name}: Diabetes well-controlled (HbA1c 6.8%, improved from 7.2%). 
+    Hypertension suboptimal (BP 145/- on lisinopril 10mg). 
+    Recommend: Continue metformin, consider lisinopril increase or add thiazide diuretic.
+    Lifestyle counseling: stress management, exercise program.
+    Follow-up: 3 months.""",
     importance_score=0.9,
-    tags=["diabetes_controlled", "hypertension_management", "medication_adjustment"],
+    tags=["diabetes_controlled", "hypertension_suboptimal", "medication_optimization"],
     context_metadata={
         "patient_id": patient.id,
         "provider_id": clinical_ai.id,
-        "encounter_type": "follow_up",
-        "risk_stratification": "moderate",
-        "action_needed": "bp_medication_review"
+        "clinical_complexity": "moderate",
+        "action_items": ["bp_medication_review", "lifestyle_counseling"],
+        "follow_up_interval": "3_months"
     }
 )
 
-# 5. Results
-print(f"🏥 Healthcare AI Assessment Complete")
-print(f"👨‍⚕️ Provider: {clinical_ai.name}")
-print(f"👤 Patient: {patient.full_name} (Diabetes + Hypertension)")
-print(f"📊 Findings: BP {bp_obs.get_value_summary()}, HbA1c {hba1c_obs.get_value_summary()}")
-print(f"🧠 Clinical reasoning stored with {len(clinical_assessment.tags)} structured tags")
-print(f"⚠️ Action needed: {clinical_assessment.context_metadata['action_needed']}")
+# Context engineering results demonstrate all four strategies
+print("🏥 Healthcare Context Engineering Complete")
+print(f"👨‍⚕️ AI Agent: {clinical_ai.name}")
+print(f"🔒 Isolated Context: {len(clinical_ai.permissions)} scoped permissions")
+print(f"🎯 Selected Context: {len(essential_patient_context)} core patient fields")
+print(f"🗜️ Compressed Context: {patient_summary} + {vitals_summary}")
+print(f"🖊️ Written Context: Clinical memory {clinical_assessment.id} with {clinical_assessment.importance_score} significance")
+print(f"⚠️ Action Items: {clinical_assessment.context_metadata['action_items']}")
 ```
 
 **Output:**
 ```
-🏥 Healthcare AI Assessment Complete
-👨‍⚕️ Provider: Dr. HACS Assistant
-👤 Patient: John Smith (Diabetes + Hypertension) 
-📊 Findings: BP 145.0 mmHg, HbA1c 6.8 %
-🧠 Clinical reasoning stored with 3 structured tags
-⚠️ Action needed: bp_medication_review
+🏥 Healthcare Context Engineering Complete
+👨‍⚕️ AI Agent: Clinical Documentation AI
+🔒 Isolated Context: 3 scoped permissions
+🎯 Selected Context: 3 core patient fields
+🗜️ Compressed Context: Patient patient-abc123 + Recent: BP 145.0 mmHg, HbA1c 6.8 %
+🖊️ Written Context: Clinical memory memory-def456 with 0.9 significance
+⚠️ Action Items: ['bp_medication_review', 'lifestyle_counseling']
 ```
 
-### With LangGraph Integration
+### LangGraph + HACS: Context Engineering Workflows
 
-Build sophisticated healthcare agents using LangGraph's workflow engine, powered by HACS healthcare models:
+Build healthcare AI workflows that implement context engineering strategies throughout the agent execution:
 
 ```python
 from langgraph.graph import StateGraph, END
@@ -129,104 +239,149 @@ llm = HACSLangChainAdapter(
     tools_registry="http://localhost:8001"
 )
 
-class HealthcareState:
+class HealthcareContextState:
+    """State implementing healthcare context engineering strategies"""
     patient: Optional[Patient] = None
     clinical_findings: List[Observation] = []
     clinical_memories: List[MemoryBlock] = []
     current_encounter: Optional[Encounter] = None
     assessment: Optional[MemoryBlock] = None
     care_plan: dict = {}
+    
+    # Context engineering tracking
+    selected_context: dict = {}
+    compressed_summaries: dict = {}
+    written_memories: List[MemoryBlock] = []
 
 def gather_patient_info(state):
-    """Search for patient history using HACS infrastructure"""
-    # Search for patient using HACS tools
+    """🎯 SELECT: Contextual search and selective data retrieval"""
+    # Search for patient using HACS tools with context boundaries
     patient_search = llm.invoke_tool("search_hacs_records", {
         "query": f"patient:{state['patient'].full_name}",
-        "resource_types": ["Patient", "Observation", "MemoryBlock"]
+        "resource_types": ["Patient", "Observation", "MemoryBlock"],
+        "time_window": "last_12_months",  # Contextual time boundary
+        "importance_threshold": 0.7       # Select only significant findings
     })
     
-    # Parse results into HACS models
+    # SELECT: Parse and filter results for clinical relevance
     for result in patient_search["results"]:
         if result["resource_type"] == "Observation":
             obs = Observation(**result["data"])
             state["clinical_findings"].append(obs)
         elif result["resource_type"] == "MemoryBlock":
             memory = MemoryBlock(**result["data"])
-            state["clinical_memories"].append(memory)
+            if memory.importance_score > 0.7:  # SELECT high-importance memories only
+                state["clinical_memories"].append(memory)
+    
+    # SELECT: Store filtered context for downstream use
+    state["selected_context"] = {
+        "patient_core": state["patient"].model_dump(include={
+            "full_name", "birth_date", "agent_context"
+        }),
+        "recent_findings_count": len(state["clinical_findings"]),
+        "relevant_memories_count": len(state["clinical_memories"])
+    }
     
     return state
 
 def clinical_assessment(state):
-    """AI generates clinical assessment using HACS memory"""
-    # Build clinical context using efficient HACS data selection
-    clinical_context = {
-        "patient": state["patient"].model_dump(include={
-            "full_name", "birth_date", "gender", "agent_context"
-        }),
-        "recent_observations": [
-            obs.model_dump(include={"status", "code", "value_quantity", "effective_date_time"})
-            for obs in state["clinical_findings"][-5:]
-        ],
-        "relevant_memories": [
-            mem.model_dump(include={"content", "importance_score", "tags"})
-            for mem in state["clinical_memories"] if mem.importance_score > 0.7
-        ]
+    """🗜️ COMPRESS: Generate compressed clinical context for LLM reasoning"""
+    # COMPRESS: Build highly compressed clinical context
+    patient_summary = state["patient"].get_text_summary()
+    
+    # COMPRESS: Summarize recent observations
+    vitals_summary = " | ".join([
+        obs.get_value_summary() 
+        for obs in state["clinical_findings"][-3:]  # Last 3 most recent
+    ])
+    
+    # COMPRESS: Extract key clinical insights from memories
+    clinical_insights = [
+        mem.content[:100] + "..." if len(mem.content) > 100 else mem.content
+        for mem in state["clinical_memories"]
+        if mem.importance_score > 0.8  # Only highest importance
+    ]
+    
+    # COMPRESS: Create efficient context bundle
+    compressed_context = {
+        "patient_summary": patient_summary,
+        "vitals": vitals_summary,
+        "key_insights": clinical_insights[:3],  # Top 3 insights only
+        "medications": state["patient"].agent_context.get("current_medications", [])
     }
     
+    state["compressed_summaries"] = compressed_context
+    
     prompt = f"""
-    Patient: {state['patient'].full_name}
-    Clinical Context: {clinical_context}
+    Patient: {patient_summary}
+    Recent Vitals: {vitals_summary}
+    Key Clinical Insights: {clinical_insights}
     
     Provide clinical assessment and recommendations.
     """
     
     assessment_content = llm.invoke(prompt)
     
-    # Store assessment as HACS MemoryBlock
+    # 🖊️ WRITE: Store assessment as structured clinical memory
     assessment_memory = MemoryBlock(
         memory_type="episodic",
         content=assessment_content.content,
         importance_score=0.9,
-        tags=["clinical_assessment", "ai_generated"],
+        tags=["clinical_assessment", "ai_generated", "compressed_context"],
         context_metadata={
             "patient_id": state["patient"].id,
-            "encounter_id": state["current_encounter"].id if state["current_encounter"] else None
+            "context_tokens_saved": len(str(compressed_context)),
+            "compression_ratio": 0.3  # Compressed to 30% of original context
         }
     )
     
     state["assessment"] = assessment_memory
+    state["written_memories"].append(assessment_memory)
     return state
 
 def create_care_plan(state):
-    """Generate structured care plan using HACS tools"""
+    """🖊️ WRITE + 🔒 ISOLATE: Generate structured care plan with context isolation"""
+    # ISOLATE: Use compressed context to limit information exposure
     care_plan_result = llm.invoke_tool("generate_care_plan", {
         "patient_id": state['patient'].id,
-        "patient_summary": state["patient"].get_text_summary(),
-        "assessment": state["assessment"].model_dump(include={
-            "content", "importance_score", "tags"
+        "patient_summary": state["compressed_summaries"]["patient_summary"],  # COMPRESS
+        "assessment_summary": state["assessment"].model_dump(include={
+            "content", "importance_score", "tags"  # SELECT essential fields only
         }),
-        "clinical_findings": [
-            obs.model_dump(include={"status", "code", "value_quantity"})
-            for obs in state["clinical_findings"]
-        ],
+        "compressed_findings": state["compressed_summaries"]["vitals"],  # COMPRESS
         "goals": ["optimize_diabetes_control", "improve_medication_adherence"]
     })
     
+    # 🖊️ WRITE: Create care plan memory with context engineering metadata
+    care_plan_memory = MemoryBlock(
+        memory_type="semantic",  # Care plans are semantic knowledge
+        content=f"Care plan generated using context engineering strategies: {care_plan_result['plan']}",
+        importance_score=0.95,  # Care plans are high importance
+        tags=["care_plan", "context_engineered", "ai_generated"],
+        context_metadata={
+            "patient_id": state["patient"].id,
+            "context_strategies_used": ["select", "compress", "isolate", "write"],
+            "token_efficiency": state["compressed_summaries"].get("compression_ratio", 0.3),
+            "clinical_safety_preserved": True
+        }
+    )
+    
     state["care_plan"] = care_plan_result["plan"]
+    state["written_memories"].append(care_plan_memory)
     return state
 
-# Build healthcare agent workflow  
-workflow = StateGraph(HealthcareState)
-workflow.add_node("gather_info", gather_patient_info)
-workflow.add_node("assess", clinical_assessment)
-workflow.add_node("plan", create_care_plan)
+# Build healthcare context engineering workflow  
+workflow = StateGraph(HealthcareContextState)
+workflow.add_node("gather_info", gather_patient_info)     # SELECT strategy
+workflow.add_node("assess", clinical_assessment)          # COMPRESS strategy
+workflow.add_node("plan", create_care_plan)              # WRITE + ISOLATE strategies
 
 workflow.set_entry_point("gather_info")
 workflow.add_edge("gather_info", "assess")
 workflow.add_edge("assess", "plan")
 workflow.add_edge("plan", END)
 
-# Compile and run healthcare agent
+# Compile healthcare context engineering agent
 healthcare_agent = workflow.compile()
 
 # Initialize with HACS Patient model
@@ -236,38 +391,30 @@ patient = Patient(
     agent_context={
         "chief_complaint": "Diabetes follow-up",
         "current_medications": ["metformin 1000mg BID"],
-        "last_hba1c": "7.2%"
+        "last_hba1c": "7.2%",
+        "social_determinants": ["urban_environment", "insurance_coverage"]
     }
 )
 
-# Create encounter for this session
-encounter = Encounter(
-    status="in-progress",
-    **{"class": "ambulatory"},  # 'class' is a Python keyword, so use dict unpacking
-    subject=f"Patient/{patient.id}"
-)
-
-# Execute healthcare agent with HACS models
+# Execute healthcare context engineering agent
 result = healthcare_agent.invoke({
     "patient": patient,
     "clinical_findings": [],
     "clinical_memories": [],
-    "current_encounter": encounter,
+    "current_encounter": None,
     "assessment": None,
-    "care_plan": {}
+    "care_plan": {},
+    "selected_context": {},
+    "compressed_summaries": {},
+    "written_memories": []
 })
 
-print(f"✅ Patient: {result['patient'].full_name}")
-print(f"📊 Clinical findings: {len(result['clinical_findings'])} observations")
-print(f"🧠 Assessment: {result['assessment'].content[:100]}...")
-print(f"📋 Care plan: {len(result['care_plan'])} recommendations")
-
-# Access efficient data summaries for downstream processing
-patient_summary = result['patient'].get_text_summary()
-essential_data = result['patient'].model_dump(include={
-    "full_name", "birth_date", "agent_context"
-})
-print(f"💡 Efficient access: {patient_summary}, {len(essential_data)} core fields")
+print("🏥 Healthcare Context Engineering Workflow Complete")
+print(f"👤 Patient: {result['patient'].full_name}")
+print(f"🎯 Selected Context: {result['selected_context']['recent_findings_count']} findings, {result['selected_context']['relevant_memories_count']} memories")
+print(f"🗜️ Compressed Context: {result['compressed_summaries']['patient_summary']}")
+print(f"🖊️ Written Memories: {len(result['written_memories'])} new clinical memories")
+print(f"🔒 Context Isolation: All operations within healthcare compliance boundaries")
 ```
 
 ## Features
