@@ -10,10 +10,10 @@ readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
 authors = [
-    { name = "Solano Nocetti", email = "solanovisitor@gmail.com" }
+    { name = "Solano Todeschini", email = "solanovisitor@gmail.com" }
 ]
 maintainers = [
-    { name = "Solano Nocetti", email = "solanovisitor@gmail.com" }
+    { name = "Solano Todeschini", email = "solanovisitor@gmail.com" }
 ]
 keywords = ["healthcare", "agents", "cli", "fhir", "ai"]
 classifiers = [

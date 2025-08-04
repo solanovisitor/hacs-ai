@@ -9,10 +9,10 @@ description = "Authentication and authorization components for HACS (Healthcare 
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
-    { name = "Solano Nocetti", email = "solanovisitor@gmail.com" }
+    { name = "Solano Todeschini", email = "solanovisitor@gmail.com" }
 ]
 maintainers = [
-    { name = "Solano Nocetti", email = "solanovisitor@gmail.com" }
+    { name = "Solano Todeschini", email = "solanovisitor@gmail.com" }
 ]
 keywords = [
     "healthcare",

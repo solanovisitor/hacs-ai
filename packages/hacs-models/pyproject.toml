@@ -5,10 +5,10 @@ description = "HACS Healthcare Data Models - Pure Pydantic models for FHIR-compl
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "Solano Nocetti", email = "solanovisitor@gmail.com"}
+    {name = "Solano Todeschini", email = "solanovisitor@gmail.com"}
 ]
 maintainers = [
-    {name = "Solano Nocetti", email = "solanovisitor@gmail.com"}
+    {name = "Solano Todeschini", email = "solanovisitor@gmail.com"}
 ]
 keywords = ["healthcare", "fhir", "models", "pydantic", "ai", "agents"]
 classifiers = [
