@@ -26,7 +26,7 @@ pip install hacs-core hacs-auth hacs-tools hacs-utils
 
 **That's it.** You now have healthcare-native AI infrastructure.
 
-## Example: Complete Healthcare AI Agent
+## Example: Context Engineering
 
 ```python
 from hacs_auth import Actor, ActorRole
@@ -117,16 +117,17 @@ from langgraph.graph import StateGraph, END
 from langchain_openai import ChatOpenAI
 from hacs_utils.integrations.langchain import HACSLangChainAdapter
 
-# Healthcare-aware LLM with HACS tools
-llm = HACSLangChainAdapter(
-    llm=ChatOpenAI(model="gpt-4"),
-    tools_registry="http://localhost:8001"
-)
-
 # Agent state with HACS healthcare models
 from hacs_models import Patient, Observation, MemoryBlock, Encounter
 from hacs_core.memory import ClinicalMemoryManager
 from typing import List, Optional
+
+
+# Healthcare-aware LLM with HACS tools via local MCP server
+llm = HACSLangChainAdapter(
+    llm=ChatOpenAI(model="gpt-4"),
+    tools_registry="http://localhost:8001"
+)
 
 class HealthcareState:
     patient: Optional[Patient] = None
