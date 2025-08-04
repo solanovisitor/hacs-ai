@@ -2,102 +2,112 @@
 
 <div align="center">
 
-![CI](https://img.shields.io/github/actions/workflow/status/solanovisitor/hacs-ai/ci.yml?branch=main)
 ![License](https://img.shields.io/github/license/solanovisitor/hacs-ai)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![Status](https://img.shields.io/badge/status-production%20ready-brightgreen)
 
-**🏥 The definitive framework for healthcare AI agents**
+**🏥 Production-ready framework for healthcare AI agents**
 
 *FHIR-compliant • Memory-enabled • Protocol-first*
 
-[**🚀 Quick Start**](#-quick-start) • [**📚 Documentation**](docs/) • [**🛠️ Tools**](#-healthcare-tools) • [**🤝 Contributing**](CONTRIBUTING.md)
+[**🚀 Quick Start**](#quick-start) • [**📚 Examples**](#examples) • [**🛠️ Tools**](#healthcare-tools) • [**📖 Docs**](docs/)
 
 </div>
 
 ---
 
-## 🎯 What is HACS?
+## What is HACS?
 
-HACS (Healthcare Agent Communication Standard) is a **production-ready framework** that enables healthcare AI systems with structured memory, clinical reasoning, and FHIR compliance. Built with **protocol-first architecture**, HACS provides **25+ specialized healthcare tools** across 9 comprehensive domains for patient data management, clinical workflows, and evidence-based reasoning.
+HACS enables healthcare AI systems with **structured memory**, **clinical reasoning**, and **FHIR compliance**. Built with protocol-first architecture, HACS provides **37+ healthcare tools** across 9 domains for patient data, clinical workflows, and evidence-based reasoning.
 
-### 🌟 Why HACS?
+### Why HACS?
 
-| Challenge | Traditional Approach | **HACS Solution** |
-|-----------|---------------------|-------------------|
-| **Clinical Memory** | Unstructured text storage | ✅ Episodic, procedural & executive memory types |
-| **Healthcare Data** | Generic JSON schemas | ✅ FHIR-compliant models with clinical validation |
-| **Evidence Tracking** | Manual documentation | ✅ Structured evidence with confidence scoring |
-| **Agent Integration** | Custom implementations | ✅ MCP standard with healthcare tools |
-| **Compliance** | Ad-hoc security | ✅ Actor-based permissions with audit trails |
+- **✅ Healthcare-First**: FHIR-compliant models designed for clinical environments
+- **✅ Memory-Enabled**: Episodic, procedural & executive memory for AI agents  
+- **✅ Protocol-Based**: Clean abstractions for maximum framework flexibility
+- **✅ Production-Ready**: Actor-based security with audit trails
+- **✅ MCP Integration**: 37+ healthcare tools via Model Context Protocol
 
-> **🏥 Built for Healthcare**: HACS extends FHIR standards specifically for AI agent cognition and communication in clinical environments.
+## Quick Start
 
-## 🚀 Quick Start
-
-### Prerequisites
-- Python 3.11+
-- [uv](https://github.com/astral-sh/uv) - Fast Python package manager
-- Docker & Docker Compose (for services)
-
-### Installation & Setup
+### Installation
 
 ```bash
-# 1. Install uv (if not already installed)
-curl -LsSf https://astral.sh/uv/install.sh | sh
+# Install HACS packages
+pip install hacs-core hacs-auth hacs-tools hacs-utils
 
-# 2. Clone and setup HACS workspace
-git clone https://github.com/solanovisitor/hacs-ai.git
-cd hacs-ai
-
-# 3. Install all packages
-uv sync
-
-# 4. Start services (PostgreSQL + MCP Server)
-docker-compose up -d
-
-# 5. Test the installation
-uv run python -c "from hacs_auth import Actor, ActorRole; print('✅ HACS installed successfully')"
+# Or install specific packages
+pip install hacs-models hacs-persistence hacs-registry
 ```
 
-### First Healthcare Agent
+### Basic Usage
 
 ```python
 from hacs_auth import Actor, ActorRole
-from hacs_core import get_llm_provider
-from hacs_utils.mcp.tools import execute_hacs_tool
+from hacs_models import Patient, Observation, CodeableConcept, Quantity
+from hacs_models.types import ObservationStatus
 
-# Create a healthcare actor
+# Create healthcare provider
 physician = Actor(
     name="Dr. Sarah Chen",
     role=ActorRole.PHYSICIAN,
     organization="General Hospital"
 )
 
-# Execute healthcare workflows
-result = await execute_hacs_tool(
-    "create_resource",
-    {
-        "resource_type": "Patient",
-        "resource_data": {
-            "full_name": "John Doe",
-            "date_of_birth": "1980-01-01"
-        }
-    },
-    actor=physician
+# Create patient record
+patient = Patient(
+    full_name="John Doe",
+    birth_date="1980-01-15",
+    gender="male"
 )
+
+# Record clinical observation
+bp_observation = Observation(
+    status=ObservationStatus.FINAL,
+    code=CodeableConcept(text="Systolic Blood Pressure"),
+    subject=f"Patient/{patient.id}",
+    value_quantity=Quantity(value=145.0, unit="mmHg")
+)
+
+print(f"Patient: {patient.full_name}")
+print(f"Observation: {bp_observation.get_value_summary()}")
 ```
 
-## 🏗️ Architecture
+### With MCP Tools
 
-HACS follows **SOLID principles** with a **protocol-first design**:
+```bash
+# Start HACS services
+docker-compose up -d
+
+# Use healthcare tools via HTTP
+curl -X POST http://localhost:8000/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "method": "tools/call", 
+    "params": {
+      "name": "create_hacs_record",
+      "arguments": {
+        "resource_type": "Patient",
+        "resource_data": {
+          "full_name": "Maria Garcia",
+          "birth_date": "1990-03-20",
+          "gender": "female"
+        }
+      }
+    },
+    "id": 1
+  }'
+```
+
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                    Your Healthcare AI                   │
 ├─────────────────────────────────────────────────────────┤
 │  🔧 hacs-utils    │  Framework integrations & adapters  │
-│  🏥 hacs-tools    │  25+ healthcare-specific tools      │
+│  🏥 hacs-tools    │  37+ healthcare-specific tools      │ 
 │  📊 hacs-registry │  Resource & tool discovery          │
 ├─────────────────────────────────────────────────────────┤
 │  💾 hacs-persistence │ Database & vector operations    │
@@ -109,97 +119,72 @@ HACS follows **SOLID principles** with a **protocol-first design**:
 └─────────────────────────────────────────────────────────┘
 ```
 
-### Key Design Principles
+## Healthcare Tools
 
-- **Protocol-First**: All components implement clean protocols for maximum flexibility
-- **Actor-Based Security**: Unified security model for humans and AI agents
-- **FHIR Compliance**: Healthcare interoperability standards throughout
-- **Memory-Centric**: Structured memory types for clinical reasoning
-- **Framework Agnostic**: Works with LangChain, OpenAI, Anthropic, etc.
+**37+ tools across 9 domains:**
 
-## 🛠️ Healthcare Tools
+| Domain | Tools | Purpose |
+|--------|-------|---------|
+| **🔍 Resource Management** | 8 tools | Patient records, CRUD operations, search |
+| **🧠 Memory Operations** | 5 tools | Clinical memory, context retrieval |
+| **📊 Clinical Workflows** | 4 tools | Assessment protocols, decision support |
+| **🔍 Vector Search** | 3 tools | Semantic healthcare record search |
+| **⚕️ Schema Discovery** | 5 tools | Resource exploration, field analysis |
+| **🛠️ Development Tools** | 4 tools | Templates, model composition |
+| **🔗 FHIR Integration** | 3 tools | Standards compliance, validation |
+| **📈 Healthcare Analytics** | 3 tools | Quality measures, population health |
+| **🤖 AI Integrations** | 2 tools | Model deployment, optimization |
 
-HACS provides **25+ healthcare tools** organized into 9 domains:
+## Examples
 
-### 🔍 **Model Discovery & Development** (5 tools)
-- Resource schema discovery and analysis
-- Clinical template generation
-- Model composition and validation
+### Complete Clinical Encounter
 
-### 📋 **Registry & CRUD Operations** (6 tools)  
-- Patient, Observation, Encounter management
-- FHIR-compliant resource operations
-- Clinical data validation
+```python
+from hacs_models import Patient, Observation, MemoryBlock
+from hacs_models.types import ObservationStatus
+from hacs_auth import Actor, ActorRole
 
-### 🔍 **Search & Discovery** (2 tools)
-- Semantic healthcare record search
-- Clinical knowledge retrieval
+# Healthcare provider  
+provider = Actor(
+    name="Dr. Maria Santos",
+    role=ActorRole.PHYSICIAN,
+    organization="Downtown Medical"
+)
 
-### 🧠 **Memory Management** (5 tools)
-- Episodic memory for patient interactions
-- Procedural memory for clinical protocols
-- Executive memory for decision-making
-- Memory consolidation and context retrieval
+# Patient with context
+patient = Patient(
+    full_name="Roberto Silva",
+    birth_date="1975-08-12", 
+    gender="male",
+    agent_context={
+        "chief_complaint": "Follow-up for diabetes",
+        "current_medications": ["metformin 1000mg BID"]
+    }
+)
 
-### ✅ **Validation & Schema** (3 tools)
-- Clinical data validation
-- FHIR compliance checking
-- Healthcare schema analysis
+# Clinical observations
+hba1c = Observation(
+    status=ObservationStatus.FINAL,
+    code=CodeableConcept(text="Hemoglobin A1c"),
+    subject=f"Patient/{patient.id}",
+    value_quantity=Quantity(value=8.1, unit="%")
+)
 
-### 🎨 **Advanced Model Tools** (3 tools)
-- LLM-optimized model generation
-- Clinical view creation
-- Field suggestion systems
+# Clinical memory
+episodic_memory = MemoryBlock(
+    memory_type="episodic",
+    content=f"Patient {patient.full_name} HbA1c improved from 9.2% to 8.1% after medication adjustment.",
+    importance_score=0.85,
+    tags=["diabetes", "medication_adherence", "improvement"],
+    context_metadata={"patient_id": patient.id}
+)
 
-### 📚 **Knowledge Management** (1 tool)
-- Clinical decision support knowledge
-
-## 📦 Package Structure
-
-HACS is organized as a **UV workspace** with 9 core packages:
-
-| Package | Purpose | PyPI Status |
-|---------|---------|-------------|
-| **hacs-models** | FHIR-compliant data models | 🚀 Ready |
-| **hacs-core** | Base protocols & infrastructure | 🚀 Ready |
-| **hacs-auth** | Actor-based security & sessions | 🚀 Ready |
-| **hacs-infrastructure** | Dependency injection & monitoring | 🚀 Ready |
-| **hacs-persistence** | Database & vector operations | 🚀 Ready |
-| **hacs-tools** | Healthcare-specific tools | 🚀 Ready |
-| **hacs-registry** | Resource & tool discovery | 🚀 Ready |
-| **hacs-utils** | Framework integrations | 🚀 Ready |
-| **hacs-cli** | Command-line interface | 🚀 Ready |
-
-Each package can be installed independently:
-
-```bash
-pip install hacs-core hacs-auth hacs-tools  # Core functionality
-pip install hacs-utils[langchain]           # LangChain integration
-pip install hacs-persistence[postgresql]    # Database support
+print(f"✅ Encounter: {patient.full_name}")
+print(f"📊 HbA1c: {hba1c.get_value_summary()}")
+print(f"🧠 Memory: {episodic_memory.content[:50]}...")
 ```
 
-## 🏥 Healthcare Compliance
-
-### FHIR Compliance
-- ✅ FHIR R4 resource models
-- ✅ Clinical terminologies (SNOMED, LOINC)
-- ✅ Healthcare interoperability standards
-
-### Security & Privacy
-- ✅ Actor-based authentication
-- ✅ Role-based access control (RBAC)
-- ✅ Comprehensive audit trails
-- ✅ HIPAA-compliant patterns
-
-### Clinical Features
-- ✅ Evidence-based reasoning
-- ✅ Clinical decision support
-- ✅ Structured clinical memory
-- ✅ Confidence scoring
-
-## 🔧 Integration Examples
-
-### Using with LangChain
+### LangChain Integration
 
 ```python
 from langchain_openai import ChatOpenAI
@@ -209,104 +194,95 @@ from hacs_utils.integrations.langchain import HACSLangChainAdapter
 llm = ChatOpenAI(model="gpt-4")
 hacs_llm = HACSLangChainAdapter(llm)
 
-# Use with HACS tools
+# Get healthcare tools
 tools = hacs_llm.get_healthcare_tools()
-agent = create_react_agent(hacs_llm, tools)
+print(f"Available tools: {len(tools)}")
 ```
 
-### MCP Server Integration
-
-```bash
-# Start HACS MCP Server
-docker-compose up -d hacs-mcp-server
-
-# Available at http://localhost:8000 with 25+ healthcare tools
-curl -X POST http://localhost:8000/ \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","method":"tools/list","id":1}'
-```
-
-### Direct Tool Usage
+### Memory Management
 
 ```python
-from hacs_tools.domains import clinical_workflows
+from hacs_models import MemoryBlock
 
-# Execute clinical workflow
-result = await clinical_workflows.execute_clinical_workflow(
-    workflow_type="patient_assessment",
-    patient_id="patient_123",
-    clinical_data={...},
-    actor=physician
-)
+# Different memory types for clinical reasoning
+memories = [
+    MemoryBlock(
+        memory_type="episodic",
+        content="Patient reported chest pain during morning rounds",
+        importance_score=0.9,
+        tags=["chest_pain", "urgent"]
+    ),
+    MemoryBlock(
+        memory_type="procedural", 
+        content="Chest pain protocol: 1) Assess vitals 2) ECG 3) Cardiac enzymes",
+        importance_score=0.85,
+        tags=["protocol", "chest_pain"]
+    ),
+    MemoryBlock(
+        memory_type="working",
+        content="Currently analyzing patient symptoms for differential diagnosis",
+        importance_score=0.7,
+        task_context="patient_assessment"
+    )
+]
+
+for memory in memories:
+    print(f"{memory.memory_type}: {memory.content[:40]}...")
 ```
 
-## 📊 Running Example
+## Packages
 
-See the complete **Healthcare Developer Agent** in [`examples/hacs_developer_agent/`](examples/hacs_developer_agent/):
+All packages available on PyPI:
 
-```bash
-cd examples/hacs_developer_agent
-uv run langgraph dev  # Starts interactive agent with HACS tools
-```
+| Package | Purpose | Install |
+|---------|---------|---------|
+| **hacs-models** | FHIR data models | `pip install hacs-models` |
+| **hacs-auth** | Actor-based security | `pip install hacs-auth` |
+| **hacs-core** | Base protocols | `pip install hacs-core` |
+| **hacs-tools** | Healthcare tools | `pip install hacs-tools` |
+| **hacs-utils** | Framework integrations | `pip install hacs-utils` |
+| **hacs-persistence** | Database operations | `pip install hacs-persistence` |
+| **hacs-registry** | Resource discovery | `pip install hacs-registry` |
+| **hacs-infrastructure** | DI & monitoring | `pip install hacs-infrastructure` |
+| **hacs-cli** | Command-line tools | `pip install hacs-cli` |
 
-## 🧪 Testing
-
-```bash
-# Run core tests
-uv run pytest tests/ -v
-
-# Run integration tests
-uv run pytest tests/test_integration_end_to_end.py -v
-
-# Run with coverage
-uv run pytest --cov=packages --cov-report=html
-```
-
-## 📚 Documentation
-
-- [**Quick Start Guide**](docs/quick-start.md) - Get up and running
-- [**Basic Usage**](docs/basic-usage.md) - Core concepts and patterns
-- [**CLI Reference**](docs/cli.md) - Command-line tools
-- [**Integration Guide**](docs/integrations.md) - Framework integrations
-- [**Testing Guide**](docs/testing.md) - Testing patterns
-
-### Architecture Documentation
-- [**ADR-001**: SOLID Principles Compliance](docs/architecture/ADR-001-SOLID-principles-compliance.md)
-- [**ADR-002**: Actor-Based Security](docs/architecture/ADR-002-actor-based-security.md)
-- [**ADR-003**: Protocol-First Design](docs/architecture/ADR-003-protocol-first-design.md)
-
-## 🤝 Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-### Development Setup
+## Development
 
 ```bash
-# Fork and clone the repository
-git clone https://github.com/yourusername/hacs-ai.git
+# Clone repository
+git clone https://github.com/solanovisitor/hacs-ai.git
 cd hacs-ai
 
-# Install development dependencies
-uv sync --all-extras --dev
-
-# Run pre-commit hooks
-pre-commit install
+# Install with UV
+uv sync
 
 # Run tests
 uv run pytest
+
+# Start services
+docker-compose up -d
+
+# Validate installation
+python examples/validated_hacs_examples.py
 ```
 
-## 📄 License
+## Documentation
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- **[Quick Start](docs/quick-start.md)** - Get up and running
+- **[Basic Usage](docs/basic-usage.md)** - Core patterns and examples
+- **[Healthcare Tools](docs/healthcare-tools.md)** - Complete tool reference
+- **[Integration Guide](docs/integrations.md)** - Framework integrations
+- **[Architecture](docs/architecture/)** - Design decisions and patterns
 
-## 🌟 Star History
+## Enterprise Support
 
-[![Star History Chart](https://api.star-history.com/svg?repos=solanovisitor/hacs-ai&type=Date)](https://star-history.com/#solanovisitor/hacs-ai&Date)
+For enterprise deployments, custom healthcare AI solutions, and consulting:
 
-## 💪 Enterprise Support
+📧 [solanovisitor@gmail.com](mailto:solanovisitor@gmail.com)
 
-For enterprise deployments, consulting, and custom healthcare AI solutions, contact [solanovisitor@gmail.com](mailto:solanovisitor@gmail.com).
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
@@ -314,6 +290,6 @@ For enterprise deployments, consulting, and custom healthcare AI solutions, cont
 
 **Built with ❤️ for Healthcare AI**
 
-[GitHub](https://github.com/solanovisitor/hacs-ai) • [Documentation](docs/) • [Issues](https://github.com/solanovisitor/hacs-ai/issues) • [Discussions](https://github.com/solanovisitor/hacs-ai/discussions)
+[GitHub](https://github.com/solanovisitor/hacs-ai) • [Documentation](docs/) • [Issues](https://github.com/solanovisitor/hacs-ai/issues)
 
 </div>
