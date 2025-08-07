@@ -2,12 +2,12 @@
 HACS Tool Integration Framework
 
 This module provides elegant design patterns and best practices for tool integration
-across different frameworks and platforms. It implements the Strategy, Factory, 
+across different frameworks and platforms. It implements the Strategy, Factory,
 Adapter, and Dependency Injection patterns for clean, extensible tool management.
 
 Key Design Patterns:
     🏭 Factory Pattern - Framework-specific tool creation
-    🎯 Strategy Pattern - Different execution strategies  
+    🎯 Strategy Pattern - Different execution strategies
     🔌 Adapter Pattern - Framework compatibility layer
     💉 Dependency Injection - Clean dependency management
     🔗 Chain of Responsibility - Validation and execution pipeline
@@ -62,7 +62,7 @@ class ExecutionContext:
 
 class ToolExecutionResult:
     """Standardized result container for tool execution."""
-    
+
     def __init__(
         self,
         success: bool,
@@ -76,7 +76,7 @@ class ToolExecutionResult:
         self.error = error
         self.metadata = metadata or {}
         self.execution_time_ms = execution_time_ms
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert result to dictionary format."""
         return {
@@ -92,11 +92,11 @@ class ToolExecutionResult:
 
 class ToolAdapter(Protocol):
     """Protocol for framework-specific tool adapters."""
-    
+
     def adapt_tool(self, tool_def: ToolDefinition) -> Any:
         """Adapt a HACS tool for the specific framework."""
         ...
-    
+
     def supports_framework(self, framework: FrameworkType) -> bool:
         """Check if adapter supports the given framework."""
         ...
@@ -104,7 +104,7 @@ class ToolAdapter(Protocol):
 
 class ExecutionStrategyProtocol(Protocol):
     """Protocol for tool execution strategies."""
-    
+
     async def execute(
         self,
         tool_func: Callable,
@@ -117,11 +117,11 @@ class ExecutionStrategyProtocol(Protocol):
 
 class ToolValidator(Protocol):
     """Protocol for tool validation."""
-    
+
     def validate_tool(self, tool_def: ToolDefinition) -> bool:
         """Validate tool definition."""
         ...
-    
+
     def validate_parameters(
         self,
         tool_def: ToolDefinition,
@@ -135,25 +135,25 @@ class ToolValidator(Protocol):
 
 class BaseToolAdapter(ABC):
     """Abstract base class for tool adapters."""
-    
+
     def __init__(self, framework: FrameworkType):
         self.framework = framework
         self._cache: Dict[str, Any] = {}
-    
+
     @abstractmethod
     def adapt_tool(self, tool_def: ToolDefinition) -> Any:
         """Adapt a HACS tool for the specific framework."""
         pass
-    
+
     @abstractmethod
     def supports_framework(self, framework: FrameworkType) -> bool:
         """Check if adapter supports the given framework."""
         pass
-    
+
     def get_cached_tool(self, tool_name: str) -> Optional[Any]:
         """Get cached adapted tool."""
         return self._cache.get(tool_name)
-    
+
     def cache_tool(self, tool_name: str, adapted_tool: Any) -> None:
         """Cache adapted tool."""
         self._cache[tool_name] = adapted_tool
@@ -161,7 +161,7 @@ class BaseToolAdapter(ABC):
 
 class BaseExecutionStrategy(ABC):
     """Abstract base class for execution strategies."""
-    
+
     @abstractmethod
     async def execute(
         self,
@@ -177,37 +177,45 @@ class BaseExecutionStrategy(ABC):
 
 class LangChainAdapter(BaseToolAdapter):
     """LangChain framework adapter."""
-    
+
     def __init__(self):
         super().__init__(FrameworkType.LANGCHAIN)
         self._langchain_available = self._check_langchain_availability()
-    
+
     def _check_langchain_availability(self) -> bool:
         """Check if LangChain is available."""
         try:
-            import langchain_core.tools
+            from langchain_core.tools.structured import StructuredTool
+            from langchain_core.tools.convert import tool
             return True
         except ImportError:
             return False
-    
+
     def supports_framework(self, framework: FrameworkType) -> bool:
         """Check if adapter supports LangChain."""
         return framework == FrameworkType.LANGCHAIN and self._langchain_available
-    
+
     def adapt_tool(self, tool_def: ToolDefinition) -> Any:
         """Adapt HACS tool to LangChain StructuredTool."""
         if not self._langchain_available:
-            raise ImportError("LangChain is required for LangChain adapter")
-        
+            logger.warning("LangChain is not available for tool adaptation")
+            return None
+
         # Check cache first
         cached = self.get_cached_tool(tool_def.name)
         if cached:
             return cached
-        
+
         try:
-            from langchain_core.tools import StructuredTool
+            from langchain_core.tools.structured import StructuredTool
             from pydantic import BaseModel, create_model
-            
+            logger.debug(f"Successfully imported StructuredTool for {tool_def.name}")
+        except ImportError as import_error:
+            logger.warning(f"StructuredTool import failed for {tool_def.name}: {import_error}")
+            # Return a simple tool wrapper instead of None
+            return self._create_simple_tool_wrapper(tool_def)
+
+        try:
             # Create dynamic Pydantic model for tool inputs
             input_fields = {}
             if tool_def.function:
@@ -218,48 +226,69 @@ class LangChainAdapter(BaseToolAdapter):
                         field_type = param.annotation if param.annotation != inspect.Parameter.empty else str
                         default_val = param.default if param.default != inspect.Parameter.empty else ...
                         input_fields[param_name] = (field_type, default_val)
-            
-            # Create Pydantic model
-            ToolInputModel = create_model(
-                f"{tool_def.name}Input",
-                **input_fields
-            )
-            
-            # Create LangChain tool
-            langchain_tool = StructuredTool.from_function(
-                func=tool_def.function,
-                name=tool_def.name,
-                description=tool_def.description,
-                args_schema=ToolInputModel,
-                return_direct=False
-            )
-            
-            # Cache and return
-            self.cache_tool(tool_def.name, langchain_tool)
-            return langchain_tool
-            
+
+                # Create Pydantic model
+                ToolInputModel = create_model(
+                    f"{tool_def.name}Input",
+                    **input_fields
+                )
+
+                # Create LangChain tool
+                langchain_tool = StructuredTool.from_function(
+                    func=tool_def.function,
+                    name=tool_def.name,
+                    description=tool_def.description,
+                    args_schema=ToolInputModel,
+                    return_direct=False
+                )
+
+                # Cache and return
+                self.cache_tool(tool_def.name, langchain_tool)
+                return langchain_tool
+
         except Exception as e:
             logger.error(f"Failed to adapt tool {tool_def.name} for LangChain: {e}")
-            raise
+            # Return simple wrapper instead of raising
+            return self._create_simple_tool_wrapper(tool_def)
+
+    def _create_simple_tool_wrapper(self, tool_def: ToolDefinition) -> Any:
+        """Create a simple tool wrapper when StructuredTool is not available."""
+        class SimpleTool:
+            def __init__(self, name: str, description: str, func: callable):
+                self.name = name
+                self.description = description
+                self.func = func
+
+            def invoke(self, input_data):
+                if callable(self.func):
+                    return self.func(**input_data if isinstance(input_data, dict) else {})
+                return f"Tool {self.name} executed with input: {input_data}"
+
+            def __call__(self, **kwargs):
+                return self.invoke(kwargs)
+
+        simple_tool = SimpleTool(tool_def.name, tool_def.description, tool_def.function)
+        self.cache_tool(tool_def.name, simple_tool)
+        return simple_tool
 
 
 class MCPAdapter(BaseToolAdapter):
     """MCP framework adapter."""
-    
+
     def __init__(self):
         super().__init__(FrameworkType.MCP)
-    
+
     def supports_framework(self, framework: FrameworkType) -> bool:
         """Check if adapter supports MCP."""
         return framework == FrameworkType.MCP
-    
+
     def adapt_tool(self, tool_def: ToolDefinition) -> Dict[str, Any]:
         """Adapt HACS tool to MCP tool definition."""
         # Check cache first
         cached = self.get_cached_tool(tool_def.name)
         if cached:
             return cached
-        
+
         # Create MCP tool definition
         mcp_tool = {
             "name": tool_def.name,
@@ -277,20 +306,20 @@ class MCPAdapter(BaseToolAdapter):
             "requires_vector_store": tool_def.requires_vector_store,
             "is_async": tool_def.is_async
         }
-        
+
         # Cache and return
         self.cache_tool(tool_def.name, mcp_tool)
         return mcp_tool
-    
+
     def _extract_input_schema(self, tool_def: ToolDefinition) -> Dict[str, Any]:
         """Extract input schema from tool function."""
         if not tool_def.function:
             return {}
-        
+
         import inspect
         sig = inspect.signature(tool_def.function)
         properties = {}
-        
+
         for param_name, param in sig.parameters.items():
             if param_name not in ['self', 'args', 'kwargs']:
                 param_type = "string"  # Default type
@@ -306,41 +335,41 @@ class MCPAdapter(BaseToolAdapter):
                             param_type = "array"
                         elif param.annotation.__origin__ == dict:
                             param_type = "object"
-                
+
                 properties[param_name] = {
                     "type": param_type,
                     "description": f"Parameter {param_name} for {tool_def.name}"
                 }
-        
+
         return properties
-    
+
     def _get_required_parameters(self, tool_def: ToolDefinition) -> List[str]:
         """Get required parameters from tool function."""
         if not tool_def.function:
             return []
-        
+
         import inspect
         sig = inspect.signature(tool_def.function)
         required = []
-        
+
         for param_name, param in sig.parameters.items():
-            if (param_name not in ['self', 'args', 'kwargs'] and 
+            if (param_name not in ['self', 'args', 'kwargs'] and
                 param.default == inspect.Parameter.empty):
                 required.append(param_name)
-        
+
         return required
 
 
 class NativeAdapter(BaseToolAdapter):
     """Native HACS adapter (no transformation)."""
-    
+
     def __init__(self):
         super().__init__(FrameworkType.NATIVE)
-    
+
     def supports_framework(self, framework: FrameworkType) -> bool:
         """Check if adapter supports native execution."""
         return framework == FrameworkType.NATIVE
-    
+
     def adapt_tool(self, tool_def: ToolDefinition) -> ToolDefinition:
         """Return tool definition as-is for native execution."""
         return tool_def
@@ -348,7 +377,7 @@ class NativeAdapter(BaseToolAdapter):
 
 class AsyncExecutionStrategy(BaseExecutionStrategy):
     """Async execution strategy."""
-    
+
     async def execute(
         self,
         tool_func: Callable,
@@ -358,37 +387,37 @@ class AsyncExecutionStrategy(BaseExecutionStrategy):
         """Execute tool asynchronously."""
         import time
         start_time = time.time()
-        
+
         try:
             # Inject context parameters if tool supports them
             execution_params = self._prepare_parameters(tool_func, params, context)
-            
+
             # Execute based on function type
             if asyncio.iscoroutinefunction(tool_func):
                 result = await tool_func(**execution_params)
             else:
                 result = tool_func(**execution_params)
-            
+
             execution_time = (time.time() - start_time) * 1000
-            
+
             return ToolExecutionResult(
                 success=True,
                 data=result,
                 execution_time_ms=execution_time,
                 metadata={"strategy": "async", "context": context.metadata}
             )
-            
+
         except Exception as e:
             execution_time = (time.time() - start_time) * 1000
             logger.error(f"Tool execution failed: {e}")
-            
+
             return ToolExecutionResult(
                 success=False,
                 error=str(e),
                 execution_time_ms=execution_time,
                 metadata={"strategy": "async", "context": context.metadata}
             )
-    
+
     def _prepare_parameters(
         self,
         tool_func: Callable,
@@ -397,20 +426,20 @@ class AsyncExecutionStrategy(BaseExecutionStrategy):
     ) -> Dict[str, Any]:
         """Prepare parameters with context injection."""
         import inspect
-        
+
         execution_params = params.copy()
         sig = inspect.signature(tool_func)
-        
+
         # Inject context parameters if tool supports them
         if 'actor_name' in sig.parameters and context.actor_name:
             execution_params['actor_name'] = context.actor_name
-        
+
         if 'db_adapter' in sig.parameters and context.db_adapter:
             execution_params['db_adapter'] = context.db_adapter
-        
+
         if 'vector_store' in sig.parameters and context.vector_store:
             execution_params['vector_store'] = context.vector_store
-        
+
         return execution_params
 
 
@@ -418,22 +447,22 @@ class AsyncExecutionStrategy(BaseExecutionStrategy):
 
 class ToolAdapterFactory:
     """Factory for creating framework-specific tool adapters."""
-    
+
     _adapters: Dict[FrameworkType, Type[BaseToolAdapter]] = {
         FrameworkType.LANGCHAIN: LangChainAdapter,
         FrameworkType.MCP: MCPAdapter,
         FrameworkType.NATIVE: NativeAdapter
     }
-    
+
     @classmethod
     def create_adapter(cls, framework: FrameworkType) -> BaseToolAdapter:
         """Create adapter for the specified framework."""
         adapter_class = cls._adapters.get(framework)
         if not adapter_class:
             raise ValueError(f"No adapter available for framework: {framework}")
-        
+
         return adapter_class()
-    
+
     @classmethod
     def register_adapter(
         cls,
@@ -442,7 +471,7 @@ class ToolAdapterFactory:
     ) -> None:
         """Register a custom adapter for a framework."""
         cls._adapters[framework] = adapter_class
-    
+
     @classmethod
     def get_supported_frameworks(cls) -> List[FrameworkType]:
         """Get list of supported frameworks."""
@@ -451,19 +480,19 @@ class ToolAdapterFactory:
 
 class ExecutionStrategyFactory:
     """Factory for creating execution strategies."""
-    
+
     _strategies: Dict[ExecutionStrategyType, Type[BaseExecutionStrategy]] = {
         ExecutionStrategyType.ASYNC: AsyncExecutionStrategy,
         # Add more strategies as needed
     }
-    
+
     @classmethod
     def create_strategy(cls, strategy: ExecutionStrategyType) -> BaseExecutionStrategy:
         """Create execution strategy."""
         strategy_class = cls._strategies.get(strategy)
         if not strategy_class:
             raise ValueError(f"No strategy available: {strategy}")
-        
+
         return strategy_class()
 
 
@@ -472,25 +501,25 @@ class ExecutionStrategyFactory:
 class HACSToolIntegrationManager:
     """
     Main coordinator for HACS tool integrations across frameworks.
-    
+
     This class implements the Facade pattern to provide a simple interface
     for complex tool integration operations across different frameworks.
     """
-    
+
     def __init__(self, registry: Optional[HACSToolRegistry] = None):
         self.registry = registry or get_global_registry()
         self._adapters: Dict[FrameworkType, BaseToolAdapter] = {}
         self._execution_strategy = ExecutionStrategyFactory.create_strategy(
             ExecutionStrategyType.ASYNC
         )
-    
+
     def get_adapter(self, framework: FrameworkType) -> BaseToolAdapter:
         """Get or create adapter for framework."""
         if framework not in self._adapters:
             self._adapters[framework] = ToolAdapterFactory.create_adapter(framework)
-        
+
         return self._adapters[framework]
-    
+
     def adapt_tool(
         self,
         tool_name: str,
@@ -501,24 +530,24 @@ class HACSToolIntegrationManager:
         if not tool_def:
             logger.warning(f"Tool not found: {tool_name}")
             return None
-        
+
         adapter = self.get_adapter(framework)
         return adapter.adapt_tool(tool_def)
-    
+
     def adapt_all_tools(self, framework: FrameworkType) -> List[Any]:
         """Adapt all tools for the specified framework."""
         adapter = self.get_adapter(framework)
         adapted_tools = []
-        
+
         for tool_def in self.registry.get_all_tools():
             try:
                 adapted_tool = adapter.adapt_tool(tool_def)
                 adapted_tools.append(adapted_tool)
             except Exception as e:
                 logger.error(f"Failed to adapt tool {tool_def.name}: {e}")
-        
+
         return adapted_tools
-    
+
     def get_tools_by_category(
         self,
         category: str,
@@ -527,7 +556,7 @@ class HACSToolIntegrationManager:
         """Get adapted tools for a specific category and framework."""
         tool_defs = self.registry.get_tools_by_category(category)
         adapter = self.get_adapter(framework)
-        
+
         adapted_tools = []
         for tool_def in tool_defs:
             try:
@@ -535,9 +564,9 @@ class HACSToolIntegrationManager:
                 adapted_tools.append(adapted_tool)
             except Exception as e:
                 logger.error(f"Failed to adapt tool {tool_def.name}: {e}")
-        
+
         return adapted_tools
-    
+
     async def execute_tool(
         self,
         tool_name: str,
@@ -551,35 +580,35 @@ class HACSToolIntegrationManager:
                 success=False,
                 error=f"Tool not found: {tool_name}"
             )
-        
+
         if not tool_def.function:
             return ToolExecutionResult(
                 success=False,
                 error=f"Tool function not available: {tool_name}"
             )
-        
+
         execution_context = context or ExecutionContext()
-        
+
         return await self._execution_strategy.execute(
             tool_def.function,
             params,
             execution_context
         )
-    
+
     def get_integration_stats(self) -> Dict[str, Any]:
         """Get comprehensive integration statistics."""
         stats = self.registry.get_tool_stats()
-        
+
         integration_stats = {
             "registry_stats": stats,
             "supported_frameworks": [f.value for f in ToolAdapterFactory.get_supported_frameworks()],
             "loaded_adapters": [f.value for f in self._adapters.keys()],
             "total_adaptable_tools": len([
-                tool for tool in self.registry.get_all_tools() 
+                tool for tool in self.registry.get_all_tools()
                 if tool.function is not None
             ])
         }
-        
+
         return integration_stats
 
 
@@ -630,6 +659,6 @@ async def execute_hacs_tool(
         vector_store=vector_store,
         metadata=kwargs
     )
-    
+
     manager = get_integration_manager()
     return await manager.execute_tool(tool_name, params, context)

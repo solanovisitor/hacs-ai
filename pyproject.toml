@@ -26,6 +26,7 @@ members = [
     "packages/hacs-models",
     "packages/hacs-auth",
     "packages/hacs-infrastructure",
+    "examples/hacs_developer_agent",
 ]
 
 [tool.uv.sources]

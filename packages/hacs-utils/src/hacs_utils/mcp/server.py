@@ -108,13 +108,13 @@ class HacsMCPServer:
                 self.vector_store = None
                 logger.warning(f"Could not initialize Qdrant vector store: {e}. Vector operations will be disabled.")
 
-    async def _handle_call_tool(self, request: MCPRequest) -> MCPResponse:
+    async def _handle_use_tool(self, request: MCPRequest) -> MCPResponse:
         """Handle tools/call request with enhanced persistence-enabled execution."""
         try:
             params = CallToolParams(**request.params)
 
             # Create enhanced actor context
-            from hacs_core import Actor
+            from hacs_models import Actor
             actor = Actor(
                 id="mcp-server",
                 name="HACS MCP Server",
@@ -606,7 +606,7 @@ class HacsMCPServer:
             if request.method == "tools/list":
                 return await self._handle_list_tools(request)
             elif request.method == "tools/call":
-                return await self._handle_call_tool(request)
+                return await self._handle_use_tool(request)
             else:
                 return MCPResponse(
                     id=request.id,

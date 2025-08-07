@@ -22,9 +22,9 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from hacs_core import Actor
-from hacs_core.results import HACSResult
-from hacs_core.tool_protocols import healthcare_tool, ToolCategory
+from hacs_models import Actor
+from hacs_models import HACSResult
+from hacs_core.tool_protocols import hacs_tool, ToolCategory
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ from .descriptions import (
     LOOKUP_FHIR_TERMINOLOGY_DESCRIPTION,
 )
 
-@healthcare_tool(
+@hacs_tool(
     name="convert_to_fhir",
     description="Convert healthcare resource data to FHIR-compliant format",
     category=ToolCategory.FHIR_INTEGRATION,
@@ -87,14 +87,14 @@ def convert_to_fhir(
         # - fhir-resources (Python)
         # - fhir.resources
         # - pydantic-fhir
-        # 
+        #
         # Real implementation should:
         # 1. Validate source data against HACS schema
         # 2. Map fields to proper FHIR resource structure
         # 3. Apply FHIR terminology and code systems
         # 4. Validate against FHIR R4/R5 specification
         # 5. Handle nested resources and references
-        
+
         # Basic FHIR structure (minimal implementation)
         fhir_resource = {
             "resourceType": resource_data.get("resource_type", "Patient"),
@@ -147,7 +147,7 @@ def convert_to_fhir(
             actor_id=actor_name
         )
 
-@healthcare_tool(
+@hacs_tool(
     name="validate_fhir_compliance",
     description="Validate FHIR resource compliance against healthcare standards",
     category=ToolCategory.FHIR_INTEGRATION,
@@ -192,31 +192,31 @@ def validate_fhir_compliance(
         # 5. Generate detailed compliance report
 
         resource_type = fhir_resource.get("resourceType", "Unknown")
-        
+
         # TODO: Implement real FHIR validation
         # Should use libraries like:
         # - fhir.resources for validation
         # - fhir-spec-parser for schema validation
         # - HAPI FHIR validation services
-        
+
         # Basic validation checks (minimal implementation)
         errors = []
         warnings = []
-        
+
         # Check required fields
         if not fhir_resource.get("resourceType"):
             errors.append("Missing required field: resourceType")
-        
+
         if not fhir_resource.get("id"):
             warnings.append("Resource ID is recommended")
-        
+
         # Check basic structure
         if "meta" in fhir_resource and not isinstance(fhir_resource["meta"], dict):
             errors.append("Meta field must be an object")
-        
+
         # Determine overall compliance
         overall_compliance = len(errors) == 0
-        
+
         validation_results = {
             "overall_compliance": overall_compliance,
             "fhir_version": fhir_version,
@@ -250,7 +250,7 @@ def validate_fhir_compliance(
             actor_id=actor_name
         )
 
-@healthcare_tool(
+@hacs_tool(
     name="process_fhir_bundle",
     description="Process FHIR Bundle operations for bulk healthcare data transactions",
     category=ToolCategory.FHIR_INTEGRATION,
@@ -296,25 +296,25 @@ def process_fhir_bundle(
 
         bundle_type = fhir_bundle.get("type", "unknown")
         entries = fhir_bundle.get("entry", [])
-        
+
         # TODO: Implement real FHIR bundle processing
         # Should handle different bundle types:
         # - transaction: Process all entries atomically
-        # - batch: Process entries independently  
+        # - batch: Process entries independently
         # - searchset: Handle search result bundles
         # - collection: Process document bundles
-        
+
         # Basic bundle processing (minimal implementation)
         start_time = datetime.now()
         entry_results = []
         successful_operations = 0
         failed_operations = 0
-        
+
         for i, entry in enumerate(entries):
             try:
                 resource = entry.get("resource", {})
                 resource_type = resource.get("resourceType", "Unknown")
-                
+
                 # Basic validation of each entry
                 if not resource_type or resource_type == "Unknown":
                     entry_results.append({
@@ -335,19 +335,19 @@ def process_fhir_bundle(
                         "note": "Basic validation passed - TODO: implement full processing"
                     })
                     successful_operations += 1
-                    
+
             except Exception as e:
                 entry_results.append({
                     "index": i,
                     "resource_type": "Unknown",
-                    "operation": "failed", 
+                    "operation": "failed",
                     "response_code": "500",
                     "error": str(e)
                 })
                 failed_operations += 1
-        
+
         processing_time = (datetime.now() - start_time).total_seconds() * 1000
-        
+
         processing_results = {
             "bundle_type": bundle_type,
             "operation_type": operation_type,
@@ -379,7 +379,7 @@ def process_fhir_bundle(
             actor_id=actor_name
         )
 
-@healthcare_tool(
+@hacs_tool(
     name="lookup_fhir_terminology",
     description="Lookup and validate FHIR terminology codes and code systems",
     category=ToolCategory.FHIR_INTEGRATION,
@@ -428,10 +428,10 @@ def lookup_fhir_terminology(
         # TODO: Implement real FHIR terminology lookup
         # Should connect to terminology services like:
         # - SNOMED CT International Terminology Server
-        # - NIH/NLM UMLS Terminology Services  
+        # - NIH/NLM UMLS Terminology Services
         # - FHIR terminology servers (HAPI FHIR)
         # - Local terminology caches
-        
+
         # Basic terminology validation (minimal implementation)
         valid_code_systems = {
             "http://snomed.info/sct": "SNOMED CT",
@@ -439,14 +439,14 @@ def lookup_fhir_terminology(
             "http://hl7.org/fhir/sid/icd-10": "ICD-10",
             "http://www.ama-assn.org/go/cpt": "CPT"
         }
-        
+
         # Basic validation
         is_valid_system = code_system in valid_code_systems
         system_name = valid_code_systems.get(code_system, "Unknown")
-        
+
         # Simple code format validation
         is_valid_code = bool(code and len(code.strip()) > 0)
-        
+
         terminology_result = {
             "code_system": code_system,
             "code_system_name": system_name,
@@ -494,4 +494,4 @@ __all__ = [
     "validate_fhir_compliance",
     "process_fhir_bundle",
     "lookup_fhir_terminology",
-] 
+]

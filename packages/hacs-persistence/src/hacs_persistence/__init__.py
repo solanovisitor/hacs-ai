@@ -16,6 +16,20 @@ except ModuleNotFoundError:
 from .resource_mapper import ResourceMapper
 from .schema import HACSSchemaManager
 
+# Repository pattern implementations
+try:
+    from .repositories import (
+        BaseRepository, ResourceRepository, PatientRepository,
+        ObservationRepository, EncounterRepository, RepositoryFactory,
+        create_repository_factory
+    )
+    REPOSITORIES_AVAILABLE = True
+except ImportError:
+    BaseRepository = ResourceRepository = PatientRepository = None
+    ObservationRepository = EncounterRepository = RepositoryFactory = None
+    create_repository_factory = None
+    REPOSITORIES_AVAILABLE = False
+
 # Import migration functionality
 try:
     from .migrations import HACSDatabaseMigration, run_migration
@@ -51,7 +65,17 @@ __all__ = [
     "HACSVectorStore",
     "create_vector_store",
     "initialize_hacs_database",
-    "get_migration_status"
+    "get_migration_status",
+    # Repository pattern
+    "BaseRepository",
+    "ResourceRepository",
+    "PatientRepository",
+    "ObservationRepository",
+    "EncounterRepository",
+    "RepositoryFactory",
+    "create_repository_factory",
+    # Availability flags
+    "REPOSITORIES_AVAILABLE",
 ]
 
 def initialize_hacs_database(database_url: str, force_migration: bool = False) -> bool:

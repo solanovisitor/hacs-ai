@@ -11,17 +11,17 @@ Features:
         - Create, validate, and manage Patient, Observation, Encounter records
         - Full support for HACS clinical data models
         - FHIR compliance checking and validation
-    
-    🤖 AI Agent Operations  
+
+    🤖 AI Agent Operations
         - Memory storage and retrieval for healthcare AI agents
         - Evidence collection and clinical reasoning support
         - Actor-based permissions and role management
-    
+
     🔄 Data Conversion & Validation
         - Convert between HACS and FHIR formats
         - Multi-level validation (basic, strict, fhir)
         - Batch processing for large datasets
-    
+
     📊 Rich Terminal Interface
         - Interactive resource builder with guided prompts
         - Beautiful tables and panels for data display
@@ -39,20 +39,20 @@ Commands:
 Usage Examples:
     # Create a new patient record
     hacs-cli create Patient --data '{"full_name": "John Doe", "birth_date": "1990-01-01"}'
-    
+
     # Validate a healthcare resource file
     hacs-cli validate patient.json --level strict
-    
+
     # Convert HACS format to FHIR
     hacs-cli convert patient.json fhir --output patient_fhir.json
-    
+
     # Interactive mode for guided resource creation
     hacs-cli interactive --resource Patient
-    
+
     # Store a memory for an AI agent
     hacs-cli memory store "Patient exhibits signs of hypertension" --type clinical
-    
-    # Search for evidence related to a condition  
+
+    # Search for evidence related to a condition
     hacs-cli search evidence --query "hypertension treatment"
 
 Requirements:
@@ -77,7 +77,7 @@ import typer
 from dotenv import load_dotenv
 
 # Import HACS modules
-from hacs_core import Actor, ActorRole, Evidence, EvidenceType, MemoryBlock
+from hacs_models import Actor, ActorRole, Evidence, EvidenceType, MemoryBlock
 from hacs_core.models import AgentMessage, Encounter, Observation, Patient
 
 # Optional FHIR functionality (graceful degradation if not available)
@@ -90,17 +90,17 @@ except ImportError:
         """FHIR validation unavailable - install FHIR dependencies."""
         # TODO: Implement proper FHIR validation or install required dependencies
         return ["FHIR validation not available - install hacs-core with FHIR extras"]
-    
+
     def to_fhir(resource: Any) -> dict[str, Any]:
         """FHIR conversion unavailable - install FHIR dependencies."""
         # TODO: Implement proper FHIR conversion or install required dependencies
         return {"error": "FHIR conversion not available"}
-    
+
     def from_fhir(data: dict[str, Any]) -> Any:
         """FHIR conversion unavailable - install FHIR dependencies."""
         # TODO: Implement proper FHIR conversion or install required dependencies
         return {"error": "FHIR conversion not available"}
-    
+
     FHIR_AVAILABLE = False
 from hacs_tools import (
     create_hacs_memory,
@@ -961,7 +961,7 @@ def export_a2a(
         hacs export a2a memory.json --type memory_share --conversation conv-123
     """
     try:
-        from hacs_core import Actor, ActorRole
+        from hacs_models import Actor, ActorRole
         from hacs_tools.adapters import create_a2a_envelope
 
         sender = get_current_actor()

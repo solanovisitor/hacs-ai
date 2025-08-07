@@ -24,9 +24,9 @@ Version: 0.3.0
 import logging
 from typing import Any, Dict, List, Optional
 
-from hacs_core import Actor
-from hacs_core.results import VectorStoreResult, HACSResult
-from hacs_core.tool_protocols import healthcare_tool, ToolCategory
+from hacs_models import Actor
+from hacs_models import VectorStoreResult, HACSResult
+from hacs_core.tool_protocols import hacs_tool, ToolCategory
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ from .descriptions import (
     OPTIMIZE_VECTOR_COLLECTION_DESCRIPTION,
 )
 
-@healthcare_tool(
+@hacs_tool(
     name="store_embedding",
     description="Store healthcare content as vector embeddings for semantic search",
     category=ToolCategory.VECTOR_SEARCH,
@@ -74,7 +74,7 @@ def store_embedding(
             "Patient presents with chest pain and elevated troponin levels",
             collection_name="clinical_observations",
             clinical_context="cardiology")
-        
+
         store_embedding("Nurse Johnson",
             "Standard pre-operative checklist: NPO status verified, consent signed",
             collection_name="clinical_procedures",
@@ -93,7 +93,7 @@ def store_embedding(
 
         # Mock embedding storage
         embedding_id = f"emb-{hash(content) % 1000000:06d}"
-        
+
         # Prepare metadata
         storage_metadata = metadata or {}
         storage_metadata.update({
@@ -126,7 +126,7 @@ def store_embedding(
             message=f"Failed to store healthcare embedding: {str(e)}"
         )
 
-@healthcare_tool(
+@hacs_tool(
     name="vector_similarity_search",
     description="Perform semantic similarity search on healthcare vector embeddings",
     category=ToolCategory.VECTOR_SEARCH,
@@ -164,7 +164,7 @@ def vector_similarity_search(
             collection_name="clinical_knowledge",
             limit=5,
             similarity_threshold=0.8)
-        
+
         vector_similarity_search("Nurse Johnson",
             "post-operative care protocols",
             clinical_filter="surgery")
@@ -208,10 +208,10 @@ def vector_similarity_search(
 
         # Apply similarity threshold filter
         filtered_results = [r for r in mock_results if r["similarity_score"] >= similarity_threshold]
-        
+
         # Apply clinical filter if specified
         if clinical_filter:
-            filtered_results = [r for r in filtered_results 
+            filtered_results = [r for r in filtered_results
                              if r["clinical_context"] == clinical_filter]
 
         # Apply limit
@@ -249,7 +249,7 @@ def vector_similarity_search(
             message=f"Failed to perform healthcare vector search: {str(e)}"
         )
 
-@healthcare_tool(
+@hacs_tool(
     name="vector_hybrid_search",
     description="Perform hybrid search combining keyword and semantic vector search",
     category=ToolCategory.VECTOR_SEARCH,
@@ -317,7 +317,7 @@ def vector_hybrid_search(
                 "keyword_score": 0.78,
                 "semantic_score": 0.92,
                 "combined_score": 0.86,
-                "clinical_context": "endocrinology", 
+                "clinical_context": "endocrinology",
                 "embedding_id": "emb-002002",
                 "search_type": "hybrid"
             }
@@ -326,7 +326,7 @@ def vector_hybrid_search(
         # Calculate combined scores using weights
         for result in mock_results:
             result["combined_score"] = (
-                result["keyword_score"] * keyword_weight + 
+                result["keyword_score"] * keyword_weight +
                 result["semantic_score"] * semantic_weight
             )
 
@@ -335,7 +335,7 @@ def vector_hybrid_search(
 
         # Apply clinical filter if specified
         if clinical_filter:
-            mock_results = [r for r in mock_results 
+            mock_results = [r for r in mock_results
                           if r["clinical_context"] == clinical_filter]
 
         # Apply limit
@@ -362,7 +362,7 @@ def vector_hybrid_search(
             message=f"Failed to perform hybrid healthcare search: {str(e)}"
         )
 
-@healthcare_tool(
+@hacs_tool(
     name="get_vector_collection_stats",
     description="Get statistics and metadata for a healthcare vector collection",
     category=ToolCategory.VECTOR_SEARCH,
@@ -452,7 +452,7 @@ def get_vector_collection_stats(
             message=f"Failed to get collection statistics: {str(e)}"
         )
 
-@healthcare_tool(
+@hacs_tool(
     name="optimize_vector_collection",
     description="Optimize vector collection for improved clinical search performance",
     category=ToolCategory.VECTOR_SEARCH,
@@ -525,4 +525,4 @@ __all__ = [
     "vector_hybrid_search",
     "get_vector_collection_stats",
     "optimize_vector_collection",
-] 
+]

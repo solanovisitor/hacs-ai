@@ -99,7 +99,7 @@ from .chains import (
     create_clinical_assessment_chain,
     create_diagnostic_chain,
     create_treatment_planning_chain,
-    create_comprehensive_clinical_chain,
+    create_clinical_chain,
 )
 
 from .vector_stores import (
@@ -121,25 +121,25 @@ from .retrievers import (
     RetrieverFactory,
     create_patient_retriever,
     create_temporal_retriever,
-    create_comprehensive_retriever,
+    create_retriever,
 )
 
 __all__ = [
     # Document Processing
     "LangChainDocumentAdapter",
-    "LangChainDocumentProcessor", 
+    "LangChainDocumentProcessor",
     "create_langchain_adapter",
     "create_document_processor",
     "Document",
     "RecursiveCharacterTextSplitter",
-    
+
     # HACS Tools Integration
     "get_hacs_tools",
     "get_hacs_tool",
-    "get_hacs_tools_by_category", 
+    "get_hacs_tools_by_category",
     "HACSToolRegistry",
     "validate_tool_inputs",
-    
+
     # Type Adapters
     "TypeAdapter",
     "ConversionStrategy",
@@ -152,7 +152,7 @@ __all__ = [
     "documents_to_hacs",
     "hacs_messages_to_langchain",
     "langchain_messages_to_hacs",
-    
+
     # Memory Integration
     "MemoryStrategy",
     "MemoryConfig",
@@ -163,7 +163,7 @@ __all__ = [
     "MemoryFactory",
     "create_clinical_memory",
     "create_episodic_memory",
-    
+
     # Chain Builders
     "ChainType",
     "ChainStrategy",
@@ -172,8 +172,8 @@ __all__ = [
     "create_clinical_assessment_chain",
     "create_diagnostic_chain",
     "create_treatment_planning_chain",
-    "create_comprehensive_clinical_chain",
-    
+    "create_clinical_chain",
+
     # Vector Stores
     "VectorStoreType",
     "EmbeddingStrategy",
@@ -183,7 +183,7 @@ __all__ = [
     "VectorStoreFactory",
     "create_clinical_vector_store",
     "create_general_vector_store",
-    
+
     # Retrievers
     "RetrievalStrategy",
     "RetrievalConfig",
@@ -192,5 +192,5 @@ __all__ = [
     "RetrieverFactory",
     "create_patient_retriever",
     "create_temporal_retriever",
-    "create_comprehensive_retriever",
+    "create_retriever",
 ]

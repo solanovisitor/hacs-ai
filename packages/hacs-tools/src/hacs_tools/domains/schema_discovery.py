@@ -24,13 +24,13 @@ Version: 0.3.0
 import logging
 from typing import Any, Dict, List, Optional
 
-from hacs_core.results import (
-    ResourceSchemaResult, 
+from hacs_models import (
+    ResourceSchemaResult,
     ResourceDiscoveryResult,
     FieldAnalysisResult,
     HACSResult
 )
-from hacs_core.tool_protocols import healthcare_tool, ToolCategory
+from hacs_core.tool_protocols import hacs_tool, ToolCategory
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ from .descriptions import (
     COMPARE_RESOURCE_SCHEMAS_DESCRIPTION,
 )
 
-@healthcare_tool(
+@hacs_tool(
     name="discover_hacs_resources",
     description="Discover all available HACS healthcare resources with comprehensive metadata",
     category=ToolCategory.SCHEMA_DISCOVERY,
@@ -126,7 +126,7 @@ def discover_hacs_resources(
                 if include_fhir_status:
                     # Check for FHIR-specific attributes
                     is_fhir_compliant = hasattr(obj, 'fhir_resource_type') or name in [
-                        "Patient", "Observation", "Encounter", "Condition", 
+                        "Patient", "Observation", "Encounter", "Condition",
                         "MedicationRequest", "Medication", "AllergyIntolerance",
                         "Procedure", "Goal", "ServiceRequest", "Organization"
                     ]
@@ -146,7 +146,7 @@ def discover_hacs_resources(
             fhir_resources=fhir_resources,
             clinical_resources=clinical_resources,
             administrative_resources=administrative_resources,
-            message=f"Discovered {len(resources)} healthcare resources" + 
+            message=f"Discovered {len(resources)} healthcare resources" +
                    (f" in category '{category_filter}'" if category_filter else "")
         )
 
@@ -162,7 +162,7 @@ def discover_hacs_resources(
             message=f"Failed to discover healthcare resources: {str(e)}"
         )
 
-@healthcare_tool(
+@hacs_tool(
     name="get_hacs_resource_schema",
     description="Get comprehensive schema information for a healthcare resource type",
     category=ToolCategory.SCHEMA_DISCOVERY,
@@ -209,12 +209,12 @@ def get_hacs_resource_schema(
 
         # Generate JSON schema
         schema = resource_class.model_json_schema()
-        
+
         # Extract field information
         properties = schema.get("properties", {})
         required_fields = schema.get("required", [])
         optional_fields = [field for field in properties.keys() if field not in required_fields]
-        
+
         # Determine FHIR compliance
         fhir_compliance = resource_type in [
             "Patient", "Observation", "Encounter", "Condition",
@@ -257,7 +257,7 @@ def get_hacs_resource_schema(
             message=f"Failed to get schema for {resource_type}: {str(e)}"
         )
 
-@healthcare_tool(
+@hacs_tool(
     name="analyze_resource_fields",
     description="Perform detailed analysis of healthcare resource fields for clinical usage",
     category=ToolCategory.SCHEMA_DISCOVERY,
@@ -277,7 +277,7 @@ def analyze_resource_fields(
 
     Args:
         resource_type: Name of the healthcare resource type to analyze
-        focus_area: Analysis focus (all, clinical, fhir, ai_optimization)  
+        focus_area: Analysis focus (all, clinical, fhir, ai_optimization)
         include_ai_recommendations: Whether to include AI agent usage recommendations
 
     Returns:
@@ -322,7 +322,7 @@ def analyze_resource_fields(
             if _is_clinical_field(field_name, resource_type):
                 clinical_fields.append(field_name)
                 field_data["clinical_significance"] = "high"
-            
+
             # FHIR requirement analysis
             if _is_fhir_required(field_name, resource_type):
                 required_for_fhir.append(field_name)
@@ -374,7 +374,7 @@ def analyze_resource_fields(
             message=f"Failed to analyze fields for {resource_type}: {str(e)}"
         )
 
-@healthcare_tool(
+@hacs_tool(
     name="compare_resource_schemas",
     description="Compare schemas between two healthcare resource types for integration analysis",
     category=ToolCategory.SCHEMA_DISCOVERY,
@@ -537,17 +537,17 @@ def _is_ai_optimized(field_name: str, field_info) -> bool:
 def _generate_field_recommendations(resource_type: str, field_analysis: Dict, focus_area: str) -> List[str]:
     """Generate field usage recommendations based on analysis."""
     recommendations = []
-    
+
     if focus_area in ["all", "clinical"]:
         clinical_count = len([f for f in field_analysis.values() if f.get("clinical_significance") == "high"])
         if clinical_count > 0:
             recommendations.append(f"Focus on {clinical_count} clinically significant fields for healthcare workflows")
-    
+
     if focus_area in ["all", "ai_optimization"]:
         ai_count = len([f for f in field_analysis.values() if f.get("ai_friendly")])
         if ai_count > 0:
             recommendations.append(f"Prioritize {ai_count} AI-friendly fields for agent interactions")
-    
+
     if focus_area in ["all", "fhir"]:
         fhir_count = len([f for f in field_analysis.values() if f.get("fhir_required")])
         if fhir_count > 0:
@@ -560,4 +560,4 @@ __all__ = [
     "get_hacs_resource_schema",
     "analyze_resource_fields",
     "compare_resource_schemas",
-] 
+]

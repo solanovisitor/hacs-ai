@@ -58,7 +58,7 @@ curl http://localhost:8000/
 ```python
 import requests
 
-def call_tool(tool_name, arguments):
+def use_tool(tool_name, arguments):
     """Call HACS MCP tools"""
     response = requests.post('http://localhost:8000/', json={
         "jsonrpc": "2.0",
@@ -72,11 +72,11 @@ def call_tool(tool_name, arguments):
     return response.json()
 
 # List all available tools
-tools = call_tool("tools/list", {})
+tools = use_tool("tools/list", {})
 print(f"Available tools: {len(tools['result']['tools'])}")
 
 # Create patient record
-patient = call_tool("create_hacs_record", {
+patient = use_tool("create_hacs_record", {
     "resource_type": "Patient",
     "resource_data": {
         "full_name": "Sarah Johnson",
@@ -91,7 +91,7 @@ patient = call_tool("create_hacs_record", {
 ### **Clinical Memory Management**
 ```python
 # Store clinical memory
-memory_result = call_tool("create_memory", {
+memory_result = use_tool("create_memory", {
     "content": "Patient reports significant improvement in symptoms after medication adjustment",
     "memory_type": "episodic",
     "importance_score": 0.9,
@@ -99,7 +99,7 @@ memory_result = call_tool("create_memory", {
 })
 
 # Search memories
-search_result = call_tool("search_memories", {
+search_result = use_tool("search_memories", {
     "query": "medication adjustment outcomes",
     "memory_type": "episodic",
     "limit": 5
@@ -109,7 +109,7 @@ search_result = call_tool("search_memories", {
 ### **Clinical Templates**
 ```python
 # Generate assessment template
-template = call_tool("create_clinical_template", {
+template = use_tool("create_clinical_template", {
     "template_type": "assessment",
     "focus_area": "cardiology",
     "complexity_level": "comprehensive"

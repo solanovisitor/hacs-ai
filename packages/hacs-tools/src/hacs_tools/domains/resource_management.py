@@ -25,9 +25,9 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from hacs_core import Actor
-from hacs_core.results import HACSResult, ResourceSchemaResult
-from hacs_core.tool_protocols import healthcare_tool, ToolCategory
+from hacs_models import Actor
+from hacs_models import HACSResult, ResourceSchemaResult
+from hacs_core.tool_protocols import hacs_tool, ToolCategory
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ from .descriptions import (
 )
 
 
-@healthcare_tool(
+@hacs_tool(
     name="create_hacs_record",
     description="Create a new healthcare resource record with FHIR compliance validation",
     category=ToolCategory.RESOURCE_MANAGEMENT,
@@ -78,7 +78,7 @@ def create_hacs_record(
             "birth_date": "1990-01-01",
             "gender": "male"
         })
-        
+
         create_hacs_record("Nurse Johnson", "Observation", {
             "code": {"coding": [{"code": "85354-9", "system": "http://loinc.org"}]},
             "value_quantity": {"value": 120, "unit": "mmHg"}
@@ -87,7 +87,7 @@ def create_hacs_record(
     try:
         # Create actor instance for validation/context
         _ = Actor(name=actor_name, role="physician")
-        
+
         # Auto-generate ID if requested and missing
         if auto_generate_id and 'id' not in resource_data:
             import uuid
@@ -163,7 +163,7 @@ def create_hacs_record(
         )
 
 
-@healthcare_tool(
+@hacs_tool(
     name="get_hacs_record",
     description="Retrieve a healthcare resource record by ID with audit trail support",
     category=ToolCategory.RESOURCE_MANAGEMENT,
@@ -250,7 +250,7 @@ def get_hacs_record(
         )
 
 
-@healthcare_tool(
+@hacs_tool(
     name="update_hacs_record",
     description="Update an existing healthcare resource record with validation",
     category=ToolCategory.RESOURCE_MANAGEMENT,
@@ -334,7 +334,7 @@ def update_hacs_record(
         )
 
 
-@healthcare_tool(
+@hacs_tool(
     name="delete_hacs_record",
     description="Delete a healthcare resource record with audit trail preservation",
     category=ToolCategory.RESOURCE_MANAGEMENT,
@@ -411,7 +411,7 @@ def delete_hacs_record(
         )
 
 
-@healthcare_tool(
+@hacs_tool(
     name="search_hacs_records",
     description="Search healthcare resource records with advanced filtering capabilities",
     category=ToolCategory.RESOURCE_MANAGEMENT,
@@ -527,8 +527,8 @@ def _get_resource_class(resource_type: str):
 
 __all__ = [
     "create_hacs_record",
-    "get_hacs_record", 
+    "get_hacs_record",
     "update_hacs_record",
     "delete_hacs_record",
     "search_hacs_records",
-] 
+]

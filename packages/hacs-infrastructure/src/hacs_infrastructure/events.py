@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 
 class EventPriority(str, Enum):
     """Event priority levels."""
-    
+
     LOW = "low"
     NORMAL = "normal"
     HIGH = "high"
@@ -27,29 +27,29 @@ class EventPriority(str, Enum):
 
 class Event(BaseModel):
     """Base event class for the event system."""
-    
+
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique event identifier")
     type: str = Field(..., description="Event type")
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Event timestamp")
     source: str = Field(..., description="Event source/publisher")
     priority: EventPriority = Field(EventPriority.NORMAL, description="Event priority")
-    
+
     # Event data
     data: Dict[str, Any] = Field(default_factory=dict, description="Event data payload")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Event metadata")
-    
+
     # Routing and filtering
     tags: Set[str] = Field(default_factory=set, description="Event tags for filtering")
     correlation_id: Optional[str] = Field(None, description="Correlation ID for related events")
-    
+
     def add_tag(self, tag: str) -> None:
         """Add tag to event."""
         self.tags.add(tag)
-    
+
     def has_tag(self, tag: str) -> bool:
         """Check if event has specific tag."""
         return tag in self.tags
-    
+
     def get_age(self) -> float:
         """Get event age in seconds."""
         return (datetime.now(timezone.utc) - self.timestamp).total_seconds()
@@ -57,7 +57,7 @@ class Event(BaseModel):
 
 class EventFilter:
     """Event filter for subscription filtering."""
-    
+
     def __init__(
         self,
         event_types: Optional[Set[str]] = None,
@@ -68,7 +68,7 @@ class EventFilter:
     ):
         """
         Initialize event filter.
-        
+
         Args:
             event_types: Set of event types to match
             tags: Set of tags to match (any)
@@ -81,31 +81,31 @@ class EventFilter:
         self.sources = sources
         self.priority = priority
         self.custom_filter = custom_filter
-    
+
     def matches(self, event: Event) -> bool:
         """Check if event matches filter criteria."""
         # Check event type
         if self.event_types and event.type not in self.event_types:
             return False
-        
+
         # Check tags (any tag matches)
         if self.tags and not self.tags.intersection(event.tags):
             return False
-        
+
         # Check source
         if self.sources and event.source not in self.sources:
             return False
-        
+
         # Check priority
         if self.priority:
             priority_order = [EventPriority.LOW, EventPriority.NORMAL, EventPriority.HIGH, EventPriority.CRITICAL]
             if priority_order.index(event.priority) < priority_order.index(self.priority):
                 return False
-        
+
         # Check custom filter
         if self.custom_filter and not self.custom_filter(event):
             return False
-        
+
         return True
 
 
@@ -115,7 +115,7 @@ AsyncEventHandler = Callable[[Event], None]
 
 class EventSubscription:
     """Represents an event subscription."""
-    
+
     def __init__(
         self,
         subscription_id: str,
@@ -125,7 +125,7 @@ class EventSubscription:
     ):
         """
         Initialize event subscription.
-        
+
         Args:
             subscription_id: Unique subscription identifier
             handler: Event handler function
@@ -139,17 +139,17 @@ class EventSubscription:
         self.created_at = datetime.now(timezone.utc)
         self.event_count = 0
         self.last_event_at: Optional[datetime] = None
-    
+
     def matches_event(self, event: Event) -> bool:
         """Check if subscription matches event."""
         return self.filter.matches(event) if self.filter else True
-    
+
     async def handle_event(self, event: Event) -> None:
         """Handle event with this subscription."""
         try:
             self.event_count += 1
             self.last_event_at = datetime.now(timezone.utc)
-            
+
             if self.is_async:
                 await self.handler(event)
             else:
@@ -171,11 +171,11 @@ class EventBus:
     Comprehensive event bus with pub/sub capabilities, filtering,
     and asynchronous event handling.
     """
-    
+
     def __init__(self, max_event_history: int = 1000):
         """
         Initialize event bus.
-        
+
         Args:
             max_event_history: Maximum number of events to keep in history
         """
@@ -183,32 +183,32 @@ class EventBus:
         self._event_history: List[Event] = []
         self._max_event_history = max_event_history
         self._lock = threading.RLock()
-        
+
         # Event processing
         self._event_queue: asyncio.Queue = asyncio.Queue()
         self._processing_task: Optional[asyncio.Task] = None
         self._running = False
-        
+
         # Statistics
         self._total_events_published = 0
         self._total_events_processed = 0
-    
+
     async def start(self) -> None:
         """Start event processing."""
         if self._running:
             return
-        
+
         self._running = True
         self._event_queue = asyncio.Queue()
         self._processing_task = asyncio.create_task(self._process_events())
-    
+
     async def stop(self) -> None:
         """Stop event processing."""
         if not self._running:
             return
-        
+
         self._running = False
-        
+
         if self._processing_task:
             self._processing_task.cancel()
             try:
@@ -216,11 +216,11 @@ class EventBus:
             except asyncio.CancelledError:
                 pass
             self._processing_task = None
-    
+
     def publish(self, event: Event) -> None:
         """
         Publish event to the bus.
-        
+
         Args:
             event: Event to publish
         """
@@ -229,9 +229,9 @@ class EventBus:
             self._event_history.append(event)
             if len(self._event_history) > self._max_event_history:
                 self._event_history.pop(0)
-            
+
             self._total_events_published += 1
-        
+
         # Queue for async processing
         if self._running:
             try:
@@ -241,7 +241,7 @@ class EventBus:
                 import logging
                 logger = logging.getLogger(__name__)
                 logger.warning(f"Event queue full, dropping event: {event.id}")
-    
+
     def publish_event(
         self,
         event_type: str,
@@ -253,7 +253,7 @@ class EventBus:
     ) -> str:
         """
         Publish event with specified parameters.
-        
+
         Args:
             event_type: Type of event
             source: Event source
@@ -261,7 +261,7 @@ class EventBus:
             priority: Event priority
             tags: Event tags
             correlation_id: Correlation ID
-            
+
         Returns:
             Event ID
         """
@@ -273,10 +273,10 @@ class EventBus:
             tags=tags or set(),
             correlation_id=correlation_id
         )
-        
+
         self.publish(event)
         return event.id
-    
+
     def subscribe(
         self,
         handler: Callable[[Event], Any],
@@ -285,23 +285,23 @@ class EventBus:
     ) -> str:
         """
         Subscribe to events.
-        
+
         Args:
             handler: Event handler function
             event_filter: Event filter for subscription
             is_async: Whether handler is async
-            
+
         Returns:
             Subscription ID
         """
         subscription_id = str(uuid.uuid4())
         subscription = EventSubscription(subscription_id, handler, event_filter, is_async)
-        
+
         with self._lock:
             self._subscriptions[subscription_id] = subscription
-        
+
         return subscription_id
-    
+
     def subscribe_to_type(
         self,
         event_type: str,
@@ -310,18 +310,18 @@ class EventBus:
     ) -> str:
         """
         Subscribe to specific event type.
-        
+
         Args:
             event_type: Event type to subscribe to
             handler: Event handler function
             is_async: Whether handler is async
-            
+
         Returns:
             Subscription ID
         """
         event_filter = EventFilter(event_types={event_type})
         return self.subscribe(handler, event_filter, is_async)
-    
+
     def subscribe_to_tags(
         self,
         tags: Set[str],
@@ -330,41 +330,41 @@ class EventBus:
     ) -> str:
         """
         Subscribe to events with specific tags.
-        
+
         Args:
             tags: Tags to subscribe to
             handler: Event handler function
             is_async: Whether handler is async
-            
+
         Returns:
             Subscription ID
         """
         event_filter = EventFilter(tags=tags)
         return self.subscribe(handler, event_filter, is_async)
-    
+
     def unsubscribe(self, subscription_id: str) -> bool:
         """
         Unsubscribe from events.
-        
+
         Args:
             subscription_id: Subscription ID to remove
-            
+
         Returns:
             True if subscription was removed
         """
         with self._lock:
             return self._subscriptions.pop(subscription_id, None) is not None
-    
+
     def get_subscription(self, subscription_id: str) -> Optional[EventSubscription]:
         """Get subscription by ID."""
         with self._lock:
             return self._subscriptions.get(subscription_id)
-    
+
     def get_subscriptions(self) -> List[EventSubscription]:
         """Get all active subscriptions."""
         with self._lock:
             return list(self._subscriptions.values())
-    
+
     async def _process_events(self) -> None:
         """Process events from queue."""
         while self._running:
@@ -381,16 +381,16 @@ class EventBus:
                 import logging
                 logger = logging.getLogger(__name__)
                 logger.error(f"Error processing event: {e}")
-    
+
     async def _dispatch_event(self, event: Event) -> None:
         """Dispatch event to matching subscriptions."""
         matching_subscriptions = []
-        
+
         with self._lock:
             for subscription in self._subscriptions.values():
                 if subscription.matches_event(event):
                     matching_subscriptions.append(subscription)
-        
+
         # Handle events concurrently
         if matching_subscriptions:
             tasks = [
@@ -398,7 +398,7 @@ class EventBus:
                 for subscription in matching_subscriptions
             ]
             await asyncio.gather(*tasks, return_exceptions=True)
-    
+
     def get_event_history(
         self,
         event_type: Optional[str] = None,
@@ -407,29 +407,29 @@ class EventBus:
     ) -> List[Event]:
         """
         Get event history with optional filtering.
-        
+
         Args:
             event_type: Filter by event type
             source: Filter by source
             limit: Maximum number of events to return
-            
+
         Returns:
             List of events
         """
         with self._lock:
             events = self._event_history.copy()
-        
+
         # Apply filters
         if event_type:
             events = [e for e in events if e.type == event_type]
-        
+
         if source:
             events = [e for e in events if e.source == source]
-        
+
         # Return most recent events first
         events.reverse()
         return events[:limit]
-    
+
     def get_statistics(self) -> Dict[str, Any]:
         """Get event bus statistics."""
         with self._lock:
@@ -441,12 +441,12 @@ class EventBus:
                 "queue_size": self._event_queue.qsize() if self._running else 0,
                 "is_running": self._running
             }
-    
+
     def clear_history(self) -> None:
         """Clear event history."""
         with self._lock:
             self._event_history.clear()
-    
+
     def get_events_by_correlation_id(self, correlation_id: str) -> List[Event]:
         """Get all events with specific correlation ID."""
         with self._lock:

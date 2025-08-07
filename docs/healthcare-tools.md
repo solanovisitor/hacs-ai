@@ -23,7 +23,7 @@ patient_data = patient.model_dump(exclude={
     "text", "contained", "extension", "modifier_extension"  # Exclude FHIR overhead
 })
 
-result = call_tool("create_hacs_record", {
+result = use_tool("create_hacs_record", {
     "resource_type": "Patient",
     "resource_data": patient_data  # Optimized clinical context only
 })
@@ -33,7 +33,7 @@ result = call_tool("create_hacs_record", {
 Retrieve healthcare resource by ID and type
 
 ```python
-patient = call_tool("get_resource", {
+patient = use_tool("get_resource", {
     "resource_type": "Patient", 
     "resource_id": "patient-123"
 })
@@ -43,7 +43,7 @@ patient = call_tool("get_resource", {
 Update existing healthcare resource
 
 ```python
-call_tool("update_resource", {
+use_tool("update_resource", {
     "resource_type": "Patient",
     "resource_id": "patient-123", 
     "resource_data": {
@@ -58,7 +58,7 @@ call_tool("update_resource", {
 Remove healthcare resource
 
 ```python
-call_tool("delete_resource", {
+use_tool("delete_resource", {
     "resource_type": "Patient",
     "resource_id": "patient-123"
 })
@@ -68,7 +68,7 @@ call_tool("delete_resource", {
 Validate resource data against FHIR schemas
 
 ```python
-validation = call_tool("validate_resource_data", {
+validation = use_tool("validate_resource_data", {
     "resource_type": "Observation",
     "data": {
         "code_text": "Blood Pressure",
@@ -82,14 +82,14 @@ validation = call_tool("validate_resource_data", {
 Get list of all available HACS resource types
 
 ```python
-resources = call_tool("list_available_resources", {})
+resources = use_tool("list_available_resources", {})
 ```
 
 #### `find_resources`
 Semantic search across healthcare resources
 
 ```python
-results = call_tool("find_resources", {
+results = use_tool("find_resources", {
     "resource_type": "Patient",
     "search_criteria": {
         "semantic_query": "diabetes patients with poor glucose control"
@@ -102,7 +102,7 @@ results = call_tool("find_resources", {
 Advanced filtered search with multiple criteria
 
 ```python
-records = call_tool("search_hacs_records", {
+records = use_tool("search_hacs_records", {
     "query": "hypertension medication",
     "resource_types": ["Patient", "Observation"],
     "filters": {
@@ -125,7 +125,7 @@ Clinical memory operations implementing context writing and selective memory acc
 
 ```python
 # WRITE: Generate clinical context with comprehensive metadata
-memory = call_tool("create_memory", {
+memory = use_tool("create_memory", {
     "content": "Patient reports 75% reduction in chest pain after metoprolol initiation. Excellent medication tolerance.",
     "memory_type": "episodic",
     "importance_score": 0.9,  # High clinical significance
@@ -144,7 +144,7 @@ memory = call_tool("create_memory", {
 Semantic search across clinical memories
 
 ```python
-memories = call_tool("search_memories", {
+memories = use_tool("search_memories", {
     "query": "medication side effects",
     "memory_type": "episodic", 
     "limit": 5,
@@ -156,7 +156,7 @@ memories = call_tool("search_memories", {
 Merge related memories for knowledge synthesis
 
 ```python
-consolidated = call_tool("consolidate_memories", {
+consolidated = use_tool("consolidate_memories", {
     "memory_ids": ["memory-1", "memory-2", "memory-3"],
     "consolidation_strategy": "thematic_synthesis"
 })
@@ -166,7 +166,7 @@ consolidated = call_tool("consolidate_memories", {
 Get relevant clinical context for current task
 
 ```python
-context = call_tool("retrieve_context", {
+context = use_tool("retrieve_context", {
     "query": "diabetes management plan",
     "context_type": "clinical",
     "max_memories": 3
@@ -177,7 +177,7 @@ context = call_tool("retrieve_context", {
 Identify patterns and insights from clinical memories
 
 ```python
-patterns = call_tool("analyze_memory_patterns", {
+patterns = use_tool("analyze_memory_patterns", {
     "memory_type": "episodic",
     "analysis_focus": "patient_outcomes",
     "time_window": "last_30_days"
@@ -192,7 +192,7 @@ Structured clinical protocols and decision support.
 Run predefined clinical workflow protocols
 
 ```python
-workflow = call_tool("execute_clinical_workflow", {
+workflow = use_tool("execute_clinical_workflow", {
     "workflow_type": "diabetes_assessment",
     "patient_context": {
         "hba1c": "8.2%",
@@ -206,7 +206,7 @@ workflow = call_tool("execute_clinical_workflow", {
 Generate clinical assessment templates
 
 ```python
-template = call_tool("create_clinical_template", {
+template = use_tool("create_clinical_template", {
     "template_type": "assessment",
     "focus_area": "cardiology", 
     "complexity_level": "intermediate"
@@ -217,7 +217,7 @@ template = call_tool("create_clinical_template", {
 Ensure clinical protocols meet standards
 
 ```python
-validation = call_tool("validate_clinical_protocol", {
+validation = use_tool("validate_clinical_protocol", {
     "protocol_data": {
         "name": "Hypertension Management",
         "steps": ["assess_bp", "lifestyle_counseling", "medication_if_needed"]
@@ -229,7 +229,7 @@ validation = call_tool("validate_clinical_protocol", {
 Create personalized care plans
 
 ```python
-care_plan = call_tool("generate_care_plan", {
+care_plan = use_tool("generate_care_plan", {
     "patient_id": "patient-123",
     "primary_conditions": ["diabetes", "hypertension"],
     "goals": ["hba1c_reduction", "bp_control"]
@@ -248,7 +248,7 @@ Vector operations implementing context compression and selective similarity matc
 ```python
 # COMPRESS: Use compressed clinical query
 # SELECT: Filter by similarity threshold and importance
-results = call_tool("semantic_search_records", {
+results = use_tool("semantic_search_records", {
     "query": "uncontrolled diabetes HbA1c >8% medication non-adherence",  # COMPRESS clinical concepts
     "resource_types": ["Patient", "Observation"],
     "similarity_threshold": 0.85,  # SELECT highly relevant only
@@ -262,7 +262,7 @@ results = call_tool("semantic_search_records", {
 Find clinically similar patient cases
 
 ```python
-similar = call_tool("find_similar_cases", {
+similar = use_tool("find_similar_cases", {
     "reference_patient_id": "patient-123",
     "similarity_criteria": ["diagnosis", "demographics", "medications"],
     "limit": 5
@@ -273,7 +273,7 @@ similar = call_tool("find_similar_cases", {
 Search clinical knowledge base
 
 ```python
-knowledge = call_tool("search_clinical_knowledge", {
+knowledge = use_tool("search_clinical_knowledge", {
     "query": "ACE inhibitor contraindications",
     "knowledge_types": ["guidelines", "contraindications"],
     "evidence_level": "high"
@@ -288,7 +288,7 @@ Healthcare resource schema exploration and analysis.
 Explore available healthcare resources
 
 ```python
-resources = call_tool("discover_hacs_resources", {
+resources = use_tool("discover_hacs_resources", {
     "category_filter": "clinical",
     "include_examples": True
 })
@@ -298,7 +298,7 @@ resources = call_tool("discover_hacs_resources", {
 Get detailed schema for resource type
 
 ```python
-schema = call_tool("get_hacs_resource_schema", {
+schema = use_tool("get_hacs_resource_schema", {
     "resource_type": "Patient",
     "include_validation_rules": True
 })
@@ -308,7 +308,7 @@ schema = call_tool("get_hacs_resource_schema", {
 Compare schemas between resource types
 
 ```python
-comparison = call_tool("compare_resource_schemas", {
+comparison = use_tool("compare_resource_schemas", {
     "model_names": ["Patient", "Observation"],
     "comparison_focus": "fields"
 })
@@ -318,7 +318,7 @@ comparison = call_tool("compare_resource_schemas", {
 Analyze fields in healthcare model
 
 ```python
-analysis = call_tool("analyze_model_fields", {
+analysis = use_tool("analyze_model_fields", {
     "model_name": "Observation", 
     "analysis_type": "comprehensive"
 })
@@ -328,7 +328,7 @@ analysis = call_tool("analyze_model_fields", {
 Get field suggestions for models
 
 ```python
-suggestions = call_tool("suggest_model_fields", {
+suggestions = use_tool("suggest_model_fields", {
     "model_name": "Patient",
     "use_case": "diabetes_management"
 })
@@ -342,7 +342,7 @@ Tools for developing with HACS models and resources.
 Compose complex healthcare data structures
 
 ```python
-stack = call_tool("create_model_stack", {
+stack = use_tool("create_model_stack", {
     "primary_model": "Patient",
     "related_models": ["Observation", "Encounter"],
     "composition_type": "clinical_episode"
@@ -353,7 +353,7 @@ stack = call_tool("create_model_stack", {
 Generate realistic test data for healthcare models
 
 ```python
-test_data = call_tool("generate_test_data", {
+test_data = use_tool("generate_test_data", {
     "resource_type": "Patient",
     "count": 10,
     "demographics": "diverse",
@@ -365,7 +365,7 @@ test_data = call_tool("generate_test_data", {
 Validate complex model relationships
 
 ```python
-validation = call_tool("validate_model_composition", {
+validation = use_tool("validate_model_composition", {
     "composition_data": {
         "patient": {...},
         "observations": [...],
@@ -378,7 +378,7 @@ validation = call_tool("validate_model_composition", {
 Optimize models for LLM consumption
 
 ```python
-optimized = call_tool("optimize_model_for_llm", {
+optimized = use_tool("optimize_model_for_llm", {
     "model_data": {...},
     "optimization_target": "token_efficiency",
     "preserve_clinical_context": True
@@ -393,7 +393,7 @@ FHIR standards compliance and interoperability.
 Ensure FHIR standard compliance
 
 ```python
-compliance = call_tool("validate_fhir_compliance", {
+compliance = use_tool("validate_fhir_compliance", {
     "resource_data": {...},
     "fhir_version": "R4",
     "strict_validation": True
@@ -404,7 +404,7 @@ compliance = call_tool("validate_fhir_compliance", {
 Convert HACS models to FHIR format
 
 ```python
-fhir_resource = call_tool("convert_to_fhir", {
+fhir_resource = use_tool("convert_to_fhir", {
     "hacs_resource": {...},
     "target_fhir_version": "R4"
 })
@@ -414,7 +414,7 @@ fhir_resource = call_tool("convert_to_fhir", {
 Import FHIR resources into HACS
 
 ```python
-hacs_resource = call_tool("import_from_fhir", {
+hacs_resource = use_tool("import_from_fhir", {
     "fhir_resource": {...},
     "enhance_for_agents": True
 })
@@ -428,7 +428,7 @@ Population health and quality measures.
 Calculate healthcare quality indicators
 
 ```python
-measures = call_tool("calculate_quality_measures", {
+measures = use_tool("calculate_quality_measures", {
     "measure_set": "diabetes_care",
     "patient_population": "all_diabetes_patients",
     "time_period": "last_12_months"
@@ -439,7 +439,7 @@ measures = call_tool("calculate_quality_measures", {
 Analyze population health trends
 
 ```python
-insights = call_tool("generate_population_insights", {
+insights = use_tool("generate_population_insights", {
     "population_criteria": {
         "conditions": ["diabetes"],
         "age_range": [18, 65]
@@ -452,7 +452,7 @@ insights = call_tool("generate_population_insights", {
 Stratify patients by risk levels
 
 ```python
-stratification = call_tool("risk_stratification", {
+stratification = use_tool("risk_stratification", {
     "patient_cohort": "diabetes_patients",
     "risk_factors": ["hba1c", "blood_pressure", "medications"],
     "stratification_model": "clinical_guidelines"
@@ -467,7 +467,7 @@ Healthcare AI model deployment and optimization.
 Deploy AI models for healthcare workflows
 
 ```python
-deployment = call_tool("deploy_healthcare_model", {
+deployment = use_tool("deploy_healthcare_model", {
     "model_type": "clinical_prediction",
     "model_config": {...},
     "deployment_target": "production"
@@ -478,7 +478,7 @@ deployment = call_tool("deploy_healthcare_model", {
 Evaluate healthcare AI model performance
 
 ```python
-evaluation = call_tool("evaluate_model_performance", {
+evaluation = use_tool("evaluate_model_performance", {
     "model_id": "clinical-model-123",
     "evaluation_metrics": ["accuracy", "sensitivity", "specificity"],
     "test_dataset": "validation_set"
@@ -502,7 +502,7 @@ def context_engineered_clinical_workflow(patient_id, clinical_query):
     }
     
     # 🎯 SELECT: Search with selective criteria
-    search_results = call_tool("search_hacs_records", {
+    search_results = use_tool("search_hacs_records", {
         "query": clinical_query,
         "resource_types": ["Patient", "Observation", "MemoryBlock"],
         "importance_threshold": 0.7,  # SELECT high-importance only
@@ -526,7 +526,7 @@ def context_engineered_clinical_workflow(patient_id, clinical_query):
             clinical_summary = f"{patient_summary} | Recent: {len(recent_obs)} significant findings"
     
     # 🖊️ WRITE: Generate clinical context with comprehensive metadata
-    clinical_memory = call_tool("create_memory", {
+    clinical_memory = use_tool("create_memory", {
         "content": f"Clinical analysis for {clinical_query}: {clinical_summary}",
         "memory_type": "episodic",
         "importance_score": 0.9,
@@ -564,7 +564,7 @@ Choose appropriate context engineering strategies based on your healthcare AI us
 ### Error Handling
 
 ```python
-def call_tool_safely(tool_name, arguments):
+def use_tool_safely(tool_name, arguments):
     try:
         result = call_mcp_tool(tool_name, arguments)
         if result and "error" not in result:
@@ -589,7 +589,7 @@ resources_to_create = [
 
 created_resources = []
 for resource_req in resources_to_create:
-    result = call_tool("create_hacs_record", resource_req)
+    result = use_tool("create_hacs_record", resource_req)
     if result:
         created_resources.append(result)
 ```
@@ -600,7 +600,7 @@ for resource_req in resources_to_create:
 # Complete clinical documentation workflow
 def document_patient_encounter(patient_id, encounter_data):
     # 1. Create encounter
-    encounter = call_tool("create_hacs_record", {
+    encounter = use_tool("create_hacs_record", {
         "resource_type": "Encounter",
         "resource_data": encounter_data
     })
@@ -608,7 +608,7 @@ def document_patient_encounter(patient_id, encounter_data):
     # 2. Record observations
     observations = []
     for vital in encounter_data.get("vitals", []):
-        obs = call_tool("create_hacs_record", {
+        obs = use_tool("create_hacs_record", {
             "resource_type": "Observation",
             "resource_data": {
                 **vital,
@@ -619,7 +619,7 @@ def document_patient_encounter(patient_id, encounter_data):
         observations.append(obs)
     
     # 3. Store clinical memory
-    memory = call_tool("create_memory", {
+    memory = use_tool("create_memory", {
         "content": encounter_data["clinical_notes"],
         "memory_type": "episodic", 
         "context_metadata": {
@@ -641,15 +641,15 @@ Get complete tool information programmatically:
 
 ```python
 # List all available tools
-tools = call_tool("list_tools", {})
+tools = use_tool("list_tools", {})
 
 # Get tool details
-tool_info = call_tool("get_tool_info", {
+tool_info = use_tool("get_tool_info", {
     "tool_name": "create_hacs_record"
 })
 
 # Search tools by category
-category_tools = call_tool("search_tools", {
+category_tools = use_tool("search_tools", {
     "category": "memory_operations"
 })
 ```

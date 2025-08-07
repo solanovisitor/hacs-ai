@@ -9,7 +9,7 @@ import uuid
 from enum import Enum
 from typing import Any
 
-from hacs_core import Actor, Evidence, MemoryBlock
+from hacs_models import Actor, Evidence, MemoryBlock
 
 try:
     from hacs_models import Observation, Patient

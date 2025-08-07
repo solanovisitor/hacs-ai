@@ -1,7 +1,7 @@
 """
 HACS Registry Domain Layer
 
-This module implements the domain layer following Domain-Driven Design (DDD) 
+This module implements the domain layer following Domain-Driven Design (DDD)
 principles and SOLID design patterns.
 
 Domain Layer Structure:
@@ -43,12 +43,12 @@ from .services import (
 __all__ = [
     # Resource Models
     "ResourceAggregate",
-    "ResourceMetadata", 
+    "ResourceMetadata",
     "ResourceVersion",
     "ResourceTag",
     "ResourceCategory",
     "ResourceStatus",
-    
+
     # Resource Services
     "ResourceService",
     "ResourceValidationService",

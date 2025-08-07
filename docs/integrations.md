@@ -1,15 +1,21 @@
 # HACS Integrations Guide
 
-Connect HACS to your healthcare technology stack with production-ready integrations. HACS focuses on **essential integrations** that healthcare organizations need for AI deployment.
+Integrate HACS packages into your healthcare AI applications. HACS provides **core packages** that integrate with AI frameworks, plus **optional service add-ons** for convenience.
 
 ## 🎯 **Integration Philosophy**
 
-HACS integrates with healthcare systems through standardized protocols:
+HACS integrates with healthcare AI systems through:
 
-- **MCP (Model Context Protocol)**: Core communication layer for AI tools
-- **PostgreSQL + pgvector**: Healthcare data storage with vector capabilities
-- **LLM Providers**: Claude, GPT-4, and other healthcare-optimized models
-- **LangGraph**: Advanced AI agent workflows with memory
+### **🧬 Core Package Integrations**
+- **LangChain/LangGraph**: Native tool integrations for AI agents
+- **CrewAI**: Multi-agent healthcare workflows
+- **OpenAI/Anthropic**: Direct LLM provider integrations
+- **Custom Frameworks**: Protocol-based integration patterns
+
+### **⚡ Optional Service Add-ons**
+- **MCP Server**: JSON-RPC interface for any language/framework
+- **PostgreSQL + pgvector**: Plug-and-play persistence layer
+- **Docker Services**: Quick development environment
 
 ## 🤖 **LLM Provider Integration**
 
@@ -199,7 +205,7 @@ uv run langgraph dev
 ### **Electronic Health Records (EHR)**
 ```python
 # FHIR R4/R5 compatibility for EHR integration
-from hacs_core import Patient, Observation
+from hacs_models import Patient, Observation
 
 # Import from existing FHIR systems
 fhir_patient = {

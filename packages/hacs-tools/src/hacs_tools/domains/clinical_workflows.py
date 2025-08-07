@@ -25,14 +25,14 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from hacs_core import Actor
-from hacs_core.results import (
+from hacs_models import Actor
+from hacs_models import (
     WorkflowResult,
-    GuidanceResult, 
+    GuidanceResult,
     DataQueryResult,
     HACSResult
 )
-from hacs_core.tool_protocols import healthcare_tool, ToolCategory
+from hacs_core.tool_protocols import hacs_tool, ToolCategory
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ from .descriptions import (
     VALIDATE_CLINICAL_PROTOCOL_DESCRIPTION,
 )
 
-@healthcare_tool(
+@hacs_tool(
     name="execute_clinical_workflow",
     description="Execute a clinical workflow using FHIR PlanDefinition specifications",
     category=ToolCategory.CLINICAL_WORKFLOWS,
@@ -100,7 +100,7 @@ def execute_clinical_workflow(
                 "timestamp": datetime.now().isoformat()
             },
             {
-                "action_id": "risk-stratification", 
+                "action_id": "risk-stratification",
                 "status": "completed",
                 "outcome": "Risk level determined: moderate",
                 "timestamp": datetime.now().isoformat()
@@ -166,7 +166,7 @@ def execute_clinical_workflow(
             execution_duration_ms=0.0
         )
 
-@healthcare_tool(
+@hacs_tool(
     name="get_clinical_guidance",
     description="Generate AI-powered clinical decision support and guidance",
     category=ToolCategory.CLINICAL_WORKFLOWS,
@@ -200,9 +200,9 @@ def get_clinical_guidance(
         GuidanceResult with clinical recommendations, evidence sources, and alternatives
 
     Examples:
-        get_clinical_guidance("Dr. Smith", "patient-123", 
+        get_clinical_guidance("Dr. Smith", "patient-123",
             "What is the appropriate antibiotic for post-surgical prophylaxis?")
-        
+
         get_clinical_guidance("Nurse Johnson", "patient-456",
             "Patient shows signs of dehydration, what interventions are recommended?",
             patient_context={"age": 75, "comorbidities": ["diabetes", "hypertension"]})
@@ -228,7 +228,7 @@ def get_clinical_guidance(
             },
             {
                 "recommendation": "Monitor for signs of infection at surgical site",
-                "strength": "moderate", 
+                "strength": "moderate",
                 "evidence_level": "moderate",
                 "clinical_rationale": "Early detection allows for prompt intervention"
             }
@@ -289,7 +289,7 @@ def get_clinical_guidance(
             urgency_level=urgency_level
         )
 
-@healthcare_tool(
+@hacs_tool(
     name="query_with_datarequirement",
     description="Execute structured healthcare data queries using FHIR DataRequirement specifications",
     category=ToolCategory.CLINICAL_WORKFLOWS,
@@ -388,7 +388,7 @@ def query_with_datarequirement(
             execution_time_ms=0.0
         )
 
-@healthcare_tool(
+@hacs_tool(
     name="validate_clinical_protocol",
     description="Validate clinical protocols and care pathways for compliance and completeness",
     category=ToolCategory.CLINICAL_WORKFLOWS,
@@ -433,7 +433,7 @@ def validate_clinical_protocol(
         # 5. Generate improvement suggestions
 
         protocol_name = protocol_data.get("protocol_name", "Unknown Protocol")
-        
+
         # Mock validation results
         validation_findings = {
             "structure_validation": "passed",
@@ -466,6 +466,6 @@ def validate_clinical_protocol(
 __all__ = [
     "execute_clinical_workflow",
     "get_clinical_guidance",
-    "query_with_datarequirement", 
+    "query_with_datarequirement",
     "validate_clinical_protocol",
-] 
+]

@@ -25,9 +25,9 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from hacs_core import Actor, MemoryBlock
-from hacs_core.results import MemoryResult, HACSResult
-from hacs_core.tool_protocols import healthcare_tool, ToolCategory
+from hacs_models import Actor, MemoryBlock
+from hacs_models import MemoryResult, HACSResult
+from hacs_core.tool_protocols import hacs_tool, ToolCategory
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ from .descriptions import (
     ANALYZE_MEMORY_PATTERNS_DESCRIPTION,
 )
 
-@healthcare_tool(
+@hacs_tool(
     name="create_hacs_memory",
     description="Store a new memory for healthcare AI agents with clinical context",
     category=ToolCategory.MEMORY_OPERATIONS,
@@ -73,12 +73,12 @@ def create_hacs_memory(
         MemoryResult with memory creation status and metadata
 
     Examples:
-        create_hacs_memory("Dr. Smith", 
+        create_hacs_memory("Dr. Smith",
             "Patient responds well to ACE inhibitors for hypertension management",
             memory_type="episodic",
             clinical_context="cardiology",
             patient_id="patient-123")
-        
+
         create_hacs_memory("Nurse Johnson",
             "Standard post-op monitoring protocol: vitals every 15 min for first hour",
             memory_type="procedural",
@@ -132,7 +132,7 @@ def create_hacs_memory(
             clinical_context=clinical_context
         )
 
-@healthcare_tool(
+@hacs_tool(
     name="search_hacs_memories",
     description="Search healthcare AI agent memories using semantic similarity",
     category=ToolCategory.MEMORY_OPERATIONS,
@@ -165,11 +165,11 @@ def search_hacs_memories(
         MemoryResult with retrieved memories and relevance scores
 
     Examples:
-        search_hacs_memories("Dr. Smith", 
+        search_hacs_memories("Dr. Smith",
             "hypertension treatment protocols",
             memory_type="procedural",
             clinical_context="cardiology")
-        
+
         search_hacs_memories("Nurse Johnson",
             "patient education for diabetes management",
             limit=5)
@@ -198,7 +198,7 @@ def search_hacs_memories(
                 "created_at": "2024-01-10T14:30:00Z"
             },
             {
-                "memory_id": "mem-002", 
+                "memory_id": "mem-002",
                 "content": "Standard protocol: Start with lowest effective dose and titrate based on response",
                 "memory_type": "procedural",
                 "clinical_context": "cardiology",
@@ -245,7 +245,7 @@ def search_hacs_memories(
             clinical_context=clinical_context
         )
 
-@healthcare_tool(
+@hacs_tool(
     name="consolidate_memories",
     description="Consolidate related healthcare memories to reduce redundancy and enhance knowledge",
     category=ToolCategory.MEMORY_OPERATIONS,
@@ -272,7 +272,7 @@ def consolidate_memories(
         MemoryResult with consolidation summary and new memory structures
 
     Examples:
-        consolidate_memories("Dr. Smith", 
+        consolidate_memories("Dr. Smith",
             ["mem-001", "mem-002", "mem-003"],
             consolidation_strategy="semantic_clustering")
     """
@@ -315,7 +315,7 @@ def consolidate_memories(
             memory_count=0
         )
 
-@healthcare_tool(
+@hacs_tool(
     name="retrieve_context",
     description="Retrieve contextual memories for healthcare decision support",
     category=ToolCategory.MEMORY_OPERATIONS,
@@ -393,7 +393,7 @@ def retrieve_context(
             memory_count=0
         )
 
-@healthcare_tool(
+@hacs_tool(
     name="analyze_memory_patterns",
     description="Analyze patterns in healthcare AI agent memory usage and content",
     category=ToolCategory.MEMORY_OPERATIONS,
@@ -487,4 +487,4 @@ __all__ = [
     "consolidate_memories",
     "retrieve_context",
     "analyze_memory_patterns",
-] 
+]

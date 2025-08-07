@@ -1,16 +1,15 @@
 {
-    "dependencies": [
-        "langchain_anthropic",
-        "langchain_openai", 
-        "langchain_core",
-        "langgraph",
-        "."
-    ],
-    "graphs": {
-        "hacs_agent": {
-            "path": "./agent.py:get_workflow",
-            "description": "HACS Developer Agent with Hybrid MCP Integration and Specialized Subagents"
-        }
-    },
-    "env": ".env"
-} 
+  "dependencies": [
+    "./hacs_agent.py",
+    "./hacs_state.py",
+    "./hacs_tools_integration.py",
+    "./hacs_sub_agent.py",
+    "./hacs_model.py",
+    "./hacs_prompts.py",
+    "./hacs_subagents_config.py"
+  ],
+  "graphs": {
+    "hacs_agent": "./hacs_agent.py:get_workflow"
+  },
+  "env": ".env"
+}

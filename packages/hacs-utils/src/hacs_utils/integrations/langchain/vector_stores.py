@@ -23,7 +23,13 @@ try:
     from langchain.vectorstores import VectorStore
     from langchain.embeddings.base import Embeddings
     from langchain.schema import Document
-    from langchain.vectorstores import Chroma, FAISS, Qdrant
+
+    try:
+        from langchain_community.vectorstores import Chroma, FAISS, Qdrant
+    except ImportError:
+        # Fallback for older langchain versions
+        from langchain.vectorstores import Chroma, FAISS, Qdrant
+
     _has_langchain_vectorstores = True
 except ImportError:
     _has_langchain_vectorstores = False
@@ -32,21 +38,21 @@ except ImportError:
         def __init__(self, page_content: str, metadata: Dict = None):
             self.page_content = page_content
             self.metadata = metadata or {}
-    
+
     class VectorStore:
         def similarity_search(self, query: str, k: int = 5) -> List[Document]:
             return []
-        
+
         def add_documents(self, documents: List[Document]) -> List[str]:
             return []
-    
+
     class Embeddings:
         def embed_documents(self, texts: List[str]) -> List[List[float]]:
             return [[0.0] * 384 for _ in texts]
-        
+
         def embed_query(self, text: str) -> List[float]:
             return [0.0] * 384
-    
+
     Chroma = FAISS = Qdrant = VectorStore
 
 try:
@@ -93,21 +99,21 @@ class VectorStoreConfig:
 
 class HACSEmbeddings(Embeddings):
     """HACS-aware embeddings with clinical context enhancement."""
-    
+
     def __init__(self, strategy: EmbeddingStrategy = EmbeddingStrategy.CLINICAL):
         self.strategy = strategy
         self.logger = logging.getLogger(f"{__name__}.HACSEmbeddings")
-        
+
         # Initialize base embeddings (fallback to simple approach)
         self._base_embeddings = None
         self._init_embeddings()
-    
+
     def _init_embeddings(self):
         """Initialize the underlying embedding model."""
         try:
             # Try to use proper embeddings if available
             from langchain.embeddings import OpenAIEmbeddings, HuggingFaceEmbeddings
-            
+
             if self.strategy == EmbeddingStrategy.CLINICAL:
                 # Use clinical-domain embeddings if available
                 self._base_embeddings = HuggingFaceEmbeddings(
@@ -116,35 +122,35 @@ class HACSEmbeddings(Embeddings):
             else:
                 # Fallback to general embeddings
                 self._base_embeddings = HuggingFaceEmbeddings()
-                
+
         except ImportError:
             self.logger.warning("Advanced embeddings not available, using fallback")
             self._base_embeddings = None
-    
+
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed documents with clinical context enhancement."""
         if self._base_embeddings:
             # Enhance texts with clinical context markers
-            enhanced_texts = [self._enhance_clinical_text(text) for text in texts]
-            return self._base_embeddings.embed_documents(enhanced_texts)
+            texts = [self._enhance_clinical_text(text) for text in texts]
+            return self._base_embeddings.embed_documents(texts)
         else:
             # Simple fallback
             return [[hash(text) % 100 / 100.0] * 384 for text in texts]
-    
+
     def embed_query(self, text: str) -> List[float]:
         """Embed query with clinical context enhancement."""
         if self._base_embeddings:
-            enhanced_text = self._enhance_clinical_text(text)
-            return self._base_embeddings.embed_query(enhanced_text)
+            text = self._enhance_clinical_text(text)
+            return self._base_embeddings.embed_query(text)
         else:
             # Simple fallback
             return [hash(text) % 100 / 100.0] * 384
-    
+
     def _enhance_clinical_text(self, text: str) -> str:
         """Enhance text with clinical context markers."""
         if self.strategy != EmbeddingStrategy.CLINICAL:
             return text
-        
+
         # Add clinical context markers (without pattern matching)
         # This is a simple enhancement - could be made more sophisticated
         if isinstance(text, dict) or '{' in text:
@@ -156,34 +162,34 @@ class HACSEmbeddings(Embeddings):
 
 class HACSVectorStore(ABC):
     """Abstract HACS vector store with clinical-aware operations."""
-    
+
     def __init__(self, config: VectorStoreConfig, embeddings: HACSEmbeddings):
         self.config = config
         self.embeddings = embeddings
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.vector_store: Optional[VectorStore] = None
-        
+
     @abstractmethod
     def initialize_store(self) -> None:
         """Initialize the underlying vector store."""
         pass
-    
+
     @abstractmethod
     def add_hacs_resources(self, resources: List[BaseResource]) -> List[str]:
         """Add HACS resources to the vector store."""
         pass
-    
+
     @abstractmethod
     def search_similar_resources(self, query: str, k: int = None) -> List[Dict[str, Any]]:
         """Search for similar HACS resources."""
         pass
-    
+
     def add_documents(self, documents: List[Document]) -> List[str]:
         """Add documents to vector store."""
         if self.vector_store:
             return self.vector_store.add_documents(documents)
         return []
-    
+
     def similarity_search(self, query: str, k: int = None) -> List[Document]:
         """Perform similarity search."""
         k = k or self.config.max_results
@@ -193,13 +199,13 @@ class HACSVectorStore(ABC):
 
 class FAISSHACSVectorStore(HACSVectorStore):
     """FAISS-based HACS vector store implementation."""
-    
+
     def initialize_store(self) -> None:
         """Initialize FAISS vector store."""
         if not _has_langchain_vectorstores:
             self.logger.warning("LangChain vector stores not available")
             return
-        
+
         try:
             # Initialize empty FAISS store
             self.vector_store = FAISS.from_texts(
@@ -210,19 +216,19 @@ class FAISSHACSVectorStore(HACSVectorStore):
             self.logger.info("FAISS vector store initialized successfully")
         except Exception as e:
             self.logger.error(f"Failed to initialize FAISS store: {e}")
-    
+
     def add_hacs_resources(self, resources: List[BaseResource]) -> List[str]:
         """Add HACS resources to FAISS store."""
         if not self.vector_store:
             self.initialize_store()
-        
+
         # Convert HACS resources to documents
         context = ConversionContext(
             strategy=ConversionStrategy.METADATA_RICH,
             preserve_metadata=True
         )
         documents = hacs_to_documents(resources, context)
-        
+
         # Add clinical metadata enhancement
         for doc in documents:
             doc.metadata.update({
@@ -230,14 +236,14 @@ class FAISSHACSVectorStore(HACSVectorStore):
                 'clinical_context': True,
                 'hacs_resource': True
             })
-        
+
         # Add to vector store
         return self.add_documents(documents)
-    
+
     def search_similar_resources(self, query: str, k: int = None) -> List[Dict[str, Any]]:
         """Search for similar HACS resources in FAISS."""
         documents = self.similarity_search(query, k)
-        
+
         results = []
         for doc in documents:
             result = {
@@ -248,18 +254,18 @@ class FAISSHACSVectorStore(HACSVectorStore):
                 'clinical_context': doc.metadata.get('clinical_context', False)
             }
             results.append(result)
-        
+
         return results
 
 class ChromaHACSVectorStore(HACSVectorStore):
     """Chroma-based HACS vector store implementation."""
-    
+
     def initialize_store(self) -> None:
         """Initialize Chroma vector store."""
         if not _has_langchain_vectorstores:
             self.logger.warning("LangChain vector stores not available")
             return
-        
+
         try:
             self.vector_store = Chroma(
                 collection_name=self.config.collection_name,
@@ -269,32 +275,32 @@ class ChromaHACSVectorStore(HACSVectorStore):
             self.logger.info("Chroma vector store initialized successfully")
         except Exception as e:
             self.logger.error(f"Failed to initialize Chroma store: {e}")
-    
+
     def add_hacs_resources(self, resources: List[BaseResource]) -> List[str]:
         """Add HACS resources to Chroma store."""
         if not self.vector_store:
             self.initialize_store()
-        
+
         # Convert and enhance documents similar to FAISS implementation
         context = ConversionContext(
             strategy=ConversionStrategy.METADATA_RICH,
             preserve_metadata=True
         )
         documents = hacs_to_documents(resources, context)
-        
+
         for doc in documents:
             doc.metadata.update({
                 'indexed_at': datetime.now().isoformat(),
                 'clinical_context': True,
                 'hacs_resource': True
             })
-        
+
         return self.add_documents(documents)
-    
+
     def search_similar_resources(self, query: str, k: int = None) -> List[Dict[str, Any]]:
         """Search for similar HACS resources in Chroma."""
         documents = self.similarity_search(query, k)
-        
+
         results = []
         for doc in documents:
             result = {
@@ -305,34 +311,34 @@ class ChromaHACSVectorStore(HACSVectorStore):
                 'clinical_context': doc.metadata.get('clinical_context', False)
             }
             results.append(result)
-        
+
         return results
 
 class VectorStoreFactory:
     """Factory for creating HACS vector stores."""
-    
+
     _store_implementations = {
         VectorStoreType.FAISS: FAISSHACSVectorStore,
         VectorStoreType.CHROMA: ChromaHACSVectorStore,
         # Add more implementations as needed
     }
-    
+
     @classmethod
     def create_vector_store(cls, config: VectorStoreConfig) -> HACSVectorStore:
         """Create a HACS vector store of the specified type."""
         store_class = cls._store_implementations.get(config.store_type)
         if not store_class:
             raise ValueError(f"Unsupported vector store type: {config.store_type}")
-        
+
         # Create embeddings
         embeddings = HACSEmbeddings(config.embedding_strategy)
-        
+
         # Create and initialize store
         store = store_class(config, embeddings)
         store.initialize_store()
-        
+
         return store
-    
+
     @classmethod
     def register_store(cls, store_type: VectorStoreType, store_class: type):
         """Register a new vector store implementation."""

@@ -1,50 +1,50 @@
 # HACS Quick Start Guide
 
-**Healthcare Context Engineering in 5 Minutes**
+**Build Healthcare AI in 5 Minutes**
 
-Learn HACS's four context engineering strategies—**Write**, **Select**, **Compress**, **Isolate**—with working healthcare AI examples.
+Install HACS packages and learn the four context engineering strategies—**Write**, **Select**, **Compress**, **Isolate**—with working healthcare AI examples.
 
 ## Prerequisites
 
 - **Python 3.11+**
 - **[uv](https://github.com/astral-sh/uv)** (recommended) or pip
-- **Docker** (for MCP server and database)
+- **Docker** (optional - for service add-ons: MCP server and database)
 
 ## Installation
 
-### Option 1: Individual Packages (Recommended)
+### Option 1: Core HACS Packages (Recommended for Integration)
 
 ```bash
-# Core functionality
-pip install hacs-core hacs-auth hacs-models
+# Essential HACS framework
+pip install hacs-core hacs-models hacs-registry
 
-# Add tools and utilities
+# Add tools and AI framework integrations
 pip install hacs-tools hacs-utils
 
-# Add persistence (optional)
+# Add persistence layer (optional)
 pip install hacs-persistence[postgresql]
 ```
 
-### Option 2: Development Setup
+### Option 2: Development Setup with Service Add-ons
 
 ```bash
-# Clone repository
+# Clone repository for full development environment
 git clone https://github.com/solanovisitor/hacs-ai.git
 cd hacs-ai
 
 # Install UV (if needed)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Setup workspace
+# Setup workspace with all packages
 uv sync
 
-# Start services (optional)
-docker-compose up -d
+# Start optional service add-ons
+docker-compose up -d  # PostgreSQL + MCP Server
 ```
 
-## Context Engineering Strategies
+## Core Package Usage
 
-Healthcare AI requires specialized context management. HACS implements four core strategies:
+The HACS framework provides healthcare-specific building blocks for AI applications. Here are the four core context engineering strategies implemented in the packages:
 
 ### 🔒 **ISOLATE Context** - Healthcare Actor Security
 

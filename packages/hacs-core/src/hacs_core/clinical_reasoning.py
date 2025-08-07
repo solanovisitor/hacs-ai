@@ -8,8 +8,8 @@ clinical decision support, and measure processing.
 from abc import ABC, abstractmethod
 from typing import Any, Protocol
 
-from .actor import Actor
-from .base_resource import BaseResource
+from hacs_models import Actor
+from hacs_models import BaseResource
 
 
 class KnowledgeRepository(Protocol):

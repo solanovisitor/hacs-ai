@@ -12,7 +12,7 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from hacs_core import Actor, BaseResource
+from hacs_models import Actor, BaseResource
 
 try:
     from hacs_core.models import (

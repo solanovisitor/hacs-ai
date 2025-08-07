@@ -1,13 +1,14 @@
 # HACS Basic Usage Guide
 
-This guide covers the essential patterns for working with HACS in healthcare environments. Learn how to use the **25+ healthcare tools** available through the MCP server for clinical workflows.
+This guide covers the essential patterns for working with HACS in healthcare environments. Learn how to use the core HACS packages and the **42+ healthcare tools** available for clinical workflows.
 
 ## 🏥 **Core Healthcare Models**
 
 HACS provides healthcare-specific models optimized for AI agent communication:
 
 ```python
-from hacs_core import Patient, Observation, Actor, MemoryBlock, Evidence
+from hacs_models import Patient, Observation
+from hacs_core import Actor, MemoryBlock, Evidence
 
 # Healthcare provider with role-based permissions
 physician = Actor(
@@ -44,26 +45,36 @@ blood_pressure = Observation(
 )
 ```
 
-## 🛠️ **Using MCP Tools**
+## 🛠️ **Using HACS Tools**
 
-HACS provides healthcare tools through the **Model Context Protocol (MCP)**. All tools are available via JSON-RPC at `http://localhost:8000`.
+HACS provides healthcare tools that can be used directly in Python or through the **optional MCP Server** add-on. The MCP Server makes all tools available via JSON-RPC at `http://localhost:8000`.
 
-### **Resource Management**
+### **Option A: Direct Python Usage (Core Packages)**
 
 ```python
-import requests
+from hacs_tools import create_hacs_record, get_resource
+from hacs_models import Patient
 
-# Create a patient record
-patient_result = call_hacs_tool("create_hacs_record", {
-    "resource_type": "Patient",
-    "resource_data": {
+# Create a patient record directly
+patient = create_hacs_record(
+    resource_type="Patient",
+    resource_data={
         "full_name": "Maria Garcia",
         "birth_date": "1990-03-20",
         "gender": "female"
     }
-})
+)
 
-# Retrieve patient data
+# Use the created patient
+print(f"Created patient: {patient.id}")
+```
+
+### **Option B: Via MCP Server Add-on**
+
+```python
+import requests
+
+# Retrieve patient data via MCP server (requires: docker-compose up -d)
 get_response = requests.post('http://localhost:8000/', json={
     "jsonrpc": "2.0",
     "method": "tools/call",
@@ -240,7 +251,7 @@ from datetime import datetime
 
 base_url = 'http://localhost:8000/'
 
-def call_tool(tool_name, arguments):
+def use_tool(tool_name, arguments):
     """Helper function to call MCP tools"""
     response = requests.post(base_url, json={
         "jsonrpc": "2.0",
@@ -262,7 +273,7 @@ patient_data = {
         "gender": "male"
     }
 }
-patient_result = call_tool("create_resource", patient_data)
+patient_result = use_tool("create_resource", patient_data)
 patient_id = patient_result["result"]["resource_id"]
 
 # 2. Record vital signs
@@ -276,7 +287,7 @@ vitals_data = {
         "status": "final"
     }
 }
-vitals_result = call_tool("create_resource", vitals_data)
+vitals_result = use_tool("create_resource", vitals_data)
 
 # 3. Store clinical assessment
 assessment_memory = {
@@ -285,7 +296,7 @@ assessment_memory = {
     "importance_score": 0.9,
     "tags": ["hypertension", "assessment", "follow_up_needed"]
 }
-memory_result = call_tool("create_memory", assessment_memory)
+memory_result = use_tool("create_memory", assessment_memory)
 
 # 4. Create clinical knowledge
 guideline_knowledge = {
@@ -294,10 +305,10 @@ guideline_knowledge = {
     "knowledge_type": "guideline",
     "tags": ["hypertension", "stage_1", "lifestyle"]
 }
-knowledge_result = call_tool("create_knowledge_item", guideline_knowledge)
+knowledge_result = use_tool("create_knowledge_item", guideline_knowledge)
 
 # 5. Search for related cases
-search_result = call_tool("search_memories", {
+search_result = use_tool("search_memories", {
     "query": "hypertension management",
     "memory_type": "episodic",
     "limit": 3
@@ -398,4 +409,4 @@ For high-throughput scenarios, consider:
 3. **Scaling**: Deploy in production with external PostgreSQL
 4. **LangGraph**: Build AI agents using the LangGraph integration
 
-For production deployment, see the [Deployment Guide](deployment.md) and [PGVector Integration](pgvector-integration.md) documentation.
+For production deployment, see the [Integration Guide](integrations.md) and [Testing Guide](testing.md) documentation.
