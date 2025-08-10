@@ -49,7 +49,7 @@ except ImportError:
 
 try:
     from hacs_core.base_resource import BaseResource
-    from hacs_core.models import (
+    from hacs_models import (
         Patient, Observation, Encounter, Condition, Memory, Document as HACSDocument,
         AgentMessage, MessageRole, MessageType
     )

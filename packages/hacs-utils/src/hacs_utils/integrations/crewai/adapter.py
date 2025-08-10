@@ -14,10 +14,6 @@ from hacs_models import Actor, Evidence, MemoryBlock
 try:
     from hacs_models import Observation, Patient
 except ImportError:
-    # Fallback to hacs_core.models if hacs_models is not available
-    try:
-        from hacs_core.models import Observation, Patient
-    except ImportError:
         # Create placeholder classes if neither is available
         class _PlaceholderModel:
             pass

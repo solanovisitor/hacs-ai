@@ -46,7 +46,7 @@ except ImportError:
     BaseMessage = HumanMessage = AIMessage = object
 
 try:
-    from hacs_core.models import Memory, MemoryType, AgentMessage, MessageRole
+    from hacs_models import Memory, MemoryType, AgentMessage, MessageRole
     from hacs_core.memory import EpisodicMemory, ProceduralMemory, ExecutiveMemory
     _has_hacs_memory = True
 except ImportError:

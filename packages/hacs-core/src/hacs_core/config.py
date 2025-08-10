@@ -25,7 +25,21 @@ class HACSSettings(BaseModel):
     """Centralized HACS configuration settings.
 
     All settings can be configured via environment variables with the HACS_ prefix.
+    Supports secure secret loading via *_FILE environment variables.
     """
+
+    # Environment and deployment settings
+    environment: str = Field(
+        default="development",
+        description="Deployment environment (development, staging, production)",
+        env="HACS_ENVIRONMENT"
+    )
+
+    dev_mode: bool = Field(
+        default=False,
+        description="Enable development mode with relaxed security",
+        env="HACS_DEV_MODE"
+    )
 
     # Core settings
     debug: bool = Field(
@@ -38,6 +52,13 @@ class HACSSettings(BaseModel):
         description="Logging level"
     )
 
+    # MCP Server Configuration
+    mcp_server_url: str | None = Field(
+        default=None,
+        description="Complete MCP server URL (overrides host/port if provided)",
+        env="HACS_MCP_SERVER_URL"
+    )
+
     # Service URLs - Configurable for deployment flexibility
     mcp_server_host: str = Field(
         default="localhost",
@@ -47,6 +68,37 @@ class HACSSettings(BaseModel):
     mcp_server_port: int = Field(
         default=8000,
         description="MCP server port"
+    )
+
+    # Security Configuration
+    api_keys: list[str] = Field(
+        default_factory=list,
+        description="List of valid API keys for MCP server access",
+        env="HACS_API_KEYS"
+    )
+
+    api_keys_file: str | None = Field(
+        default=None,
+        description="Path to file containing API keys (one per line)",
+        env="HACS_API_KEYS_FILE"
+    )
+
+    allowed_origins: list[str] = Field(
+        default_factory=list,
+        description="Allowed CORS origins",
+        env="HACS_ALLOWED_ORIGINS"
+    )
+
+    allowed_hosts: list[str] = Field(
+        default_factory=list,
+        description="Allowed host headers",
+        env="HACS_ALLOWED_HOSTS"
+    )
+
+    rate_limit_per_minute: int = Field(
+        default=60,
+        description="Rate limit per minute per IP",
+        env="HACS_RATE_LIMIT_PER_MINUTE"
     )
 
     langgraph_agent_host: str = Field(
@@ -82,9 +134,87 @@ class HACSSettings(BaseModel):
 
     # Computed service URLs
     @property
-    def mcp_server_url(self) -> str:
+    def computed_mcp_server_url(self) -> str:
         """Get the complete MCP server URL."""
+        if self.mcp_server_url:
+            return self.mcp_server_url
         return f"http://{self.mcp_server_host}:{self.mcp_server_port}"
+
+    @property
+    def is_production(self) -> bool:
+        """Check if running in production environment."""
+        return self.environment.lower() == "production"
+
+    @property
+    def is_development(self) -> bool:
+        """Check if running in development environment."""
+        return self.environment.lower() == "development"
+
+    def _load_secret_from_file(self, file_path: str | None) -> str | None:
+        """Load secret from file if it exists."""
+        if not file_path:
+            return None
+        try:
+            import os
+            if os.path.exists(file_path):
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    return f.read().strip()
+        except Exception:
+            pass
+        return None
+
+    def _load_api_keys_from_file(self, file_path: str | None) -> list[str]:
+        """Load API keys from file (one per line)."""
+        if not file_path:
+            return []
+        try:
+            import os
+            if os.path.exists(file_path):
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    return [line.strip() for line in f if line.strip()]
+        except Exception:
+            pass
+        return []
+
+    def get_effective_api_keys(self) -> list[str]:
+        """Get effective API keys with precedence order."""
+        # 1. Explicit env var
+        if self.api_keys:
+            return self.api_keys
+        
+        # 2. File-based
+        file_keys = self._load_api_keys_from_file(self.api_keys_file)
+        if file_keys:
+            return file_keys
+        
+        # 3. Development fallback
+        if self.dev_mode and self.is_development:
+            import secrets
+            return [f"dev-{secrets.token_urlsafe(16)}"]
+        
+        return []
+
+    def get_effective_openai_api_key(self) -> str | None:
+        """Get OpenAI API key with file fallback."""
+        import os
+        
+        # 1. Explicit env var
+        if self.openai_api_key:
+            return self.openai_api_key
+        
+        # 2. File-based
+        return self._load_secret_from_file(os.getenv("OPENAI_API_KEY_FILE"))
+
+    def get_effective_anthropic_api_key(self) -> str | None:
+        """Get Anthropic API key with file fallback."""
+        import os
+        
+        # 1. Explicit env var
+        if self.anthropic_api_key:
+            return self.anthropic_api_key
+        
+        # 2. File-based
+        return self._load_secret_from_file(os.getenv("ANTHROPIC_API_KEY_FILE"))
 
     @property
     def langgraph_agent_url(self) -> str:
@@ -229,6 +359,41 @@ class HACSSettings(BaseModel):
         """Validate log level."""
         if isinstance(v, str):
             return LogLevel(v.upper())
+        return v
+
+    @field_validator("api_keys", mode="before")
+    @classmethod
+    def validate_api_keys(cls, v):
+        """Parse comma-separated API keys."""
+        if isinstance(v, str):
+            return [key.strip() for key in v.split(",") if key.strip()]
+        return v or []
+
+    @field_validator("allowed_origins", mode="before")
+    @classmethod
+    def validate_allowed_origins(cls, v):
+        """Parse comma-separated allowed origins."""
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v or []
+
+    @field_validator("allowed_hosts", mode="before")
+    @classmethod
+    def validate_allowed_hosts(cls, v):
+        """Parse comma-separated allowed hosts."""
+        if isinstance(v, str):
+            return [host.strip() for host in v.split(",") if host.strip()]
+        return v or []
+
+    @field_validator("environment", mode="before")
+    @classmethod
+    def validate_environment(cls, v):
+        """Validate environment value."""
+        if isinstance(v, str):
+            env = v.lower()
+            if env not in ["development", "staging", "production"]:
+                raise ValueError("Environment must be one of: development, staging, production")
+            return env
         return v
 
     @property

@@ -135,7 +135,7 @@ main() {
         echo ""
         echo "🏥 Your HACS Environment is Ready:"
         echo "  • PostgreSQL Database: ✅ Running"
-        echo "  • HACS MCP Server: ✅ Running (25+ healthcare tools)"
+        echo "  • HACS MCP Server: ✅ Running (25+ Hacs Tools)"
         echo "  • LangGraph Server: ✅ Running"
         echo "  • Healthcare Agents: ✅ Functional"
         echo ""

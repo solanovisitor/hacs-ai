@@ -15,7 +15,7 @@ from typing import Any
 from hacs_models import Actor, BaseResource
 
 try:
-    from hacs_core.models import (
+    from hacs_models import (
         AgentMessage,
         ContextSummary,
         Encounter,

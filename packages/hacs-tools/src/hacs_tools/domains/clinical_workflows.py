@@ -56,7 +56,9 @@ def execute_clinical_workflow(
     plan_definition_id: str,
     patient_id: Optional[str] = None,
     input_parameters: Optional[Dict[str, Any]] = None,
-    execution_context: str = "routine"
+    execution_context: str = "routine",
+    db_adapter: Any | None = None,
+    vector_store: Any | None = None,
 ) -> WorkflowResult:
     """
     Execute a clinical workflow using FHIR PlanDefinition specifications.

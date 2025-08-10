@@ -33,6 +33,11 @@ from .session import SessionManager, Session, SessionConfig
 from .decorators import require_auth, require_permission, require_role
 from .audit import AuditLogger, AuditEvent, AuditLevel
 
+# Tool security integration
+from .tool_security import (
+    ToolSecurityContext, secure_tool_execution, create_secure_actor
+)
+
 # OAuth2 support (optional)
 try:
     from .oauth2 import OAuth2Config, OAuth2Manager, OAuth2Error
@@ -86,6 +91,11 @@ __all__ = [
     "OAuth2Config",
     "OAuth2Manager",
     "OAuth2Error",
+    
+    # Tool security integration
+    "ToolSecurityContext",
+    "secure_tool_execution",
+    "create_secure_actor",
 ]
 
 # Package metadata

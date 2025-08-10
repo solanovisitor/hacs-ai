@@ -466,7 +466,7 @@ def compare_resource_schemas(
 def _get_resource_class(resource_type: str):
     """Get the resource class for a given resource type."""
     try:
-        from hacs_core.models import (
+        from hacs_models import (
             Patient, Observation, Encounter, Condition, MedicationRequest,
             Medication, AllergyIntolerance, Procedure, Goal, ServiceRequest,
             Organization, OrganizationContact, OrganizationQualification

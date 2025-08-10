@@ -8,7 +8,7 @@ HACS_BASE_PROMPT = """
 
 ## HACS Healthcare Operations
 
-You have access to specialized HACS healthcare tools for:
+You have access to specialized HACS Hacs Tools for:
 
 ### `manage_admin_tasks`
 Track and manage HACS administrative tasks including database migrations, system configurations, and operational tasks. Use this tool VERY frequently to ensure you are tracking your healthcare admin tasks and giving users visibility into your progress.

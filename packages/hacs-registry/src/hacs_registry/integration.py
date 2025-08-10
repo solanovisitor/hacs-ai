@@ -392,6 +392,37 @@ class AsyncExecutionStrategy(BaseExecutionStrategy):
             # Inject context parameters if tool supports them
             execution_params = self._prepare_parameters(tool_func, params, context)
 
+            # Security validation if auth system is available
+            try:
+                from hacs_auth import ToolSecurityContext, create_secure_actor, ActorRole
+                
+                if context.actor_name:
+                    # Create secure actor context
+                    actor = create_secure_actor(
+                        actor_name=context.actor_name,
+                        role=ActorRole.AGENT,
+                        permissions=["read:*", "write:*", "admin:tools"]
+                    )
+                    
+                    security_context = ToolSecurityContext(actor)
+                    
+                    # Validate tool execution permissions
+                    tool_permissions = getattr(tool_func, '_required_permissions', [])
+                    if tool_permissions:
+                        security_context.validate_tool_permission(tool_func.__name__, tool_permissions)
+                    
+                    logger.info(f"Security validation passed for {tool_func.__name__} by {context.actor_name}")
+                
+            except ImportError:
+                logger.debug("hacs-auth not available, skipping security validation")
+            except Exception as security_error:
+                logger.warning(f"Security validation failed: {security_error}")
+                return ToolExecutionResult(
+                    success=False,
+                    error=f"Security validation failed: {security_error}",
+                    execution_time_ms=(time.time() - start_time) * 1000
+                )
+
             # Execute based on function type
             if asyncio.iscoroutinefunction(tool_func):
                 result = await tool_func(**execution_params)
@@ -400,16 +431,48 @@ class AsyncExecutionStrategy(BaseExecutionStrategy):
 
             execution_time = (time.time() - start_time) * 1000
 
+            # Log successful execution if security context available
+            try:
+                if context.actor_name and 'security_context' in locals():
+                    security_context.log_tool_execution(
+                        tool_name=tool_func.__name__,
+                        parameters=execution_params,
+                        result=result,
+                        execution_time_ms=execution_time,
+                        success=True
+                    )
+            except:
+                pass  # Continue if audit logging fails
+
             return ToolExecutionResult(
                 success=True,
                 data=result,
                 execution_time_ms=execution_time,
-                metadata={"strategy": "async", "context": context.metadata}
+                metadata={
+                    "strategy": "async", 
+                    "context": context.metadata,
+                    "actor_name": context.actor_name,
+                    "security_validated": context.actor_name is not None
+                }
             )
 
         except Exception as e:
             execution_time = (time.time() - start_time) * 1000
             logger.error(f"Tool execution failed: {e}")
+
+            # Log failed execution if security context available
+            try:
+                if context.actor_name and 'security_context' in locals():
+                    security_context.log_tool_execution(
+                        tool_name=tool_func.__name__,
+                        parameters=execution_params,
+                        result=None,
+                        execution_time_ms=execution_time,
+                        success=False,
+                        error=str(e)
+                    )
+            except:
+                pass  # Continue if audit logging fails
 
             return ToolExecutionResult(
                 success=False,

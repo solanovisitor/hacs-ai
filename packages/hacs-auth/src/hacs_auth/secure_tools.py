@@ -2,7 +2,7 @@
 HACS Secure Tool Execution - Authentication-Protected Tool Wrappers
 
 This module provides secure wrappers for tool execution that enforce
-authentication and authorization requirements for all healthcare tools.
+authentication and authorization requirements for all Hacs Tools.
 
 Security Features:
     - Mandatory authentication for all tool executions
@@ -95,7 +95,7 @@ class RateLimiter:
 
 
 class SecureToolExecutor:
-    """Secure executor for healthcare tools with authentication enforcement."""
+    """Secure executor for Hacs Tools with authentication enforcement."""
 
     def __init__(
         self,

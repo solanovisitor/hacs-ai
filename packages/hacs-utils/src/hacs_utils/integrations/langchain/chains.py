@@ -61,7 +61,7 @@ except ImportError:
     ConversationChain = SequentialChain = LLMChain
 
 try:
-    from hacs_core.models import Patient, Observation, Condition, Procedure, Goal
+    from hacs_models import Patient, Observation, Condition, Procedure, Goal
     from hacs_core.clinical_reasoning import ClinicalReasoner
     _has_hacs_clinical = True
 except ImportError:

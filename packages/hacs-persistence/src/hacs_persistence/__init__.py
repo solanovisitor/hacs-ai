@@ -7,6 +7,9 @@ database adapters, schema management, data mapping, and migrations.
 
 # from hacs_tools.vectorization import VectorMetadata, VectorStore
 from .adapter import PostgreSQLAdapter, create_postgres_adapter
+from .connection_factory import (
+    HACSConnectionFactory, get_default_adapter, get_test_adapter, ensure_database_ready
+)
 
 # Optional granular adapter – depends on hacs_models package
 try:
@@ -66,6 +69,11 @@ __all__ = [
     "create_vector_store",
     "initialize_hacs_database",
     "get_migration_status",
+    # Connection factory
+    "HACSConnectionFactory",
+    "get_default_adapter",
+    "get_test_adapter", 
+    "ensure_database_ready",
     # Repository pattern
     "BaseRepository",
     "ResourceRepository",

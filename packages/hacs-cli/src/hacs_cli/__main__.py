@@ -78,7 +78,7 @@ from dotenv import load_dotenv
 
 # Import HACS modules
 from hacs_models import Actor, ActorRole, Evidence, EvidenceType, MemoryBlock
-from hacs_core.models import AgentMessage, Encounter, Observation, Patient
+from hacs_models import AgentMessage, Encounter, Observation, Patient
 
 # Optional FHIR functionality (graceful degradation if not available)
 try:

@@ -1,7 +1,7 @@
 """
 HACS Tools - Healthcare Agent Communication Standard Tools Module
 
-This module provides a comprehensive suite of specialized healthcare tools
+This module provides a comprehensive suite of specialized Hacs Tools
 designed for AI agents working with clinical data, FHIR resources, and healthcare
 workflows. All tools are compatible with LangChain and the Model Context Protocol (MCP).
 

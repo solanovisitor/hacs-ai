@@ -1,7 +1,7 @@
 """
 HACS Tools Descriptions
 
-This module contains comprehensive description constants for all HACS healthcare tools.
+This module contains comprehensive description constants for all HACS Hacs Tools.
 These descriptions are used by the @tool decorators to provide rich context for
 AI agents working with healthcare data and clinical workflows.
 

@@ -620,6 +620,21 @@ class Actor(BaseResource):
 
         return last_activity_timestamp < timeout_threshold
 
+    def has_active_session(self, timeout_minutes: int | None = None) -> bool:
+        """
+        Check if the actor has an active session that hasn't expired.
+        
+        Args:
+            timeout_minutes: Session timeout in minutes. If None, uses default (480 minutes = 8 hours).
+        
+        Returns:
+            True if session is active and not expired
+        """
+        if self.session_status != SessionStatus.ACTIVE:
+            return False
+        
+        return not self.is_session_expired(timeout_minutes or 480)
+
     def __repr__(self) -> str:
         """Enhanced representation including role and status."""
         status = "active" if self.is_active else "inactive"

@@ -337,7 +337,7 @@ def hacs_tool(
     enable_metrics: bool = True,
     **kwargs
 ) -> Callable[[F], F]:
-    """Decorator for healthcare tools with automatic metadata and observability.
+    """Decorator for Hacs Tools with automatic metadata and observability.
 
     This is the main decorator that should be used for HACS tools.
     It provides a clean, framework-agnostic interface with built-in tracing and metrics.

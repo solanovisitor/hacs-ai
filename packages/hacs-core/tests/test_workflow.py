@@ -5,7 +5,7 @@ Test suite for Workflow and related components.
 import pytest
 from datetime import datetime, timezone
 
-from hacs_core.models import (
+from hacs_models import (
     # Base Patterns
     WorkflowDefinition,
     WorkflowRequest,

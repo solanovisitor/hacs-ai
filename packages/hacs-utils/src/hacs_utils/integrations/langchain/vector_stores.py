@@ -56,7 +56,7 @@ except ImportError:
     Chroma = FAISS = Qdrant = VectorStore
 
 try:
-    from hacs_core.models import Patient, Observation, Condition, Document as HACSDocument
+    from hacs_models import Patient, Observation, Condition, Document as HACSDocument
     from hacs_core.base_resource import BaseResource
     _has_hacs = True
 except ImportError:

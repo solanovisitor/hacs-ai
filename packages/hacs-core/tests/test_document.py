@@ -5,7 +5,7 @@ Test suite for Document and related components.
 import pytest
 from datetime import datetime, timezone
 
-from hacs_core.models import (
+from hacs_models import (
     Document,
     DocumentStatus,
     DocumentType,

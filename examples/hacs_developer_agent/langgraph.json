@@ -6,10 +6,12 @@
     "./hacs_sub_agent.py",
     "./hacs_model.py",
     "./hacs_prompts.py",
-    "./hacs_subagents_config.py"
+    "./hacs_subagents_config.py",
+    "./mcp_graph.py"
   ],
   "graphs": {
-    "hacs_agent": "./hacs_agent.py:get_workflow"
+    "hacs_agent": "./hacs_agent.py:get_workflow",
+    "hacs_agent_mcp": "./mcp_graph.py:make_graph"
   },
   "env": ".env"
 }

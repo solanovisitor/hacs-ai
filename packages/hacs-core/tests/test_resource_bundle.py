@@ -5,7 +5,7 @@ Test suite for ResourceBundle and related components.
 import pytest
 from datetime import datetime, timezone
 
-from hacs_core.models import (
+from hacs_models import (
     ResourceBundle,
     BundleType,
     BundleStatus,

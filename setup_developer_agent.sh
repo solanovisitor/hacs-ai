@@ -175,7 +175,7 @@ EOF
 # HACS Environment Configuration
 
 # Database Configuration
-POSTGRES_PASSWORD=hacs_dev
+DB_PASSWORD=hacs_dev
 DATABASE_URL=postgresql://hacs:hacs_dev@postgres:5432/hacs
 
 # LLM Provider API Keys (add your keys here)
@@ -281,7 +281,7 @@ EOF
         if [ "$tools_count" -gt 0 ]; then
             # Try to get actual count from the response
             actual_count=$(echo "$response" | grep -o '"name":"[^"]*"' | wc -l)
-            log_success "MCP server has $actual_count healthcare tools available"
+            log_success "MCP server has $actual_count Hacs Tools available"
         else
             log_warning "MCP server responded but no tools found"
         fi
@@ -398,7 +398,7 @@ EOF
     echo "📚 Next Steps:"
     echo "  1. Open LangGraph Studio in your browser"
     echo "  2. Test the agents with healthcare scenarios"
-    echo "  3. Explore the 25+ HACS healthcare tools"
+    echo "  3. Explore the 25+ HACS Hacs Tools"
     echo "  4. Build your own healthcare AI workflows"
     echo ""
     
