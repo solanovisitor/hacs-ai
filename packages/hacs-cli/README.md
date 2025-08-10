@@ -8,25 +8,26 @@
 
 The HACS CLI is **under development**. Current healthcare operations are available through:
 
-1. **MCP Server** - 25+ healthcare tools via JSON-RPC (Port 8000)
-2. **Setup Script** - `python setup.py` for deployment and configuration
-3. **LangGraph Agent** - Interactive AI workflows (Port 8001)
+1. **MCP Server** - 42+ Hacs Tools via JSON-RPC
+2. **Docker Compose** - Infrastructure deployment and configuration
+3. **LangGraph Agent** - Interactive AI workflows via examples
 
 ## 🚀 **Current Functionality**
 
 ### **Deployment & Setup**
 ```bash
-# Interactive setup (primary interface)
-python setup.py
+# Start infrastructure with Docker Compose
+docker-compose up -d
 
-# Deployment modes
-python setup.py --mode local     # Full development environment
-python setup.py --mode minimal   # Essential services only
-python setup.py --mode cloud     # Production configuration
+# Manual MCP server startup
+python -m hacs_utils.mcp.cli
 
-# Specialized operations
-python setup.py --migrate-only   # Database migration only
-python setup.py --validate-only  # Validate existing setup
+# FastMCP server for streamable HTTP
+python -m hacs_utils.mcp.fastmcp_server
+
+# Environment configuration
+export HACS_MCP_SERVER_URL=http://127.0.0.1:8000
+export DATABASE_URL=postgresql://hacs:hacs_dev@localhost:5432/hacs
 ```
 
 ### **Service Management**
@@ -37,8 +38,8 @@ docker-compose down               # Stop services
 docker-compose logs hacs-mcp-server  # View logs
 
 # Health checks
-curl http://localhost:8000/       # MCP server
-curl http://localhost:8001/       # LangGraph agent
+curl $HACS_MCP_SERVER_URL         # MCP server
+curl http://localhost:8001/       # LangGraph agent (if running)
 ```
 
 ## 🛠️ **MCP Server Interface**
@@ -46,10 +47,10 @@ curl http://localhost:8001/       # LangGraph agent
 All healthcare operations use the **Model Context Protocol** server:
 
 ```bash
-# List available healthcare tools (25 tools)
+# List available Hacs Tools (42 tools)
 curl -X POST -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"tools/list","id":1}' \
-  http://localhost:8000/
+  $HACS_MCP_SERVER_URL
 
 # Create patient record
 curl -X POST -H "Content-Type: application/json" \
@@ -69,7 +70,7 @@ curl -X POST -H "Content-Type: application/json" \
     },
     "id": 1
   }' \
-  http://localhost:8000/
+  $HACS_MCP_SERVER_URL
 ```
 
 ## 📋 **Planned CLI Features**
@@ -90,9 +91,11 @@ Use Python requests for programmatic access:
 ```python
 import requests
 
-def call_hacs_tool(tool_name, arguments):
-    """Call HACS healthcare tools"""
-    response = requests.post('http://localhost:8000/', json={
+def use_hacs_tool(tool_name, arguments):
+    """Call HACS tools"""
+    import os
+    server_url = os.getenv('HACS_MCP_SERVER_URL', 'http://127.0.0.1:8000')
+    response = requests.post(server_url, json={
         "jsonrpc": "2.0",
         "method": "tools/call",
         "params": {
@@ -104,14 +107,14 @@ def call_hacs_tool(tool_name, arguments):
     return response.json()
 
 # Clinical memory management
-memory_result = call_hacs_tool("create_memory", {
+memory_result = use_hacs_tool("create_memory", {
     "content": "Patient shows improvement after medication adjustment",
     "memory_type": "episodic",
     "importance_score": 0.8
 })
 
 # Search clinical memories
-search_result = call_hacs_tool("search_memories", {
+search_result = use_hacs_tool("search_memories", {
     "query": "medication response",
     "limit": 5
 })

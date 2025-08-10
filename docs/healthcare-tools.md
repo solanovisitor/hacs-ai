@@ -1,8 +1,8 @@
-# HACS Healthcare Tools Reference
+# HACS Tools Reference
 
 **Context Engineering Operations for Medical AI**
 
-Complete reference for 37+ healthcare tools implementing context engineering strategies (**Write**, **Select**, **Compress**, **Isolate**) for medical AI agents.
+Complete reference for 42+ Hacs Tools implementing context engineering strategies (**Write**, **Select**, **Compress**, **Isolate**) for medical AI agents.
 
 ## Context Engineering Tool Categories
 

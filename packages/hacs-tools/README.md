@@ -1,43 +1,45 @@
 # HACS Tools
 
-**25+ Healthcare tools for AI agents via Model Context Protocol**
+**42+ Hacs Tools for AI agents via Model Context Protocol**
 
 Production-ready tools for clinical workflows, resource management, and healthcare AI operations.
 
 ## 🛠️ **Tool Categories**
 
-### 🔍 **Resource Discovery & Development** (5 tools)
+### 🔍 **Resource Discovery & Development** (5+ tools)
 - `discover_hacs_resources` - Explore healthcare resource schemas with metadata
 - `analyze_resource_fields` - Field analysis with validation rules
 - `compare_resource_schemas` - Schema comparison and integration
 - `create_clinical_template` - Generate clinical workflow templates
 - `create_model_stack` - Compose complex data structures
 
-### 📋 **Record Management** (8 tools)
+### 📋 **Record Management** (8+ tools)
 - `create_hacs_record` / `get_hacs_record_by_id` / `update_hacs_record` / `delete_hacs_record` - Full CRUD
 - `validate_hacs_record_data` - Comprehensive validation
 - `list_available_hacs_resources` - Resource schema catalog
 - `find_hacs_records` - Advanced semantic search
 - `search_hacs_records` - Filtered record search
 
-### 🧠 **Memory Management** (5 tools)
-- `create_memory` - Store episodic/procedural/executive memories
-- `search_memories` - Semantic memory retrieval
+### 🧠 **Memory Management** (5+ tools)
+- `create_hacs_memory` - Store episodic/procedural/executive memories
+- `search_hacs_memories` - Semantic memory retrieval
 - `consolidate_memories` - Merge related memories
 - `retrieve_context` - Context-aware memory access
 - `analyze_memory_patterns` - Usage pattern analysis
 
-### ✅ **Validation & Schema** (3 tools)
+### ✅ **Validation & Schema** (3+ tools)
 - `get_hacs_resource_schema` - JSON schema exploration
 - `create_view_resource_schema` - Custom view creation
 - `suggest_view_fields` - Intelligent field suggestions
 
-### 🎨 **Advanced Tools** (3 tools)
+### 🎨 **Advanced Tools** (Multiple tools)
 - `optimize_resource_for_llm` - LLM-specific optimizations
 - `version_hacs_resource` - Resource versioning and tracking
+- `execute_clinical_workflow` - Clinical protocol execution
 
-### 📚 **Knowledge Management** (1 tool)
+### 📚 **Knowledge Management** (Multiple tools)
 - `create_knowledge_item` - Clinical guidelines and protocols
+- `search_knowledge_base` - Medical knowledge retrieval
 
 ## 📦 **Installation**
 
@@ -50,7 +52,7 @@ pip install hacs-tools
 ```python
 import requests
 
-def call_hacs_tool(tool_name, arguments):
+def use_hacs_tool(tool_name, arguments):
     """Call HACS MCP tools"""
     response = requests.post('http://localhost:8000/', json={
         "jsonrpc": "2.0",
@@ -64,7 +66,7 @@ def call_hacs_tool(tool_name, arguments):
     return response.json()
 
 # Create patient record
-patient_result = call_hacs_tool("create_hacs_record", {
+patient_result = use_hacs_tool("create_hacs_record", {
     "resource_type": "Patient",
     "resource_data": {
         "full_name": "John Smith",
@@ -74,14 +76,14 @@ patient_result = call_hacs_tool("create_hacs_record", {
 })
 
 # Store clinical memory
-memory_result = call_hacs_tool("create_memory", {
+memory_result = use_hacs_tool("create_memory", {
     "content": "Patient reports improved symptoms after treatment",
     "memory_type": "episodic",
     "importance_score": 0.8
 })
 
 # Search for related memories
-search_result = call_hacs_tool("search_memories", {
+search_result = use_hacs_tool("search_memories", {
     "query": "treatment response",
     "limit": 5
 })
@@ -92,14 +94,14 @@ search_result = call_hacs_tool("search_memories", {
 ### **Clinical Assessment**
 ```python
 # Generate assessment template
-template = call_hacs_tool("create_clinical_template", {
+template = use_hacs_tool("create_clinical_template", {
     "template_type": "assessment",
     "focus_area": "cardiology",
     "complexity_level": "standard"
 })
 
 # Create knowledge item
-knowledge = call_hacs_tool("create_knowledge_item", {
+knowledge = use_hacs_tool("create_knowledge_item", {
     "title": "AHA Guidelines 2024",
     "content": "New recommendations for hypertension management",
     "knowledge_type": "guideline"
@@ -109,13 +111,13 @@ knowledge = call_hacs_tool("create_knowledge_item", {
 ### **Resource Discovery**
 ```python
 # Discover available models
-models = call_hacs_tool("discover_hacs_resources", {
+models = use_hacs_tool("discover_hacs_resources", {
     "category_filter": "clinical",
     "include_examples": True
 })
 
 # Get schema for specific model
-schema = call_hacs_tool("get_hacs_resource_schema", {
+schema = use_hacs_tool("get_hacs_resource_schema", {
     "resource_type": "Patient",
     "include_validation_rules": True
 })

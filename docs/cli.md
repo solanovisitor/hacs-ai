@@ -4,7 +4,7 @@ The HACS CLI is currently **in development**. Most HACS functionality is availab
 
 ## 🚀 **Primary Interface: MCP Server**
 
-HACS operations are primarily performed through the **Model Context Protocol (MCP)** server, which provides 25+ healthcare tools via JSON-RPC.
+HACS operations are primarily performed through the **Model Context Protocol (MCP)** server, which provides 42+ Hacs Tools via JSON-RPC.
 
 ### **Setup and Deployment**
 ```bash
@@ -128,7 +128,7 @@ For programmatic access, use the Python requests library:
 ```python
 import requests
 
-def call_hacs_tool(tool_name, arguments):
+def use_hacs_tool(tool_name, arguments):
     """Helper function to call HACS MCP tools"""
     response = requests.post('http://localhost:8000/', json={
         "jsonrpc": "2.0",
@@ -142,7 +142,7 @@ def call_hacs_tool(tool_name, arguments):
     return response.json()
 
 # Example usage
-patient_result = call_hacs_tool("create_resource", {
+patient_result = use_hacs_tool("create_resource", {
     "resource_type": "Patient",
     "resource_data": {
         "full_name": "Maria Rodriguez",
@@ -151,7 +151,7 @@ patient_result = call_hacs_tool("create_resource", {
     }
 })
 
-memory_result = call_hacs_tool("create_memory", {
+memory_result = use_hacs_tool("create_memory", {
     "content": "Patient reports no adverse reactions to new medication",
     "memory_type": "episodic",
     "importance_score": 0.7
@@ -160,7 +160,7 @@ memory_result = call_hacs_tool("create_memory", {
 
 ## 📋 **Available Tools by Category**
 
-HACS provides **25 healthcare tools** organized into functional categories:
+HACS provides **42 Hacs Tools** organized into functional categories:
 
 ### 🔍 **Resource Discovery & Development** (5 tools)
 - `discover_hacs_resources` - Explore available healthcare resources
@@ -371,7 +371,7 @@ python setup.py --mode local
 The traditional HACS CLI (`hacs` command) is under development. Current functionality includes:
 
 - ✅ **Setup & Deployment**: `python setup.py` with multiple modes
-- ✅ **MCP Server**: 25+ healthcare tools via HTTP/JSON-RPC
+- ✅ **MCP Server**: 42+ Hacs Tools via HTTP/JSON-RPC
 - ✅ **Service Management**: Docker Compose integration
 - ✅ **Environment**: UV-based package management
 

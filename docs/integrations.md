@@ -2,6 +2,14 @@
 
 Integrate HACS packages into your healthcare AI applications. HACS provides **core packages** that integrate with AI frameworks, plus **optional service add-ons** for convenience.
 
+> **📚 Related Documentation:**
+> - [Hacs Tools Reference](healthcare-tools.md) - Complete tool documentation
+> - [Basic Usage Guide](basic-usage.md) - Essential patterns and examples
+> - [Quick Start Guide](quick-start.md) - Get running in 5 minutes
+> - [LangGraph Examples](../packages/hacs-utils/src/hacs_utils/integrations/langchain/README.md) - LangChain integration
+> - [Developer Agent Example](../examples/hacs_developer_agent/README.md) - Complete LangGraph implementation
+> - [Package Documentation](README.md#core-hacs-framework) - Individual package guides
+
 ## 🎯 **Integration Philosophy**
 
 HACS integrates with healthcare AI systems through:
@@ -128,7 +136,23 @@ export QDRANT_API_KEY="your-api-key"
 
 The **Model Context Protocol** is HACS's core integration layer:
 
-### **Available Healthcare Tools (25 total)**
+### JSON-RPC server (secure) vs Streamable HTTP (FastMCP)
+
+- JSON-RPC server (secure):
+  - Start: `uv run python -m hacs_utils.mcp.cli`
+  - URL: `HACS_MCP_SERVER_URL` (e.g., `http://localhost:8000/`)
+  - Features: API key auth, host/CORS validation, rate limiting, health endpoints
+  - Clients: HTTP JSON-RPC clients, simple integrations
+
+- Streamable HTTP (FastMCP wrapper):
+  - Start: `uv run --with mcp --with langchain-mcp-adapters python -m hacs_utils.mcp.fastmcp_server`
+  - URL: `http://localhost:8000/mcp/` (path fixed to `/mcp/`)
+  - Features: MCP-native streamable HTTP for tool streaming via adapters
+  - Clients: `langchain-mcp-adapters`, MCP-native clients
+
+Use the secure JSON-RPC server for production, and FastMCP for development or adapter-based integrations. Never hardcode ports; prefer `HACS_MCP_SERVER_URL`.
+
+### **Available Hacs Tools (25 total)**
 
 ```python
 import requests
@@ -158,7 +182,7 @@ from hacs_utils.mcp import HacsMCPClient
 
 client = HacsMCPClient("http://localhost:8000")
 
-# Use healthcare tools programmatically
+# Use Hacs Tools programmatically
 patient_result = await client.call_tool("create_resource", {
     "resource_type": "Patient",
     "resource_data": {

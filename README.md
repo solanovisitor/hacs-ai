@@ -114,7 +114,7 @@ In the agent-based world, healthcare AI faces unique challenges:
 ## Quick Start
 
 ```bash
-pip install hacs-core hacs-auth hacs-tools hacs-utils
+pip install hacs-core hacs-auth hacs-tools hacs-utils hacs-models hacs-persistence
 ```
 
 **That's it.** You now have healthcare context engineering infrastructure.
@@ -225,19 +225,18 @@ Build healthcare AI workflows that implement context engineering strategies thro
 ```python
 from langgraph.graph import StateGraph, END
 from langchain_openai import ChatOpenAI
-from hacs_utils.integrations.langchain import HACSLangChainAdapter
+from hacs_registry import get_langchain_tools
 
 # Agent state with HACS healthcare models
 from hacs_models import Patient, Observation, MemoryBlock, Encounter
-from hacs_core.memory import ClinicalMemoryManager
+# Clinical memory helpers are framework-dependent; use your own memory management or
+# hacs_utils integrations as needed.
 from typing import List, Optional
 
 
 # Healthcare-aware LLM with HACS tools via local MCP server
-llm = HACSLangChainAdapter(
-    llm=ChatOpenAI(model="gpt-4"),
-    tools_registry="http://localhost:8001"
-)
+lc_tools = get_langchain_tools()
+llm = ChatOpenAI(model="gpt-4")
 
 class HealthcareContextState:
     """State implementing healthcare context engineering strategies"""
@@ -474,11 +473,11 @@ working_memory = MemoryBlock(
 
 ### 🛠️ Medical Tools Registry
 
-37+ healthcare tools with efficient HACS data selection patterns:
+42+ Hacs Tools with efficient HACS data selection patterns:
 
 ```python
 from hacs_models import Patient, Observation
-from hacs_tools import call_hacs_tool
+from hacs_tools import use_hacs_tool
 
 # Create patient using HACS models
 patient = Patient(
@@ -488,7 +487,7 @@ patient = Patient(
 )
 
 # Resource management with efficient HACS data selection
-patient_result = call_hacs_tool("create_hacs_record", {
+patient_result = use_hacs_tool("create_hacs_record", {
     "resource_type": "Patient",
     "resource_data": patient.model_dump(exclude={
         "text", "contained", "extension", "modifier_extension"
@@ -496,7 +495,7 @@ patient_result = call_hacs_tool("create_hacs_record", {
 })
 
 # Semantic search with structured output formatting
-search_results = call_hacs_tool("search_hacs_records", {
+search_results = use_hacs_tool("search_hacs_records", {
     "query": "diabetes patients with elevated HbA1c",
     "resource_types": ["Patient", "Observation"],
     "filters": {"importance_score": {"min": 0.7}},
@@ -504,7 +503,7 @@ search_results = call_hacs_tool("search_hacs_records", {
 })
 
 # Clinical workflow execution with optimized context
-workflow_result = call_hacs_tool("execute_clinical_workflow", {
+workflow_result = use_hacs_tool("execute_clinical_workflow", {
     "workflow_type": "diabetes_assessment",
     "patient_summary": patient.get_text_summary(),
     "patient_context": patient.model_dump(include={
@@ -517,7 +516,7 @@ workflow_result = call_hacs_tool("execute_clinical_workflow", {
 })
 
 # Memory operations preserving clinical context
-memory_result = call_hacs_tool("create_memory", {
+memory_result = use_hacs_tool("create_memory", {
     "content": f"Patient {patient.full_name}: Diabetes management plan updated",
     "memory_type": "episodic",
     "context_metadata": {
@@ -597,25 +596,33 @@ clinical_ai = Actor(
 ### 📋 Clinical Workflows  
 
 ```python
-from hacs_registry import WorkflowRegistry
+from hacs_tools import use_hacs_tool
 
-workflows = WorkflowRegistry()
-
-# Register diabetes management workflow
-workflows.register_workflow("diabetes_visit", {
-    "steps": [
-        {"action": "search_patient_history", "tools": ["search_hacs_records"]},
-        {"action": "record_vitals", "tools": ["create_hacs_record"]},
-        {"action": "assess_glucose_control", "tools": ["analyze_trends"]},
-        {"action": "update_care_plan", "tools": ["create_care_plan"]}
-    ]
+# Create clinical assessment template
+template_result = use_hacs_tool("create_clinical_template", {
+    "template_type": "assessment",
+    "focus_area": "diabetes",
+    "complexity_level": "comprehensive"
 })
 
-# Execute workflow
-workflow_result = call_hacs_tool("execute_workflow", {
-    "workflow_name": "diabetes_visit",
+# Execute clinical workflow with template
+workflow_result = use_hacs_tool("execute_clinical_workflow", {
+    "workflow_type": "diabetes_assessment",
     "patient_id": patient.id,
-    "actor": clinical_ai.id
+    "template_id": template_result["template_id"],
+    "actor_id": clinical_ai.id
+})
+
+# Store clinical memory from workflow
+memory_result = use_hacs_tool("create_hacs_memory", {
+    "content": f"Diabetes assessment completed: {workflow_result['summary']}",
+    "memory_type": "episodic",
+    "importance_score": 0.9,
+    "context_metadata": {
+        "patient_id": patient.id,
+        "workflow_id": workflow_result["id"],
+        "assessment_type": "diabetes"
+    }
 })
 ```
 
@@ -624,13 +631,11 @@ workflow_result = call_hacs_tool("execute_workflow", {
 ```python
 from langgraph.graph import StateGraph, END
 from langchain_openai import ChatOpenAI
-from hacs_utils.integrations.langchain import HACSLangChainAdapter
+from hacs_registry import get_langchain_tools
 
-# HACS-enabled LLM with healthcare tools
-llm = HACSLangChainAdapter(
-    llm=ChatOpenAI(model="gpt-4"),
-    tools_registry="http://localhost:8001"
-)
+# HACS-enabled LLM with Hacs Tools
+lc_tools = get_langchain_tools()
+llm = ChatOpenAI(model="gpt-4")
 
 # Agent state with healthcare context
 class HealthcareState:
@@ -735,8 +740,8 @@ services:
 # Start all services
 docker-compose up -d
 
-# Verify healthcare tools available
-curl http://localhost:8000/  # 37+ healthcare tools
+# Verify Hacs Tools available
+curl http://localhost:8000/  # 42+ Hacs Tools
 curl http://localhost:8001/  # Registry for customization
 
 # Initialize for your healthcare domain
@@ -747,12 +752,19 @@ python -m hacs_registry init --domain=cardiology
 
 ```python
 # Works with any LLM
+import os
 import openai
 from hacs_models import Patient
-from hacs_utils.context import build_clinical_context
+from hacs_tools import use_hacs_tool
 
+# Environment-based configuration
 patient = Patient(full_name="Jane Doe", birth_date="1985-01-01")
-clinical_context = build_clinical_context(patient)
+
+# Use HACS tools for context building
+clinical_context = use_hacs_tool("retrieve_context", {
+    "patient_id": patient.id,
+    "context_type": "clinical_summary"
+})
 
 response = openai.chat.completions.create(
     model="gpt-4",
@@ -772,7 +784,7 @@ response = openai.chat.completions.create(
 │                Your Healthcare AI App                   │
 ├─────────────────────────────────────────────────────────┤
 │  🔧 hacs-utils    │  LangChain/OpenAI/Claude adapters   │
-│  🏥 hacs-tools    │  37+ healthcare tools (MCP)         │ 
+│  🏥 hacs-tools    │  42+ Hacs Tools (MCP)         │ 
 ├─────────────────────────────────────────────────────────┤
 │  🔒 hacs-auth     │  Healthcare actors + permissions    │
 │  💾 hacs-persistence │ FHIR data + vector memory      │
@@ -787,7 +799,7 @@ response = openai.chat.completions.create(
 ### Quick Start
 
 ```bash
-pip install hacs-core hacs-auth hacs-models hacs-tools
+pip install hacs-core hacs-auth hacs-models hacs-tools hacs-utils hacs-persistence
 ```
 
 ### With Services (Optional)
@@ -799,6 +811,11 @@ cd hacs-ai
 
 # Start healthcare infrastructure 
 docker-compose up -d  # PostgreSQL + pgvector, MCP server
+
+# Configure environment variables
+export HACS_MCP_SERVER_URL=http://127.0.0.1:8000
+export DATABASE_URL=postgresql://hacs:hacs_dev@localhost:5432/hacs
+export ANTHROPIC_API_KEY=your_api_key_here  # or OPENAI_API_KEY
 ```
 
 ### Framework Integration
@@ -810,16 +827,34 @@ pip install hacs-utils[langchain]
 # OpenAI integration  
 pip install hacs-utils[openai]
 
+# MCP server and adapters
+pip install hacs-utils[mcp]
+
 # All integrations
 pip install hacs-utils[all]
+```
+
+### MCP Server Integration
+
+HACS provides Hacs Tools via Model Context Protocol:
+
+```bash
+# Start HACS MCP server
+python -m hacs_utils.mcp.cli
+
+# Access 42+ Hacs Tools via JSON-RPC
+export HACS_MCP_SERVER_URL=http://127.0.0.1:8000
+
+# Or use FastMCP for streamable HTTP
+python -m hacs_utils.mcp.fastmcp_server
 ```
 
 ## Documentation
 
 - **[Quick Start Guide](docs/quick-start.md)** - Get running in 5 minutes
-- **[Healthcare Tools Reference](docs/healthcare-tools.md)** - 37+ medical AI tools
+- **[Hacs Tools Reference](docs/healthcare-tools.md)** - 42+ medical AI tools
 - **[LangGraph Healthcare Agent](examples/hacs_developer_agent/)** - Complete working example
-- **[API Reference](docs/api/)** - Comprehensive API documentation
+- **[API Reference](docs/api-reference.md)** - Comprehensive API documentation
 
 ## Community & Support
 

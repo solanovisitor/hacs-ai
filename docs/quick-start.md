@@ -170,7 +170,7 @@ curl http://localhost:8000/
 ```python
 import requests
 
-def call_hacs_tool(tool_name, arguments):
+def use_hacs_tool(tool_name, arguments):
     response = requests.post("http://localhost:8000/", json={
         "jsonrpc": "2.0",
         "method": "tools/call",
@@ -183,7 +183,7 @@ def call_hacs_tool(tool_name, arguments):
     return response.json()
 
 # 🎯 SELECT: Create patient with selective data extraction
-result = call_hacs_tool("create_hacs_record", {
+result = use_hacs_tool("create_hacs_record", {
     "resource_type": "Patient",
     "resource_data": patient.model_dump(exclude={
         "text", "contained", "extension"  # SELECT: Exclude unnecessary FHIR fields
@@ -197,7 +197,7 @@ print(f"🎯 Selected Context: Patient created with essential fields only")
 
 ```python
 # 🎯 SELECT + 🗜️ COMPRESS: Semantic search with compression
-search_result = call_hacs_tool("search_hacs_records", {
+search_result = use_hacs_tool("search_hacs_records", {
     "query": "diabetes patients with elevated HbA1c",
     "resource_types": ["Patient", "Observation"],
     "importance_threshold": 0.7,  # SELECT high-importance only
@@ -212,7 +212,7 @@ print(f"🔍 Context-Aware Search: {len(search_result['result']['records'])} com
 
 ```python
 # 🖊️ WRITE: Store clinical context with metadata
-memory_result = call_hacs_tool("create_memory", {
+memory_result = use_hacs_tool("create_memory", {
     "content": clinical_assessment.content,
     "memory_type": "episodic", 
     "importance_score": 0.9,
@@ -224,7 +224,7 @@ memory_result = call_hacs_tool("create_memory", {
 })
 
 # 🎯 SELECT: Search memories with relevance filtering
-search_memories = call_hacs_tool("search_memories", {
+search_memories = use_hacs_tool("search_memories", {
     "query": "diabetes medication management",
     "similarity_threshold": 0.8,  # SELECT highly relevant only
     "limit": 5
@@ -441,7 +441,7 @@ validate_context_engineering_setup()
 
 ## Next Steps
 
-- **[Healthcare Tools](healthcare-tools.md)** - Complete tool reference
+- **[Hacs Tools](healthcare-tools.md)** - Complete tool reference
 - **[Basic Usage](basic-usage.md)** - Detailed patterns and examples  
 - **[Integration Guide](integrations.md)** - Framework integrations
 - **[Architecture](architecture/)** - Design and patterns
