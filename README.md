@@ -16,7 +16,42 @@ pip install -U hacs-core hacs-auth hacs-models hacs-tools hacs-utils hacs-persis
 ```
 
 Then follow the Quick Start to run the MCP server and the LangGraph developer agent:
-- Quick Start: `docs/quick-start.md`
+- [Quick Start](./docs/quick-start.md)
+
+### Quickstart (minimal code)
+
+Start the MCP server (in a separate terminal):
+
+```bash
+python -m hacs_utils.mcp.fastmcp_server
+```
+
+Call a HACS tool over MCP (JSON-RPC) to create a Patient record:
+
+```python
+import os, requests
+
+url = os.getenv("HACS_MCP_SERVER_URL", "http://127.0.0.1:8000")
+
+payload = {
+    "jsonrpc": "2.0",
+    "method": "tools/call",
+    "params": {
+        "name": "create_hacs_record",
+        "arguments": {
+            "resource_type": "Patient",
+            "resource_data": {
+                "full_name": "John Smith",
+                "birth_date": "1980-05-15",
+                "gender": "male"
+            }
+        }
+    },
+    "id": 1,
+}
+
+print(requests.post(url, json=payload).json())
+```
 
 ## Why HACS
 
@@ -36,14 +71,24 @@ Then follow the Quick Start to run the MCP server and the LangGraph developer ag
 
 Note: Package‑level docs evolve; use the links below for the most up‑to‑date guidance.
 
+## Architecture at a glance
+
+| Layer | Package(s) | Purpose | Interfaces |
+| --- | --- | --- | --- |
+| Models & Protocols | `hacs-core`, `hacs-models` | Clinical data models and protocol contracts | Pydantic models, protocol utils |
+| Tools & Registry | `hacs-tools`, `hacs-registry` | Healthcare tools and resource/Tool registry | MCP Tools, registry APIs |
+| Integrations & MCP | `hacs-utils` | MCP server and framework adapters | JSON-RPC, streamable HTTP, adapters |
+| Persistence | `hacs-persistence` | PostgreSQL + pgvector adapters and repositories | DB adapters, migrations |
+| Security & IAM | `hacs-auth` | Actor model, permissions, sessions, audit | Decorators, token utilities |
+
 ## Learn more
 
-- Quick Start: `docs/quick-start.md`
-- HACS Tools reference: `docs/healthcare-tools.md`
-- Use MCP with LangGraph: `docs/mcp_langgraph.md`
-- Integrations overview: `docs/integrations.md`
-- Testing and CI: `docs/testing.md`
-- API reference (selected): `docs/api-reference.md`
+- [Quick Start](./docs/quick-start.md)
+- [HACS Tools reference](./docs/healthcare-tools.md)
+- [Use MCP with LangGraph](./docs/mcp_langgraph.md)
+- [Integrations overview](./docs/integrations.md)
+- [Testing and CI](./docs/testing.md)
+- [API reference (selected)](./docs/api-reference.md)
 
 ## Optional services
 
