@@ -25,9 +25,9 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from hacs_models import Actor, MemoryBlock
-from hacs_models import MemoryResult, HACSResult
-from hacs_core.tool_protocols import hacs_tool, ToolCategory
+from hacs_core import Actor, MemoryBlock
+from hacs_core.results import MemoryResult, HACSResult
+from hacs_core.tool_protocols import healthcare_tool, ToolCategory
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ from .descriptions import (
     ANALYZE_MEMORY_PATTERNS_DESCRIPTION,
 )
 
-@hacs_tool(
+@healthcare_tool(
     name="create_hacs_memory",
     description="Store a new memory for healthcare AI agents with clinical context",
     category=ToolCategory.MEMORY_OPERATIONS,
@@ -53,9 +53,7 @@ def create_hacs_memory(
     memory_type: str = "episodic",
     clinical_context: Optional[str] = None,
     confidence_score: float = 1.0,
-    patient_id: Optional[str] = None,
-    db_adapter: Any | None = None,
-    vector_store: Any | None = None,
+    patient_id: Optional[str] = None
 ) -> MemoryResult:
     """
     Store a new memory for healthcare AI agents with clinical context.
@@ -75,12 +73,12 @@ def create_hacs_memory(
         MemoryResult with memory creation status and metadata
 
     Examples:
-        create_hacs_memory("Dr. Smith",
+        create_hacs_memory("Dr. Smith", 
             "Patient responds well to ACE inhibitors for hypertension management",
             memory_type="episodic",
             clinical_context="cardiology",
             patient_id="patient-123")
-
+        
         create_hacs_memory("Nurse Johnson",
             "Standard post-op monitoring protocol: vitals every 15 min for first hour",
             memory_type="procedural",
@@ -90,121 +88,37 @@ def create_hacs_memory(
         # Create actor instance for validation/context
         _ = Actor(name=actor_name, role="physician")
 
-        # Create memory block (only supported fields; put extras in context_metadata)
+        # Create memory block
         memory_data = {
             "content": memory_content,
             "memory_type": memory_type,
             "confidence_score": confidence_score,
-            "context_metadata": {
-                "created_by": actor_name,
-                "clinical_context": clinical_context,
-                "patient_id": patient_id,
-            },
+            "created_by": actor_name,
+            "created_at": datetime.now(),
+            "clinical_context": clinical_context,
+            "patient_id": patient_id
         }
 
-        # Create MemoryBlock instance
+        # TODO: In a real implementation, this would:
+        # 1. Create MemoryBlock instance
+        # 2. Store in vector database with embeddings
+        # 3. Index for semantic search
+        # 4. Link to clinical context and patient records
+
         memory_block = MemoryBlock(**memory_data)
-        memory_id = memory_block.id
-        
-        # Storage tracking
-        storage_status = {"database": "skipped", "vector": "skipped"}
-
-        # Persist to database if adapter is provided
-        if db_adapter is not None:
-            try:
-                # Try async methods first, fallback to sync
-                if hasattr(db_adapter, "save_resource"):
-                    # Handle both sync and async adapters
-                    result = db_adapter.save_resource(memory_block.model_dump())
-                    if hasattr(result, "__await__"):
-                        # This is async, but we're in a sync function - store as pending
-                        storage_status["database"] = "async_pending"
-                        logger.info(f"Memory {memory_id} queued for async database save")
-                    else:
-                        storage_status["database"] = "success"
-                        logger.info(f"Memory {memory_id} saved to database")
-                elif hasattr(db_adapter, "create_resource"):
-                    result = db_adapter.create_resource(memory_block)
-                    if hasattr(result, "__await__"):
-                        storage_status["database"] = "async_pending"
-                        logger.info(f"Memory {memory_id} queued for async database creation")
-                    else:
-                        storage_status["database"] = "success"
-                        logger.info(f"Memory {memory_id} created in database")
-                else:
-                    storage_status["database"] = "no_method"
-                    logger.warning("Database adapter missing save/create methods")
-            except Exception as e:
-                storage_status["database"] = f"error: {str(e)}"
-                logger.warning(f"Database persistence failed: {e}")
-
-        # Generate embeddings and store in vector database
-        if vector_store is not None:
-            try:
-                # Generate deterministic hash-based embedding for testing/fallback
-                import hashlib
-                hash_value = int(hashlib.md5(memory_content.encode()).hexdigest(), 16)
-                embedding = [(hash_value >> i) % 100 / 100.0 for i in range(384)]
-                
-                # Store vector with comprehensive metadata
-                vector_metadata = {
-                    "resource_type": "MemoryBlock",
-                    "resource_id": memory_id,
-                    "clinical_context": clinical_context,
-                    "memory_type": memory_type,
-                    "actor_name": actor_name,
-                    "content": memory_content[:500],  # Truncated content for search
-                    "confidence_score": confidence_score,
-                    "created_at": memory_block.created_at.isoformat() if memory_block.created_at else None
-                }
-                
-                vector_id = f"memory:{memory_id}"
-                
-                # Try different vector store interfaces
-                if hasattr(vector_store, "add_vectors"):
-                    # Generic vector store interface
-                    vector_store.add_vectors([vector_id], [embedding], [vector_metadata])
-                    memory_block.vector_id = vector_id
-                    storage_status["vector"] = "success"
-                    logger.info(f"Memory {memory_id} stored in vector database")
-                elif hasattr(vector_store, "add"):
-                    # Qdrant-style interface
-                    vector_store.add(
-                        ids=[vector_id],
-                        vectors=[embedding],
-                        payloads=[vector_metadata]
-                    )
-                    memory_block.vector_id = vector_id
-                    storage_status["vector"] = "success"
-                    logger.info(f"Memory {memory_id} added to Qdrant vector store")
-                elif hasattr(vector_store, "store_vector"):
-                    # Custom HACS interface
-                    vector_store.store_vector(vector_id, embedding, vector_metadata)
-                    memory_block.vector_id = vector_id
-                    storage_status["vector"] = "success"
-                    logger.info(f"Memory {memory_id} embedded and stored")
-                else:
-                    storage_status["vector"] = "no_method"
-                    logger.warning("Vector store missing storage methods")
-                    
-            except Exception as e:
-                storage_status["vector"] = f"error: {str(e)}"
-                logger.warning(f"Vector storage failed: {e}")
+        memory_id = f"memory-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
         return MemoryResult(
             success=True,
-            message=f"Healthcare memory created successfully with {storage_status}",
+            message=f"Healthcare memory created successfully",
             memory_type=memory_type,
             operation_type="store",
             memory_count=1,
             clinical_context=clinical_context,
             consolidation_summary={
                 "memory_id": memory_id,
-                "storage_location": "database" if storage_status["database"] == "success" else "vector" if storage_status["vector"] == "success" else "mock",
-                "database_status": storage_status["database"],
-                "vector_status": storage_status["vector"],
-                "vector_id": getattr(memory_block, "vector_id", None),
-                "indexing_status": "completed" if getattr(memory_block, "vector_id", None) else "skipped"
+                "storage_location": "vector_store",
+                "indexing_status": "completed"
             }
         )
 
@@ -218,7 +132,7 @@ def create_hacs_memory(
             clinical_context=clinical_context
         )
 
-@hacs_tool(
+@healthcare_tool(
     name="search_hacs_memories",
     description="Search healthcare AI agent memories using semantic similarity",
     category=ToolCategory.MEMORY_OPERATIONS,
@@ -231,8 +145,7 @@ def search_hacs_memories(
     memory_type: Optional[str] = None,
     clinical_context: Optional[str] = None,
     limit: int = 10,
-    min_confidence: float = 0.5,
-    vector_store: Any | None = None,
+    min_confidence: float = 0.5
 ) -> MemoryResult:
     """
     Search healthcare AI agent memories using semantic similarity.
@@ -252,11 +165,11 @@ def search_hacs_memories(
         MemoryResult with retrieved memories and relevance scores
 
     Examples:
-        search_hacs_memories("Dr. Smith",
+        search_hacs_memories("Dr. Smith", 
             "hypertension treatment protocols",
             memory_type="procedural",
             clinical_context="cardiology")
-
+        
         search_hacs_memories("Nurse Johnson",
             "patient education for diabetes management",
             limit=5)
@@ -265,106 +178,12 @@ def search_hacs_memories(
         # Create actor instance for validation/context
         _ = Actor(name=actor_name, role="physician")
 
-        # Enhanced vector search with multiple interface support
-        if vector_store is not None:
-            try:
-                search_results = []
-                
-                # Try different vector store interfaces
-                if hasattr(vector_store, "similarity_search"):
-                    # Standard interface
-                    found = vector_store.similarity_search(query, limit)
-                    for item in found:
-                        search_results.append({
-                            "memory_id": item.get("resource_id") or item.get("memory_id") or "",
-                            "content": item.get("content") or item.get("text", ""),
-                            "memory_type": item.get("metadata", {}).get("memory_type", memory_type or "episodic"),
-                            "clinical_context": item.get("metadata", {}).get("clinical_context"),
-                            "confidence_score": item.get("similarity_score", 0.0),
-                            "relevance_score": item.get("similarity_score", 0.0),
-                            "created_by": item.get("metadata", {}).get("actor_name"),
-                            "vector_id": item.get("id"),
-                            "created_at": item.get("metadata", {}).get("created_at")
-                        })
-                
-                elif hasattr(vector_store, "search"):
-                    # Qdrant-style interface
-                    import hashlib
-                    query_hash = int(hashlib.md5(query.encode()).hexdigest(), 16)
-                    query_embedding = [(query_hash >> i) % 100 / 100.0 for i in range(384)]
-                    
-                    search_result = vector_store.search(
-                        collection_name="hacs_vectors",
-                        query_vector=query_embedding,
-                        limit=limit,
-                        filter={"memory_type": memory_type} if memory_type else None
-                    )
-                    
-                    for hit in search_result:
-                        payload = hit.payload if hasattr(hit, 'payload') else {}
-                        search_results.append({
-                            "memory_id": payload.get("resource_id", ""),
-                            "content": payload.get("content", ""),
-                            "memory_type": payload.get("memory_type", memory_type or "episodic"),
-                            "clinical_context": payload.get("clinical_context"),
-                            "confidence_score": hit.score if hasattr(hit, 'score') else 0.0,
-                            "relevance_score": hit.score if hasattr(hit, 'score') else 0.0,
-                            "created_by": payload.get("actor_name"),
-                            "vector_id": hit.id if hasattr(hit, 'id') else None,
-                            "created_at": payload.get("created_at")
-                        })
-                
-                elif hasattr(vector_store, "query"):
-                    # Generic query interface
-                    query_result = vector_store.query(
-                        query_text=query,
-                        top_k=limit,
-                        filter_metadata={"memory_type": memory_type} if memory_type else None
-                    )
-                    
-                    for result in query_result.get("matches", []):
-                        metadata = result.get("metadata", {})
-                        search_results.append({
-                            "memory_id": metadata.get("resource_id", ""),
-                            "content": metadata.get("content", ""),
-                            "memory_type": metadata.get("memory_type", memory_type or "episodic"),
-                            "clinical_context": metadata.get("clinical_context"),
-                            "confidence_score": result.get("score", 0.0),
-                            "relevance_score": result.get("score", 0.0),
-                            "created_by": metadata.get("actor_name"),
-                            "vector_id": result.get("id"),
-                            "created_at": metadata.get("created_at")
-                        })
-                
-                # Apply filters
-                filtered_results = []
-                for memory in search_results:
-                    if memory_type and memory["memory_type"] != memory_type:
-                        continue
-                    if clinical_context and memory["clinical_context"] != clinical_context:
-                        continue
-                    if memory["confidence_score"] < min_confidence:
-                        continue
-                    filtered_results.append(memory)
-                
-                result_memories = filtered_results[:limit]
-                confidence_scores = [m["confidence_score"] for m in result_memories]
-                
-                logger.info(f"Vector search found {len(result_memories)} memories for query: {query[:50]}...")
-                
-                return MemoryResult(
-                    success=True,
-                    message=f"Found {len(result_memories)} relevant healthcare memories via vector search",
-                    memory_type=memory_type or "all",
-                    operation_type="retrieve",
-                    memory_count=len(result_memories),
-                    clinical_context=clinical_context,
-                    retrieval_matches=result_memories,
-                    confidence_scores=confidence_scores
-                )
-                
-            except Exception as e:
-                logger.warning(f"Vector search failed: {e}. Falling back to mock results.")
+        # TODO: In a real implementation, this would:
+        # 1. Generate embedding for search query
+        # 2. Perform vector similarity search
+        # 3. Apply filters for memory type and clinical context
+        # 4. Rank results by relevance and confidence
+        # 5. Return structured memory objects
 
         # Mock search results
         mock_memories = [
@@ -379,7 +198,7 @@ def search_hacs_memories(
                 "created_at": "2024-01-10T14:30:00Z"
             },
             {
-                "memory_id": "mem-002",
+                "memory_id": "mem-002", 
                 "content": "Standard protocol: Start with lowest effective dose and titrate based on response",
                 "memory_type": "procedural",
                 "clinical_context": "cardiology",
@@ -426,7 +245,7 @@ def search_hacs_memories(
             clinical_context=clinical_context
         )
 
-@hacs_tool(
+@healthcare_tool(
     name="consolidate_memories",
     description="Consolidate related healthcare memories to reduce redundancy and enhance knowledge",
     category=ToolCategory.MEMORY_OPERATIONS,
@@ -453,7 +272,7 @@ def consolidate_memories(
         MemoryResult with consolidation summary and new memory structures
 
     Examples:
-        consolidate_memories("Dr. Smith",
+        consolidate_memories("Dr. Smith", 
             ["mem-001", "mem-002", "mem-003"],
             consolidation_strategy="semantic_clustering")
     """
@@ -496,7 +315,7 @@ def consolidate_memories(
             memory_count=0
         )
 
-@hacs_tool(
+@healthcare_tool(
     name="retrieve_context",
     description="Retrieve contextual memories for healthcare decision support",
     category=ToolCategory.MEMORY_OPERATIONS,
@@ -574,7 +393,7 @@ def retrieve_context(
             memory_count=0
         )
 
-@hacs_tool(
+@healthcare_tool(
     name="analyze_memory_patterns",
     description="Analyze patterns in healthcare AI agent memory usage and content",
     category=ToolCategory.MEMORY_OPERATIONS,
@@ -668,4 +487,4 @@ __all__ = [
     "consolidate_memories",
     "retrieve_context",
     "analyze_memory_patterns",
-]
+] 

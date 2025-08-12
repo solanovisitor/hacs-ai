@@ -23,23 +23,23 @@ logger = logging.getLogger(__name__)
 class AuditLogger:
     """
     Audit logging service for tracking registry operations.
-
+    
     SOLID Compliance:
     - S: Single responsibility - audit logging only
     - O: Open/closed - extensible for new audit events
     """
-
+    
     def __init__(self, log_level: str = "INFO"):
         self.logger = logging.getLogger(f"{self.__class__.__name__}")
         self.logger.setLevel(getattr(logging, log_level.upper()))
         self._initialized = False
-
+    
     async def initialize(self) -> None:
         """Initialize the audit logger."""
         if not self._initialized:
             self._initialized = True
             self.logger.info("Audit logger initialized")
-
+    
     async def log_event(
         self,
         event_type: str,
@@ -56,13 +56,13 @@ class AuditLogger:
                 "resource_id": resource_id,
                 "details": details or {}
             }
-
+            
             self.logger.info(f"AUDIT: {audit_entry}")
-
+            
         except Exception as e:
             self.logger.error(f"Failed to log audit event: {e}")
             raise InfrastructureException(f"Audit logging failed: {e}")
-
+    
     async def cleanup(self) -> None:
         """Clean up audit logger."""
         self._initialized = False

@@ -1,20 +1,13 @@
 # HACS Basic Usage Guide
 
-This guide covers the essential patterns for working with HACS in healthcare environments. Learn how to use the core HACS packages and the **42+ Hacs Tools** available for clinical workflows.
-
-> **📚 Related Documentation:**
-> - [Hacs Tools Reference](healthcare-tools.md) - Complete tool documentation
-> - [Integration Guide](integrations.md) - Connect to external systems  
-> - [LangGraph Agent Example](../examples/hacs_developer_agent/README.md) - Working agent implementation
-> - [Testing Guide](testing.md) - Validation and testing procedures
+This guide covers the essential patterns for working with HACS in healthcare environments. Learn how to use the **25+ healthcare tools** available through the MCP server for clinical workflows.
 
 ## 🏥 **Core Healthcare Models**
 
 HACS provides healthcare-specific models optimized for AI agent communication:
 
 ```python
-from hacs_models import Patient, Observation
-from hacs_core import Actor, MemoryBlock, Evidence
+from hacs_core import Patient, Observation, Actor, MemoryBlock, Evidence
 
 # Healthcare provider with role-based permissions
 physician = Actor(
@@ -51,108 +44,27 @@ blood_pressure = Observation(
 )
 ```
 
-## 🛠️ **Using HACS Tools**
+## 🛠️ **Using MCP Tools**
 
-HACS provides Hacs Tools that can be used directly in Python or through the **optional MCP Server** add-on. The MCP Server makes all tools available via JSON-RPC at the configured `HACS_MCP_SERVER_URL`.
+HACS provides healthcare tools through the **Model Context Protocol (MCP)**. All tools are available via JSON-RPC at `http://localhost:8000`.
 
-### **Option A: Direct Python Usage (Core Packages)**
+### **Resource Management**
 
 ```python
-from hacs_tools import create_hacs_record, get_resource
-from hacs_models import Patient
+import requests
 
-# Create a patient record directly
-patient = create_hacs_record(
-    resource_type="Patient",
-    resource_data={
+# Create a patient record
+patient_result = call_hacs_tool("create_hacs_record", {
+    "resource_type": "Patient",
+    "resource_data": {
         "full_name": "Maria Garcia",
         "birth_date": "1990-03-20",
         "gender": "female"
     }
-)
+})
 
-# Use the created patient
-print(f"Created patient: {patient.id}")
-```
-
-### **Option B: Via MCP Server Add-on**
-
-The MCP server provides HTTP access to all HACS tools with built-in authentication and audit logging.
-
-#### **Development Setup**
-```bash
-# 1. Configure environment (add to your .env file - development only)
-echo "HACS_MCP_SERVER_URL=http://localhost:8000" >> .env
-echo "HACS_ENVIRONMENT=development" >> .env
-echo "HACS_DEV_MODE=true" >> .env
-
-# 2. Generate secure API key for testing
-uv run python -m hacs_utils.mcp.cli --generate-api-key
-
-# 3. Start infrastructure
-docker-compose up -d postgres qdrant
-
-# 4. Load environment and start MCP server
-source .env
-export PYTHONPATH="packages/hacs-models/src:packages/hacs-core/src:packages/hacs-tools/src:packages/hacs-auth/src:packages/hacs-persistence/src:packages/hacs-registry/src:packages/hacs-utils/src:packages/hacs-infrastructure/src"
-uv run python -m hacs_utils.mcp.cli
-
-# ✅ Secure server running at $HACS_MCP_SERVER_URL with 42 tools
-```
-
-#### **Production Setup**
-```bash
-# 1. Generate secure API keys
-uv run python -c "import secrets; print(secrets.token_urlsafe(32))" > /secrets/hacs_api_keys.txt
-
-# 2. Configure production environment
-export HACS_ENVIRONMENT=production
-export HACS_MCP_SERVER_URL=https://your-domain.com:8000
-export HACS_API_KEYS_FILE=/secrets/hacs_api_keys.txt
-export HACS_ALLOWED_ORIGINS=https://your-frontend.com,https://your-admin.com
-export HACS_ALLOWED_HOSTS=your-domain.com
-export HACS_RATE_LIMIT_PER_MINUTE=120
-
-# 3. Start with production security
-uv run python -m hacs_utils.mcp.cli
-```
-
-#### MCP Streamable HTTP (FastMCP) for MCP Adapters
-
-Use this option when connecting MCP-native clients (e.g., `langchain-mcp-adapters`) that expect a streamable HTTP endpoint at `/mcp/`.
-
-```bash
-# Start FastMCP wrapper (serves MCP at http://127.0.0.1:8000/mcp/)
-# Note: Uses default port 8000. Stop any server already bound to :8000 first.
-pkill -f hacs_utils.mcp.cli || true
-
-# Run FastMCP
-uv run --with mcp --with langchain-mcp-adapters python -m hacs_utils.mcp.fastmcp_server
-
-# Client configuration (examples)
-export HACS_MCP_SERVER_URL=http://127.0.0.1:8000  # client will normalize to /mcp/
-export HACS_MCP_TRANSPORT=streamable_http
-```
-
-Security note: The FastMCP wrapper is primarily for development and adapter compatibility. For production, use the secure JSON-RPC server (`python -m hacs_utils.mcp.cli`) with API key enforcement and network policies.
-
-#### **Using the MCP API**
-```python
-import requests
-import os
-
-# Get MCP server configuration from environment
-mcp_url = os.getenv('HACS_MCP_SERVER_URL', 'http://localhost:8000')
-api_key = os.getenv('HACS_API_KEY')  # Your API key
-
-# Set up headers for authentication
-headers = {
-    'Content-Type': 'application/json',
-    'Authorization': f'Bearer {api_key}'  # or use 'X-HACS-API-Key': api_key
-}
-
-# Retrieve patient data via MCP server
-get_response = requests.post(f'{mcp_url}/', headers=headers, json={
+# Retrieve patient data
+get_response = requests.post('http://localhost:8000/', json={
     "jsonrpc": "2.0",
     "method": "tools/call",
     "params": {
@@ -166,7 +78,7 @@ get_response = requests.post(f'{mcp_url}/', headers=headers, json={
 })
 
 # Validate clinical data
-validation_response = requests.post(f'{mcp_url}/', headers=headers, json={
+validation_response = requests.post('http://localhost:8000/', json={
     "jsonrpc": "2.0",
     "method": "tools/call",
     "params": {
@@ -187,25 +99,24 @@ validation_response = requests.post(f'{mcp_url}/', headers=headers, json={
 ### **Memory Management**
 
 ```python
-# Store clinical memory (with actor authentication)
-memory_response = requests.post(f'{mcp_url}/', headers=headers, json={
+# Store clinical memory
+memory_response = requests.post('http://localhost:8000/', json={
     "jsonrpc": "2.0",
     "method": "tools/call",
     "params": {
-        "name": "create_hacs_memory",
+        "name": "create_memory",
         "arguments": {
-            "actor_name": "Dr. Rodriguez",
-            "memory_content": "Patient reports improved sleep after medication adjustment. Continue current regimen.",
+            "content": "Patient reports improved sleep after medication adjustment. Continue current regimen.",
             "memory_type": "episodic",
-            "clinical_context": "sleep_disorders",
-            "confidence_score": 0.9
+            "importance_score": 0.8,
+            "tags": ["medication_management", "sleep_improvement"]
         }
     },
     "id": 4
 })
 
 # Search memories semantically
-search_response = requests.post(f'{mcp_url}/', headers=headers, json={
+search_response = requests.post('http://localhost:8000/', json={
     "jsonrpc": "2.0",
     "method": "tools/call",
     "params": {
@@ -221,7 +132,7 @@ search_response = requests.post(f'{mcp_url}/', headers=headers, json={
 })
 
 # Retrieve clinical context
-context_response = requests.post(f'{mcp_url}/', headers=headers, json={
+context_response = requests.post('http://localhost:8000/', json={
     "jsonrpc": "2.0",
     "method": "tools/call",
     "params": {
@@ -240,7 +151,7 @@ context_response = requests.post(f'{mcp_url}/', headers=headers, json={
 
 ```python
 # Generate clinical assessment template
-template_response = requests.post(f'{mcp_url}/', headers=headers, json={
+template_response = requests.post('http://localhost:8000/', json={
     "jsonrpc": "2.0",
     "method": "tools/call",
     "params": {
@@ -255,7 +166,7 @@ template_response = requests.post(f'{mcp_url}/', headers=headers, json={
 })
 
 # Create knowledge item for clinical guidelines
-knowledge_response = requests.post(f'{mcp_url}/', headers=headers, json={
+knowledge_response = requests.post('http://localhost:8000/', json={
     "jsonrpc": "2.0",
     "method": "tools/call",
     "params": {
@@ -277,7 +188,7 @@ Explore available healthcare resources and their schemas:
 
 ```python
 # Discover all HACS resources
-models_response = requests.post(f'{mcp_url}/', headers=headers, json={
+models_response = requests.post('http://localhost:8000/', json={
     "jsonrpc": "2.0",
     "method": "tools/call",
     "params": {
@@ -291,7 +202,7 @@ models_response = requests.post(f'{mcp_url}/', headers=headers, json={
 })
 
 # Get detailed schema for Patient resource
-schema_response = requests.post(f'{mcp_url}/', headers=headers, json={
+schema_response = requests.post('http://localhost:8000/', json={
     "jsonrpc": "2.0",
     "method": "tools/call",
     "params": {
@@ -305,7 +216,7 @@ schema_response = requests.post(f'{mcp_url}/', headers=headers, json={
 })
 
 # Compare schemas between resources
-comparison_response = requests.post(f'{mcp_url}/', headers=headers, json={
+comparison_response = requests.post('http://localhost:8000/', json={
     "jsonrpc": "2.0",
     "method": "tools/call",
     "params": {
@@ -325,19 +236,13 @@ Here's a complete example of a clinical encounter workflow:
 
 ```python
 import requests
-import os
 from datetime import datetime
 
-base_url = os.getenv('HACS_MCP_SERVER_URL', 'http://localhost:8000/')
-api_key = os.getenv('HACS_API_KEY')
+base_url = 'http://localhost:8000/'
 
-def use_tool(tool_name, arguments):
+def call_tool(tool_name, arguments):
     """Helper function to call MCP tools"""
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': f'Bearer {api_key}'
-    }
-    response = requests.post(base_url, headers=headers, json={
+    response = requests.post(base_url, json={
         "jsonrpc": "2.0",
         "method": "tools/call",
         "params": {
@@ -357,7 +262,7 @@ patient_data = {
         "gender": "male"
     }
 }
-patient_result = use_tool("create_resource", patient_data)
+patient_result = call_tool("create_resource", patient_data)
 patient_id = patient_result["result"]["resource_id"]
 
 # 2. Record vital signs
@@ -371,7 +276,7 @@ vitals_data = {
         "status": "final"
     }
 }
-vitals_result = use_tool("create_resource", vitals_data)
+vitals_result = call_tool("create_resource", vitals_data)
 
 # 3. Store clinical assessment
 assessment_memory = {
@@ -380,7 +285,7 @@ assessment_memory = {
     "importance_score": 0.9,
     "tags": ["hypertension", "assessment", "follow_up_needed"]
 }
-memory_result = use_tool("create_memory", assessment_memory)
+memory_result = call_tool("create_memory", assessment_memory)
 
 # 4. Create clinical knowledge
 guideline_knowledge = {
@@ -389,10 +294,10 @@ guideline_knowledge = {
     "knowledge_type": "guideline",
     "tags": ["hypertension", "stage_1", "lifestyle"]
 }
-knowledge_result = use_tool("create_knowledge_item", guideline_knowledge)
+knowledge_result = call_tool("create_knowledge_item", guideline_knowledge)
 
 # 5. Search for related cases
-search_result = use_tool("search_memories", {
+search_result = call_tool("search_memories", {
     "query": "hypertension management",
     "memory_type": "episodic",
     "limit": 3
@@ -406,7 +311,7 @@ print(f"📚 Knowledge created: {knowledge_result['result']['knowledge_id']}")
 
 ## 📊 **Available Tool Categories**
 
-HACS provides **25 Hacs Tools** organized into categories:
+HACS provides **25 healthcare tools** organized into categories:
 
 ### 🔍 **Resource Discovery & Development** (5 tools)
 - `discover_hacs_resources` - Explore healthcare resources
@@ -441,52 +346,10 @@ HACS provides **25 Hacs Tools** organized into categories:
 ### 📚 **Knowledge Management** (1 tool)
 - `create_knowledge_item` - Clinical guidelines
 
-## 🔐 **Security & Authentication**
+## 🔐 **Security & Actor Model**
 
-HACS implements comprehensive security for healthcare environments:
+HACS implements role-based security for healthcare environments:
 
-### **API Authentication**
-```bash
-# Generate secure API keys
-uv run python -m hacs_utils.mcp.cli --generate-api-key
-
-# Use Bearer token authentication
-curl -X POST "$HACS_MCP_SERVER_URL/" \
-  -H "Authorization: Bearer your-api-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","method":"tools/list","id":1}'
-
-# Alternative: X-HACS-API-Key header
-curl -X POST "$HACS_MCP_SERVER_URL/" \
-  -H "X-HACS-API-Key: your-api-key-here" \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","method":"tools/list","id":1}'
-```
-
-### **Environment-Based Security**
-```bash
-# Development (relaxed security)
-export HACS_ENVIRONMENT=development
-export HACS_DEV_MODE=true  # Optional auth, permissive CORS
-
-# Production (strict security)
-export HACS_ENVIRONMENT=production
-export HACS_API_KEYS_FILE=/secrets/api_keys.txt  # Required auth
-export HACS_ALLOWED_ORIGINS=https://your-app.com  # CORS restrictions
-export HACS_ALLOWED_HOSTS=your-domain.com  # Host validation
-export HACS_RATE_LIMIT_PER_MINUTE=120  # Rate limiting
-```
-
-### **Health & Monitoring**
-```bash
-# Health check (no auth required)
-curl "$HACS_MCP_SERVER_URL/health"
-
-# Readiness check (no auth required)
-curl "$HACS_MCP_SERVER_URL/ready"
-```
-
-### **Actor-Based Permissions**
 ```python
 # Define healthcare roles with specific permissions
 roles = {
@@ -535,4 +398,4 @@ For high-throughput scenarios, consider:
 3. **Scaling**: Deploy in production with external PostgreSQL
 4. **LangGraph**: Build AI agents using the LangGraph integration
 
-For production deployment, see the [Integration Guide](integrations.md) and [Testing Guide](testing.md) documentation.
+For production deployment, see the [Deployment Guide](deployment.md) and [PGVector Integration](pgvector-integration.md) documentation.

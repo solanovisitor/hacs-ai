@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-08-02T11:34:01.140441",
+  "demo_version": "1.0",
+  "total_tools": 3,
+  "tools": [
+    {
+      "name": "discover_hacs_resources",
+      "description": "Discover available HACS healthcare resource types and schemas",
+      "args_count": 4,
+      "has_schema": true
+    },
+    {
+      "name": "create_hacs_record",
+      "description": "Create a new healthcare resource record with FHIR compliance validation",
+      "args_count": 5,
+      "has_schema": true
+    },
+    {
+      "name": "create_clinical_template",
+      "description": "Create clinical assessment and documentation templates",
+      "args_count": 4,
+      "has_schema": true
+    }
+  ],
+  "test_results": [
+    {
+      "test": "Resource Discovery",
+      "status": "passed",
+      "resources_found": 3
+    },
+    {
+      "test": "Record Creation",
+      "status": "passed",
+      "resource_type": "Patient"
+    },
+    {
+      "test": "Template Creation",
+      "status": "passed",
+      "template_type": "assessment"
+    }
+  ]
+}

@@ -151,13 +151,14 @@ PINECONE_API_KEY=your_pinecone_key
 Configure the tool execution backend:
 
 ```bash
-# Option A: Secure JSON-RPC server (production-ready)
+# Local MCP server (default)
 HACS_MCP_SERVER_URL=http://localhost:8000
-HACS_API_KEY=your_custom_key
 
-# Option B: Streamable HTTP via FastMCP (for MCP adapters)
-# Start: uv run --with mcp --with langchain-mcp-adapters python -m hacs_utils.mcp.fastmcp_server
-# Client URL: http://localhost:8000 (normalized to /mcp/)
+# Remote MCP server
+HACS_MCP_SERVER_URL=https://your-hacs-api.com
+
+# Custom authentication
+HACS_API_KEY=your_custom_key
 ```
 
 ## 📚 Usage Examples

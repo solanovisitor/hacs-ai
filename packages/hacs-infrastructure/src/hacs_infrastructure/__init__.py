@@ -27,9 +27,9 @@ Version: 0.1.0
 
 # Core infrastructure components
 from .container import (
-    Container,
-    Injectable,
-    Singleton,
+    Container, 
+    Injectable, 
+    Singleton, 
     Scoped,
     ServiceError,
     DependencyError,
@@ -91,53 +91,53 @@ __license__ = "MIT"
 __all__ = [
     # Core container
     "Container",
-    "Injectable",
+    "Injectable", 
     "Singleton",
     "Scoped",
     "ServiceError",
     "DependencyError",
     "get_container",
     "reset_container",
-
+    
     # Configuration
     "HACSConfig",
     "ConfigurationError",
     "get_config",
-    "reset_config",
+    "reset_config", 
     "configure_hacs",
-
+    
     # Service registry
     "ServiceRegistry",
     "ServiceInfo",
     "ServiceStatus",
     "HealthCheck",
     "ServiceDiscovery",
-
+    
     # Lifecycle management
     "ServiceLifecycle",
     "LifecycleState",
     "StartupManager",
     "ShutdownManager",
     "GracefulShutdown",
-
+    
     # Protocols
     "Configurable",
-    "HealthCheckable",
+    "HealthCheckable", 
     "Startable",
     "Stoppable",
     "InjectableProtocol",
-
+    
     # Event system
     "EventBus",
     "Event",
     "EventHandler",
-    "EventSubscription",
+    "EventSubscription", 
     "EventError",
-
+    
     # Monitoring
     "HealthMonitor",
     "MetricsCollector",
-    "ServiceMetrics",
+    "ServiceMetrics", 
     "PerformanceMonitor",
 ]
 
@@ -164,10 +164,10 @@ PACKAGE_INFO = {
 def get_infrastructure_components() -> dict[str, type]:
     """
     Get registry of all available infrastructure components.
-
+    
     Returns:
         Dictionary mapping component names to component classes
-
+        
     Example:
         >>> components = get_infrastructure_components()
         >>> container = components["Container"]()
@@ -185,10 +185,10 @@ def get_infrastructure_components() -> dict[str, type]:
 def validate_infrastructure_setup() -> bool:
     """
     Validate that infrastructure components are properly configured.
-
+    
     Returns:
         True if all components pass validation checks
-
+        
     Raises:
         ValueError: If configuration issues are found
     """
@@ -197,27 +197,27 @@ def validate_infrastructure_setup() -> bool:
         config = get_config()
         if not hasattr(config, 'debug'):
             raise ValueError("Configuration not properly loaded")
-
+        
         # Test container creation
         container = Container()
-
+        
         # Test service registry
         service_registry = ServiceRegistry()
-
+        
         # Test basic dependency injection
         @Injectable
         class TestService:
             def __init__(self):
                 self.name = "test"
-
+        
         container.register(TestService)
         test_service = container.get(TestService)
-
+        
         if test_service.name != "test":
             raise ValueError("Dependency injection not working")
-
+        
         return True
-
+        
     except Exception as e:
         raise ValueError(f"Infrastructure setup validation failed: {e}") from e
 
@@ -225,7 +225,7 @@ def validate_infrastructure_setup() -> bool:
 def get_feature_info() -> dict[str, str]:
     """
     Get information about infrastructure features and capabilities.
-
+    
     Returns:
         Dictionary with feature information
     """

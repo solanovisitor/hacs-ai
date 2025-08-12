@@ -1,7 +1,7 @@
 """
 HACS Registry - Resource Registration and Versioning System
 
-This package provides registration, versioning, and lifecycle management
+This package provides registration, versioning, and lifecycle management 
 for hacs-core healthcare resources. It acts as a wrapper/facade around
 hacs-core resources rather than redefining them.
 
@@ -10,7 +10,7 @@ Core Architecture:
     📋 hacs-registry: Registers, versions, and manages those resources
     🤖 Agent management: Configures agents using registered resources
     🔧 Tool integration: Manages tool access to registered resources
-
+    
 Key Principles:
     • Pure wrapper pattern - no resource redefinition
     • Registry as source of truth for resource metadata
@@ -85,14 +85,6 @@ from .versioning import (
     get_tool_version_info
 )
 
-# Persistence integration
-from .persistence_integration import (
-    RegistryPersistenceService, RegistryPersistenceIntegration,
-    configure_registry_persistence, get_registry_integration,
-    get_persistent_resource_registry, get_persistent_agent_registry,
-    get_persistent_iam_registry, get_persistent_tool_registry
-)
-
 # Integration framework (existing)
 from .integration import (
     HACSToolIntegrationManager,
@@ -129,22 +121,22 @@ __version__ = "0.2.0"  # Updated for new architecture
 __all__ = [
     # Resource registry - Core functionality
     "ResourceStatus",
-    "ResourceCategory",
+    "ResourceCategory", 
     "ResourceMetadata",
     "RegisteredResource",
     "HACSResourceRegistry",
     "get_global_registry",
     "register_hacs_resource",
-
+    
     # Agent registry - Agent management
     "AgentStatus",
     "AgentConfigurationType",
-    "AgentMetadata",
+    "AgentMetadata", 
     "AgentConfiguration",
     "AgentTemplate",
     "HACSAgentRegistry",
     "get_global_agent_registry",
-
+    
     # IAM registry - Access control
     "AccessLevel",
     "PermissionScope",
@@ -158,41 +150,41 @@ __all__ = [
     "get_global_iam_registry",
     "iam_context",
     "require_permission",
-
+    
     # Tool registry - Tool management
     "HACSToolRegistry",
     "get_global_tool_registry",
     "discover_hacs_tools",
-
+    
     # Plugin discovery system
     "PluginRegistry",
-    "ToolPlugin",
+    "ToolPlugin", 
     "PluginMetadata",
     "register_tool",
     "discover_hacs_plugins",
     "plugin_registry",
-
+    
     # Versioning system
     "VersionStatus",
     "VersionInfo",
-    "SemanticVersion",
+    "SemanticVersion", 
     "ToolVersionManager",
     "version_manager",
     "check_tool_version",
     "register_tool_version",
     "get_tool_version_info",
-
+    
     # Integration framework - Tool execution
     "HACSToolIntegrationManager",
     "get_integration_manager",
     "FrameworkType",
-    "ExecutionStrategyType",
+    "ExecutionStrategyType", 
     "ExecutionContext",
     "ToolExecutionResult",
     "get_langchain_tools",
     "get_mcp_tools",
     "execute_hacs_tool",
-
+    
     # Validation framework - Resource validation
     "ValidationResult",
     "ValidationReport",
@@ -205,17 +197,7 @@ __all__ = [
     "validate_agent_config",
     "validate_all_configs",
     "create_custom_validator",
-
-    # Persistence integration
-    "RegistryPersistenceService",
-    "RegistryPersistenceIntegration",
-    "configure_registry_persistence",
-    "get_registry_integration",
-    "get_persistent_resource_registry",
-    "get_persistent_agent_registry",
-    "get_persistent_iam_registry",
-    "get_persistent_tool_registry",
-
+    
     # Exceptions
     "RegistryError",
 ]
@@ -223,12 +205,9 @@ __all__ = [
 # Registry convenience functions
 def register_patient_template(name: str, version: str = "1.0.0", **kwargs) -> RegisteredResource:
     """Convenience function to register a Patient resource template."""
-    try:
-        from hacs_models import Patient
-    except ImportError:
-        from hacs_core import Patient
+    from hacs_core.models import Patient
     return register_hacs_resource(
-        Patient, name, version,
+        Patient, name, version, 
         f"Patient template: {name}",
         ResourceCategory.CLINICAL,
         **kwargs
@@ -236,18 +215,10 @@ def register_patient_template(name: str, version: str = "1.0.0", **kwargs) -> Re
 
 def register_workflow_template(name: str, version: str = "1.0.0", **kwargs) -> RegisteredResource:
     """Convenience function to register a WorkflowDefinition template."""
-    try:
-        from hacs_models import WorkflowDefinition
-    except ImportError:
-        # Fallback or mock if not available
-        WorkflowDefinition = None
-
-    if WorkflowDefinition is None:
-        raise ValueError("WorkflowDefinition not available - workflow templates not supported")
-
+    from hacs_core.models.workflow import WorkflowDefinition
     return register_hacs_resource(
         WorkflowDefinition, name, version,
-        f"Workflow template: {name}",
+        f"Workflow template: {name}", 
         ResourceCategory.WORKFLOW,
         **kwargs
     )
@@ -255,9 +226,9 @@ def register_workflow_template(name: str, version: str = "1.0.0", **kwargs) -> R
 def create_cardiology_agent(name: str, **config) -> AgentConfiguration:
     """Convenience function to create a cardiology agent."""
     from hacs_core import HealthcareDomain, AgentRole
-
+    
     agent_registry = get_global_agent_registry()
-
+    
     metadata = AgentMetadata(
         name=name,
         version="1.0.0",
@@ -265,43 +236,43 @@ def create_cardiology_agent(name: str, **config) -> AgentConfiguration:
         domain=HealthcareDomain.CARDIOLOGY,
         role=AgentRole.CLINICAL_ASSISTANT
     )
-
+    
     agent_config = AgentConfiguration(
         agent_id=f"cardiology-{name.lower().replace(' ', '-')}",
         metadata=metadata,
         **config
     )
-
+    
     agent_registry.register_agent(agent_config)
     return agent_config
 
 def create_emergency_agent(name: str, **config) -> AgentConfiguration:
     """Convenience function to create an emergency medicine agent."""
     from hacs_core import HealthcareDomain, AgentRole
-
+    
     agent_registry = get_global_agent_registry()
-
+    
     metadata = AgentMetadata(
         name=name,
-        version="1.0.0",
+        version="1.0.0", 
         description=f"Emergency medicine agent: {name}",
         domain=HealthcareDomain.EMERGENCY,
         role=AgentRole.TRIAGE_SPECIALIST
     )
-
+    
     agent_config = AgentConfiguration(
         agent_id=f"emergency-{name.lower().replace(' ', '-')}",
         metadata=metadata,
         **config
     )
-
+    
     agent_registry.register_agent(agent_config)
     return agent_config
 
 # Add convenience functions to __all__
 __all__.extend([
     "register_patient_template",
-    "register_workflow_template",
+    "register_workflow_template", 
     "create_cardiology_agent",
     "create_emergency_agent",
 ])

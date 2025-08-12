@@ -30,7 +30,7 @@ jobs:
           echo "HACS_ORGANIZATION=comprehensive-test-org" >> $GITHUB_ENV
           echo "HEALTHCARE_SYSTEM_NAME=Comprehensive Test Healthcare" >> $GITHUB_ENV
           echo "VECTOR_STORE=pgvector" >> $GITHUB_ENV
-          echo "HACS_ENVIRONMENT=testing" >> $GITHUB_ENV
+          echo "HACS_ENVIRONMENT=comprehensive_testing" >> $GITHUB_ENV
 
           # Mock API keys for comprehensive testing
           echo "ANTHROPIC_API_KEY=test-anthropic-comprehensive" >> $GITHUB_ENV

@@ -20,7 +20,7 @@ from hacs_core import (
     PersistenceProvider,
     get_settings,
 )
-from hacs_models import (
+from hacs_core.models import (
     AgentMessage,
     ContextSummary,
     Encounter,

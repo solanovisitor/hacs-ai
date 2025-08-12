@@ -1,6 +1,6 @@
-# HACS Testing Guide
+# HACS Tools Testing Guide
 
-This guide covers comprehensive testing for HACS, including the new Phase 2 persistence, security, and vector integration features.
+This guide covers comprehensive testing for all 42 HACS tools across 10 domains, including unit tests, integration tests, and end-to-end workflow validation.
 
 ## Quick Start
 
@@ -8,35 +8,13 @@ This guide covers comprehensive testing for HACS, including the new Phase 2 pers
 
 - Docker and Docker Compose installed
 - Python 3.11+ (for local testing)
-- **UV package manager** (required): `curl -LsSf https://astral.sh/uv/install.sh | sh`
-- Environment variables configured in `.env` file (see root directory)
+- UV package manager (for local development)
 
 ### Running Tests
 
-#### 1. Using the Test Runner Script (Recommended)
+#### 1. Full Integration Test Suite (Recommended)
 
-We provide a convenient test runner script:
-
-```bash
-# Validate environment setup
-./run_tests.sh validate
-
-# Run local unit tests
-./run_tests.sh local unit
-
-# Run Phase 2 integration tests (persistence, security, vector)
-./run_tests.sh local phase2
-
-# Run all local tests
-./run_tests.sh local all
-
-# Run full Docker test suite
-./run_tests.sh docker
-```
-
-#### 2. Direct Docker Testing
-
-Run the complete test suite with Docker:
+Run the complete test suite with MCP server integration:
 
 ```bash
 # Start all services and run comprehensive tests
@@ -46,21 +24,19 @@ docker-compose --profile test up --build
 docker logs hacs-test-runner
 ```
 
-#### 3. Local Testing (Development)
+#### 2. Local Testing (Development)
 
 For local development and debugging:
 
 ```bash
-# Set up Python path
-export PYTHONPATH="$PWD/packages/hacs-models/src:$PWD/packages/hacs-core/src:$PWD/packages/hacs-tools/src:$PWD/packages/hacs-auth/src:$PWD/packages/hacs-persistence/src:$PWD/packages/hacs-registry/src:$PWD/packages/hacs-utils/src:$PYTHONPATH"
+# Install dependencies
+uv sync --all-extras --dev
 
-# Install test dependencies with UV
-uv pip install pytest pytest-asyncio
+# Run unit tests only (no MCP server required)
+python -m pytest tests/test_hacs_tools_comprehensive.py -v
 
-# Run specific test categories
-python -m pytest tests/test_ci_essential.py -v                # Essential CI tests
-python -m pytest tests/test_phase2_integration.py -v         # Phase 2 integration tests
-python -m pytest tests/test_integration_end_to_end.py -v     # End-to-end tests
+# Run with MCP integration (requires running MCP server)
+python -m pytest tests/test_hacs_tools_comprehensive.py --mcp-integration -v
 
 # Run specific domain tests
 python -m pytest tests/test_hacs_tools_comprehensive.py::TestResourceManagement -v
@@ -335,7 +311,7 @@ jobs:
 
 ### Adding New Tests
 
-1. **Add Test Data**: Update `examples/hacs_developer_agent/scripts/init-db.sql` with relevant test data
+1. **Add Test Data**: Update `scripts/init-db.sql` with relevant test data
 2. **Create Test Cases**: Add test methods to appropriate test classes
 3. **Update Documentation**: Document new test scenarios in this guide
 4. **Verify Coverage**: Ensure new tools have comprehensive test coverage

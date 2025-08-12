@@ -4,7 +4,7 @@ Welcome to the HACS community! We're building the definitive platform for health
 
 ## 🏥 **About HACS**
 
-HACS (Healthcare Agent Communication Standard) is a production-ready platform enabling healthcare organizations to deploy AI agents with structured memory, clinical reasoning, and FHIR compliance. Built on the Model Context Protocol (MCP), HACS provides 25+ specialized Hacs Tools for patient data management, clinical workflows, and evidence-based reasoning.
+HACS (Healthcare Agent Communication Standard) is a production-ready platform enabling healthcare organizations to deploy AI agents with structured memory, clinical reasoning, and FHIR compliance. Built on the Model Context Protocol (MCP), HACS provides 25+ specialized healthcare tools for patient data management, clinical workflows, and evidence-based reasoning.
 
 ## 🚀 **Quick Start for Contributors**
 
@@ -155,7 +155,7 @@ uv run python publish.py --check    # Package validation
 Our UV workspace contains focused packages:
 
 - **`hacs-core`** - Core models, actors, memory, evidence
-- **`hacs-tools`** - 25+ Hacs Tools for AI agents  
+- **`hacs-tools`** - 25+ healthcare tools for AI agents  
 - **`hacs-utils`** - Integrations, MCP server, adapters
 - **`hacs-persistence`** - Database adapters and migrations
 - **`hacs-registry`** - Model and workflow definitions

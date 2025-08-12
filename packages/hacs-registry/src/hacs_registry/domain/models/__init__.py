@@ -13,7 +13,7 @@ SOLID Compliance:
 
 Model Categories:
     🏥 Resource Models - Healthcare resource management
-    🤖 Agent Models - AI agent lifecycle and configuration
+    🤖 Agent Models - AI agent lifecycle and configuration  
     🔐 IAM Models - Identity and access management
     🔧 Tool Models - Tool registration and execution
 """

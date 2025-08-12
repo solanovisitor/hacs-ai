@@ -69,7 +69,7 @@ memory = MemoryBlock(
 ## 🔗 **Integration**
 
 HACS Core models work seamlessly with:
-- **MCP Tools** - 42+ Hacs Tools via Model Context Protocol
+- **MCP Tools** - 25+ healthcare tools via Model Context Protocol
 - **LangGraph** - AI agent workflows with clinical memory
 - **PostgreSQL** - Persistent storage with pgvector
 - **FHIR Systems** - Healthcare standards compliance

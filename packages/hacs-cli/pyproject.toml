@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "hacs-cli"
-version = "0.4.0"
+version = "0.3.1"
 description = "Command-line interface for Healthcare Agent Communication Standard (HACS)"
 readme = "README.md"
 license = { text = "Apache-2.0" }
@@ -33,8 +33,8 @@ classifiers = [
 ]
 
 dependencies = [
-    "hacs-core>=0.4.0",
-    "hacs-utils>=0.4.0",
+    "hacs-core>=0.3.1",
+    "hacs-utils>=0.3.1",
     "click>=8.1.0",
     "rich>=13.0.0",
     "typer>=0.9.0",
@@ -43,11 +43,11 @@ dependencies = [
 [project.optional-dependencies]
 # Include tools for full CLI functionality
 tools = [
-    "hacs-tools>=0.4.0",
+    "hacs-tools>=0.3.1",
 ]
 # Include persistence for data operations
 persistence = [
-    "hacs-persistence>=0.4.0",
+    "hacs-persistence>=0.3.1",
 ]
 all = [
     "hacs-cli[tools,persistence]"

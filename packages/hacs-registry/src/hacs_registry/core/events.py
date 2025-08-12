@@ -52,19 +52,19 @@ class EventCategory(str, Enum):
 class RegistryEvent(DomainEvent):
     """
     Base class for all registry-related events.
-
+    
     SOLID Compliance:
     - S: Single responsibility - registry event data
     - L: Liskov substitution - all registry events behave consistently
     """
-
+    
     def __init__(self, aggregate_id: EntityId, event_version: int = 1, **kwargs):
         super().__init__(aggregate_id, event_version)
         self.severity = kwargs.get('severity', EventSeverity.INFO)
         self.category = kwargs.get('category', EventCategory.SYSTEM)
         self.actor_id = kwargs.get('actor_id')
         self.correlation_id = kwargs.get('correlation_id')
-
+    
     @property
     def aggregate_type(self) -> str:
         return "Registry"
@@ -73,19 +73,19 @@ class RegistryEvent(DomainEvent):
 class ResourceEvent(DomainEvent):
     """
     Base class for resource-related events.
-
+    
     SOLID Compliance:
     - S: Single responsibility - resource event data
     - O: Open/closed - extensible for new resource event types
     """
-
+    
     def __init__(self, resource_id: EntityId, resource_type: str, **kwargs):
         super().__init__(resource_id)
         self.resource_type = resource_type
         self.resource_version = kwargs.get('resource_version', '1.0.0')
         self.actor_id = kwargs.get('actor_id')
         self.category = EventCategory.DOMAIN
-
+    
     @property
     def aggregate_type(self) -> str:
         return "Resource"
@@ -94,12 +94,12 @@ class ResourceEvent(DomainEvent):
 class AgentEvent(DomainEvent):
     """
     Base class for agent-related events.
-
+    
     SOLID Compliance:
     - S: Single responsibility - agent event data
     - O: Open/closed - extensible for new agent event types
     """
-
+    
     def __init__(self, agent_id: EntityId, agent_type: str, **kwargs):
         super().__init__(agent_id)
         self.agent_type = agent_type
@@ -107,7 +107,7 @@ class AgentEvent(DomainEvent):
         self.role = kwargs.get('role')
         self.actor_id = kwargs.get('actor_id')
         self.category = EventCategory.DOMAIN
-
+    
     @property
     def aggregate_type(self) -> str:
         return "Agent"
@@ -116,12 +116,12 @@ class AgentEvent(DomainEvent):
 class IAMEvent(DomainEvent):
     """
     Base class for IAM/security-related events.
-
+    
     SOLID Compliance:
     - S: Single responsibility - IAM event data
     - O: Open/closed - extensible for new IAM event types
     """
-
+    
     def __init__(self, subject_id: EntityId, **kwargs):
         super().__init__(subject_id)
         self.actor_id = kwargs.get('actor_id')
@@ -130,7 +130,7 @@ class IAMEvent(DomainEvent):
         self.result = kwargs.get('result', 'unknown')
         self.category = EventCategory.SECURITY
         self.severity = kwargs.get('severity', EventSeverity.INFO)
-
+    
     @property
     def aggregate_type(self) -> str:
         return "IAM"
@@ -140,7 +140,7 @@ class IAMEvent(DomainEvent):
 
 class ResourceRegisteredEvent(ResourceEvent):
     """Event fired when a resource is registered."""
-
+    
     @property
     def event_type(self) -> str:
         return "resource.registered"
@@ -148,11 +148,11 @@ class ResourceRegisteredEvent(ResourceEvent):
 
 class ResourceUpdatedEvent(ResourceEvent):
     """Event fired when a resource is updated."""
-
+    
     def __init__(self, resource_id: EntityId, resource_type: str, changes: Dict[str, Any], **kwargs):
         super().__init__(resource_id, resource_type, **kwargs)
         self.changes = changes
-
+    
     @property
     def event_type(self) -> str:
         return "resource.updated"
@@ -160,12 +160,12 @@ class ResourceUpdatedEvent(ResourceEvent):
 
 class ResourceDeprecatedEvent(ResourceEvent):
     """Event fired when a resource is deprecated."""
-
+    
     def __init__(self, resource_id: EntityId, resource_type: str, reason: str, **kwargs):
         super().__init__(resource_id, resource_type, **kwargs)
         self.reason = reason
         self.severity = EventSeverity.WARNING
-
+    
     @property
     def event_type(self) -> str:
         return "resource.deprecated"
@@ -173,11 +173,11 @@ class ResourceDeprecatedEvent(ResourceEvent):
 
 class ResourceDeletedEvent(ResourceEvent):
     """Event fired when a resource is deleted."""
-
+    
     def __init__(self, resource_id: EntityId, resource_type: str, **kwargs):
         super().__init__(resource_id, resource_type, **kwargs)
         self.severity = EventSeverity.WARNING
-
+    
     @property
     def event_type(self) -> str:
         return "resource.deleted"
@@ -185,7 +185,7 @@ class ResourceDeletedEvent(ResourceEvent):
 
 class AgentCreatedEvent(AgentEvent):
     """Event fired when an agent is created."""
-
+    
     @property
     def event_type(self) -> str:
         return "agent.created"
@@ -193,11 +193,11 @@ class AgentCreatedEvent(AgentEvent):
 
 class AgentConfiguredEvent(AgentEvent):
     """Event fired when an agent configuration is updated."""
-
+    
     def __init__(self, agent_id: EntityId, agent_type: str, config_changes: Dict[str, Any], **kwargs):
         super().__init__(agent_id, agent_type, **kwargs)
         self.config_changes = config_changes
-
+    
     @property
     def event_type(self) -> str:
         return "agent.configured"
@@ -205,11 +205,11 @@ class AgentConfiguredEvent(AgentEvent):
 
 class AgentDeployedEvent(AgentEvent):
     """Event fired when an agent is deployed."""
-
+    
     def __init__(self, agent_id: EntityId, agent_type: str, environment: str, **kwargs):
         super().__init__(agent_id, agent_type, **kwargs)
         self.environment = environment
-
+    
     @property
     def event_type(self) -> str:
         return "agent.deployed"
@@ -217,12 +217,12 @@ class AgentDeployedEvent(AgentEvent):
 
 class AgentRetiredEvent(AgentEvent):
     """Event fired when an agent is retired."""
-
+    
     def __init__(self, agent_id: EntityId, agent_type: str, reason: str, **kwargs):
         super().__init__(agent_id, agent_type, **kwargs)
         self.reason = reason
         self.severity = EventSeverity.WARNING
-
+    
     @property
     def event_type(self) -> str:
         return "agent.retired"
@@ -230,13 +230,13 @@ class AgentRetiredEvent(AgentEvent):
 
 class PermissionGrantedEvent(IAMEvent):
     """Event fired when a permission is granted."""
-
+    
     def __init__(self, permission_id: EntityId, grantee_id: str, permission_type: str, **kwargs):
         super().__init__(permission_id, **kwargs)
         self.grantee_id = grantee_id
         self.permission_type = permission_type
         self.result = 'granted'
-
+    
     @property
     def event_type(self) -> str:
         return "iam.permission.granted"
@@ -244,7 +244,7 @@ class PermissionGrantedEvent(IAMEvent):
 
 class PermissionRevokedEvent(IAMEvent):
     """Event fired when a permission is revoked."""
-
+    
     def __init__(self, permission_id: EntityId, grantee_id: str, permission_type: str, reason: str, **kwargs):
         super().__init__(permission_id, **kwargs)
         self.grantee_id = grantee_id
@@ -252,7 +252,7 @@ class PermissionRevokedEvent(IAMEvent):
         self.reason = reason
         self.result = 'revoked'
         self.severity = EventSeverity.WARNING
-
+    
     @property
     def event_type(self) -> str:
         return "iam.permission.revoked"
@@ -260,7 +260,7 @@ class PermissionRevokedEvent(IAMEvent):
 
 class AccessAttemptEvent(IAMEvent):
     """Event fired when access is attempted."""
-
+    
     def __init__(self, subject_id: EntityId, access_granted: bool, **kwargs):
         super().__init__(subject_id, **kwargs)
         self.access_granted = access_granted
@@ -268,7 +268,7 @@ class AccessAttemptEvent(IAMEvent):
         self.category = EventCategory.AUDIT
         if not access_granted:
             self.severity = EventSeverity.WARNING
-
+    
     @property
     def event_type(self) -> str:
         return "iam.access.attempted"
@@ -276,14 +276,14 @@ class AccessAttemptEvent(IAMEvent):
 
 class EmergencyAccessEvent(IAMEvent):
     """Event fired when emergency access is granted."""
-
+    
     def __init__(self, subject_id: EntityId, justification: str, **kwargs):
         super().__init__(subject_id, **kwargs)
         self.justification = justification
         self.result = 'emergency_granted'
         self.severity = EventSeverity.CRITICAL
         self.category = EventCategory.COMPLIANCE
-
+    
     @property
     def event_type(self) -> str:
         return "iam.emergency.access"
@@ -291,7 +291,7 @@ class EmergencyAccessEvent(IAMEvent):
 
 class ComplianceViolationEvent(IAMEvent):
     """Event fired when a compliance violation is detected."""
-
+    
     def __init__(self, subject_id: EntityId, violation_type: str, details: str, **kwargs):
         super().__init__(subject_id, **kwargs)
         self.violation_type = violation_type
@@ -299,7 +299,7 @@ class ComplianceViolationEvent(IAMEvent):
         self.result = 'violation'
         self.severity = EventSeverity.ERROR
         self.category = EventCategory.COMPLIANCE
-
+    
     @property
     def event_type(self) -> str:
         return "iam.compliance.violation"
@@ -310,31 +310,31 @@ class ComplianceViolationEvent(IAMEvent):
 class EventBus:
     """
     In-memory event bus implementation.
-
+    
     SOLID Compliance:
     - S: Single responsibility - event routing and delivery
     - O: Open/closed - new handlers can be added without modification
     - D: Dependency inversion - depends on EventHandler abstraction
     """
-
+    
     def __init__(self):
         self._handlers: Dict[str, List[EventHandler]] = {}
         self._global_handlers: List[EventHandler] = []
         self._middleware: List[Callable[[DomainEvent], Awaitable[DomainEvent]]] = []
         self.logger = logging.getLogger(self.__class__.__name__)
-
+    
     def subscribe(self, event_type: str, handler: EventHandler):
         """Subscribe a handler to a specific event type."""
         if event_type not in self._handlers:
             self._handlers[event_type] = []
         self._handlers[event_type].append(handler)
         self.logger.debug(f"Handler subscribed to {event_type}")
-
+    
     def subscribe_all(self, handler: EventHandler):
         """Subscribe a handler to all events."""
         self._global_handlers.append(handler)
         self.logger.debug("Global handler subscribed")
-
+    
     def unsubscribe(self, event_type: str, handler: EventHandler):
         """Unsubscribe a handler from an event type."""
         if event_type in self._handlers:
@@ -343,11 +343,11 @@ class EventBus:
                 self.logger.debug(f"Handler unsubscribed from {event_type}")
             except ValueError:
                 self.logger.warning(f"Handler not found for {event_type}")
-
+    
     def add_middleware(self, middleware: Callable[[DomainEvent], Awaitable[DomainEvent]]):
         """Add middleware to process events before delivery."""
         self._middleware.append(middleware)
-
+    
     async def publish(self, event: DomainEvent) -> None:
         """Publish a single event to all relevant handlers."""
         try:
@@ -355,7 +355,7 @@ class EventBus:
             processed_event = event
             for middleware in self._middleware:
                 processed_event = await middleware(processed_event)
-
+            
             # Deliver to specific handlers
             specific_handlers = self._handlers.get(event.event_type, [])
             for handler in specific_handlers:
@@ -363,7 +363,7 @@ class EventBus:
                     await handler.handle(processed_event)
                 except Exception as e:
                     self.logger.error(f"Handler error for {event.event_type}: {e}")
-
+            
             # Deliver to global handlers
             for handler in self._global_handlers:
                 try:
@@ -371,22 +371,22 @@ class EventBus:
                         await handler.handle(processed_event)
                 except Exception as e:
                     self.logger.error(f"Global handler error for {event.event_type}: {e}")
-
+            
             self.logger.debug(f"Event published: {event.event_type}")
-
+            
         except Exception as e:
             self.logger.error(f"Event publishing failed: {e}")
             raise
-
+    
     async def publish_batch(self, events: List[DomainEvent]) -> None:
         """Publish multiple events."""
         for event in events:
             await self.publish(event)
-
+    
     def get_handler_count(self, event_type: str) -> int:
         """Get the number of handlers for an event type."""
         return len(self._handlers.get(event_type, []))
-
+    
     def get_total_handlers(self) -> int:
         """Get the total number of registered handlers."""
         specific_count = sum(len(handlers) for handlers in self._handlers.values())
@@ -398,21 +398,21 @@ class EventBus:
 class InMemoryEventPublisher:
     """
     In-memory event publisher using EventBus.
-
+    
     SOLID Compliance:
     - S: Single responsibility - publishes events
     - D: Dependency inversion - can work with any event bus
     """
-
+    
     def __init__(self, event_bus: EventBus):
         self.event_bus = event_bus
         self.logger = logging.getLogger(self.__class__.__name__)
-
+    
     async def publish(self, event: DomainEvent) -> None:
         """Publish a single event."""
         await self.event_bus.publish(event)
         self.logger.debug(f"Published event: {event.event_type}")
-
+    
     async def publish_batch(self, events: List[DomainEvent]) -> None:
         """Publish multiple events."""
         await self.event_bus.publish_batch(events)
@@ -424,21 +424,21 @@ class InMemoryEventPublisher:
 class BaseEventHandler:
     """
     Base implementation for event handlers.
-
+    
     SOLID Compliance:
     - S: Single responsibility - provides common handler functionality
     - L: Liskov substitution - all handlers can be used interchangeably
     """
-
+    
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
-
+    
     @property
     @abstractmethod
     def supported_event_types(self) -> List[str]:
         """Event types this handler supports."""
         pass
-
+    
     async def handle(self, event: DomainEvent) -> None:
         """Handle an event with error logging."""
         try:
@@ -447,7 +447,7 @@ class BaseEventHandler:
         except Exception as e:
             self.logger.error(f"Error handling {event.event_type}: {e}")
             raise
-
+    
     @abstractmethod
     async def _handle_event(self, event: DomainEvent) -> None:
         """Override this method to implement event handling logic."""
@@ -456,16 +456,16 @@ class BaseEventHandler:
 
 class ResourceEventHandler(BaseEventHandler):
     """Handler for resource-related events."""
-
+    
     @property
     def supported_event_types(self) -> List[str]:
         return [
             "resource.registered",
-            "resource.updated",
+            "resource.updated", 
             "resource.deprecated",
             "resource.deleted"
         ]
-
+    
     async def _handle_event(self, event: DomainEvent) -> None:
         if isinstance(event, ResourceEvent):
             self.logger.info(f"Resource {event.event_type}: {event.resource_type} {event.aggregate_id}")
@@ -473,7 +473,7 @@ class ResourceEventHandler(BaseEventHandler):
 
 class IAMEventHandler(BaseEventHandler):
     """Handler for IAM/security events."""
-
+    
     @property
     def supported_event_types(self) -> List[str]:
         return [
@@ -483,7 +483,7 @@ class IAMEventHandler(BaseEventHandler):
             "iam.emergency.access",
             "iam.compliance.violation"
         ]
-
+    
     async def _handle_event(self, event: DomainEvent) -> None:
         if isinstance(event, IAMEvent):
             if event.severity in [EventSeverity.ERROR, EventSeverity.CRITICAL]:
@@ -513,13 +513,13 @@ async def correlation_middleware(event: DomainEvent) -> DomainEvent:
 def create_default_event_bus() -> EventBus:
     """Create an event bus with standard configuration."""
     event_bus = EventBus()
-
+    
     # Add default middleware
     event_bus.add_middleware(audit_middleware)
     event_bus.add_middleware(correlation_middleware)
-
+    
     # Add default handlers
     event_bus.subscribe_all(ResourceEventHandler())
     event_bus.subscribe_all(IAMEventHandler())
-
+    
     return event_bus

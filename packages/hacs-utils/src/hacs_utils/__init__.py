@@ -15,30 +15,6 @@ Key Features:
 
 import warnings
 
-# Core utilities moved from hacs-core
-from .core_utils import (
-    ImportError as HACSImportError,
-    safe_import,
-    optional_import,
-    get_api_key,
-    ClientConfig,
-    validate_response_model,
-    log_llm_request,
-    standardize_messages,
-    RetryMixin,
-    VersionManager
-)
-from .agent_types import (
-    HealthcareDomain,
-    AgentRole,
-    AgentInteractionStrategy,
-    AgentMemoryStrategy,
-    AgentChainStrategy,
-    AgentRetrievalStrategy,
-    AgentScratchpadEntry,
-    AgentTask
-)
-
 # Graceful import handling for optional dependencies
 def _safe_import(module_name: str, class_name: str = None):
     """Safely import a module or class with graceful degradation."""
@@ -57,8 +33,21 @@ def _safe_import(module_name: str, class_name: str = None):
             )
         return None
 
-# MCP Server - lazy loading to avoid dependency conflicts
-_has_mcp = None  # Lazy check
+# MCP Server - always available (no optional dependencies)
+try:
+    from .mcp import (
+        HacsMCPServer,
+        create_hacs_mcp_server,
+        StdioTransport,
+        HTTPTransport,
+        MCPRequest,
+        MCPResponse,
+        MCPNotification,
+        MCPError,
+    )
+    _has_mcp = True
+except ImportError:
+    _has_mcp = False
 
 # OpenAI Integration
 OpenAIClient = _safe_import("hacs_utils.integrations.openai", "OpenAIClient")
@@ -87,8 +76,25 @@ create_langchain_adapter = _safe_import("hacs_utils.integrations.langchain", "cr
 LangGraphWorkflow = _safe_import("hacs_utils.integrations.langgraph", "LangGraphWorkflow")
 create_langgraph_workflow = _safe_import("hacs_utils.integrations.langgraph", "create_langgraph_workflow")
 
-# CrewAI Integration (maintained for backward compatibility) - lazy loading
-_has_crewai = None  # Lazy check
+# CrewAI Integration (maintained for backward compatibility)
+try:
+    from .integrations.crewai.adapter import (
+        CrewAIAdapter,
+        CrewAIAgent,
+        CrewAITask,
+        CrewAIProcess,
+        CrewAIAgentRole,
+        CrewAITaskType,
+    )
+    _has_crewai = True
+except ImportError:
+    CrewAIAdapter = None
+    CrewAIAgent = None
+    CrewAITask = None
+    CrewAIProcess = None
+    CrewAIAgentRole = None
+    CrewAITaskType = None
+    _has_crewai = False
 
 # Structured Output (always available)
 try:
@@ -111,36 +117,15 @@ def list_available_integrations() -> dict[str, bool]:
     Returns:
         Dict mapping integration name to availability status
     """
-    # Lazy check for MCP availability
-    def _check_mcp():
-        global _has_mcp
-        if _has_mcp is None:
-            try:
-                from .mcp import HacsMCPServer  # noqa: F401
-                _has_mcp = True
-            except ImportError:
-                _has_mcp = False
-        return _has_mcp
-    # Lazy check for CrewAI availability
-    def _check_crewai():
-        global _has_crewai
-        if _has_crewai is None:
-            try:
-                from .integrations.crewai.adapter import CrewAIAdapter  # noqa: F401
-                _has_crewai = True
-            except ImportError:
-                _has_crewai = False
-        return _has_crewai
-
     return {
-        "mcp": _check_mcp(),
+        "mcp": _has_mcp,
         "openai": OpenAIClient is not None,
         "anthropic": AnthropicClient is not None,
         "pinecone": PineconeVectorStore is not None,
         "qdrant": QdrantVectorStore is not None,
         "langchain": LangChainDocumentAdapter is not None,
         "langgraph": LangGraphWorkflow is not None,
-        "crewai": _check_crewai(),
+        "crewai": _has_crewai,
     }
 
 
@@ -158,7 +143,7 @@ def get_integration_info(integration_name: str = None) -> dict[str, str]:
         "mcp": {
             "description": "Model Context Protocol server for secure agent access",
             "install": "pip install hacs-utils[mcp]",
-            "available": list_available_integrations()["mcp"]
+            "available": _has_mcp
         },
         "openai": {
             "description": "OpenAI GPT models, embeddings, and structured generation",
@@ -193,7 +178,7 @@ def get_integration_info(integration_name: str = None) -> dict[str, str]:
         "crewai": {
             "description": "CrewAI multi-agent orchestration (backward compatibility)",
             "install": "pip install hacs-utils[crewai]",
-            "available": list_available_integrations()["crewai"]
+            "available": _has_crewai
         }
     }
 
@@ -206,27 +191,15 @@ def get_integration_info(integration_name: str = None) -> dict[str, str]:
 __version__ = "0.3.0"
 
 __all__ = [
-    # Core utilities
-    "HACSImportError",
-    "safe_import",
-    "optional_import",
-    "get_api_key",
-    "ClientConfig",
-    "validate_response_model",
-    "log_llm_request",
-    "standardize_messages",
-    "RetryMixin",
-    "VersionManager",
-
-    # Agent types
-    "HealthcareDomain",
-    "AgentRole",
-    "AgentInteractionStrategy",
-    "AgentMemoryStrategy",
-    "AgentChainStrategy",
-    "AgentRetrievalStrategy",
-    "AgentScratchpadEntry",
-    "AgentTask",
+    # MCP Server
+    "HacsMCPServer",
+    "create_hacs_mcp_server",
+    "StdioTransport",
+    "HTTPTransport",
+    "MCPRequest",
+    "MCPResponse",
+    "MCPNotification",
+    "MCPError",
     # OpenAI
     "OpenAIClient",
     "OpenAIStructuredGenerator",
@@ -248,6 +221,11 @@ __all__ = [
     # LangGraph
     "LangGraphWorkflow",
     "create_langgraph_workflow",
+    # CrewAI (backward compatibility)
+    "CrewAIAdapter",
+    "CrewAIAgent",
+    "CrewAITask",
+    "CrewAIProcess",
     # Structured Output
     "generate_structured_output",
     "generate_structured_list",
@@ -258,98 +236,3 @@ __all__ = [
     "list_available_integrations",
     "get_integration_info",
 ]
-
-
-def __getattr__(name: str):
-    """Lazy loading for optional dependencies that might cause conflicts."""
-    # MCP Server components
-    mcp_exports = {
-        "HacsMCPServer",
-        "create_hacs_mcp_server",
-        "StdioTransport",
-        "HTTPTransport",
-        "MCPRequest",
-        "MCPResponse",
-        "MCPNotification",
-        "MCPError",
-    }
-
-    # CrewAI components
-    crewai_exports = {
-        "CrewAIAdapter",
-        "CrewAIAgent",
-        "CrewAITask",
-        "CrewAIProcess",
-        "CrewAIAgentRole",
-        "CrewAITaskType",
-    }
-
-    if name in mcp_exports:
-        try:
-            from .mcp import (
-                HacsMCPServer,
-                create_hacs_mcp_server,
-                StdioTransport,
-                HTTPTransport,
-                MCPRequest,
-                MCPResponse,
-                MCPNotification,
-                MCPError,
-            )
-            globals()["_has_mcp"] = True
-
-            # Export all MCP components to globals
-            mcp_components = {
-                "HacsMCPServer": HacsMCPServer,
-                "create_hacs_mcp_server": create_hacs_mcp_server,
-                "StdioTransport": StdioTransport,
-                "HTTPTransport": HTTPTransport,
-                "MCPRequest": MCPRequest,
-                "MCPResponse": MCPResponse,
-                "MCPNotification": MCPNotification,
-                "MCPError": MCPError,
-            }
-            globals().update(mcp_components)
-
-            return mcp_components[name]
-
-        except ImportError as e:
-            globals()["_has_mcp"] = False
-            raise AttributeError(
-                f"'{name}' requires MCP dependencies that have conflicts. "
-                f"Import error: {e}"
-            ) from e
-
-    if name in crewai_exports:
-        try:
-            from .integrations.crewai.adapter import (
-                CrewAIAdapter,
-                CrewAIAgent,
-                CrewAITask,
-                CrewAIProcess,
-                CrewAIAgentRole,
-                CrewAITaskType,
-            )
-            globals()["_has_crewai"] = True
-
-            # Export all CrewAI components to globals
-            crewai_components = {
-                "CrewAIAdapter": CrewAIAdapter,
-                "CrewAIAgent": CrewAIAgent,
-                "CrewAITask": CrewAITask,
-                "CrewAIProcess": CrewAIProcess,
-                "CrewAIAgentRole": CrewAIAgentRole,
-                "CrewAITaskType": CrewAITaskType,
-            }
-            globals().update(crewai_components)
-
-            return crewai_components[name]
-
-        except ImportError as e:
-            globals()["_has_crewai"] = False
-            raise AttributeError(
-                f"'{name}' requires CrewAI dependencies that have conflicts. "
-                f"Import error: {e}"
-            ) from e
-
-    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

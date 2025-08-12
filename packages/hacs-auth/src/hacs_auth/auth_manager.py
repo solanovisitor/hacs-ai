@@ -20,7 +20,7 @@ class AuthConfig(BaseModel):
     jwt_algorithm: str = Field(default="HS256", description="JWT signing algorithm")
     token_expire_minutes: int = Field(default=30, description="Token expiration in minutes")
     refresh_token_expire_days: int = Field(default=7, description="Refresh token expiration in days")
-
+    
     # OAuth2 configuration
     oauth2_client_id: Optional[str] = Field(None, description="OAuth2 client ID")
     oauth2_client_secret: Optional[str] = Field(None, description="OAuth2 client secret")
@@ -29,12 +29,12 @@ class AuthConfig(BaseModel):
         default_factory=lambda: ["openid", "profile", "email"],
         description="OAuth2 requested scopes"
     )
-
+    
     # Healthcare-specific settings
     require_mfa: bool = Field(default=False, description="Require multi-factor authentication")
     max_session_duration_hours: int = Field(default=8, description="Maximum session duration")
     audit_all_access: bool = Field(default=True, description="Audit all authentication events")
-
+    
     # Security settings
     allowed_algorithms: list[str] = Field(
         default_factory=lambda: ["HS256", "RS256"],
@@ -50,18 +50,18 @@ class TokenData(BaseModel):
     user_id: str = Field(..., description="Unique user identifier")
     role: str = Field(..., description="User role in healthcare system")
     permissions: list[str] = Field(..., description="List of granted permissions")
-
+    
     # Standard JWT claims
     issued_at: datetime = Field(..., description="Token issuance timestamp")
     expires_at: datetime = Field(..., description="Token expiration timestamp")
     not_before: Optional[datetime] = Field(None, description="Token not valid before")
-
+    
     # Healthcare-specific claims
     organization: Optional[str] = Field(None, description="Healthcare organization")
     department: Optional[str] = Field(None, description="Department within organization")
     security_level: str = Field(default="medium", description="Security clearance level")
     session_id: Optional[str] = Field(None, description="Associated session identifier")
-
+    
     # Audit and compliance
     issuer: str = Field(default="hacs-auth", description="Token issuer")
     audience: list[str] = Field(default_factory=list, description="Intended token audience")
@@ -70,11 +70,11 @@ class TokenData(BaseModel):
 
 class AuthError(Exception):
     """Authentication and authorization errors."""
-
+    
     def __init__(self, message: str, error_code: Optional[str] = None, details: Optional[dict[str, Any]] = None):
         """
         Initialize authentication error.
-
+        
         Args:
             message: Human-readable error message
             error_code: Machine-readable error code
@@ -89,7 +89,7 @@ class AuthError(Exception):
 class AuthManager:
     """
     Manages authentication and authorization for healthcare systems.
-
+    
     Provides comprehensive JWT token management with healthcare-specific
     claims, OAuth2 integration, and security features required for
     healthcare AI agent systems.
@@ -98,7 +98,7 @@ class AuthManager:
     def __init__(self, config: Optional[AuthConfig] = None):
         """
         Initialize authentication manager.
-
+        
         Args:
             config: Authentication configuration, uses environment defaults if None
         """
@@ -114,7 +114,7 @@ class AuthManager:
         if not jwt_secret:
             from .security import SecureSecretsManager
             secrets_manager = SecureSecretsManager()
-
+            
             # Check if we have a stored secret
             if secrets_manager.secret_exists("jwt_secret"):
                 jwt_secret = secrets_manager.get_secret("jwt_secret")
@@ -123,7 +123,7 @@ class AuthManager:
                 jwt_secret = secrets_manager.generate_jwt_secret()
                 secrets_manager.store_secret("jwt_secret", jwt_secret)
                 print("🔒 Generated new secure JWT secret and stored safely")
-
+        
         return AuthConfig(
             jwt_secret=jwt_secret,
             jwt_algorithm=os.getenv("HACS_JWT_ALGORITHM", "HS256"),
@@ -142,10 +142,10 @@ class AuthManager:
         # SECURITY: Validate JWT secret strength
         if not self.config.jwt_secret:
             raise AuthError("JWT secret is required for authentication")
-
+        
         if len(self.config.jwt_secret) < 32:
             raise AuthError("JWT secret must be at least 32 characters for security")
-
+        
         # SECURITY: Reject known weak secrets
         weak_secrets = [
             "dev-secret-change-in-production",
@@ -156,30 +156,30 @@ class AuthManager:
         ]
         if self.config.jwt_secret in weak_secrets:
             raise AuthError("Weak or default JWT secret detected - use secure generated secret")
-
+        
         # SECURITY: Validate algorithm
         if self.config.jwt_algorithm not in self.config.allowed_algorithms:
             raise AuthError(f"JWT algorithm {self.config.jwt_algorithm} not in allowed list")
-
+        
         # SECURITY: Validate token expiration times
         if self.config.token_expire_minutes > 60:
             raise AuthError("Token expiration too long - maximum 60 minutes for security")
-
+        
         if self.config.token_expire_minutes < 5:
             raise AuthError("Token expiration too short - minimum 5 minutes for usability")
-
+        
         # SECURITY: Validate session duration
         if self.config.max_session_duration_hours > 24:
             raise AuthError("Session duration too long - maximum 24 hours")
-
+        
         # SECURITY: Production environment checks
         if os.getenv("HACS_ENV") == "production":
             if not self.config.require_https:
                 raise AuthError("HTTPS is required in production environment")
-
+            
             if not self.config.require_mfa:
                 raise AuthError("Multi-factor authentication is required in production")
-
+            
             if self.config.token_expire_minutes > 30:
                 raise AuthError("Token expiration must be ≤30 minutes in production")
 
@@ -196,23 +196,23 @@ class AuthManager:
     ) -> str:
         """
         Create a JWT access token with healthcare claims.
-
+        
         Args:
             user_id: Unique user identifier
             role: User role in healthcare system
             permissions: List of granted permissions
             organization: Healthcare organization
-            department: Department within organization
+            department: Department within organization  
             security_level: Security clearance level
             session_id: Associated session identifier
             audience: Intended token audience
-
+            
         Returns:
             Encoded JWT token string
         """
         now = datetime.now(timezone.utc)
         expire = now + timedelta(minutes=self.config.token_expire_minutes)
-
+        
         # Standard JWT claims
         payload = {
             "iss": "hacs-auth",  # Issuer
@@ -223,14 +223,14 @@ class AuthManager:
             "nbf": now.timestamp(),           # Not before
             "jti": f"jwt_{user_id}_{int(now.timestamp())}",  # JWT ID
         }
-
+        
         # Healthcare-specific claims
         payload.update({
             "role": role,
             "permissions": permissions,
             "security_level": security_level,
         })
-
+        
         # Optional claims
         if organization:
             payload["organization"] = organization
@@ -250,13 +250,13 @@ class AuthManager:
     def verify_token(self, token: str) -> TokenData:
         """
         Verify and decode a JWT token.
-
+        
         Args:
             token: JWT token string to verify
-
+            
         Returns:
             Decoded token data with healthcare claims
-
+            
         Raises:
             AuthError: If token is invalid, expired, or malformed
         """
@@ -321,17 +321,17 @@ class AuthManager:
     def create_refresh_token(self, user_id: str, session_id: Optional[str] = None) -> str:
         """
         Create a refresh token for token renewal.
-
+        
         Args:
             user_id: User identifier
             session_id: Associated session identifier
-
+            
         Returns:
             Refresh token string
         """
         now = datetime.now(timezone.utc)
         expire = now + timedelta(days=self.config.refresh_token_expire_days)
-
+        
         payload = {
             "iss": "hacs-auth",
             "sub": user_id,
@@ -341,10 +341,10 @@ class AuthManager:
             "token_type": "refresh",
             "jti": f"refresh_{user_id}_{int(now.timestamp())}",
         }
-
+        
         if session_id:
             payload["session_id"] = session_id
-
+            
         # SECURITY: Enhanced refresh token encoding
         return jwt.encode(
             payload,
@@ -356,13 +356,13 @@ class AuthManager:
     def verify_refresh_token(self, refresh_token: str) -> str:
         """
         Verify refresh token and extract user ID.
-
+        
         Args:
             refresh_token: Refresh token to verify
-
+            
         Returns:
             User ID from refresh token
-
+            
         Raises:
             AuthError: If refresh token is invalid
         """
@@ -373,16 +373,16 @@ class AuthManager:
                 algorithms=self.config.allowed_algorithms,
                 audience=["hacs-refresh"]
             )
-
+            
             if payload.get("token_type") != "refresh":
                 raise AuthError("Invalid refresh token type", "INVALID_REFRESH_TYPE")
-
+                
             user_id = payload.get("sub")
             if not user_id:
                 raise AuthError("Invalid refresh token: missing user ID", "MISSING_USER_ID")
-
+                
             return user_id
-
+            
         except jwt.ExpiredSignatureError as e:
             raise AuthError("Refresh token has expired", "REFRESH_EXPIRED") from e
         except jwt.InvalidTokenError as e:
@@ -391,45 +391,45 @@ class AuthManager:
     def has_permission(self, token_data: TokenData, required_permission: str) -> bool:
         """
         Check if token has required permission.
-
+        
         Args:
             token_data: Decoded token data
             required_permission: Permission to check (format: "action:resource")
-
+            
         Returns:
             True if token has the permission
         """
         if not token_data.permissions:
             return False
-
+            
         required_permission = required_permission.lower().strip()
-
+        
         # Check exact permission
         if required_permission in token_data.permissions:
             return True
-
+        
         # Check for wildcard permissions
         if ":" in required_permission:
             action, resource = required_permission.split(":", 1)
-
+            
             # Check for action:* (all resources for this action)
             if f"{action}:*" in token_data.permissions:
                 return True
-
+                
             # Check for admin permissions
             if "admin:*" in token_data.permissions:
                 return True
-
+        
         return False
 
     def require_permission(self, token_data: TokenData, required_permission: str) -> None:
         """
         Require specific permission or raise error.
-
+        
         Args:
             token_data: Decoded token data
             required_permission: Permission that is required
-
+            
         Raises:
             AuthError: If permission is not granted
         """
@@ -443,10 +443,10 @@ class AuthManager:
     def is_token_expired(self, token_data: TokenData) -> bool:
         """
         Check if token is expired.
-
-        Args:
+        
+        Args:  
             token_data: Token data to check
-
+            
         Returns:
             True if token is expired
         """
@@ -455,10 +455,10 @@ class AuthManager:
     def get_token_ttl(self, token_data: TokenData) -> int:
         """
         Get time-to-live for token in seconds.
-
+        
         Args:
             token_data: Token data to check
-
+            
         Returns:
             Seconds until token expires (0 if expired)
         """
@@ -470,22 +470,22 @@ class AuthManager:
     def validate_security_level(self, token_data: TokenData, required_level: str) -> bool:
         """
         Validate token security level meets requirement.
-
+        
         Args:
             token_data: Token data to check
             required_level: Required security level (low/medium/high/critical)
-
+            
         Returns:
             True if security level is sufficient
         """
         level_hierarchy = {
             "low": 1,
-            "medium": 2,
+            "medium": 2, 
             "high": 3,
             "critical": 4
         }
-
+        
         token_level = level_hierarchy.get(token_data.security_level, 0)
         required_level_num = level_hierarchy.get(required_level, 0)
-
+        
         return token_level >= required_level_num

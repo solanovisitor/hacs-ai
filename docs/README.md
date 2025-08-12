@@ -1,14 +1,14 @@
 # HACS Documentation
 
-Welcome to the **Healthcare Agent Communication Standard (HACS)** documentation. HACS is a modular framework of Python packages for building healthcare AI applications with structured memory, clinical reasoning, and FHIR compliance.
+Welcome to the **Healthcare Agent Communication Standard (HACS)** documentation. HACS is a production-ready platform for deploying healthcare AI agents with structured memory, clinical reasoning, and FHIR compliance.
 
 ## 🚀 **Getting Started**
 
-Start here to get HACS integrated into your healthcare AI projects:
+Start here to get HACS running in your healthcare organization:
 
-- **[Quick Start Guide](quick-start.md)** - Install HACS packages and build your first agent
+- **[Quick Start Guide](quick-start.md)** - Get HACS deployed in 5 minutes
 - **[Basic Usage](basic-usage.md)** - Core patterns and healthcare workflows
-- **[Integration Guide](integrations.md)** - Connect to AI frameworks and external systems
+- **[Integration Guide](integrations.md)** - Connect to external systems
 
 ## 🏥 **Healthcare Focus**
 
@@ -22,42 +22,25 @@ HACS is purpose-built for healthcare AI:
 ## 🛠️ **Technical Documentation**
 
 ### Core System
-- **[Hacs Tools](healthcare-tools.md)** - Complete guide to 42+ Hacs Tools
-- **[Testing Guide](testing.md)** - Testing and validation procedures
-- **[CLI Reference](cli.md)** - Command-line tools and utilities
+- **[MCP Tools Reference](mcp-tools.md)** - Complete guide to 25+ healthcare tools
+- **[Database Setup](database-migration.md)** - PostgreSQL + pgvector configuration
+- **[Deployment Guide](deployment.md)** - Production deployment options
 
 ### Implementation Guides
-- **[Integration Guide](integrations.md)** - Connect to external systems (see also: [LangChain Examples](../packages/hacs-utils/src/hacs_utils/integrations/langchain/README.md))
-- **[Branch Management](branch-management.md)** - Development workflow
-- **[Phase 3 Testing Summary](phase3-testing-summary.md)** - Comprehensive testing results
-
-### Architecture & Design
-- **[ADR-001: SOLID Principles](architecture/ADR-001-SOLID-principles-compliance.md)** - Design principles
-- **[ADR-002: Actor-Based Security](architecture/ADR-002-actor-based-security.md)** - Security model
-- **[ADR-003: Protocol-First Design](architecture/ADR-003-protocol-first-design.md)** - Protocol design
+- **[PGVector Integration](pgvector-integration.md)** - Vector storage for clinical data
+- **[CLI Reference](cli.md)** - Command-line tools and utilities
 
 ## 🏗️ **Architecture Overview**
 
-HACS is structured as **core packages** with **optional service add-ons**:
+HACS consists of three main components:
 
-### **🧬 Core HACS Framework**
-1. **`hacs-core`** - Protocols, interfaces, and core abstractions → [README](../packages/hacs-core/README.md)
-2. **`hacs-models`** - FHIR-compliant healthcare data models → [README](../packages/hacs-models/README.md)
-3. **`hacs-registry`** - Resource registration and lifecycle management → [README](../packages/hacs-registry/README.md)
-4. **`hacs-persistence`** - Data storage abstractions and repositories → [README](../packages/hacs-persistence/README.md)
-5. **`hacs-tools`** - Hacs Tools for AI workflows → [README](../packages/hacs-tools/README.md)
-6. **`hacs-utils`** - Integrations and utilities for AI frameworks → [README](../packages/hacs-utils/README.md)
-
-### **⚡ Optional Service Add-ons**
-- **MCP Server** - Makes tools accessible via JSON-RPC → [Basic Usage Guide](basic-usage.md#mcp-server)
-- **PostgreSQL + pgvector** - Convenient persistence implementation → [Persistence Guide](../packages/hacs-persistence/README.md)
-- **LangGraph Agent** - Ready-to-use AI agent for development → [Developer Agent](../examples/hacs_developer_agent/README.md)
-
-> **💡 Key Distinction**: The HACS **packages** are the framework - you can use them in any Python application. The **services** are optional convenience tools that make development easier but aren't required.
+1. **MCP Server** (Port 8000) - Provides 25+ healthcare tools via JSON-RPC
+2. **LangGraph Agent** (Port 8001) - AI agent with memory and reasoning
+3. **PostgreSQL + pgvector** (Port 5432) - Clinical data and vector storage
 
 ## 📊 **Key Features**
 
-- **42+ Hacs Tools**: Specialized tools for clinical workflows
+- **25+ Healthcare Tools**: Specialized tools for clinical workflows
 - **Production Ready**: Sub-100ms response times for healthcare operations
 - **FHIR Compliant**: Standards-based healthcare data models
 - **Secure**: Actor-based permissions with comprehensive audit trails
@@ -65,13 +48,12 @@ HACS is structured as **core packages** with **optional service add-ons**:
 
 ## 🎯 **Use Cases**
 
-HACS packages enable developers to build:
+HACS enables healthcare organizations to:
 
-- **Healthcare AI Agents**: LangChain/LangGraph agents with medical knowledge
-- **Clinical Workflows**: CrewAI multi-agent systems for healthcare teams
-- **FHIR Applications**: Standards-compliant healthcare data processing
-- **Medical Chatbots**: Context-aware AI with structured clinical memory
-- **Research Tools**: Evidence-based reasoning with confidence scoring
+- **Clinical Documentation**: Structure and store patient encounters
+- **Evidence-Based Reasoning**: Track clinical guidelines and research
+- **Memory Management**: Build AI agents with clinical context
+- **Workflow Automation**: Standardize healthcare AI communications
 
 ## 🤝 **Contributing**
 

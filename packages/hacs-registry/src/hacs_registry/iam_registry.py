@@ -22,15 +22,7 @@ from contextlib import contextmanager
 
 from pydantic import Field, BaseModel
 from hacs_core import BaseResource, HealthcareDomain, AgentRole
-try:
-    from hacs_models import Patient, Organization
-except ImportError:
-    try:
-        from hacs_models import Patient
-        Organization = None
-    except ImportError:
-        from hacs_core import Patient
-        Organization = None
+from hacs_core.models import Patient, Organization
 
 from .resource_registry import get_global_registry, RegisteredResource, ResourceCategory
 
@@ -41,7 +33,7 @@ class AccessLevel(str, Enum):
     """Levels of access to resources."""
     NONE = "none"           # No access
     READ = "read"           # View only
-    WRITE = "write"         # Create/Update
+    WRITE = "write"         # Create/Update  
     DELETE = "delete"       # Delete operations
     ADMIN = "admin"         # Full administrative access
     EMERGENCY = "emergency" # Break-glass emergency access
@@ -105,20 +97,20 @@ class Permission:
     access_level: AccessLevel
     scope: PermissionScope
     scope_value: Optional[str] = None  # Specific org/department/patient ID
-
+    
     # Time constraints
     valid_from: Optional[datetime] = None
     valid_until: Optional[datetime] = None
-
+    
     # Conditions
     conditions: Dict[str, Any] = field(default_factory=dict)
     requires_supervision: bool = False
     supervisor_id: Optional[str] = None
-
+    
     # Compliance
     compliance_rules: List[ComplianceRule] = field(default_factory=list)
     justification: Optional[str] = None
-
+    
     # Metadata
     granted_by: str = ""
     granted_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
@@ -146,43 +138,43 @@ class AuditEntry:
 class PermissionMatrix(BaseResource):
     """
     Role-based permission matrix for healthcare operations.
-
+    
     Defines standard permissions for healthcare roles with
     HIPAA compliance and clinical workflow considerations.
     """
-
+    
     resource_type: str = Field(default="PermissionMatrix", description="Resource type")
-
+    
     # Matrix metadata
     matrix_id: str = Field(description="Unique matrix identifier")
     name: str = Field(description="Matrix name")
     version: str = Field(description="Matrix version")
     domain: HealthcareDomain = Field(description="Healthcare domain")
-
+    
     # Role-based permissions
     role_permissions: Dict[str, Dict[str, AccessLevel]] = Field(
         default_factory=dict,
         description="Mapping of roles to resource permissions"
     )
-
+    
     # Resource categories and their default access patterns
     resource_access_patterns: Dict[ResourceCategory, Dict[str, AccessLevel]] = Field(
         default_factory=dict,
         description="Default access patterns by resource category"
     )
-
+    
     # Compliance requirements
     required_compliance: List[ComplianceRule] = Field(
         default_factory=list,
         description="Required compliance rules for this matrix"
     )
-
+    
     # Emergency access rules
     emergency_access_roles: List[str] = Field(
         default_factory=list,
         description="Roles that can request emergency access"
     )
-
+    
     # Supervision requirements
     supervision_matrix: Dict[str, List[str]] = Field(
         default_factory=dict,
@@ -193,7 +185,7 @@ class PermissionMatrix(BaseResource):
 class HACSIAMRegistry:
     """
     Identity and Access Management Registry for HACS.
-
+    
     Provides healthcare-compliant access control with:
     - Role-based access control (RBAC)
     - HIPAA minimum necessary principle
@@ -201,17 +193,17 @@ class HACSIAMRegistry:
     - Emergency access procedures
     - Time-based access controls
     """
-
+    
     def __init__(self):
         self._actors: Dict[str, ActorIdentity] = {}
         self._permissions: Dict[str, Permission] = {}
         self._permission_matrices: Dict[str, PermissionMatrix] = {}
         self._audit_log: List[AuditEntry] = []
         self._active_sessions: Dict[str, Dict[str, Any]] = {}
-
+        
         # Initialize default healthcare permission matrix
         self._initialize_healthcare_matrix()
-
+    
     def _initialize_healthcare_matrix(self):
         """Initialize standard healthcare permission matrix."""
         # Standard clinical roles and their permissions
@@ -285,23 +277,23 @@ class HACSIAMRegistry:
                 "nurse_practitioner": ["physician"]
             }
         )
-
+        
         self._permission_matrices["clinical-standard-v1"] = clinical_matrix
-
+    
     def register_actor(self, actor: ActorIdentity) -> str:
         """Register an actor in the IAM system."""
         self._actors[actor.actor_id] = actor
-
+        
         # Audit the registration
         self._audit(
             AuditEventType.ACCESS_GRANTED,
             actor.actor_id,
             details={"action": "actor_registration", "actor_type": actor.actor_type}
         )
-
+        
         logger.info(f"Registered actor: {actor.actor_id} ({actor.actor_type})")
         return actor.actor_id
-
+    
     def grant_permission(
         self,
         actor_id: str,
@@ -313,7 +305,7 @@ class HACSIAMRegistry:
     ) -> Permission:
         """Grant a permission to an actor."""
         permission_id = f"perm-{actor_id}-{len(self._permissions)}"
-
+        
         permission = Permission(
             permission_id=permission_id,
             actor_id=actor_id,
@@ -323,9 +315,9 @@ class HACSIAMRegistry:
             granted_by=granted_by,
             **kwargs
         )
-
+        
         self._permissions[permission_id] = permission
-
+        
         # Audit the permission grant
         self._audit(
             AuditEventType.PERMISSION_MODIFIED,
@@ -338,10 +330,10 @@ class HACSIAMRegistry:
                 "granted_by": granted_by
             }
         )
-
+        
         logger.info(f"Granted permission {permission_id} to {actor_id}")
         return permission
-
+    
     def check_access(
         self,
         actor_id: str,
@@ -351,11 +343,11 @@ class HACSIAMRegistry:
     ) -> bool:
         """
         Check if an actor has access to a resource.
-
+        
         Implements HIPAA minimum necessary principle and RBAC.
         """
         context = context or {}
-
+        
         # Get actor
         actor = self._actors.get(actor_id)
         if not actor or not actor.active:
@@ -368,7 +360,7 @@ class HACSIAMRegistry:
                 details={"reason": "actor_not_found_or_inactive"}
             )
             return False
-
+        
         # Check direct permissions
         for permission in self._permissions.values():
             if permission.actor_id == actor_id and self._matches_pattern(resource_id, permission.resource_pattern):
@@ -377,7 +369,7 @@ class HACSIAMRegistry:
                         # Update usage tracking
                         permission.last_used = datetime.now(timezone.utc)
                         permission.use_count += 1
-
+                        
                         self._audit(
                             AuditEventType.ACCESS_GRANTED,
                             actor_id,
@@ -389,7 +381,7 @@ class HACSIAMRegistry:
                             }
                         )
                         return True
-
+        
         # Check role-based permissions through matrices
         for matrix in self._permission_matrices.values():
             if self._check_matrix_access(actor, resource_id, access_level, matrix, context):
@@ -404,7 +396,7 @@ class HACSIAMRegistry:
                     }
                 )
                 return True
-
+        
         # Access denied
         self._audit(
             AuditEventType.ACCESS_DENIED,
@@ -415,7 +407,7 @@ class HACSIAMRegistry:
             details={"reason": "insufficient_permissions"}
         )
         return False
-
+    
     def request_emergency_access(
         self,
         actor_id: str,
@@ -427,15 +419,15 @@ class HACSIAMRegistry:
         actor = self._actors.get(actor_id)
         if not actor:
             return False
-
+        
         # Check if actor can request emergency access
         can_emergency = False
         for matrix in self._permission_matrices.values():
-            if any(role in matrix.emergency_access_roles
+            if any(role in matrix.emergency_access_roles 
                    for role in actor.credentials):
                 can_emergency = True
                 break
-
+        
         if not can_emergency:
             self._audit(
                 AuditEventType.ACCESS_DENIED,
@@ -448,7 +440,7 @@ class HACSIAMRegistry:
                 }
             )
             return False
-
+        
         # Grant temporary emergency permission
         emergency_permission = self.grant_permission(
             actor_id=actor_id,
@@ -463,7 +455,7 @@ class HACSIAMRegistry:
                 ComplianceRule.AUDIT_ALL_ACCESS
             ]
         )
-
+        
         self._audit(
             AuditEventType.EMERGENCY_ACCESS,
             actor_id,
@@ -477,10 +469,10 @@ class HACSIAMRegistry:
             },
             compliance_flags=["EMERGENCY_ACCESS", "REQUIRES_REVIEW"]
         )
-
+        
         logger.warning(f"Emergency access granted to {actor_id} for {resource_id}: {justification}")
         return True
-
+    
     def delegate_permission(
         self,
         delegator_id: str,
@@ -493,7 +485,7 @@ class HACSIAMRegistry:
         original_permission = self._permissions.get(permission_id)
         if not original_permission or original_permission.actor_id != delegator_id:
             return None
-
+        
         # Create delegated permission
         delegated_permission = Permission(
             permission_id=f"delegated-{permission_id}-{len(self._permissions)}",
@@ -510,9 +502,9 @@ class HACSIAMRegistry:
             justification=reason,
             granted_by=delegator_id
         )
-
+        
         self._permissions[delegated_permission.permission_id] = delegated_permission
-
+        
         self._audit(
             AuditEventType.DELEGATION_GRANTED,
             delegator_id,
@@ -524,10 +516,10 @@ class HACSIAMRegistry:
                 "reason": reason
             }
         )
-
+        
         logger.info(f"Permission {permission_id} delegated from {delegator_id} to {delegatee_id}")
         return delegated_permission
-
+    
     def get_audit_trail(
         self,
         actor_id: Optional[str] = None,
@@ -538,7 +530,7 @@ class HACSIAMRegistry:
     ) -> List[AuditEntry]:
         """Get filtered audit trail."""
         filtered_entries = []
-
+        
         for entry in self._audit_log:
             # Apply filters
             if actor_id and entry.actor_id != actor_id:
@@ -551,17 +543,17 @@ class HACSIAMRegistry:
                 continue
             if event_types and entry.event_type not in event_types:
                 continue
-
+            
             filtered_entries.append(entry)
-
+        
         return sorted(filtered_entries, key=lambda x: x.timestamp, reverse=True)
-
+    
     def check_compliance(self, actor_id: str) -> Dict[str, Any]:
         """Check compliance status for an actor."""
         actor = self._actors.get(actor_id)
         if not actor:
             return {"error": "Actor not found"}
-
+        
         compliance_report = {
             "actor_id": actor_id,
             "compliance_status": "compliant",
@@ -569,13 +561,13 @@ class HACSIAMRegistry:
             "recommendations": [],
             "last_check": datetime.now(timezone.utc).isoformat()
         }
-
+        
         # Check for compliance violations
         recent_entries = self.get_audit_trail(
             actor_id=actor_id,
             start_time=datetime.now(timezone.utc) - timedelta(days=30)
         )
-
+        
         # Look for patterns that might indicate violations
         emergency_accesses = [e for e in recent_entries if e.event_type == AuditEventType.EMERGENCY_ACCESS]
         if len(emergency_accesses) > 5:  # Too many emergency accesses
@@ -585,7 +577,7 @@ class HACSIAMRegistry:
                 "severity": "medium"
             })
             compliance_report["compliance_status"] = "warning"
-
+        
         failed_accesses = [e for e in recent_entries if not e.success]
         if len(failed_accesses) > 20:  # Many failed access attempts
             compliance_report["violations"].append({
@@ -594,9 +586,9 @@ class HACSIAMRegistry:
                 "severity": "high"
             })
             compliance_report["compliance_status"] = "violation"
-
+        
         return compliance_report
-
+    
     def _matches_pattern(self, resource_id: str, pattern: str) -> bool:
         """Check if resource ID matches permission pattern."""
         if pattern == "*":
@@ -607,28 +599,28 @@ class HACSIAMRegistry:
         if pattern.endswith("*") and resource_id.startswith(pattern[:-1]):
             return True
         return False
-
+    
     def _check_permission_validity(self, permission: Permission, context: Dict[str, Any]) -> bool:
         """Check if permission is currently valid."""
         now = datetime.now(timezone.utc)
-
+        
         # Check time constraints
         if permission.valid_from and now < permission.valid_from:
             return False
         if permission.valid_until and now > permission.valid_until:
             return False
-
+        
         # Check supervision requirements
         if permission.requires_supervision and not context.get("supervisor_approved"):
             return False
-
+        
         # Check conditions
         for condition, required_value in permission.conditions.items():
             if context.get(condition) != required_value:
                 return False
-
+        
         return True
-
+    
     def _access_level_sufficient(self, granted: AccessLevel, required: AccessLevel) -> bool:
         """Check if granted access level is sufficient for required level."""
         access_hierarchy = {
@@ -639,9 +631,9 @@ class HACSIAMRegistry:
             AccessLevel.ADMIN: 4,
             AccessLevel.EMERGENCY: 5
         }
-
+        
         return access_hierarchy.get(granted, 0) >= access_hierarchy.get(required, 0)
-
+    
     def _check_matrix_access(
         self,
         actor: ActorIdentity,
@@ -661,9 +653,9 @@ class HACSIAMRegistry:
                     if self._matches_pattern(resource_id, resource_pattern):
                         if self._access_level_sufficient(granted_level, access_level):
                             return True
-
+        
         return False
-
+    
     def _audit(
         self,
         event_type: AuditEventType,
@@ -686,9 +678,9 @@ class HACSIAMRegistry:
             details=details or {},
             compliance_flags=compliance_flags or []
         )
-
+        
         self._audit_log.append(audit_entry)
-
+        
         # Log high-priority events
         if event_type in [AuditEventType.EMERGENCY_ACCESS, AuditEventType.COMPLIANCE_VIOLATION]:
             logger.warning(f"Critical IAM event: {event_type.value} for {actor_id}")
@@ -711,7 +703,7 @@ def iam_context(actor_id: str, session_context: Optional[Dict[str, Any]] = None)
     """Context manager for IAM-controlled operations."""
     iam = get_global_iam_registry()
     session_id = f"session-{actor_id}-{datetime.now().timestamp()}"
-
+    
     try:
         # Start session
         iam._active_sessions[session_id] = {
@@ -719,16 +711,16 @@ def iam_context(actor_id: str, session_context: Optional[Dict[str, Any]] = None)
             "start_time": datetime.now(timezone.utc),
             "context": session_context or {}
         }
-
+        
         yield iam
-
+        
     finally:
         # End session
         if session_id in iam._active_sessions:
             session_data = iam._active_sessions[session_id]
             session_data["end_time"] = datetime.now(timezone.utc)
             session_data["duration"] = (session_data["end_time"] - session_data["start_time"]).total_seconds()
-
+            
             # Audit session end
             iam._audit(
                 AuditEventType.ACCESS_GRANTED,
@@ -739,7 +731,7 @@ def iam_context(actor_id: str, session_context: Optional[Dict[str, Any]] = None)
                     "duration_seconds": session_data["duration"]
                 }
             )
-
+            
             del iam._active_sessions[session_id]
 
 
@@ -751,14 +743,14 @@ def require_permission(resource_pattern: str, access_level: AccessLevel):
             actor_id = kwargs.get("actor_id") or kwargs.get("context", {}).get("actor_id")
             if not actor_id:
                 raise PermissionError("Actor ID required for permission check")
-
+            
             # Extract resource_id from args or kwargs
             resource_id = kwargs.get("resource_id", resource_pattern)
-
+            
             iam = get_global_iam_registry()
             if not iam.check_access(actor_id, resource_id, access_level):
                 raise PermissionError(f"Access denied: {actor_id} -> {resource_id} ({access_level.value})")
-
+            
             return func(*args, **kwargs)
         return wrapper
     return decorator

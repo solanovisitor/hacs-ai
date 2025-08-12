@@ -8,15 +8,14 @@ services:
     environment:
       POSTGRES_DB: hacs
       POSTGRES_USER: hacs
-      DB_PASSWORD: ${DB_PASSWORD:-hacs_dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hacs_dev}
       # Enable pgvector extension
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
     ports:
       - "5432:5432"
     volumes:
       - hacs_postgres_data:/var/lib/postgresql/data
-      # Use example init SQL to seed schemas for local dev
-      - ./examples/hacs_developer_agent/scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U hacs -d hacs"]
       interval: 10s
@@ -59,7 +58,7 @@ services:
       - "8000:8000"
     environment:
       # Database Configuration
-      - DATABASE_URL=${DATABASE_URL:-postgresql://hacs:${DB_PASSWORD:-hacs_dev}@postgres:5432/hacs}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://hacs:${POSTGRES_PASSWORD:-hacs_dev}@postgres:5432/hacs}
       
       # API Keys for LLM providers
       - OPENAI_API_KEY=${OPENAI_API_KEY}
@@ -96,7 +95,7 @@ services:
       dockerfile: Dockerfile
     container_name: hacs-migration
     environment:
-      - DATABASE_URL=${DATABASE_URL:-postgresql://hacs:${DB_PASSWORD:-hacs_dev}@postgres:5432/hacs}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://hacs:${POSTGRES_PASSWORD:-hacs_dev}@postgres:5432/hacs}
       - PYTHONPATH=/app/packages/hacs-core/src:/app/packages/hacs-persistence/src:/app/packages/hacs-utils/src
     command: ["python", "-c", "from hacs_persistence.migrations import run_migrations; run_migrations()"]
     depends_on:
@@ -115,7 +114,7 @@ services:
     container_name: hacs-test-runner
     environment:
       - MCP_SERVER_URL=http://hacs-mcp-server:8000
-      - DATABASE_URL=${DATABASE_URL:-postgresql://hacs:${DB_PASSWORD:-hacs_dev}@postgres:5432/hacs}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://hacs:${POSTGRES_PASSWORD:-hacs_dev}@postgres:5432/hacs}
       - QDRANT_URL=${QDRANT_URL:-http://qdrant:6333}
       - PYTHONPATH=/app/packages/hacs-core/src:/app/packages/hacs-tools/src:/app/packages/hacs-utils/src:/app/packages/hacs-persistence/src:/app/packages/hacs-registry/src
     command: ["python", "-m", "pytest", "tests/test_hacs_tools_comprehensive.py", "--mcp-integration", "-v", "--tb=short"]
@@ -131,42 +130,6 @@ services:
 
   # Note: LangGraph agents are now run locally with UV
   # See examples/*/README.md for instructions on running agents locally
-
-  # Test runner service for comprehensive testing
-  test-runner:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    environment:
-      - DATABASE_URL=postgresql://hacs:${DB_PASSWORD:-hacs_dev}@postgres:5432/hacs
-      - QDRANT_URL=http://qdrant:6333
-      - TEST_DATABASE_URL=postgresql://hacs:${DB_PASSWORD:-hacs_dev}@postgres:5432/hacs_test
-      - PYTHONPATH=/app/packages/hacs-models/src:/app/packages/hacs-core/src:/app/packages/hacs-tools/src:/app/packages/hacs-auth/src:/app/packages/hacs-persistence/src:/app/packages/hacs-registry/src:/app/packages/hacs-utils/src:/app/packages/hacs-infrastructure/src
-    volumes:
-      - .:/app
-    working_dir: /app
-    command: >
-      sh -c "
-        echo 'Installing UV package manager...' &&
-        curl -LsSf https://astral.sh/uv/install.sh | sh &&
-        export PATH=\"/root/.cargo/bin:\$PATH\" &&
-        echo 'Installing test dependencies with UV...' &&
-        uv pip install pytest pytest-asyncio &&
-        echo 'Waiting for services to be ready...' &&
-        sleep 15 &&
-        echo 'Running Phase 2 integration tests...' &&
-        python -m pytest tests/test_phase2_integration.py -v --tb=short &&
-        echo 'Running essential CI tests...' &&
-        python -m pytest tests/test_ci_essential.py -v --tb=short &&
-        echo 'All tests completed successfully!'
-      "
-    depends_on:
-      - postgres
-      - qdrant
-    networks:
-      - hacs-network
-    profiles:
-      - test
 
 volumes:
   hacs_postgres_data:

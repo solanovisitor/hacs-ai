@@ -5,7 +5,7 @@ Test suite for Document and related components.
 import pytest
 from datetime import datetime, timezone
 
-from hacs_models import (
+from hacs_core.models import (
     Document,
     DocumentStatus,
     DocumentType,
@@ -32,7 +32,7 @@ class TestDocument:
             subject_id="patient-001",
             subject_name="John Doe"
         )
-
+        
         assert doc.document_type == DocumentType.PROGRESS_NOTE
         assert doc.title == "Test Progress Note"
         assert doc.subject_id == "patient-001"
@@ -49,13 +49,13 @@ class TestDocument:
             title="Test 1",
             subject_id="patient-001"
         )
-
+        
         doc2 = Document(
             document_type=DocumentType.PROGRESS_NOTE,
             title="Test 2",
             subject_id="patient-001"
         )
-
+        
         assert doc1.document_identifier != doc2.document_identifier
         assert doc1.document_identifier.startswith("doc-")
         assert doc2.document_identifier.startswith("doc-")
@@ -67,14 +67,14 @@ class TestDocument:
             title="Test Document",
             subject_id="patient-001"
         )
-
+        
         doc.add_section(
             title="Assessment",
             text="Patient is stable and improving.",
             code="assessment",
             metadata={"priority": "high"}
         )
-
+        
         assert len(doc.sections) == 1
         section = doc.sections[0]
         assert section.title == "Assessment"
@@ -89,14 +89,14 @@ class TestDocument:
             title="Test Document",
             subject_id="patient-001"
         )
-
+        
         doc.add_author(
             name="Dr. Jane Smith",
             role="attending-physician",
             organization="General Hospital",
             specialty="Internal Medicine"
         )
-
+        
         assert len(doc.authors) == 1
         author = doc.authors[0]
         assert author.name == "Dr. Jane Smith"
@@ -111,7 +111,7 @@ class TestDocument:
             title="Test Document",
             subject_id="patient-001"
         )
-
+        
         doc.add_attester(
             mode="professional",
             party_name="Dr. John Doe",
@@ -119,7 +119,7 @@ class TestDocument:
             organization="General Hospital",
             signature="digital-signature-hash"
         )
-
+        
         assert len(doc.attesters) == 1
         attester = doc.attesters[0]
         assert attester.mode == "professional"
@@ -136,13 +136,13 @@ class TestDocument:
             subject_id="patient-001",
             subject_name="John Doe"
         )
-
+        
         doc.add_author("Dr. Jane Smith")
         doc.add_section("Assessment", "Patient is stable.")
         doc.add_section("Plan", "Continue current treatment.")
-
+        
         full_text = doc.get_full_text()
-
+        
         assert "Document: Progress Note" in full_text
         assert "Subject: John Doe" in full_text
         assert "Authors: Dr. Jane Smith" in full_text
@@ -158,14 +158,14 @@ class TestDocument:
             title="Test Document",
             subject_id="patient-001"
         )
-
+        
         doc.add_section("Assessment", "Patient assessment")
         doc.add_section("Plan", "Treatment plan")
-
+        
         assessment = doc.get_section_by_title("Assessment")
         plan = doc.get_section_by_title("Plan")
         missing = doc.get_section_by_title("Missing")
-
+        
         assert assessment is not None
         assert assessment.title == "Assessment"
         assert plan is not None
@@ -179,15 +179,15 @@ class TestDocument:
             title="Test Document",
             subject_id="patient-001"
         )
-
+        
         doc.add_section("Assessment 1", "First assessment", code="assessment")
         doc.add_section("Assessment 2", "Second assessment", code="assessment")
         doc.add_section("Plan", "Treatment plan", code="plan")
-
+        
         assessments = doc.get_sections_by_code("assessment")
         plans = doc.get_sections_by_code("plan")
         missing = doc.get_sections_by_code("missing")
-
+        
         assert len(assessments) == 2
         assert len(plans) == 1
         assert len(missing) == 0
@@ -199,10 +199,10 @@ class TestDocument:
             title="Test Document",
             subject_id="patient-001"
         )
-
+        
         doc.add_section("Assessment", "This is a test assessment with ten words total.")
         doc.add_section("Plan", "Short plan.")
-
+        
         word_count = doc.get_word_count()
         assert word_count == 12  # 10 + 2 words
 
@@ -214,25 +214,25 @@ class TestDocument:
             subject_id="patient-001"
         )
         doc1.add_section("Assessment", "Same content")
-
+        
         doc2 = Document(
             document_type=DocumentType.PROGRESS_NOTE,
             title="Test Document",
             subject_id="patient-001"
         )
         doc2.add_section("Assessment", "Same content")
-
+        
         doc3 = Document(
             document_type=DocumentType.PROGRESS_NOTE,
             title="Test Document",
             subject_id="patient-001"
         )
         doc3.add_section("Assessment", "Different content")
-
+        
         hash1 = doc1.get_content_hash()
         hash2 = doc2.get_content_hash()
         hash3 = doc3.get_content_hash()
-
+        
         assert hash1 == hash2  # Same content, same hash
         assert hash1 != hash3  # Different content, different hash
 
@@ -248,23 +248,23 @@ class TestLangChainIntegration:
             subject_id="patient-001",
             subject_name="John Doe"
         )
-
+        
         doc.add_author("Dr. Jane Smith", role="physician")
         doc.add_section("Assessment", "Patient is stable and improving.")
         doc.add_section("Plan", "Continue current medications.")
-
+        
         langchain_doc = doc.to_langchain_document(custom_field="custom_value")
-
+        
         assert "page_content" in langchain_doc
         assert "metadata" in langchain_doc
-
+        
         content = langchain_doc["page_content"]
         metadata = langchain_doc["metadata"]
-
+        
         assert "Progress Note" in content
         assert "Assessment" in content
         assert "Patient is stable" in content
-
+        
         assert metadata["doc_id"] == doc.id
         assert metadata["document_type"] == DocumentType.PROGRESS_NOTE
         assert metadata["subject_id"] == "patient-001"
@@ -286,9 +286,9 @@ class TestLangChainIntegration:
                 "document_type": "progress-note"
             }
         }
-
+        
         doc = Document.from_langchain_document(langchain_doc)
-
+        
         assert doc.title == "Test Progress Note"
         assert doc.subject_id == "patient-001"
         assert doc.subject_name == "Jane Doe"
@@ -303,14 +303,14 @@ class TestLangChainIntegration:
             title="Progress Note",
             subject_id="patient-001"
         )
-
+        
         doc.add_section("Assessment", "Patient assessment details")
         doc.add_section("Plan", "Treatment plan details")
-
+        
         langchain_docs = doc.to_langchain_documents(split_by_section=True)
-
+        
         assert len(langchain_docs) == 2
-
+        
         # Check first section document
         doc1 = langchain_docs[0]
         assert "Assessment" in doc1["page_content"]
@@ -318,7 +318,7 @@ class TestLangChainIntegration:
         assert doc1["metadata"]["section_index"] == 0
         assert doc1["metadata"]["section_title"] == "Assessment"
         assert doc1["metadata"]["is_section"] is True
-
+        
         # Check second section document
         doc2 = langchain_docs[1]
         assert "Plan" in doc2["page_content"]
@@ -338,7 +338,7 @@ class TestDocumentSection:
             code="assessment",
             metadata={"priority": "high"}
         )
-
+        
         assert section.title == "Assessment"
         assert section.text == "Patient assessment details"
         assert section.code == "assessment"
@@ -350,19 +350,19 @@ class TestDocumentSection:
             title="Physical Exam",
             text="Overall physical examination findings"
         )
-
+        
         subsection1 = DocumentSection(
             title="Cardiovascular",
             text="Heart rate regular, no murmurs"
         )
-
+        
         subsection2 = DocumentSection(
             title="Respiratory",
             text="Lungs clear bilaterally"
         )
-
+        
         parent_section.sections = [subsection1, subsection2]
-
+        
         full_text = parent_section.get_full_text()
         assert "Overall physical examination findings" in full_text
         assert "Cardiovascular" in full_text
@@ -376,14 +376,14 @@ class TestDocumentSection:
             title="Assessment",
             text="This is a test assessment with exactly ten words."
         )
-
+        
         subsection = DocumentSection(
             title="Subsection",
             text="Additional five words here."
         )
-
+        
         section.sections = [subsection]
-
+        
         assert section.get_word_count() == 15  # 10 + 5 words
 
 
@@ -408,19 +408,19 @@ class TestDocumentValidation:
             subject_id="patient-001",
             status=DocumentStatus.FINAL
         )
-
+        
         # Add required sections
         doc.add_section("Chief Complaint", "Chest pain")
         doc.add_section("History", "Patient history")
         doc.add_section("Assessment", "Clinical assessment")
         doc.add_section("Plan", "Treatment plan")
-
+        
         # Add author and attester
         doc.add_author("Dr. Smith")
         doc.add_attester("professional", "Dr. Jones")
-
+        
         validation = doc.validate_clinical_content()
-
+        
         assert validation["valid"] is True
         assert validation["has_authors"] is True
         assert validation["has_attesters"] is True
@@ -439,7 +439,7 @@ class TestFactoryFunctions:
             primary_author="Dr. Smith",
             encounter_id="enc-001"
         )
-
+        
         assert doc.document_type == DocumentType.DISCHARGE_SUMMARY
         assert doc.subject_id == "patient-001"
         assert doc.subject_name == "John Doe"
@@ -457,7 +457,7 @@ class TestFactoryFunctions:
             author="Dr. Smith",
             note_type="daily"
         )
-
+        
         assert doc.document_type == DocumentType.PROGRESS_NOTE
         assert doc.subject_id == "patient-001"
         assert doc.subject_name == "John Doe"
@@ -475,7 +475,7 @@ class TestFactoryFunctions:
             specialty="Cardiology",
             referring_physician="Dr. Primary"
         )
-
+        
         assert doc.document_type == DocumentType.CONSULTATION_NOTE
         assert doc.subject_id == "patient-001"
         assert doc.subject_name == "John Doe"
@@ -494,7 +494,7 @@ class TestFactoryFunctions:
             author="Dr. Smith",
             summary_type="comprehensive"
         )
-
+        
         assert doc.document_type == DocumentType.CLINICAL_SUMMARY
         assert doc.subject_id == "patient-001"
         assert doc.subject_name == "John Doe"
@@ -514,7 +514,7 @@ class TestDocumentTypes:
             title="Test",
             subject_id="patient-001"
         )
-
+        
         assert doc.document_type == DocumentType.DISCHARGE_SUMMARY
         assert doc.document_type.value == "discharge-summary"
 
@@ -526,7 +526,7 @@ class TestDocumentTypes:
             subject_id="patient-001",
             status=DocumentStatus.FINAL
         )
-
+        
         assert doc.status == DocumentStatus.FINAL
         assert doc.status.value == "final"
 
@@ -538,7 +538,7 @@ class TestDocumentTypes:
             subject_id="patient-001",
             confidentiality=ConfidentialityLevel.RESTRICTED
         )
-
+        
         assert doc.confidentiality == ConfidentialityLevel.RESTRICTED
         assert doc.confidentiality.value == "R"
 
@@ -555,7 +555,7 @@ class TestDocumentEncounter:
             location="General Hospital",
             class_code="inpatient"
         )
-
+        
         assert encounter.id == "enc-001"
         assert encounter.type == "inpatient"
         assert encounter.location == "General Hospital"
@@ -568,17 +568,17 @@ class TestDocumentEncounter:
             type="emergency",
             class_code="emergency"
         )
-
+        
         doc = Document(
             document_type=DocumentType.PROGRESS_NOTE,
             title="Emergency Note",
             subject_id="patient-001",
             encounter=encounter
         )
-
+        
         langchain_doc = doc.to_langchain_document()
         metadata = langchain_doc["metadata"]
-
+        
         assert metadata["encounter_id"] == "enc-001"
         assert metadata["encounter_type"] == "emergency"
         assert metadata["encounter_class"] == "emergency"

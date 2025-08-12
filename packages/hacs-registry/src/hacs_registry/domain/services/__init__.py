@@ -29,6 +29,6 @@ from .resource_service import (
 __all__ = [
     # Resource services (implemented)
     'ResourceService',
-    'ResourceValidationService',
+    'ResourceValidationService', 
     'ResourceLifecycleService',
 ]

@@ -7,7 +7,7 @@ manipulation and creation patterns for complex clinical workflows.
 
 Key Features:
     🏗️ Healthcare resource stacking and composition
-    📋 Clinical template generation for common scenarios
+    📋 Clinical template generation for common scenarios  
     ⚡ AI-optimized resource views
     🔄 Resource field analysis and optimization
     🏥 FHIR-compliant resource development
@@ -24,8 +24,8 @@ Version: 0.3.0
 import logging
 from typing import Any, Dict, List
 
-from hacs_models import ResourceStackResult, ResourceTemplateResult
-from hacs_core.tool_protocols import hacs_tool, ToolCategory
+from hacs_core.results import ResourceStackResult, ResourceTemplateResult
+from hacs_core.tool_protocols import healthcare_tool, ToolCategory
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ from .descriptions import (
     OPTIMIZE_RESOURCE_FOR_LLM_DESCRIPTION,
 )
 
-@hacs_tool(
+@healthcare_tool(
     name="create_resource_stack",
     description="Create a stacked healthcare resource by layering multiple resources or views",
     category=ToolCategory.DEVELOPMENT_TOOLS,
@@ -70,7 +70,7 @@ def create_resource_stack(
             {"resource": "Observation", "fields": ["code", "value_quantity"], "layer_name": "vitals"},
             {"resource": "Condition", "fields": ["code", "severity"], "layer_name": "conditions"}
         ], "ComprehensivePatientView")
-
+        
         create_resource_stack("Encounter", [
             {"resource": "Procedure", "fields": ["code", "status"], "layer_name": "procedures"},
             {"resource": "MedicationRequest", "fields": ["medication", "dosage"], "layer_name": "medications"}
@@ -114,7 +114,7 @@ def create_resource_stack(
         }
         layers.append(base_layer)
         total_fields += base_layer["field_count"]
-
+        
         # Count clinical fields in base
         clinical_fields += _count_clinical_fields(base_layer["fields"], base_resource)
 
@@ -166,7 +166,7 @@ def create_resource_stack(
 
             # Determine clinical significance of extension
             clinical_significance = "high" if ext_resource in ["Observation", "Condition", "Procedure"] else "moderate"
-
+            
             layer_info = {
                 "layer_name": layer_name,
                 "resource": ext_resource,
@@ -190,7 +190,7 @@ def create_resource_stack(
 
         # Determine FHIR compliance
         fhir_compliance = all(dep in [
-            "Patient", "Observation", "Encounter", "Condition",
+            "Patient", "Observation", "Encounter", "Condition", 
             "MedicationRequest", "Medication", "AllergyIntolerance",
             "Procedure", "Goal", "ServiceRequest", "Organization"
         ] for dep in dependencies)
@@ -227,7 +227,7 @@ def create_resource_stack(
             message=f"Failed to create healthcare resource stack: {str(e)}"
         )
 
-@hacs_tool(
+@healthcare_tool(
     name="create_clinical_template",
     description="Generate pre-configured clinical templates for common healthcare scenarios",
     category=ToolCategory.DEVELOPMENT_TOOLS,
@@ -397,7 +397,7 @@ def create_clinical_template(
         clinical_workflows = [f"{focus_area}_{template_type}_workflow"]
         use_cases = [
             f"{focus_area} {template_type}",
-            f"Clinical {template_type} workflow",
+            f"Clinical {template_type} workflow", 
             f"{complexity_level.title()} healthcare documentation",
             config["clinical_purpose"]
         ]
@@ -521,7 +521,7 @@ def create_clinical_template(
         # Determine FHIR compliance
         fhir_compliance = all(resource in [
             "Patient", "Observation", "Encounter", "Condition",
-            "MedicationRequest", "Medication", "AllergyIntolerance",
+            "MedicationRequest", "Medication", "AllergyIntolerance", 
             "Procedure", "Goal", "ServiceRequest"
         ] for resource in config["base_resources"])
 
@@ -567,7 +567,7 @@ def create_clinical_template(
             message=f"Failed to create clinical template: {str(e)}"
         )
 
-@hacs_tool(
+@healthcare_tool(
     name="optimize_resource_for_llm",
     description="Optimize a HACS healthcare resource for LLM interactions by intelligent field selection",
     category=ToolCategory.DEVELOPMENT_TOOLS,
@@ -588,7 +588,7 @@ def optimize_resource_for_llm(
 
     Args:
         resource_name: Name of the HACS resource to optimize
-        optimization_goal: Goal ("token_efficiency", "accuracy", "completeness", "simplicity")
+        optimization_goal: Goal ("token_efficiency", "accuracy", "completeness", "simplicity") 
         target_use_case: Target use case ("structured_output", "classification", "extraction", "validation")
         preserve_validation: Whether to keep validation-critical fields
 
@@ -732,7 +732,7 @@ def optimize_resource_for_llm(
 
         # Build field mappings and metadata
         field_mappings = {field: f"{resource_name}.{field}" for field in selected_fields}
-
+        
         # Generate clinical workflows and use cases
         clinical_workflows = [f"llm_{target_use_case}_workflow"]
         use_cases = [
@@ -763,7 +763,7 @@ def optimize_resource_for_llm(
             success=True,
             template_name=optimized_name,
             template_type="llm_optimization",
-            focus_area="ai_agents",
+            focus_area="ai_agents", 
             template_schema=schema,
             clinical_workflows=clinical_workflows,
             use_cases=use_cases,
@@ -810,10 +810,10 @@ def _count_clinical_fields(fields: List[str], resource_type: str) -> int:
 def _generate_clinical_use_cases(base_resource: str, dependencies: List[str], stack_name: str) -> List[str]:
     """Generate clinical use cases for a resource stack."""
     use_cases = []
-
+    
     # Base use case
     use_cases.append(f"Comprehensive {base_resource.lower()} management")
-
+    
     # Add specialty use cases based on dependencies
     if "Observation" in dependencies:
         use_cases.append("Clinical monitoring and vital signs tracking")
@@ -823,14 +823,14 @@ def _generate_clinical_use_cases(base_resource: str, dependencies: List[str], st
         use_cases.append("Treatment and procedure documentation")
     if "MedicationRequest" in dependencies:
         use_cases.append("Medication management and prescribing")
-
+    
     # Add stack-specific use case
     use_cases.append(f"Integrated healthcare workflow using {stack_name}")
-
+    
     return use_cases
 
 __all__ = [
     "create_resource_stack",
     "create_clinical_template",
     "optimize_resource_for_llm",
-]
+] 

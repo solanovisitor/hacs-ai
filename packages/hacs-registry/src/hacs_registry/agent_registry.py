@@ -19,76 +19,13 @@ from typing import Any, Dict, List, Optional, Union
 from dataclasses import dataclass, field
 
 from pydantic import Field, BaseModel
-
-# Import base resource
-try:
-    from hacs_models import BaseResource
-except ImportError:
-    from hacs_core import BaseResource
-
-# Import agent-related types
-try:
-    from hacs_utils import (
-        HealthcareDomain, AgentRole,
-        AgentInteractionStrategy, AgentMemoryStrategy,
-        AgentChainStrategy, AgentRetrievalStrategy,
-    )
-    # These may not exist in hacs_utils yet
-    VectorStoreType = EmbeddingStrategy = None
-except ImportError:
-    try:
-        from hacs_core import HealthcareDomain, AgentRole
-        # Mock the missing ones
-        AgentInteractionStrategy = AgentMemoryStrategy = None
-        AgentChainStrategy = AgentRetrievalStrategy = None
-        VectorStoreType = EmbeddingStrategy = None
-    except ImportError:
-        # Ultimate fallback
-        HealthcareDomain = AgentRole = None
-        AgentInteractionStrategy = AgentMemoryStrategy = None
-        AgentChainStrategy = AgentRetrievalStrategy = None
-        VectorStoreType = EmbeddingStrategy = None
-
-# Create mock enums if types don't exist
-if AgentInteractionStrategy is None:
-    from enum import Enum
-    class AgentInteractionStrategy(str, Enum):
-        CONVERSATIONAL = "conversational"
-
-if AgentMemoryStrategy is None:
-    from enum import Enum
-    class AgentMemoryStrategy(str, Enum):
-        CLINICAL = "clinical"
-
-if AgentChainStrategy is None:
-    from enum import Enum
-    class AgentChainStrategy(str, Enum):
-        SEQUENTIAL = "sequential"
-
-if AgentRetrievalStrategy is None:
-    from enum import Enum
-    class AgentRetrievalStrategy(str, Enum):
-        SEMANTIC = "semantic"
-
-if VectorStoreType is None:
-    from enum import Enum
-    class VectorStoreType(str, Enum):
-        FAISS = "faiss"
-
-if EmbeddingStrategy is None:
-    from enum import Enum
-    class EmbeddingStrategy(str, Enum):
-        CLINICAL = "clinical"
-
-if HealthcareDomain is None:
-    from enum import Enum
-    class HealthcareDomain(str, Enum):
-        GENERAL = "general"
-
-if AgentRole is None:
-    from enum import Enum
-    class AgentRole(str, Enum):
-        ASSISTANT = "assistant"
+from hacs_core import BaseResource
+from hacs_core import (
+    HealthcareDomain, AgentRole,
+    AgentInteractionStrategy, AgentMemoryStrategy,
+    AgentChainStrategy, AgentRetrievalStrategy,
+    VectorStoreType, EmbeddingStrategy
+)
 
 from .resource_registry import get_global_registry, RegisteredResource, ResourceStatus
 
@@ -137,17 +74,17 @@ class AgentMetadata:
 class AgentConfiguration(BaseResource):
     """
     Agent configuration that references registered hacs-core resources.
-
+    
     This defines how an agent uses registered resources rather than
     redefining those resources.
     """
-
+    
     resource_type: str = Field(default="AgentConfiguration", description="Resource type")
-
+    
     # Agent metadata
     agent_id: str = Field(description="Unique agent identifier")
     metadata: AgentMetadata = Field(description="Agent metadata")
-
+    
     # Agent behavior configuration
     interaction_strategy: AgentInteractionStrategy = Field(
         default=AgentInteractionStrategy.CONVERSATIONAL,
@@ -165,7 +102,7 @@ class AgentConfiguration(BaseResource):
         default=AgentRetrievalStrategy.SEMANTIC,
         description="Information retrieval strategy"
     )
-
+    
     # Technical configuration
     vector_store_type: VectorStoreType = Field(
         default=VectorStoreType.FAISS,
@@ -175,19 +112,19 @@ class AgentConfiguration(BaseResource):
         default=EmbeddingStrategy.CLINICAL,
         description="Embedding strategy"
     )
-
+    
     # Resource references (using registry IDs)
     enabled_resources: List[str] = Field(
         default_factory=list,
         description="List of registered resource IDs this agent can use"
     )
-
+    
     # Agent-specific configurations for resources
     resource_configurations: Dict[str, Dict[str, Any]] = Field(
         default_factory=dict,
         description="Agent-specific configuration for each resource"
     )
-
+    
     # Prompt and model configuration
     prompt_template_id: Optional[str] = Field(
         default=None,
@@ -197,7 +134,7 @@ class AgentConfiguration(BaseResource):
         default_factory=dict,
         description="Model parameters and settings"
     )
-
+    
     # Safety and compliance
     safety_constraints: List[str] = Field(
         default_factory=list,
@@ -211,7 +148,7 @@ class AgentConfiguration(BaseResource):
         default="standard",
         description="Auditing level (basic, standard, comprehensive)"
     )
-
+    
     # Performance and scaling
     max_concurrent_requests: int = Field(
         default=10,
@@ -225,7 +162,7 @@ class AgentConfiguration(BaseResource):
         default=None,
         description="Rate limit for requests per minute"
     )
-
+    
     # Deployment configuration
     deployment_environment: str = Field(
         default="development",
@@ -235,76 +172,76 @@ class AgentConfiguration(BaseResource):
         default_factory=dict,
         description="Computational resource requirements"
     )
-
+    
     def get_enabled_resources(self) -> List[RegisteredResource]:
         """Get the actual registered resources this agent can use."""
         registry = get_global_registry()
         resources = []
-
+        
         for resource_id in self.enabled_resources:
             resource = registry.get_resource(resource_id)
             if resource and resource.metadata.status == ResourceStatus.PUBLISHED:
                 resources.append(resource)
-
+        
         return resources
-
+    
     def add_resource(self, resource_id: str, configuration: Optional[Dict[str, Any]] = None):
         """Add a resource to this agent's enabled resources."""
         if resource_id not in self.enabled_resources:
             self.enabled_resources.append(resource_id)
-
+        
         if configuration:
             self.resource_configurations[resource_id] = configuration
-
+    
     def remove_resource(self, resource_id: str):
         """Remove a resource from this agent's enabled resources."""
         if resource_id in self.enabled_resources:
             self.enabled_resources.remove(resource_id)
-
+        
         if resource_id in self.resource_configurations:
             del self.resource_configurations[resource_id]
-
+    
     def validate_resources(self) -> List[str]:
         """Validate that all enabled resources are available and published."""
         issues = []
         registry = get_global_registry()
-
+        
         for resource_id in self.enabled_resources:
             resource = registry.get_resource(resource_id)
             if not resource:
                 issues.append(f"Resource not found: {resource_id}")
             elif resource.metadata.status != ResourceStatus.PUBLISHED:
                 issues.append(f"Resource not published: {resource_id} (status: {resource.metadata.status})")
-
+        
         return issues
 
 
 class AgentTemplate(BaseResource):
     """
     Reusable agent template for creating agent configurations.
-
+    
     Templates define common patterns that can be instantiated
     with specific parameters.
     """
-
+    
     resource_type: str = Field(default="AgentTemplate", description="Resource type")
-
+    
     # Template metadata
     template_id: str = Field(description="Unique template identifier")
     name: str = Field(description="Template name")
     version: str = Field(description="Template version")
     description: str = Field(description="Template description")
-
+    
     # Template configuration
     domain: HealthcareDomain = Field(description="Target healthcare domain")
     role: AgentRole = Field(description="Agent role")
-
+    
     # Default configuration values
     default_config: Dict[str, Any] = Field(
         default_factory=dict,
         description="Default configuration values"
     )
-
+    
     # Required and optional parameters for instantiation
     required_parameters: List[str] = Field(
         default_factory=list,
@@ -314,26 +251,26 @@ class AgentTemplate(BaseResource):
         default_factory=dict,
         description="Optional parameters with defaults"
     )
-
+    
     # Recommended resources for this template
     recommended_resources: List[str] = Field(
         default_factory=list,
         description="Registry IDs of recommended resources"
     )
-
+    
     def instantiate(self, **parameters) -> AgentConfiguration:
         """Create an agent configuration from this template."""
         # Validate required parameters
         missing = [param for param in self.required_parameters if param not in parameters]
         if missing:
             raise ValueError(f"Missing required parameters: {missing}")
-
+        
         # Merge parameters with defaults
         config_data = self.default_config.copy()
         config_data.update(parameters)
         config_data.update(self.optional_parameters)
         config_data.update(parameters)  # Parameters override defaults
-
+        
         # Create agent metadata
         agent_id = f"{self.template_id}-{parameters.get('instance_name', 'instance')}"
         metadata = AgentMetadata(
@@ -344,7 +281,7 @@ class AgentTemplate(BaseResource):
             role=self.role,
             config_type=AgentConfigurationType.INSTANCE
         )
-
+        
         # Create agent configuration
         agent_config = AgentConfiguration(
             agent_id=agent_id,
@@ -352,18 +289,18 @@ class AgentTemplate(BaseResource):
             enabled_resources=self.recommended_resources.copy(),
             **config_data
         )
-
+        
         return agent_config
 
 
 class HACSAgentRegistry:
     """
     Registry for managing agent configurations and templates.
-
+    
     Provides lifecycle management for healthcare agents without
     redefining any hacs-core resources.
     """
-
+    
     def __init__(self):
         self._configurations: Dict[str, AgentConfiguration] = {}
         self._templates: Dict[str, AgentTemplate] = {}
@@ -373,7 +310,7 @@ class HACSAgentRegistry:
         self._by_role: Dict[AgentRole, List[str]] = {
             role: [] for role in AgentRole
         }
-
+    
     def register_agent(self, config: AgentConfiguration, actor_id: Optional[str] = None) -> str:
         """Register an agent configuration."""
         # IAM check for agent registration
@@ -388,35 +325,35 @@ class HACSAgentRegistry:
                 pass
         agent_id = config.agent_id
         self._configurations[agent_id] = config
-
+        
         # Index by domain and role
         domain = config.metadata.domain
         role = config.metadata.role
-
+        
         if agent_id not in self._by_domain[domain]:
             self._by_domain[domain].append(agent_id)
         if agent_id not in self._by_role[role]:
             self._by_role[role].append(agent_id)
-
+        
         logger.info(f"Registered agent: {agent_id}")
         return agent_id
-
+    
     def register_template(self, template: AgentTemplate) -> str:
         """Register an agent template."""
         template_id = template.template_id
         self._templates[template_id] = template
-
+        
         logger.info(f"Registered agent template: {template_id}")
         return template_id
-
+    
     def get_agent(self, agent_id: str) -> Optional[AgentConfiguration]:
         """Get an agent configuration by ID."""
         return self._configurations.get(agent_id)
-
+    
     def get_template(self, template_id: str) -> Optional[AgentTemplate]:
         """Get an agent template by ID."""
         return self._templates.get(template_id)
-
+    
     def list_agents(
         self,
         domain: Optional[HealthcareDomain] = None,
@@ -425,37 +362,37 @@ class HACSAgentRegistry:
     ) -> List[AgentConfiguration]:
         """List agent configurations with optional filtering."""
         agents = []
-
+        
         if domain:
             agent_ids = self._by_domain.get(domain, [])
         elif role:
             agent_ids = self._by_role.get(role, [])
         else:
             agent_ids = list(self._configurations.keys())
-
+        
         for agent_id in agent_ids:
             agent = self._configurations[agent_id]
             if status is None or agent.metadata.status == status:
                 agents.append(agent)
-
+        
         return agents
-
+    
     def list_templates(self, domain: Optional[HealthcareDomain] = None) -> List[AgentTemplate]:
         """List agent templates with optional domain filtering."""
         templates = []
-
+        
         for template in self._templates.values():
             if domain is None or template.domain == domain:
                 templates.append(template)
-
+        
         return templates
-
+    
     def create_from_template(self, template_id: str, **parameters) -> AgentConfiguration:
         """Create an agent configuration from a template."""
         template = self._templates.get(template_id)
         if not template:
             raise ValueError(f"Template not found: {template_id}")
-
+        
         agent_config = template.instantiate(**parameters)
         self.register_agent(agent_config)
         return agent_config
@@ -475,7 +412,7 @@ def get_global_agent_registry() -> HACSAgentRegistry:
 
 __all__ = [
     'AgentStatus',
-    'AgentConfigurationType',
+    'AgentConfigurationType', 
     'AgentMetadata',
     'AgentConfiguration',
     'AgentTemplate',

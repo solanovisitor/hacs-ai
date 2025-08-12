@@ -12,10 +12,10 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from hacs_models import Actor, BaseResource
+from hacs_core import Actor, BaseResource
 
 try:
-    from hacs_models import (
+    from hacs_core.models import (
         AgentMessage,
         ContextSummary,
         Encounter,

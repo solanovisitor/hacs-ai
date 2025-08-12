@@ -21,14 +21,13 @@ License: MIT
 Version: 0.3.0
 """
 
-import json
 import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from hacs_models import Actor
-from hacs_models import HACSResult, ResourceSchemaResult
-from hacs_core.tool_protocols import hacs_tool, ToolCategory
+from hacs_core import Actor
+from hacs_core.results import HACSResult, ResourceSchemaResult
+from hacs_core.tool_protocols import healthcare_tool, ToolCategory
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +41,7 @@ from .descriptions import (
 )
 
 
-@hacs_tool(
+@healthcare_tool(
     name="create_hacs_record",
     description="Create a new healthcare resource record with FHIR compliance validation",
     category=ToolCategory.RESOURCE_MANAGEMENT,
@@ -54,9 +53,7 @@ def create_hacs_record(
     resource_type: str,
     resource_data: Dict[str, Any],
     auto_generate_id: bool = True,
-    validate_fhir: bool = True,
-    db_adapter: Any | None = None,
-    vector_store: Any | None = None,
+    validate_fhir: bool = True
 ) -> HACSResult:
     """
     Create a new healthcare resource record with FHIR compliance validation.
@@ -81,7 +78,7 @@ def create_hacs_record(
             "birth_date": "1990-01-01",
             "gender": "male"
         })
-
+        
         create_hacs_record("Nurse Johnson", "Observation", {
             "code": {"coding": [{"code": "85354-9", "system": "http://loinc.org"}]},
             "value_quantity": {"value": 120, "unit": "mmHg"}
@@ -90,7 +87,7 @@ def create_hacs_record(
     try:
         # Create actor instance for validation/context
         _ = Actor(name=actor_name, role="physician")
-
+        
         # Auto-generate ID if requested and missing
         if auto_generate_id and 'id' not in resource_data:
             import uuid
@@ -129,50 +126,9 @@ def create_hacs_record(
             # TODO: Add FHIR validation logic
             fhir_status = "validation_pending"
 
-        # Persist to database with comprehensive error handling  
+        # Store resource (placeholder for actual persistence)
+        # In a real implementation, this would save to database
         resource_id = resource.id or resource_data.get('id', 'generated-id')
-        persistence_status = "mock"
-        
-        if db_adapter is not None:
-            try:
-                save_payload = resource.model_dump()
-                
-                # Try different persistence methods
-                if hasattr(db_adapter, "save_resource"):
-                    result = db_adapter.save_resource(save_payload)  # type: ignore[attr-defined]
-                    if hasattr(result, "get"):
-                        saved_id = result.get("id", resource_id)  # type: ignore
-                        if saved_id:
-                            resource_id = saved_id
-                    persistence_status = "database_saved"
-                    logger.info(f"Resource {resource_type} {resource_id} saved to database")
-                    
-                elif hasattr(db_adapter, "create_resource"):
-                    created_id = db_adapter.create_resource(resource)  # type: ignore[attr-defined]
-                    if isinstance(created_id, str):
-                        resource_id = created_id
-                    persistence_status = "database_created"
-                    logger.info(f"Resource {resource_type} {resource_id} created in database")
-                    
-                elif hasattr(db_adapter, "execute_query"):
-                    # Direct SQL execution for advanced use cases
-                    table_name = f"{resource_type.lower()}s"
-                    query = f"INSERT INTO {table_name} (id, data, created_at) VALUES (%s, %s, NOW()) RETURNING id"
-                    result = db_adapter.execute_query(query, (resource_id, json.dumps(save_payload)))
-                    if result and len(result) > 0:
-                        resource_id = result[0].get("id", resource_id)
-                    persistence_status = "database_sql"
-                    logger.info(f"Resource {resource_type} {resource_id} inserted via SQL")
-                    
-                else:
-                    persistence_status = "no_adapter_method"
-                    logger.warning(f"Database adapter missing required methods for {resource_type}")
-                    
-            except Exception as e:
-                persistence_status = f"error: {str(e)}"
-                logger.warning(f"Persistence failed for {resource_type}: {e}")
-        else:
-            logger.info(f"No database adapter provided, using mock storage for {resource_type}")
 
         return HACSResult(
             success=True,
@@ -181,13 +137,11 @@ def create_hacs_record(
                 "resource_id": resource_id,
                 "resource_type": resource_type,
                 "fhir_status": fhir_status,
-                "persistence_status": persistence_status,
                 "created_at": datetime.now().isoformat(),
                 "audit_info": {
                     "created_by": actor_name,
                     "created_at": datetime.now().isoformat(),
-                    "operation": "resource_creation",
-                    "storage_method": persistence_status
+                    "operation": "resource_creation"
                 }
             },
             actor_id=actor_name,
@@ -209,7 +163,7 @@ def create_hacs_record(
         )
 
 
-@hacs_tool(
+@healthcare_tool(
     name="get_hacs_record",
     description="Retrieve a healthcare resource record by ID with audit trail support",
     category=ToolCategory.RESOURCE_MANAGEMENT,
@@ -220,9 +174,7 @@ def get_hacs_record(
     actor_name: str,
     resource_type: str,
     resource_id: str,
-    include_audit_trail: bool = False,
-    db_adapter: Any | None = None,
-    vector_store: Any | None = None,
+    include_audit_trail: bool = False
 ) -> HACSResult:
     """
     Retrieve a healthcare resource record by ID with audit trail support.
@@ -257,15 +209,9 @@ def get_hacs_record(
                 actor_id=actor_name
             )
 
-        resource_payload: Dict[str, Any] | None = None
-        if db_adapter is not None:
-            try:
-                if hasattr(db_adapter, "get_resource"):
-                    resource_payload = db_adapter.get_resource(resource_type, resource_id)  # type: ignore[attr-defined]
-            except Exception as e:
-                logger.warning(f"Persistence get failed, using mock: {e}")
-
-        mock_resource_data = resource_payload or {
+        # TODO: Retrieve from actual persistence layer
+        # This is a placeholder implementation
+        mock_resource_data = {
             "id": resource_id,
             "resource_type": resource_type,
             "status": "active",
@@ -304,7 +250,7 @@ def get_hacs_record(
         )
 
 
-@hacs_tool(
+@healthcare_tool(
     name="update_hacs_record",
     description="Update an existing healthcare resource record with validation",
     category=ToolCategory.RESOURCE_MANAGEMENT,
@@ -316,8 +262,7 @@ def update_hacs_record(
     resource_type: str,
     resource_id: str,
     updates: Dict[str, Any],
-    validate_fhir: bool = True,
-    db_adapter: Any | None = None,
+    validate_fhir: bool = True
 ) -> HACSResult:
     """
     Update an existing healthcare resource record with validation.
@@ -355,13 +300,8 @@ def update_hacs_record(
                 actor_id=actor_name
             )
 
-        # Update via persistence if available
-        if db_adapter is not None:
-            try:
-                if hasattr(db_adapter, "update_resource"):
-                    _ = db_adapter.update_resource(resource_type, resource_id, updates)  # type: ignore[attr-defined]
-            except Exception as e:
-                logger.warning(f"Persistence update failed, returning mock: {e}")
+        # TODO: Implement actual update logic with persistence layer
+        # This is a placeholder implementation
 
         # Perform FHIR validation if requested
         fhir_status = "validation_pending" if validate_fhir else "not_validated"
@@ -394,7 +334,7 @@ def update_hacs_record(
         )
 
 
-@hacs_tool(
+@healthcare_tool(
     name="delete_hacs_record",
     description="Delete a healthcare resource record with audit trail preservation",
     category=ToolCategory.RESOURCE_MANAGEMENT,
@@ -405,8 +345,7 @@ def delete_hacs_record(
     actor_name: str,
     resource_type: str,
     resource_id: str,
-    soft_delete: bool = True,
-    db_adapter: Any | None = None,
+    soft_delete: bool = True
 ) -> HACSResult:
     """
     Delete a healthcare resource record with audit trail preservation.
@@ -440,13 +379,8 @@ def delete_hacs_record(
                 actor_id=actor_name
             )
 
-        # Delete via persistence if available
-        if db_adapter is not None:
-            try:
-                if hasattr(db_adapter, "delete_resource"):
-                    _ = db_adapter.delete_resource(resource_type, resource_id, soft_delete=soft_delete)  # type: ignore[attr-defined]
-            except Exception as e:
-                logger.warning(f"Persistence delete failed, returning mock: {e}")
+        # TODO: Implement actual deletion logic with persistence layer
+        # This is a placeholder implementation
 
         deletion_type = "soft_delete" if soft_delete else "hard_delete"
 
@@ -477,7 +411,7 @@ def delete_hacs_record(
         )
 
 
-@hacs_tool(
+@healthcare_tool(
     name="search_hacs_records",
     description="Search healthcare resource records with advanced filtering capabilities",
     category=ToolCategory.RESOURCE_MANAGEMENT,
@@ -489,8 +423,7 @@ def search_hacs_records(
     resource_type: str,
     search_criteria: Dict[str, Any],
     limit: int = 10,
-    include_audit_info: bool = False,
-    db_adapter: Any | None = None,
+    include_audit_info: bool = False
 ) -> HACSResult:
     """
     Search healthcare resource records with advanced filtering capabilities.
@@ -528,13 +461,9 @@ def search_hacs_records(
                 actor_id=actor_name
             )
 
+        # TODO: Implement actual search logic with persistence layer
+        # This is a placeholder implementation
         mock_results = []
-        if db_adapter is not None:
-            try:
-                if hasattr(db_adapter, "search_resources"):
-                    mock_results = db_adapter.search_resources(resource_type, search_criteria, limit=limit)  # type: ignore[attr-defined]
-            except Exception as e:
-                logger.warning(f"Persistence search failed, returning mock: {e}")
 
         return HACSResult(
             success=True,
@@ -569,8 +498,7 @@ def search_hacs_records(
 def _get_resource_class(resource_type: str):
     """Get the resource class for a given resource type."""
     try:
-        # Prefer pure data models from hacs_models
-        from hacs_models import (
+        from hacs_core.models import (
             Patient, Observation, Encounter, Condition, MedicationRequest,
             Medication, AllergyIntolerance, Procedure, Goal, ServiceRequest,
             Organization, OrganizationContact, OrganizationQualification
@@ -599,8 +527,8 @@ def _get_resource_class(resource_type: str):
 
 __all__ = [
     "create_hacs_record",
-    "get_hacs_record",
+    "get_hacs_record", 
     "update_hacs_record",
     "delete_hacs_record",
     "search_hacs_records",
-]
+] 

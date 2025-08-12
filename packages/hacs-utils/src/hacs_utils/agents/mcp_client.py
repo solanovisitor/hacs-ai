@@ -21,7 +21,7 @@ class HACSMCPClient:
         if anthropic_api_key:
             self.anthropic_client = anthropic.Anthropic(api_key=anthropic_api_key)
 
-    async def use_tool(
+    async def call_tool(
         self, tool_name: str, arguments: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Call a tool on the MCP server."""
@@ -108,7 +108,7 @@ When a developer asks a question, use the tools to provide comprehensive guidanc
             elif content_block.type == "tool_use":
                 # Execute the tool
                 try:
-                    tool_result = await self.use_tool(
+                    tool_result = await self.call_tool(
                         content_block.name,
                         content_block.input,
                     )

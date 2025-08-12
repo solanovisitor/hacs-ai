@@ -22,13 +22,13 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
-from hacs_models import Actor
-from hacs_models import HACSResult
-from hacs_core.tool_protocols import hacs_tool, ToolCategory
+from hacs_core import Actor
+from hacs_core.results import HACSResult
+from hacs_core.tool_protocols import healthcare_tool, ToolCategory
 
 logger = logging.getLogger(__name__)
 
-@hacs_tool(
+@healthcare_tool(
     name="deploy_healthcare_ai_model",
     description="Deploy AI/ML models for healthcare applications with clinical validation",
     category=ToolCategory.AI_INTEGRATIONS,
@@ -131,7 +131,7 @@ def deploy_healthcare_ai_model(
             actor_id=actor_name
         )
 
-@hacs_tool(
+@healthcare_tool(
     name="run_clinical_inference",
     description="Run AI inference on healthcare data for clinical decision support",
     category=ToolCategory.AI_INTEGRATIONS,
@@ -233,7 +233,7 @@ def run_clinical_inference(
             actor_id=actor_name
         )
 
-@hacs_tool(
+@healthcare_tool(
     name="preprocess_medical_data",
     description="Preprocess medical data for AI/ML applications with healthcare-specific transformations",
     category=ToolCategory.AI_INTEGRATIONS,
@@ -347,4 +347,4 @@ __all__ = [
     "deploy_healthcare_ai_model",
     "run_clinical_inference",
     "preprocess_medical_data",
-]
+] 

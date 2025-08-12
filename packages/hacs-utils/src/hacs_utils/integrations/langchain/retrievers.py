@@ -30,16 +30,16 @@ except ImportError:
         def __init__(self, page_content: str, metadata: Dict = None):
             self.page_content = page_content
             self.metadata = metadata or {}
-
+    
     class BaseRetriever:
         def get_relevant_documents(self, query: str) -> List[Document]:
             return []
-
+    
     class CallbackManagerForRetrieverRun:
         pass
 
 try:
-    from hacs_models import Patient, Observation, Condition, Encounter
+    from hacs_core.models import Patient, Observation, Condition, Encounter
     from hacs_core.base_resource import BaseResource
     _has_hacs = True
 except ImportError:
@@ -75,8 +75,8 @@ class RetrievalConfig:
 
 class ClinicalContext:
     """Clinical context for retrieval operations."""
-
-    def __init__(self, patient_id: str = None, encounter_id: str = None,
+    
+    def __init__(self, patient_id: str = None, encounter_id: str = None, 
                  clinical_domain: str = None, specialty: str = None):
         self.patient_id = patient_id
         self.encounter_id = encounter_id
@@ -84,11 +84,11 @@ class ClinicalContext:
         self.specialty = specialty
         self.timestamp = datetime.now()
         self.context_metadata = {}
-
+    
     def add_context(self, key: str, value: Any) -> None:
         """Add additional context metadata."""
         self.context_metadata[key] = value
-
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation."""
         return {
@@ -102,14 +102,14 @@ class ClinicalContext:
 
 class HACSRetriever(BaseRetriever):
     """Base HACS retriever with clinical context awareness."""
-
+    
     def __init__(self, config: RetrievalConfig, vector_store: HACSVectorStore = None):
         super().__init__()
         self.config = config
         self.vector_store = vector_store or create_clinical_vector_store()
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-
-    def get_relevant_documents(self, query: str,
+        
+    def get_relevant_documents(self, query: str, 
                              run_manager: CallbackManagerForRetrieverRun = None) -> List[Document]:
         """Get relevant documents based on strategy."""
         try:
@@ -117,47 +117,47 @@ class HACSRetriever(BaseRetriever):
         except Exception as e:
             self.logger.error(f"Retrieval failed: {e}")
             return []
-
+    
     @abstractmethod
     def _retrieve_documents(self, query: str) -> List[Document]:
         """Internal document retrieval implementation."""
         pass
-
-    def enhance_with_clinical_context(self, documents: List[Document],
+    
+    def enhance_with_clinical_context(self, documents: List[Document], 
                                     context: ClinicalContext = None) -> List[Document]:
         """Enhance documents with clinical context."""
         if not context:
             return documents
-
-        docs = []
+        
+        enhanced_docs = []
         for doc in documents:
             # Create enhanced document with clinical context
-            metadata = doc.metadata.copy()
-            metadata.update({
+            enhanced_metadata = doc.metadata.copy()
+            enhanced_metadata.update({
                 'clinical_context': context.to_dict(),
                 'retrieved_at': datetime.now().isoformat(),
                 'retrieval_strategy': self.config.strategy.value
             })
-
-            doc = Document(
+            
+            enhanced_doc = Document(
                 page_content=doc.page_content,
-                metadata=metadata
+                metadata=enhanced_metadata
             )
-            docs.append(doc)
-
-        return docs
+            enhanced_docs.append(enhanced_doc)
+        
+        return enhanced_docs
 
 class SemanticRetriever(HACSRetriever):
     """Semantic similarity-based retriever."""
-
+    
     def _retrieve_documents(self, query: str) -> List[Document]:
         """Retrieve documents using semantic similarity."""
         # Use vector store for semantic search
         results = self.vector_store.search_similar_resources(
-            query,
+            query, 
             k=self.config.max_results
         )
-
+        
         # Convert results to Documents
         documents = []
         for result in results:
@@ -166,38 +166,38 @@ class SemanticRetriever(HACSRetriever):
                 metadata=result['metadata']
             )
             documents.append(doc)
-
+        
         return documents
 
 class PatientSpecificRetriever(HACSRetriever):
     """Patient-specific document retriever."""
-
+    
     def __init__(self, config: RetrievalConfig, vector_store: HACSVectorStore = None,
                  patient_id: str = None):
         super().__init__(config, vector_store)
         self.patient_id = patient_id
-
+    
     def _retrieve_documents(self, query: str) -> List[Document]:
         """Retrieve patient-specific documents."""
         if not self.patient_id:
             # Fallback to semantic search if no patient context
             return SemanticRetriever(self.config, self.vector_store)._retrieve_documents(query)
-
+        
         # Enhance query with patient context
         patient_query = f"patient_id:{self.patient_id} {query}"
-
+        
         # Get initial results
         results = self.vector_store.search_similar_resources(
             patient_query,
             k=self.config.max_results * 2  # Get more to filter
         )
-
+        
         # Filter for patient-specific results
         patient_results = [
             result for result in results
             if result.get('metadata', {}).get('patient_id') == self.patient_id
         ]
-
+        
         # If not enough patient-specific results, include related ones
         if len(patient_results) < self.config.max_results:
             general_results = [
@@ -205,7 +205,7 @@ class PatientSpecificRetriever(HACSRetriever):
                 if result not in patient_results
             ]
             patient_results.extend(general_results[:self.config.max_results - len(patient_results)])
-
+        
         # Convert to Documents
         documents = []
         for result in patient_results[:self.config.max_results]:
@@ -214,12 +214,12 @@ class PatientSpecificRetriever(HACSRetriever):
                 metadata=result['metadata']
             )
             documents.append(doc)
-
+        
         return documents
 
 class TemporalRetriever(HACSRetriever):
     """Time-based document retriever."""
-
+    
     def _retrieve_documents(self, query: str) -> List[Document]:
         """Retrieve documents with temporal relevance."""
         # Get semantic results first
@@ -227,18 +227,18 @@ class TemporalRetriever(HACSRetriever):
             query,
             k=self.config.max_results * 3  # Get more for temporal filtering
         )
-
+        
         # Apply temporal filtering
         cutoff_date = datetime.now() - timedelta(days=self.config.temporal_window_days)
-
+        
         temporal_results = []
         for result in semantic_results:
             metadata = result.get('metadata', {})
-
+            
             # Check for various timestamp fields
             timestamp_fields = ['created_at', 'updated_at', 'indexed_at', 'timestamp']
             result_date = None
-
+            
             for field in timestamp_fields:
                 if field in metadata:
                     try:
@@ -246,18 +246,18 @@ class TemporalRetriever(HACSRetriever):
                         break
                     except (ValueError, AttributeError):
                         continue
-
+            
             # Include if within temporal window or no date available
             if not result_date or result_date >= cutoff_date:
                 temporal_results.append(result)
-
+        
         # Sort by recency if prioritized
         if self.config.prioritize_recent:
             temporal_results.sort(
                 key=lambda x: x.get('metadata', {}).get('created_at', ''),
                 reverse=True
             )
-
+        
         # Convert to Documents
         documents = []
         for result in temporal_results[:self.config.max_results]:
@@ -266,12 +266,12 @@ class TemporalRetriever(HACSRetriever):
                 metadata=result['metadata']
             )
             documents.append(doc)
-
+        
         return documents
 
 class MultiModalRetriever(HACSRetriever):
     """Multi-modal retriever combining multiple strategies."""
-
+    
     def __init__(self, config: RetrievalConfig, vector_store: HACSVectorStore = None,
                  strategies: List[RetrievalStrategy] = None):
         super().__init__(config, vector_store)
@@ -281,11 +281,11 @@ class MultiModalRetriever(HACSRetriever):
             RetrievalStrategy.PATIENT_SPECIFIC
         ]
         self.retrievers = self._initialize_retrievers()
-
+    
     def _initialize_retrievers(self) -> Dict[RetrievalStrategy, HACSRetriever]:
         """Initialize sub-retrievers for each strategy."""
         retrievers = {}
-
+        
         for strategy in self.strategies:
             if strategy == RetrievalStrategy.SEMANTIC:
                 retrievers[strategy] = SemanticRetriever(self.config, self.vector_store)
@@ -293,19 +293,19 @@ class MultiModalRetriever(HACSRetriever):
                 retrievers[strategy] = TemporalRetriever(self.config, self.vector_store)
             elif strategy == RetrievalStrategy.PATIENT_SPECIFIC:
                 retrievers[strategy] = PatientSpecificRetriever(self.config, self.vector_store)
-
+        
         return retrievers
-
+    
     def _retrieve_documents(self, query: str) -> List[Document]:
         """Retrieve documents using multiple strategies."""
         all_documents = []
         document_ids = set()  # Track document IDs to avoid duplicates
-
+        
         # Get results from each strategy
         for strategy, retriever in self.retrievers.items():
             try:
                 strategy_docs = retriever._retrieve_documents(query)
-
+                
                 # Add unique documents
                 for doc in strategy_docs:
                     doc_id = doc.metadata.get('resource_id', hash(doc.page_content))
@@ -314,22 +314,22 @@ class MultiModalRetriever(HACSRetriever):
                         doc.metadata['retrieval_strategy'] = strategy.value
                         all_documents.append(doc)
                         document_ids.add(doc_id)
-
+                        
             except Exception as e:
                 self.logger.warning(f"Strategy {strategy} failed: {e}")
-
+        
         # Score and rank combined results
         scored_documents = self._score_documents(all_documents, query)
-
+        
         # Return top results
         return scored_documents[:self.config.max_results]
-
+    
     def _score_documents(self, documents: List[Document], query: str) -> List[Document]:
         """Score and rank documents based on multiple factors."""
         # Simple scoring - could be enhanced with proper relevance scoring
         for i, doc in enumerate(documents):
             score = 1.0 / (i + 1)  # Position-based scoring
-
+            
             # Boost recent documents if prioritized
             if self.config.prioritize_recent:
                 created_at = doc.metadata.get('created_at')
@@ -341,27 +341,27 @@ class MultiModalRetriever(HACSRetriever):
                         score *= (1 + recency_boost)
                     except (ValueError, AttributeError):
                         pass
-
+            
             doc.metadata['relevance_score'] = score
-
+        
         # Sort by score
         documents.sort(key=lambda x: x.metadata.get('relevance_score', 0), reverse=True)
         return documents
 
 class RetrieverFactory:
     """Factory for creating healthcare retrievers."""
-
+    
     @staticmethod
     def create_retriever(strategy: RetrievalStrategy, config: RetrievalConfig = None,
                         vector_store: HACSVectorStore = None, **kwargs) -> HACSRetriever:
         """Create a retriever of the specified strategy."""
         config = config or RetrievalConfig(strategy=strategy)
         vector_store = vector_store or create_clinical_vector_store()
-
+        
         if strategy == RetrievalStrategy.SEMANTIC:
             return SemanticRetriever(config, vector_store)
         elif strategy == RetrievalStrategy.PATIENT_SPECIFIC:
-            return PatientSpecificRetriever(config, vector_store,
+            return PatientSpecificRetriever(config, vector_store, 
                                           patient_id=kwargs.get('patient_id'))
         elif strategy == RetrievalStrategy.TEMPORAL:
             return TemporalRetriever(config, vector_store)
@@ -390,7 +390,7 @@ def create_temporal_retriever(temporal_window_days: int = 30) -> TemporalRetriev
     )
     return TemporalRetriever(config)
 
-def create_retriever(max_results: int = 10) -> MultiModalRetriever:
+def create_comprehensive_retriever(max_results: int = 10) -> MultiModalRetriever:
     """Create a comprehensive multi-modal retriever."""
     config = RetrievalConfig(
         strategy=RetrievalStrategy.MULTI_MODAL,
@@ -414,5 +414,5 @@ __all__ = [
     # Convenience functions
     'create_patient_retriever',
     'create_temporal_retriever',
-    'create_retriever',
+    'create_comprehensive_retriever',
 ]
