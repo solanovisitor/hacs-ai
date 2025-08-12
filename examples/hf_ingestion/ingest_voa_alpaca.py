@@ -65,11 +65,23 @@ stack_template = StackTemplate(
 )
 
 
+def _extract_between(text: str, start_tag: str, end_tag: str) -> str:
+    if not text:
+        return ""
+    try:
+        start = text.index(start_tag) + len(start_tag)
+        end = text.index(end_tag, start)
+        return text[start:end].strip()
+    except ValueError:
+        return ""
+
+
 def build_stack_from_row(row: Dict[str, Any]) -> Dict[str, Any]:
     variables = {
         "patient_name": row.get("input", "Anonymous Patient"),
-        "instruction": row.get("instruction", ""),
-        "input_text": row.get("input", ""),
+        # Extract template and transcript content between tags if present
+        "instruction": _extract_between(row.get("instruction", ""), "[TEMPLATE]", "[/TEMPLATE]") or row.get("instruction", ""),
+        "input_text": _extract_between(row.get("input", ""), "[TRANSCRIÇÃO]", "[/TRANSCRIÇÃO]") or row.get("input", ""),
         "output_text": row.get("output", ""),
     }
     stack = instantiate_stack_template(stack_template, variables)
