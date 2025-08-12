@@ -43,3 +43,33 @@ class OpenAILanguageModel(BaseLanguageModel):
             yield [ScoredOutput(score=None, output=content)]
 
 
+class AnthropicLanguageModel(BaseLanguageModel):
+    def __init__(self, **kwargs) -> None:
+        # Defer import to keep optional
+        import os
+        from anthropic import Anthropic
+
+        fmt = kwargs.pop("format_type", FormatType.JSON)
+        super().__init__(format_type=fmt)
+        api_key = kwargs.pop("api_key", os.getenv("ANTHROPIC_API_KEY"))
+        self._client = Anthropic(api_key=api_key)
+        self._model = kwargs.pop("model", "claude-3-7-sonnet-latest")
+        self._max_tokens = kwargs.pop("max_tokens", 1024)
+
+    def infer(self, batch_prompts: Sequence[str], **kwargs) -> Iterator[Sequence[ScoredOutput]]:
+        # Basic non-streaming implementation; can add streaming later
+        for prompt in batch_prompts:
+            msg = self._client.messages.create(
+                model=self._model,
+                max_tokens=kwargs.get("max_tokens", self._max_tokens),
+                messages=[{"role": "user", "content": prompt}],
+            )
+            # msg.content is a list of content blocks; concatenate text blocks
+            parts = []
+            for block in getattr(msg, "content", []) or []:
+                if getattr(block, "type", None) == "text":
+                    parts.append(getattr(block, "text", ""))
+            content = "".join(parts)
+            yield [ScoredOutput(score=None, output=content)]
+
+

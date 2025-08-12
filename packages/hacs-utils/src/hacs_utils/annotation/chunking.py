@@ -21,12 +21,13 @@ class TextChunk:
     def char_interval(self) -> CharInterval:
         return CharInterval(start_pos=self.start_index, end_pos=self.end_index)
 
-    def to_model(self) -> TextChunkModel:
+    def to_model(self, *, chunk_index: int | None = None) -> TextChunkModel:
         return TextChunkModel(
             start_pos=self.start_index,
             end_pos=self.end_index,
             document_id=self.document.document_id,
             additional_context=self.document.additional_context,
+            chunk_index=chunk_index,
         )
 
 
@@ -53,11 +54,13 @@ class ChunkIterator:
     For now, this keeps implementation minimal and dependency-free.
     """
 
-    def __init__(self, document: Document, max_char_buffer: int = 4000):
+    def __init__(self, document: Document, max_char_buffer: int = 4000, chunk_overlap: int = 0):
         self.document = document
         self.max_char_buffer = max_char_buffer
+        self.chunk_overlap = max(0, min(chunk_overlap, max_char_buffer - 1))
         self._pos = 0
         self._n = len(document.text)
+        self._index = 0
 
     def __iter__(self) -> Iterator[TextChunk]:
         return self
@@ -67,7 +70,10 @@ class ChunkIterator:
             raise StopIteration
         start = self._pos
         end = min(self._pos + self.max_char_buffer, self._n)
-        self._pos = end
-        return TextChunk(start_index=start, end_index=end, document=self.document)
+        # Advance with overlap
+        self._pos = end - self.chunk_overlap if self.chunk_overlap > 0 else end
+        chunk = TextChunk(start_index=start, end_index=end, document=self.document)
+        self._index += 1
+        return chunk
 
 

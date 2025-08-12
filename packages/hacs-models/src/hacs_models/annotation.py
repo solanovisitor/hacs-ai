@@ -94,9 +94,20 @@ class MappingSpec(BaseModel):
 class ChunkingPolicy(BaseModel):
     """Chunking policy for large inputs."""
 
+    strategy: Literal[
+        "char",
+        "token",
+        "recursive",
+        "markdown",
+        "html",
+        "code",
+        "semantic",
+    ] = Field(default="char")
     max_chars: int = Field(default=4000)
+    chunk_overlap: int = Field(default=0)
     sentence_aware: bool = Field(default=True)
     fenced_output: bool = Field(default=True)
+    encoding_name: Optional[str] = Field(default=None, description="tiktoken encoding name for token-based splitters")
 
 
 class ModelConfig(BaseModel):
@@ -155,3 +166,6 @@ class TextChunk(BaseModel):
     end_pos: int = Field(description="End character position (exclusive)")
     document_id: Optional[str] = Field(default=None, description="Source document ID")
     additional_context: Optional[str] = Field(default=None, description="Optional prompt context")
+    token_start_idx: Optional[int] = Field(default=None, description="Start token index if tokenization used")
+    token_end_idx: Optional[int] = Field(default=None, description="End token index (exclusive) if tokenization used")
+    chunk_index: Optional[int] = Field(default=None, description="Sequential chunk index")

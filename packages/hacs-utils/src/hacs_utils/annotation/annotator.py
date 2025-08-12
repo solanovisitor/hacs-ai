@@ -42,11 +42,12 @@ class Annotator:
         resolver: AbstractResolver,
         *,
         max_char_buffer: int = 4000,
+        chunk_overlap: int = 0,
         batch_length: int = 4,
         variables: Dict[str, Any] | None = None,
     ) -> AnnotatedDocument:
         doc = Document(text=text)
-        chunks = ChunkIterator(doc, max_char_buffer=max_char_buffer)
+        chunks = ChunkIterator(doc, max_char_buffer=max_char_buffer, chunk_overlap=chunk_overlap)
         batches = make_batches_of_textchunk(iter(chunks), batch_length)
 
         all_extractions: list = []
