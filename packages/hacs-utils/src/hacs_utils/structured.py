@@ -9,7 +9,7 @@ Core responsibilities:
 """
 
 import json
-from typing import Any, TypeVar, Type, Sequence
+from typing import Any, TypeVar, Type, Sequence, Literal
 from pydantic import BaseModel
 import yaml
 
@@ -418,45 +418,100 @@ def shift_char_intervals(extractions: list[ExtractionDC], *, char_offset: int) -
     return shifted
 
 
-async def generate_extractions(
-    llm_provider: Any,
-    prompt: str,
-    **kwargs,
-) -> list[ExtractionDC]:
-    """Async generation of extractions using a generic provider (ainvoke/invoke)."""
-    if hasattr(llm_provider, 'ainvoke'):
-        resp = await llm_provider.ainvoke(prompt)
-        return parse_extractions(_to_text(resp))
-    if hasattr(llm_provider, 'invoke'):
-        resp = llm_provider.invoke(prompt)
-        return parse_extractions(_to_text(resp))
-    raise ValueError("LLM provider must support 'ainvoke' or 'invoke' method")
-
-
-def generate_extractions_openai(client: Any, prompt: str, **kwargs) -> list[ExtractionDC]:
-    messages = [{"role": "user", "content": prompt}]
-    resp = client.chat(messages, **kwargs)
-    return parse_extractions(_to_text(resp))
-
-
-def generate_extractions_anthropic(
+def generate_extractions(
     client: Any,
-    prompt: str,
+    prompt: str | None = None,
     *,
+    messages: Sequence[ChatMessage] | Sequence[dict] | None = None,
+    provider: Literal["openai", "anthropic", "auto"] = "auto",
     model: str | None = None,
     stream: bool = False,
     max_tokens: int = 1024,
     **kwargs,
 ) -> list[ExtractionDC]:
-    msgs = [{"role": "user", "content": prompt}]
-    if stream:
-        evs = client.messages.create(model=model or "claude-3-7-sonnet-latest", max_tokens=max_tokens, messages=msgs, stream=True)
-        buf: list[str] = []
-        for ev in evs:
-            delta = getattr(ev, "delta", None)
-            if delta and hasattr(delta, "text") and delta.text:
-                buf.append(delta.text)
-        return parse_extractions("".join(buf))
+    """Unified extraction generation for OpenAI/Anthropic/generic providers.
+
+    Pass either a raw prompt or a list of chat messages. Provider is auto-detected by default:
+    - Anthropic: `client.messages.create` present
+    - OpenAI (HACS client): `client.chat` present
+    - Generic: `client.ainvoke`/`client.invoke`
+    """
+    if (prompt is None) == (messages is None):
+        raise ValueError("Provide exactly one of 'prompt' or 'messages'.")
+
+    # Provider auto-detection
+    detected: Literal["openai", "anthropic", "generic"]
+    if provider != "auto":
+        detected = provider  # type: ignore[assignment]
     else:
-        msg = client.messages.create(model=model or "claude-3-7-sonnet-latest", max_tokens=max_tokens, messages=msgs)
+        if hasattr(client, "messages") and hasattr(getattr(client, "messages"), "create"):
+            detected = "anthropic"  # type: ignore[assignment]
+        elif hasattr(client, "chat"):
+            detected = "openai"  # type: ignore[assignment]
+        elif hasattr(client, "ainvoke") or hasattr(client, "invoke"):
+            detected = "generic"  # type: ignore[assignment]
+        else:
+            raise ValueError("Unsupported client. Expected anthropic, OpenAI-like, or ainvoke/invoke provider.")
+
+    if detected == "anthropic":
+        if messages is None:
+            msg_list = [{"role": "user", "content": prompt}]  # type: ignore[list-item]
+        else:
+            msg_list = (
+                to_anthropic_messages(messages) if messages and isinstance(messages[0], ChatMessage) else list(messages)  # type: ignore[arg-type]
+            )
+        if stream:
+            evs = client.messages.create(model=model or "claude-3-7-sonnet-latest", max_tokens=max_tokens, messages=msg_list, stream=True)
+            buf: list[str] = []
+            for ev in evs:
+                delta = getattr(ev, "delta", None)
+                if delta and hasattr(delta, "text") and delta.text:
+                    buf.append(delta.text)
+            return parse_extractions("".join(buf))
+        msg = client.messages.create(model=model or "claude-3-7-sonnet-latest", max_tokens=max_tokens, messages=msg_list)
         return parse_extractions(_to_text(msg))
+
+    if detected == "openai":
+        if messages is None:
+            msg_list = [{"role": "user", "content": prompt}]  # type: ignore[list-item]
+        else:
+            msg_list = (
+                to_openai_messages(messages) if messages and isinstance(messages[0], ChatMessage) else list(messages)  # type: ignore[arg-type]
+            )
+        resp = client.chat(msg_list, **kwargs)
+        return parse_extractions(_to_text(resp))
+
+    # generic ainvoke/invoke
+    if prompt is None:
+        # flatten messages into a simple prompt
+        flat = []
+        for m in (messages or []):
+            if isinstance(m, ChatMessage):
+                flat.append(f"{m.role}: {m.content}")
+            else:
+                role = m.get("role", "user")
+                content = m.get("content", "")
+                flat.append(f"{role}: {content}")
+        prompt = "\n".join(flat)
+    if hasattr(client, "ainvoke"):
+        # best effort sync wrapper
+        try:
+            # If caller passed an async client by mistake, we can't await here; fall back to invoke
+            resp = client.invoke(prompt)
+        except Exception:
+            resp = client.ainvoke(prompt)  # may return coroutine; stringify safely
+        return parse_extractions(_to_text(resp))
+    if hasattr(client, "invoke"):
+        resp = client.invoke(prompt)
+        return parse_extractions(_to_text(resp))
+    raise ValueError("Unsupported generic client for extraction generation")
+
+
+def generate_extractions_openai(client: Any, prompt: str, **kwargs) -> list[ExtractionDC]:
+    # Backward compat: delegate to unified API
+    return generate_extractions(client, prompt, provider="openai", **kwargs)
+
+
+def generate_extractions_anthropic(client: Any, prompt: str, **kwargs) -> list[ExtractionDC]:
+    # Backward compat: delegate to unified API
+    return generate_extractions(client, prompt, provider="anthropic", **kwargs)
