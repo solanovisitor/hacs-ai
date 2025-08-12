@@ -6,6 +6,11 @@ from datasets import load_dataset
 
 from hacs_models import StackTemplate, LayerSpec, instantiate_stack_template
 from hacs_models import Patient, Observation, MemoryBlock, CodeableConcept, Coding
+from hacs_models import PromptTemplateResource, ExtractionSchemaResource
+from hacs_models import AnnotationWorkflowResource, ChunkingPolicy, ModelConfig
+from hacs_utils.structured import generate_extractions, parse_extractions
+from hacs_utils.annotation.chunking import select_chunks
+from hacs_models import Document
 from hacs_persistence import Adapter
 
 HF_TOKEN = os.getenv("HF_TOKEN")
@@ -77,13 +82,46 @@ def _extract_between(text: str, start_tag: str, end_tag: str) -> str:
 
 
 def build_stack_from_row(row: Dict[str, Any]) -> Dict[str, Any]:
+    # 1) Build prompt template from instruction column (markdown template inside [TEMPLATE]...[/TEMPLATE])
+    template_md = _extract_between(row.get("instruction", ""), "[TEMPLATE]", "[/TEMPLATE]") or row.get("instruction", "")
+
+    # Define a minimal prompt expecting structured extractions with fields needed for the stack
+    # The model should return JSON like: {"extractions": [{"extraction_class":"patient_name","extraction_text":"...","char_interval":{"start_pos":0,"end_pos":10}}, ...]}
+    prompt = f"""
+Use the following TEMPLATE and TRANSCRIÇÃO to extract the variables patient_name, input_text, output_text.
+
+TEMPLATE:
+{template_md}
+
+TRANSCRIÇÃO:
+{row.get('input','')}
+
+Return JSON with key 'extractions' and items containing extraction_class and extraction_text for each variable.
+"""
+
+    # 2) Generate extractions with provider client auto-detection (OpenAI/Anthropic/generic)
+    # Here we assume user provides a configured client outside; for demo we just simulate with None and fallback
+    try:
+        client = None  # replace with real client if available
+        extractions = generate_extractions(client, prompt=prompt)
+    except Exception:
+        # Fallback: build extractions trivially from fields
+        from hacs_models import Extraction, CharInterval
+        extractions = [
+            Extraction(extraction_class="patient_name", extraction_text=row.get("input", "Anonymous Patient")),
+            Extraction(extraction_class="input_text", extraction_text=row.get("input", "")),
+            Extraction(extraction_class="output_text", extraction_text=row.get("output", "")),
+        ]
+
+    # 3) Map extractions to template variables
+    by_class = {e.extraction_class: e.extraction_text for e in extractions}
     variables = {
-        "patient_name": row.get("input", "Anonymous Patient"),
-        # Extract template and transcript content between tags if present
-        "instruction": _extract_between(row.get("instruction", ""), "[TEMPLATE]", "[/TEMPLATE]") or row.get("instruction", ""),
-        "input_text": _extract_between(row.get("input", ""), "[TRANSCRIÇÃO]", "[/TRANSCRIÇÃO]") or row.get("input", ""),
-        "output_text": row.get("output", ""),
+        "patient_name": by_class.get("patient_name", row.get("input", "Anonymous Patient")),
+        "instruction": template_md,
+        "input_text": by_class.get("input_text", row.get("input", "")),
+        "output_text": by_class.get("output_text", row.get("output", "")),
     }
+
     stack = instantiate_stack_template(stack_template, variables)
 
     # Ensure Observation has a minimal codeable concept if not set by template helper
