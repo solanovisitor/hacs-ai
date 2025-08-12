@@ -328,9 +328,8 @@ class HTTPTransport(MCPTransport):
                 "environment": self.settings.environment
             }
 
-        @app.post("/")
-        async def mcp_endpoint(request: Request):  # type: ignore[valid-type]
-            """Secure MCP JSON-RPC endpoint with authentication."""
+        async def _handle_mcp_post(request: Request):
+            """Unified handler for MCP POST requests."""
             try:
                 payload = await request.json()
             except Exception as exc:
@@ -342,7 +341,7 @@ class HTTPTransport(MCPTransport):
                         "message": "Parse error: Invalid JSON"
                     }
                 }
-            
+
             try:
                 mcp_request = MCPRequest(**payload)
             except Exception as exc:
@@ -362,6 +361,25 @@ class HTTPTransport(MCPTransport):
 
             mcp_response = await self.server.handle_request(mcp_request)
             return mcp_response.model_dump()
+
+        @app.post("/")
+        async def mcp_endpoint_root(request: Request):  # type: ignore[valid-type]
+            """Secure MCP JSON-RPC endpoint with authentication at root path."""
+            return await _handle_mcp_post(request)
+
+        @app.post("/mcp/")
+        async def mcp_endpoint_streamable(request: Request):  # type: ignore[valid-type]
+            """Secure MCP JSON-RPC endpoint compatible with streamable HTTP clients.
+
+            The langchain-mcp-adapters expect an MCP endpoint at /mcp/. This
+            mirrors the root endpoint behavior but lives under the /mcp/ path.
+            """
+            return await _handle_mcp_post(request)
+
+        @app.post("/mcp")
+        async def mcp_endpoint_streamable_no_slash(request: Request):  # type: ignore[valid-type]
+            """Alias without trailing slash for compatibility."""
+            return await _handle_mcp_post(request)
 
         # Parse URL to get host and port
         if self.settings.mcp_server_url:

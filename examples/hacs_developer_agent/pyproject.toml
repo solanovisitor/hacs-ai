@@ -12,6 +12,7 @@ dependencies = [
     "pydantic>=2.11.7",
     "httpx>=0.25.0",
     "typing-extensions>=4.12.0",
+    "langchain-mcp-adapters>=0.1.9",
     # HACS packages
     "hacs-models",
     "hacs-core",
@@ -44,6 +45,7 @@ select = ["E", "F", "I"]
 dev-dependencies = [
     "pytest>=7.0.0",
     "ruff>=0.1.0",
+    "langgraph-cli[inmem]>=0.3.6",
 ]
 
 [tool.hatch.build.targets.wheel]

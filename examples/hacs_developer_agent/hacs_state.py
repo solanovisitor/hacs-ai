@@ -52,23 +52,25 @@ def system_status_reducer(left, right):
 
 
 class HACSAgentState(AgentState):
-    """
-    HACS Agent State following DeepAgents pattern.
-    
-    Includes essential HACS admin context while keeping the structure lean.
-    """
-    
-    # Admin task management (similar to todos in DeepAgents)
+    """DeepAgents-style state with HACS extensions."""
+
+    # Core deep agent fields
+    todos: NotRequired[List[Dict[str, Any]]]
+
+    def files_reducer(left: Dict[str, str] | None, right: Dict[str, str] | None) -> Dict[str, str] | None:
+        if left is None:
+            return right
+        if right is None:
+            return left
+        return {**left, **right}
+
+    files: Annotated[NotRequired[Dict[str, str]], files_reducer]
+
+    # HACS extensions
     admin_tasks: Annotated[NotRequired[List[HACSAdminTask]], admin_task_reducer]
-    
-    # HACS system status
     system_status: Annotated[NotRequired[HACSSystemStatus], system_status_reducer]
-    
-    # Current healthcare context (lightweight)
     current_patient_id: NotRequired[str]
     active_clinical_workflow: NotRequired[str]
-    
-    # Session metadata
     session_actor: NotRequired[str]
     session_role: NotRequired[str]
     audit_trail: NotRequired[List[Dict[str, Any]]]

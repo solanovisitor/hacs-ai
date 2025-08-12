@@ -8,7 +8,8 @@ supporting environment-based configuration and validation.
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class LogLevel(str, Enum):
@@ -21,7 +22,7 @@ class LogLevel(str, Enum):
     CRITICAL = "CRITICAL"
 
 
-class HACSSettings(BaseModel):
+class HACSSettings(BaseSettings):
     """Centralized HACS configuration settings.
 
     All settings can be configured via environment variables with the HACS_ prefix.
@@ -74,13 +75,13 @@ class HACSSettings(BaseModel):
     api_keys: list[str] = Field(
         default_factory=list,
         description="List of valid API keys for MCP server access",
-        env="HACS_API_KEYS"
+        env="HACS_API_KEY"
     )
 
     api_keys_file: str | None = Field(
         default=None,
         description="Path to file containing API keys (one per line)",
-        env="HACS_API_KEYS_FILE"
+        env="HACS_API_KEY_FILE"
     )
 
     allowed_origins: list[str] = Field(
@@ -187,7 +188,16 @@ class HACSSettings(BaseModel):
         if file_keys:
             return file_keys
         
-        # 3. Development fallback
+        # 3. Backward-compatible single key via HACS_API_KEY (singular)
+        try:
+            import os as _os
+            single_key = _os.getenv("HACS_API_KEY")
+            if single_key and single_key.strip():
+                return [single_key.strip()]
+        except Exception:
+            pass
+
+        # 4. Development fallback
         if self.dev_mode and self.is_development:
             import secrets
             return [f"dev-{secrets.token_urlsafe(16)}"]
@@ -346,12 +356,11 @@ class HACSSettings(BaseModel):
         description="Default permissions for new actors",
     )
 
-    class Config:
-        """Pydantic configuration."""
-
-        env_prefix = "HACS_"
-        case_sensitive = False
-        validate_assignment = True
+    # Pydantic v2 BaseSettings configuration
+    model_config = SettingsConfigDict(
+        env_prefix="HACS_",
+        case_sensitive=False,
+    )
 
     @field_validator("log_level", mode="before")
     @classmethod

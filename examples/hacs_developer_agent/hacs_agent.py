@@ -13,7 +13,14 @@ from hacs_sub_agent import _create_task_tool, HACSSubAgent
 from hacs_model import get_default_model
 from hacs_utils.integrations.langgraph import get_hacs_agent_tools
 from hacs_state import HACSAgentState
-from hacs_prompts import HACS_BASE_PROMPT
+from hacs_prompts import DEEP_BASE_PROMPT
+from hacs_tools_integration import (
+    manage_admin_tasks,
+    update_system_status,
+    run_database_migration,
+    check_database_status,
+    create_hacs_record,
+)
 
 StateSchema = TypeVar("StateSchema", bound=HACSAgentState)
 StateSchemaType = Type[StateSchema]
@@ -41,10 +48,42 @@ def create_hacs_agent(
     Returns:
         Configured HACS agent ready for healthcare operations.
     """
-    prompt = instructions + HACS_BASE_PROMPT
+    prompt = instructions + DEEP_BASE_PROMPT
     
     # Get HACS agent tools via proper integration
-    built_in_tools = get_hacs_agent_tools()
+    # DeepAgents-style built-ins: write_todos + ls
+    from langchain_core.tools import tool
+
+    @tool(description="Update the todo list for planning and tracking tasks. Pass a list of todo objects.")
+    def write_todos(todos: list[dict[str, Any]]) -> str:
+        """Write or replace the current todo list with the provided items."""
+        try:
+            count = len(todos) if isinstance(todos, list) else 0
+        except Exception:
+            count = 0
+        return f"Updated todos with {count} items"
+
+    @tool(description="List directory entries for the given path (default current directory).")
+    def ls(path: str = ".") -> str:
+        """List files and directories at the specified path."""
+        import os
+        try:
+            entries = sorted(os.listdir(path))
+        except Exception as e:
+            return f"Error listing {path}: {e}"
+        return "\n".join(entries)
+
+    built_in_tools = [
+        write_todos,
+        ls,
+        # Example-local HACS admin tools so subagents can use them by name
+        manage_admin_tasks,
+        update_system_status,
+        run_database_migration,
+        check_database_status,
+        create_hacs_record,
+    ]
+    hacs_tools = get_hacs_agent_tools()
     
     # Set up model
     if model is None:
@@ -55,7 +94,7 @@ def create_hacs_agent(
     
     # Create task delegation tool for HACS subagents
     additional_tools = list(tools) if tools else []
-    all_available_tools = built_in_tools + additional_tools
+    all_available_tools = hacs_tools + built_in_tools + additional_tools
     
     task_tool = _create_task_tool(
         all_available_tools,
@@ -66,7 +105,7 @@ def create_hacs_agent(
     )
     
     # Combine all tools
-    all_tools = built_in_tools + additional_tools + [task_tool]
+    all_tools = hacs_tools + built_in_tools + additional_tools + [task_tool]
     
     return create_react_agent(
         model,

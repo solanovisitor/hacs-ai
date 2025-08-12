@@ -28,6 +28,7 @@ HACS is purpose-built for healthcare AI:
 
 ### Implementation Guides
 - **[Integration Guide](integrations.md)** - Connect to external systems (see also: [LangChain Examples](../packages/hacs-utils/src/hacs_utils/integrations/langchain/README.md))
+- **[Use MCP](mcp_langgraph.md)** - How to use MCP tools with LangGraph, including stdio and streamable HTTP
 - **[Branch Management](branch-management.md)** - Development workflow
 - **[Phase 3 Testing Summary](phase3-testing-summary.md)** - Comprehensive testing results
 

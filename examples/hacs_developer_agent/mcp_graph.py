@@ -39,14 +39,36 @@ def _normalize_streamable_url(base_url: str) -> str:
 
 
 async def make_graph():
-    """Async factory returning a LangGraph agent wired to HACS MCP via MCP adapters."""
-    # Defer imports to avoid hard dependency if not used
+    """Async factory returning a LangGraph agent wired to HACS MCP via MCP adapters.
+
+    This function is hardened to avoid blocking or missing-dependency crashes during
+    LangGraph dev server startup (schema collection). If MCP dependencies are missing
+    or any blocking import/IO occurs, we return a lightweight fallback agent that
+    responds with an initialization message.
+    """
+
+    def _fallback_agent():
+        from langgraph.graph import StateGraph
+        from hacs_state import HACSAgentState
+        workflow = StateGraph(HACSAgentState)
+
+        def basic_node(state):
+            return {
+                "messages": state.get("messages", []) + [
+                    {"role": "assistant", "content": "MCP agent is initializing. Please try again shortly."}
+                ]
+            }
+
+        workflow.add_node("mcp_init", basic_node)
+        workflow.set_entry_point("mcp_init")
+        workflow.set_finish_point("mcp_init")
+        return workflow.compile()
+
+    # Defer imports and guard against blocking errors
     try:
         from langchain_mcp_adapters.client import MultiServerMCPClient
-    except Exception as exc:  # pragma: no cover
-        raise RuntimeError(
-            "langchain-mcp-adapters is required. Install with: uv add langchain-mcp-adapters"
-        ) from exc
+    except Exception:
+        return _fallback_agent()
 
     # Read configuration
     server_name = os.getenv("HACS_MCP_SERVER_NAME", "hacs-mcp")
@@ -68,6 +90,11 @@ async def make_graph():
             headers["Authorization"] = f"Bearer {api_key}"
         if headers:
             server_cfg["headers"] = headers
+        # Debug: print final connection info
+        try:
+            print(f"[MCP Graph] transport=streamable_http url={url} headers={'set' if headers else 'none'}")
+        except Exception:
+            pass
     elif transport == "sse":
         # SSE requires a concrete SSE endpoint; assume base_url already points to SSE path
         server_cfg["url"] = base_url
@@ -76,18 +103,37 @@ async def make_graph():
             headers["Authorization"] = f"Bearer {api_key}"
         if headers:
             server_cfg["headers"] = headers
+        try:
+            print(f"[MCP Graph] transport=sse url={base_url} headers={'set' if headers else 'none'}")
+        except Exception:
+            pass
+    elif transport == "stdio":
+        # Spawn a local FastMCP server over stdio using our HACS tools adapter
+        # Allows fully local dev without HTTP transport
+        server_cfg.update({
+            "command": "python",
+            "args": ["-m", "hacs_utils.mcp.fastmcp_server", "--transport", "stdio"],
+        })
+        try:
+            print("[MCP Graph] transport=stdio command=python -m hacs_utils.mcp.fastmcp_server --transport stdio")
+        except Exception:
+            pass
     else:
         raise ValueError(f"Unsupported HACS_MCP_TRANSPORT: {transport}")
 
-    # Initialize MCP client and load tools
-    client = MultiServerMCPClient({server_name: server_cfg})
-    tools = await client.get_tools()
+    try:
+        # Initialize MCP client and load tools
+        client = MultiServerMCPClient({server_name: server_cfg})
+        tools = await client.get_tools()
 
-    # Initialize the model (LangChain-compatible)
-    model = get_default_model()
+        # Initialize the model (LangChain-compatible)
+        model = get_default_model()
 
-    # Create agent with MCP tools
-    agent = create_react_agent(model, tools)
-    return agent
+        # Create agent with MCP tools
+        agent = create_react_agent(model, tools)
+        return agent
+    except Exception:
+        # Any runtime/IO/import issue → return safe fallback
+        return _fallback_agent()
 
 

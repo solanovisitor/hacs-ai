@@ -422,8 +422,8 @@ HACS_ORGANIZATION=your_health_system
 HEALTHCARE_SYSTEM_NAME=Your Health System
 
 # Optional - Security
-HACS_API_KEYS=key1,key2         # Comma-separated API keys
-HACS_API_KEYS_FILE=/path/to/keys.txt
+HACS_API_KEY=key1,key2         # Comma-separated API keys
+HACS_API_KEY_FILE=/path/to/keys.txt
 ```
 
 ### Docker Configuration
