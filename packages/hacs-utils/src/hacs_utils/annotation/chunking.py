@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Iterable, Iterator, Sequence
 
 from .data import Document, CharInterval
+from hacs_models import TextChunk as TextChunkModel
 
 
 @dataclass
@@ -19,6 +20,14 @@ class TextChunk:
     @property
     def char_interval(self) -> CharInterval:
         return CharInterval(start_pos=self.start_index, end_pos=self.end_index)
+
+    def to_model(self) -> TextChunkModel:
+        return TextChunkModel(
+            start_pos=self.start_index,
+            end_pos=self.end_index,
+            document_id=self.document.document_id,
+            additional_context=self.document.additional_context,
+        )
 
 
 def _sanitize(text: str) -> str:

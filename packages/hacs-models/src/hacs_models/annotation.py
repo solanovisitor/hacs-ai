@@ -142,3 +142,16 @@ class AnnotationWorkflowResource(BaseResource):
     )
 
 
+
+class TextChunk(BaseModel):
+    """Abstract representation of a chunk of text within a document.
+
+    Utilities in hacs-utils compute the text and do splitting; this model only
+    carries positional metadata so it can be serialized and referenced.
+    """
+
+    resource_type: Literal["TextChunk"] = Field(default="TextChunk")
+    start_pos: int = Field(description="Start character position (inclusive)")
+    end_pos: int = Field(description="End character position (exclusive)")
+    document_id: Optional[str] = Field(default=None, description="Source document ID")
+    additional_context: Optional[str] = Field(default=None, description="Optional prompt context")

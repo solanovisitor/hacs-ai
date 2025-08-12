@@ -31,7 +31,12 @@ class OpenAILanguageModel(BaseLanguageModel):
 
     def infer(self, batch_prompts: Sequence[str], **kwargs) -> Iterator[Sequence[ScoredOutput]]:
         for prompt in batch_prompts:
-            # Use plain chat completion for now; could switch to structured in P1
+            # Prefer structured generation when response_model provided
+            response_model = kwargs.pop("response_model", None)
+            if response_model is not None:
+                obj = self._generator.generate_hacs_resource(response_model, user_prompt=prompt)
+                yield [ScoredOutput(score=None, output=obj.json())]
+                continue
             messages = [{"role": "user", "content": prompt}]
             resp = self._client.chat(messages, **kwargs)
             content = resp.choices[0].message.content if getattr(resp, "choices", None) else ""

@@ -119,6 +119,7 @@ from .annotation import (
     ModelConfig,
     PersistencePolicy,
     AnnotationWorkflowResource,
+    TextChunk,
 )
 from .actor import Actor, ActorRole, PermissionLevel, SessionStatus
 from .evidence import Evidence, EvidenceType
@@ -271,6 +272,7 @@ __all__ = [
     "ModelConfig",
     "PersistencePolicy",
     "AnnotationWorkflowResource",
+    "TextChunk",
 
     # Actor and authentication
     "Actor",
