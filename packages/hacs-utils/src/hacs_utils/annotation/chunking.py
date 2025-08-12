@@ -77,3 +77,76 @@ class ChunkIterator:
         return chunk
 
 
+def split_with_langchain_character(
+    document: Document,
+    *,
+    chunk_size: int = 1000,
+    chunk_overlap: int = 0,
+    encoding_name: str | None = None,
+) -> list[TextChunk]:
+    """Optional LangChain token/character-based splitting.
+
+    Falls back to simple char-based if langchain_text_splitters is unavailable.
+    """
+    try:
+        from langchain_text_splitters import CharacterTextSplitter
+    except Exception:
+        it = ChunkIterator(document, max_char_buffer=chunk_size, chunk_overlap=chunk_overlap)
+        return list(iter(it))
+
+    if encoding_name:
+        splitter = CharacterTextSplitter.from_tiktoken_encoder(
+            encoding_name=encoding_name, chunk_size=chunk_size, chunk_overlap=chunk_overlap
+        )
+    else:
+        splitter = CharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+
+    texts = splitter.split_text(document.text)
+    chunks: list[TextChunk] = []
+    cursor = 0
+    for t in texts:
+        # find next occurrence from cursor to preserve order
+        idx = document.text.find(t, cursor)
+        if idx == -1:
+            # fallback: search from start (risk duplicates)
+            idx = document.text.find(t)
+        if idx == -1:
+            continue
+        start = idx
+        end = idx + len(t)
+        cursor = end
+        chunks.append(TextChunk(start_index=start, end_index=end, document=document))
+    return chunks
+
+
+def split_with_langchain_recursive(
+    document: Document,
+    *,
+    chunk_size: int = 1000,
+    chunk_overlap: int = 0,
+) -> list[TextChunk]:
+    try:
+        from langchain_text_splitters import RecursiveCharacterTextSplitter
+    except Exception:
+        it = ChunkIterator(document, max_char_buffer=chunk_size, chunk_overlap=chunk_overlap)
+        return list(iter(it))
+
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size, chunk_overlap=chunk_overlap
+    )
+    texts = splitter.split_text(document.text)
+    chunks: list[TextChunk] = []
+    cursor = 0
+    for t in texts:
+        idx = document.text.find(t, cursor)
+        if idx == -1:
+            idx = document.text.find(t)
+        if idx == -1:
+            continue
+        start = idx
+        end = idx + len(t)
+        cursor = end
+        chunks.append(TextChunk(start_index=start, end_index=end, document=document))
+    return chunks
+
+
