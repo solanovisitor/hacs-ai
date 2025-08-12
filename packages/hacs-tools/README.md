@@ -1,8 +1,8 @@
 # HACS Tools
 
-**42+ Hacs Tools for AI agents via Model Context Protocol**
+**42+ Hacs Tools for healthcare agents**
 
-Production-ready tools for clinical workflows, resource management, and healthcare AI operations.
+Production-ready tools for clinical workflows, resource management, and healthcare AI operations. HACS tools can be used directly from agent frameworks (e.g., LangGraph, LangChain) or exposed over MCP via `hacs-utils`.
 
 ## 🛠️ **Tool Categories**
 
@@ -47,45 +47,24 @@ Production-ready tools for clinical workflows, resource management, and healthca
 pip install hacs-tools
 ```
 
-## 🚀 **Quick Start**
+## 🚀 **Quick Start (bind tools to an agent)**
 
 ```python
-import requests
+from langgraph.prebuilt import create_react_agent
+from hacs_utils.integrations.langgraph.hacs_agent_tools import get_hacs_agent_tools
 
-def use_hacs_tool(tool_name, arguments):
-    """Call HACS MCP tools"""
-    response = requests.post('http://localhost:8000/', json={
-        "jsonrpc": "2.0",
-        "method": "tools/call",
-        "params": {
-            "name": tool_name,
-            "arguments": arguments
-        },
-        "id": 1
-    })
-    return response.json()
+tools = get_hacs_agent_tools()
+agent = create_react_agent(
+    model="anthropic:claude-3-7-sonnet-latest",
+    tools=tools,
+    prompt="You are a healthcare assistant using HACS tools."
+)
 
-# Create patient record
-patient_result = use_hacs_tool("create_hacs_record", {
-    "resource_type": "Patient",
-    "resource_data": {
-        "full_name": "John Smith",
-        "birth_date": "1980-05-15",
-        "gender": "male"
-    }
-})
-
-# Store clinical memory
-memory_result = use_hacs_tool("create_memory", {
-    "content": "Patient reports improved symptoms after treatment",
-    "memory_type": "episodic",
-    "importance_score": 0.8
-})
-
-# Search for related memories
-search_result = use_hacs_tool("search_memories", {
-    "query": "treatment response",
-    "limit": 5
+agent.invoke({
+    "messages": [{
+        "role": "user",
+        "content": "Create a Patient Jane Doe (1990-01-15) and return their id"
+    }]
 })
 ```
 
@@ -126,10 +105,10 @@ schema = use_hacs_tool("get_hacs_resource_schema", {
 ## 🔗 **Integration**
 
 HACS Tools integrate with:
-- **MCP Protocol** - Standard tool calling interface
-- **LangGraph** - AI agent workflows
-- **PostgreSQL** - Persistent healthcare data storage
-- **Healthcare Systems** - FHIR-compliant data exchange
+- **LangGraph / LangChain** — bind tools directly to models/agents
+- **MCP Protocol (via hacs-utils)** — expose tools over JSON‑RPC / streamable HTTP
+- **PostgreSQL (via hacs-persistence)** — persistent healthcare data storage
+- **Healthcare Systems** — FHIR‑compliant data exchange
 
 ## 📊 **Performance**
 

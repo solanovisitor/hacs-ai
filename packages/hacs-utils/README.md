@@ -4,9 +4,9 @@
 
 Provides the Model Context Protocol server and core utilities for healthcare AI agent integration.
 
-## 🌐 **MCP Server**
+## 🌐 **MCP Server (Integrations)**
 
-The core HACS MCP server provides **42+ Hacs Tools** via JSON-RPC:
+The core HACS MCP server provides **42+ Hacs Tools** via JSON‑RPC / streamable HTTP:
 
 - **Port**: 8000 (default)
 - **Protocol**: Model Context Protocol (MCP)
@@ -43,7 +43,7 @@ The core HACS MCP server provides **42+ Hacs Tools** via JSON-RPC:
 pip install hacs-utils
 ```
 
-## 🚀 **Quick Start**
+## 🚀 **Quick Start (MCP)**
 
 ### **Start MCP Server**
 ```bash
@@ -57,7 +57,7 @@ export HACS_MCP_SERVER_URL=http://127.0.0.1:8000
 curl $HACS_MCP_SERVER_URL
 ```
 
-### **Use Hacs Tools**
+### **Use Hacs Tools over MCP**
 ```python
 import requests
 

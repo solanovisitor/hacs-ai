@@ -20,37 +20,30 @@ Then follow the Quick Start to run the MCP server and the LangGraph developer ag
 
 ### Quickstart (minimal code)
 
-Start the MCP server (in a separate terminal):
-
-```bash
-python -m hacs_utils.mcp.fastmcp_server
-```
-
-Call a HACS tool over MCP (JSON-RPC) to create a Patient record:
+Bind HACS tools directly to an agent (LangGraph):
 
 ```python
-import os, requests
+from langgraph.prebuilt import create_react_agent
+from hacs_utils.integrations.langgraph.hacs_agent_tools import get_hacs_agent_tools
 
-url = os.getenv("HACS_MCP_SERVER_URL", "http://127.0.0.1:8000")
+# Discover HACS tools and create an agent that can call them
+tools = get_hacs_agent_tools()
+agent = create_react_agent(
+    model="anthropic:claude-3-7-sonnet-latest",  # or "openai:gpt-4o"
+    tools=tools,
+    prompt="You are a healthcare assistant using HACS tools."
+)
 
-payload = {
-    "jsonrpc": "2.0",
-    "method": "tools/call",
-    "params": {
-        "name": "create_hacs_record",
-        "arguments": {
-            "resource_type": "Patient",
-            "resource_data": {
-                "full_name": "John Smith",
-                "birth_date": "1980-05-15",
-                "gender": "male"
-            }
+# Ask the agent to use tools (it will decide which to call)
+result = agent.invoke({
+    "messages": [
+        {
+            "role": "user",
+            "content": "Create a Patient named John Smith (1980-05-15) and summarize current DB health"
         }
-    },
-    "id": 1,
-}
-
-print(requests.post(url, json=payload).json())
+    ]
+})
+print(result)
 ```
 
 ## Why HACS
