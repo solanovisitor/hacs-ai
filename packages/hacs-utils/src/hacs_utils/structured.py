@@ -18,6 +18,7 @@ from .annotation.conversations import (
     to_openai_messages,
     to_anthropic_messages,
 )
+from .annotation.data import Extraction as ExtractionDC, CharInterval, AlignmentStatus, AnnotatedDocument, Document
 
 T = TypeVar('T', bound=BaseModel)
 
@@ -326,3 +327,136 @@ def _to_text(response: Any) -> str:
     if hasattr(response, 'content'):
         return str(response.content)
     return str(response)
+
+
+# === Extraction-oriented helpers (strategy-compatible) ===
+
+def parse_extractions(response_text: str) -> list[ExtractionDC]:
+    """Parse a response into a list of Extraction dataclasses.
+
+    Accepts either a JSON/YAML array of extraction dicts or an object with key "extractions".
+    Fields supported: extraction_class, extraction_text, char_interval{start_pos,end_pos},
+    alignment_status, extraction_index, group_index, description, attributes.
+    """
+    response_text = _extract_fenced(response_text)
+    data: Any
+    try:
+        data = json.loads(response_text)
+    except Exception:
+        try:
+            data = yaml.safe_load(response_text)
+        except Exception:
+            return []
+
+    items = data.get("extractions") if isinstance(data, dict) else data
+    if not isinstance(items, list):
+        return []
+
+    results: list[ExtractionDC] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        extraction_class = str(item.get("extraction_class", ""))
+        extraction_text = str(item.get("extraction_text", ""))
+        if not extraction_class or not extraction_text:
+            continue
+        # char interval
+        ci_obj = item.get("char_interval") or {}
+        char_interval = None
+        if isinstance(ci_obj, dict):
+            char_interval = CharInterval(
+                start_pos=ci_obj.get("start_pos"), end_pos=ci_obj.get("end_pos")
+            )
+        # alignment status
+        status = item.get("alignment_status")
+        align_status = None
+        if isinstance(status, str):
+            try:
+                align_status = AlignmentStatus(status)
+            except Exception:
+                align_status = None
+        results.append(
+            ExtractionDC(
+                extraction_class=extraction_class,
+                extraction_text=extraction_text,
+                char_interval=char_interval,
+                alignment_status=align_status,
+                extraction_index=item.get("extraction_index"),
+                group_index=item.get("group_index"),
+                description=item.get("description"),
+                attributes=item.get("attributes"),
+            )
+        )
+    return results
+
+
+def shift_char_intervals(extractions: list[ExtractionDC], *, char_offset: int) -> list[ExtractionDC]:
+    """Shift char intervals by a fixed offset (e.g., chunk start offset)."""
+    if char_offset == 0:
+        return extractions
+    shifted: list[ExtractionDC] = []
+    for e in extractions:
+        if e.char_interval and e.char_interval.start_pos is not None and e.char_interval.end_pos is not None:
+            ci = CharInterval(
+                start_pos=e.char_interval.start_pos + char_offset,
+                end_pos=e.char_interval.end_pos + char_offset,
+            )
+        else:
+            ci = e.char_interval
+        shifted.append(
+            ExtractionDC(
+                extraction_class=e.extraction_class,
+                extraction_text=e.extraction_text,
+                char_interval=ci,
+                alignment_status=e.alignment_status,
+                extraction_index=e.extraction_index,
+                group_index=e.group_index,
+                description=e.description,
+                attributes=e.attributes,
+            )
+        )
+    return shifted
+
+
+async def generate_extractions(
+    llm_provider: Any,
+    prompt: str,
+    **kwargs,
+) -> list[ExtractionDC]:
+    """Async generation of extractions using a generic provider (ainvoke/invoke)."""
+    if hasattr(llm_provider, 'ainvoke'):
+        resp = await llm_provider.ainvoke(prompt)
+        return parse_extractions(_to_text(resp))
+    if hasattr(llm_provider, 'invoke'):
+        resp = llm_provider.invoke(prompt)
+        return parse_extractions(_to_text(resp))
+    raise ValueError("LLM provider must support 'ainvoke' or 'invoke' method")
+
+
+def generate_extractions_openai(client: Any, prompt: str, **kwargs) -> list[ExtractionDC]:
+    messages = [{"role": "user", "content": prompt}]
+    resp = client.chat(messages, **kwargs)
+    return parse_extractions(_to_text(resp))
+
+
+def generate_extractions_anthropic(
+    client: Any,
+    prompt: str,
+    *,
+    model: str | None = None,
+    stream: bool = False,
+    max_tokens: int = 1024,
+    **kwargs,
+) -> list[ExtractionDC]:
+    msgs = [{"role": "user", "content": prompt}]
+    if stream:
+        evs = client.messages.create(model=model or "claude-3-7-sonnet-latest", max_tokens=max_tokens, messages=msgs, stream=True)
+        buf: list[str] = []
+        for ev in evs:
+            delta = getattr(ev, "delta", None)
+            if delta and hasattr(delta, "text") and delta.text:
+                buf.append(delta.text)
+        return parse_extractions("".join(buf))
+    else:
+        msg = client.messages.create(model=model or "claude-3-7-sonnet-latest", max_tokens=max_tokens, messages=msgs)
+        return parse_extractions(_to_text(msg))
