@@ -16,7 +16,7 @@ from datetime import date
 from typing import Dict, Type, Any
 
 # Only import models that work reliably
-from hacs_core import Patient, MemoryBlock, Actor, BaseResource
+from hacs_models import Patient, MemoryBlock, Actor, BaseResource
 
 
 def discover_working_hacs_resources() -> Dict[str, Type[BaseResource]]:
@@ -25,7 +25,7 @@ def discover_working_hacs_resources() -> Dict[str, Type[BaseResource]]:
 
     # Core models that always work
     try:
-        from hacs_core import Patient, MemoryBlock, Actor
+        from hacs_models import Patient, MemoryBlock, Actor
         working_resources.update({
             "Patient": Patient,
             "MemoryBlock": MemoryBlock,

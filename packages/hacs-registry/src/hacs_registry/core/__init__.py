@@ -4,7 +4,7 @@ HACS Registry Core - Foundational Abstractions
 This module provides the core abstractions that follow SOLID principles:
 
 S - Single Responsibility: Each interface has one clear purpose
-O - Open/Closed: Extensible through inheritance, closed for modification  
+O - Open/Closed: Extensible through inheritance, closed for modification
 L - Liskov Substitution: All implementations are substitutable
 I - Interface Segregation: Small, focused interfaces
 D - Dependency Inversion: Depend on abstractions, not concretions
@@ -17,16 +17,28 @@ Core Patterns:
 """
 
 from .base import (
+    # Re-exported from hacs-core
     EntityId,
     Entity,
-    ValueObject,
     AggregateRoot,
     Repository,
+    UnitOfWork,
+
+    # Registry-specific abstractions
+    ValueObject,
+    DomainEvent,
     EventPublisher,
     EventHandler,
-    DomainEvent,
+    LifecycleAware,
     DomainService,
     ApplicationService,
+    QueryRepository,
+    Specification,
+    RegistryAggregateRoot,
+
+    # Type aliases
+    RepositoryType,
+    QueryRepositoryType,
 )
 
 from .events import (
@@ -52,34 +64,43 @@ from .exceptions import (
 )
 
 __all__ = [
-    # Base abstractions
+    # Re-exported from hacs-core
     "EntityId",
     "Entity",
-    "ValueObject", 
     "AggregateRoot",
     "Repository",
+    "UnitOfWork",
+
+    # Registry-specific abstractions
+    "ValueObject",
+    "DomainEvent",
     "EventPublisher",
     "EventHandler",
-    "DomainEvent",
+    "LifecycleAware",
     "DomainService",
     "ApplicationService",
-    
+    "QueryRepository",
+    "Specification",
+    "RegistryAggregateRoot",
+    "RepositoryType",
+    "QueryRepositoryType",
+
     # Event system
     "RegistryEvent",
     "ResourceEvent",
-    "AgentEvent", 
+    "AgentEvent",
     "IAMEvent",
     "EventBus",
-    
+
     # Lifecycle management
     "LifecycleState",
     "LifecycleManager",
     "LifecycleTransition",
-    
+
     # Exceptions
     "RegistryException",
     "DomainException",
-    "InfrastructureException", 
+    "InfrastructureException",
     "ValidationException",
     "PermissionException",
 ]

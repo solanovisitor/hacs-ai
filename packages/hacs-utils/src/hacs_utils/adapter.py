@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any
 
-from hacs_core import Actor, Evidence, MemoryBlock, Observation, Patient
+from hacs_models import Actor, Evidence, MemoryBlock, Observation, Patient
 from pydantic import BaseModel, Field
 
 

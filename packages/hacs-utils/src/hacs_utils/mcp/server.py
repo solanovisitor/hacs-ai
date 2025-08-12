@@ -59,32 +59,22 @@ class HacsMCPServer:
 
     def _initialize_persistence(self) -> None:
         """Initialize database and vector store with full migration."""
-        # Database initialization with migration
+        # Database initialization with enhanced connection factory
         database_url = os.getenv("DATABASE_URL")
         if database_url and PERSISTENCE_AVAILABLE:
             try:
-                logger.info("Initializing HACS database with migration...")
+                logger.info("Initializing HACS database with connection factory...")
 
-                # Check migration status first
-                status = get_migration_status(database_url)
-                logger.info(f"Migration status: {status}")
-
-                if status.get("error"):
-                    logger.warning(f"⚠️ Migration status check failed: {status.get('error')}")
-                elif status.get("migration_complete", False):
-                    logger.info(f"✅ HACS schemas ready - found: {', '.join(status.get('schemas_found', []))}")
-                else:
-                    logger.info("Running HACS database migration...")
-                    success = initialize_hacs_database(database_url)
-                    if success:
-                        logger.info("✅ HACS database migration completed successfully")
-                        logger.info(f"📊 Created schemas: {', '.join(['hacs_core', 'hacs_clinical', 'hacs_registry', 'hacs_agents', 'hacs_admin', 'hacs_audit'])}")
-                    else:
-                        logger.warning("⚠️ Database migration failed, using fallback mode")
-
-                # Initialize adapter
-                self.db_adapter = PostgreSQLAdapter(database_url=database_url)
-                logger.info("PostgreSQL persistence adapter initialized")
+                # Use connection factory for robust initialization
+                from hacs_persistence import HACSConnectionFactory
+                
+                # Get adapter with automatic migration and connection pooling
+                self.db_adapter = HACSConnectionFactory.get_adapter(
+                    database_url=database_url,
+                    auto_migrate=True,
+                    pool_size=10
+                )
+                logger.info("✅ PostgreSQL adapter initialized via connection factory")
 
             except Exception as e:
                 self.db_adapter = None
@@ -108,13 +98,13 @@ class HacsMCPServer:
                 self.vector_store = None
                 logger.warning(f"Could not initialize Qdrant vector store: {e}. Vector operations will be disabled.")
 
-    async def _handle_call_tool(self, request: MCPRequest) -> MCPResponse:
+    async def _handle_use_tool(self, request: MCPRequest) -> MCPResponse:
         """Handle tools/call request with enhanced persistence-enabled execution."""
         try:
-            params = CallToolParams(**request.params)
+            params = CallToolParams(**(request.params or {}))
 
             # Create enhanced actor context
-            from hacs_core import Actor
+            from hacs_models import Actor
             actor = Actor(
                 id="mcp-server",
                 name="HACS MCP Server",
@@ -123,19 +113,20 @@ class HacsMCPServer:
                 session_status="active"
             )
 
-            # Execute tool with full persistence context
-            result = await execute_tool(
+            # Execute via integration manager (async) with context injection
+            from hacs_registry import execute_hacs_tool
+            tool_result = await execute_hacs_tool(
                 tool_name=params.name,
                 params=params.arguments,
+                actor_name=actor.name,
                 db_adapter=self.db_adapter,
-                vector_store=self.vector_store,
-                actor=actor
+                vector_store=self.vector_store
             )
 
-            return MCPResponse(id=request.id, result=result.model_dump())
+            return MCPResponse(id=request.id, result=tool_result.to_dict())
 
         except Exception as e:
-            logger.error(f"Error executing tool {request.params.get('name', 'unknown')}: {e}")
+            logger.error(f"Error executing tool {getattr(params, 'name', 'unknown')}: {e}")
             return MCPResponse(
                 id=request.id,
                 error={
@@ -143,7 +134,7 @@ class HacsMCPServer:
                     "message": "Internal error",
                     "data": {"details": str(e)},
                 },
-        )
+            )
 
     async def _handle_list_tools(self, request: MCPRequest) -> MCPResponse:
         """Handle tools/list requests with comprehensive HACS tool coverage organized in blocks."""
@@ -606,7 +597,7 @@ class HacsMCPServer:
             if request.method == "tools/list":
                 return await self._handle_list_tools(request)
             elif request.method == "tools/call":
-                return await self._handle_call_tool(request)
+                return await self._handle_use_tool(request)
             else:
                 return MCPResponse(
                     id=request.id,

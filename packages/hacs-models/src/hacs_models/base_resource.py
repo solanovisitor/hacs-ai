@@ -1,7 +1,7 @@
 """
 Base resource model for all HACS healthcare models.
 
-This module provides the foundational BaseResource and DomainResource classes 
+This module provides the foundational BaseResource and DomainResource classes
 that all HACS models inherit from. Designed for world-class development quality
 with full type safety, comprehensive validation, and AI-optimized features.
 
@@ -28,6 +28,58 @@ from typing import Any, ClassVar, Type, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
+# Import protocols (interfaces only, not implementations) to avoid circular imports
+try:
+    from hacs_core.protocols import (
+        ClinicalResource,
+        Identifiable,
+        Serializable,
+        Timestamped,
+        Validatable,
+        Versioned,
+    )
+    _has_protocols = True
+except ImportError:
+    # Create dummy protocols for standalone usage
+    _has_protocols = False
+    from typing import Protocol, runtime_checkable
+
+    @runtime_checkable
+    class Identifiable(Protocol):
+        @property
+        def id(self) -> str: ...
+
+    @runtime_checkable
+    class Timestamped(Protocol):
+        @property
+        def created_at(self) -> datetime: ...
+        @property
+        def updated_at(self) -> datetime: ...
+
+    @runtime_checkable
+    class Versioned(Protocol):
+        @property
+        def version(self) -> str: ...
+
+    @runtime_checkable
+    class Serializable(Protocol):
+        def to_dict(self) -> dict: ...
+        @classmethod
+        def from_dict(cls, data: dict): ...
+
+    @runtime_checkable
+    class Validatable(Protocol):
+        def validate(self) -> list: ...
+        def is_valid(self) -> bool: ...
+
+    @runtime_checkable
+    class ClinicalResource(Protocol):
+        @property
+        def resource_type(self) -> str: ...
+        @property
+        def status(self) -> str: ...
+        def get_patient_id(self) -> str | None: ...
+
 # Type variable for generic base resource operations
 T = TypeVar('T', bound='BaseResource')
 
@@ -38,9 +90,19 @@ class BaseResource(BaseModel):
 
     Provides essential functionality for healthcare data models including
     automatic ID generation, timestamp management, and type-safe operations.
-    
+
     This class follows FHIR R4/R5 base resource patterns while optimizing
     for AI agent communication and modern Python development practices.
+
+    **Protocol Compliance:**
+        Implements: Identifiable, Timestamped, Versioned, Serializable, Validatable
+
+        This ensures all HACS resources follow standardized contracts for:
+        - Unique identification (id field)
+        - Audit trails (created_at, updated_at)
+        - Version tracking (version field)
+        - Data interchange (to_dict, from_dict)
+        - Validation (validate, is_valid)
 
     Features:
         - Auto-generated UUIDs if ID not provided
@@ -49,38 +111,40 @@ class BaseResource(BaseModel):
         - JSON Schema generation with examples
         - Subset model creation for specific use cases
         - Performance optimized serialization
+        - Protocol-based interface contracts
 
     Example:
         >>> class MyResource(BaseResource):
         ...     name: str
         ...     value: int = 0
-        >>> 
+        >>>
         >>> resource = MyResource(resource_type="MyResource", name="test")
         >>> print(resource.id)  # Auto-generated: myresource-a1b2c3d4
         >>> print(resource.created_at)  # Auto-set to current time
+        >>> isinstance(resource, Identifiable)  # True - protocol compliance
     """
 
-    # Pydantic v2 configuration for optimal performance and validation  
+    # Pydantic v2 configuration for optimal performance and validation
     model_config = ConfigDict(
         # Core validation settings
         validate_assignment=True,           # Validate on field assignment
         validate_default=True,             # Validate default values
         use_enum_values=True,              # Serialize enums as values
-        
+
         # Performance optimizations
         extra="forbid",                    # Strict field validation (world-class quality)
         frozen=False,                      # Allow field updates for timestamps
         str_strip_whitespace=True,         # Auto-strip whitespace
-        
+
         # Developer experience
         arbitrary_types_allowed=False,     # Strict type checking
-        
+
         # JSON Schema generation
         json_schema_extra={
             "examples": [
                 {
                     "id": "resource-a1b2c3d4",
-                    "resource_type": "BaseResource", 
+                    "resource_type": "BaseResource",
                     "created_at": "2024-08-03T12:00:00Z",
                     "updated_at": "2024-08-03T12:00:00Z",
                 }
@@ -90,33 +154,40 @@ class BaseResource(BaseModel):
         },
     )
 
-    # Resource identification fields
+    # Protocol Implementation Fields
+
+    # Identifiable protocol
     id: str | None = Field(
-        default=None,
+        default=None,  # Will be set in model_post_init
         description="Unique identifier for this resource. Auto-generated if not provided.",
-        examples=["patient-a1b2c3d4", "observation-b2c3d4e5", "memory-c3d4e5f6"],
         min_length=1,
         max_length=64,
     )
 
+    # Timestamped protocol
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="ISO 8601 timestamp when this resource was created",
+    )
+
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="ISO 8601 timestamp when this resource was last updated",
+    )
+
+    # Versioned protocol
+    version: str = Field(
+        default="1.0.0",
+        description="Version of the resource",
+        pattern=r"^\d+\.\d+\.\d+$",
+    )
+
+    # Resource type field (required for all resources)
     resource_type: str = Field(
         description="Type identifier for this resource (Patient, Observation, etc.)",
         examples=["Patient", "Observation", "MemoryBlock", "WorkflowDefinition"],
         min_length=1,
         max_length=50,
-    )
-
-    # Timestamp management  
-    created_at: datetime | None = Field(
-        default=None,
-        description="ISO 8601 timestamp when this resource was created",
-        examples=["2024-08-03T12:00:00Z", "2024-08-03T12:00:00.123456Z"],
-    )
-
-    updated_at: datetime | None = Field(
-        default=None, 
-        description="ISO 8601 timestamp when this resource was last updated",
-        examples=["2024-08-03T12:30:00Z", "2024-08-03T12:30:00.654321Z"],
     )
 
     # Class-level metadata for introspection
@@ -126,58 +197,61 @@ class BaseResource(BaseModel):
     def model_post_init(self, __context: Any) -> None:
         """
         Post-initialization hook for auto-generation of required fields.
-        
+
         Called automatically after model creation to set:
         - Auto-generated ID if not provided
-        - Created timestamp if not provided  
-        - Updated timestamp if not provided
-        
+        - Resource-type prefix for ID clarity
+
         Args:
             __context: Pydantic validation context (unused)
         """
-        current_time = datetime.now(timezone.utc)
-
         # Generate ID with resource-type prefix for clarity
         if self.id is None:
             resource_prefix = self.resource_type.lower().replace(" ", "-")
             unique_suffix = str(uuid.uuid4())[:8]
             self.id = f"{resource_prefix}-{unique_suffix}"
 
-        # Set creation timestamp
-        if self.created_at is None:
-            self.created_at = current_time
-
-        # Set update timestamp  
-        if self.updated_at is None:
-            self.updated_at = current_time
-
     def update_timestamp(self) -> None:
-        """
-        Update the updated_at timestamp to current UTC time.
-        
-        Call this method when making modifications to track when
-        the resource was last changed.
-        
-        Example:
-            >>> resource.name = "New Name"
-            >>> resource.update_timestamp()
-        """
+        """Update the updated_at timestamp to current time."""
         self.updated_at = datetime.now(timezone.utc)
+
+    # Serializable protocol methods
+    def to_dict(self) -> dict[str, Any]:
+        """Convert object to dictionary representation."""
+        return self.model_dump()
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> 'BaseResource':
+        """Create object from dictionary representation."""
+        return cls(**data)
+
+    # Validatable protocol methods
+    def validate(self) -> list[str]:
+        """Validate the object and return list of errors."""
+        try:
+            self.model_validate(self.model_dump())
+            return []
+        except Exception as e:
+            return [str(e)]
+
+    def is_valid(self) -> bool:
+        """Check if the object is valid."""
+        return len(self.validate()) == 0
 
     def is_newer_than(self, other: "BaseResource") -> bool:
         """
         Compare timestamps to determine if this resource is newer.
-        
+
         Args:
             other: Another BaseResource to compare against
-            
+
         Returns:
             True if this resource was updated more recently
-            
+
         Example:
             >>> resource1 = MyResource(resource_type="Test", name="first")
             >>> # ... time passes ...
-            >>> resource2 = MyResource(resource_type="Test", name="second") 
+            >>> resource2 = MyResource(resource_type="Test", name="second")
             >>> resource2.is_newer_than(resource1)  # True
         """
         if self.updated_at is None or other.updated_at is None:
@@ -188,23 +262,23 @@ class BaseResource(BaseModel):
     def pick(cls: Type[T], *fields: str) -> Type[T]:
         """
         Create a subset model containing only specified fields.
-        
+
         Useful for creating lightweight models for specific use cases,
         API responses, or when you only need certain fields from a model.
         Essential fields (id, resource_type, timestamps) are always included.
-        
+
         Args:
             *fields: Names of fields to include in the subset model
-            
+
         Returns:
             New Pydantic model class with only the specified fields
-            
+
         Example:
             >>> PatientSummary = Patient.pick("full_name", "birth_date", "gender")
             >>> summary = PatientSummary(
             ...     resource_type="Patient",
             ...     full_name="Jane Doe",
-            ...     birth_date="1990-01-15", 
+            ...     birth_date="1990-01-15",
             ...     gender="female"
             ... )
             >>> # summary only has the picked fields plus essentials
@@ -236,10 +310,10 @@ class BaseResource(BaseModel):
     def get_age_days(self) -> float | None:
         """
         Calculate age of this resource in days since creation.
-        
+
         Returns:
             Number of days since created_at, or None if no creation time
-            
+
         Example:
             >>> resource = MyResource(resource_type="Test")
             >>> # ... some time later ...
@@ -247,7 +321,7 @@ class BaseResource(BaseModel):
         """
         if self.created_at is None:
             return None
-        
+
         now = datetime.now(timezone.utc)
         delta = now - self.created_at
         return delta.total_seconds() / 86400  # Convert seconds to days
@@ -255,10 +329,10 @@ class BaseResource(BaseModel):
     def to_reference(self) -> str:
         """
         Create a FHIR-style reference string for this resource.
-        
+
         Returns:
             Reference string in format "ResourceType/id"
-            
+
         Example:
             >>> patient = Patient(resource_type="Patient", full_name="John Doe")
             >>> ref = patient.to_reference()  # "Patient/patient-a1b2c3d4"
@@ -268,7 +342,7 @@ class BaseResource(BaseModel):
     def __str__(self) -> str:
         """
         Human-readable string representation.
-        
+
         Returns:
             Simple string showing resource type and ID
         """
@@ -277,12 +351,12 @@ class BaseResource(BaseModel):
     def __repr__(self) -> str:
         """
         Developer-friendly detailed representation.
-        
+
         Shows up to 5 most important fields with values,
         truncating long strings for readability.
         """
         field_strs = []
-        
+
         # Always show essential fields first
         essential_order = ["id", "resource_type", "created_at", "updated_at"]
         other_fields = [f for f in self.model_fields if f not in essential_order]
@@ -296,7 +370,7 @@ class BaseResource(BaseModel):
                     value = f"{value[:37]}..."
                 elif isinstance(value, datetime):
                     value = value.isoformat()
-                    
+
                 # Shorten common field names
                 display_name = field_name
                 if field_name == "created_at":
@@ -305,7 +379,7 @@ class BaseResource(BaseModel):
                     display_name = "updated"
                 elif field_name == "resource_type":
                     display_name = "type"
-                    
+
                 field_strs.append(f"{display_name}={repr(value)}")
 
         # Show max 5 fields to keep repr concise
@@ -319,20 +393,36 @@ class BaseResource(BaseModel):
 class DomainResource(BaseResource):
     """
     Base class for domain-specific healthcare resources.
-    
+
     Extends BaseResource with additional fields and functionality
     specific to FHIR domain resources (Patient, Observation, etc.).
-    
+
     This follows FHIR's DomainResource pattern where most clinical
     resources inherit common patterns like text, contained resources,
     extensions, and modifierExtensions.
-    
+
+    **Protocol Compliance:**
+        Implements: ClinicalResource protocol patterns
+
+        This ensures all clinical resources provide:
+        - Patient ID association (get_patient_id method)
+        - Status tracking (status field)
+        - Resource type identification (inherited from BaseResource)
+
     Features:
         - Human-readable text representation
-        - Support for contained resources  
+        - Support for contained resources
         - Extension mechanism for additional data
         - Modifier extensions for data that changes meaning
+        - Clinical resource protocol compliance
     """
+
+    # Clinical resource status (implements ClinicalResource protocol)
+    status: str = Field(
+        default="active",
+        description="Current status of the resource",
+        examples=["active", "inactive", "draft", "entered-in-error"],
+    )
 
     # FHIR DomainResource fields
     text: str | None = Field(
@@ -367,10 +457,10 @@ class DomainResource(BaseResource):
     def get_text_summary(self) -> str:
         """
         Get or generate a human-readable text summary.
-        
+
         Returns the explicit text field if set, otherwise generates
         a basic summary from the resource type and ID.
-        
+
         Returns:
             Human-readable summary string
         """
@@ -381,11 +471,11 @@ class DomainResource(BaseResource):
     def add_extension(self, url: str, value: Any) -> None:
         """
         Add an extension to this resource.
-        
+
         Args:
             url: Extension URL/identifier
             value: Extension value
-            
+
         Example:
             >>> resource.add_extension("custom-flag", True)
         """
@@ -397,10 +487,10 @@ class DomainResource(BaseResource):
     def get_extension(self, url: str) -> Any | None:
         """
         Get an extension value by URL.
-        
+
         Args:
             url: Extension URL/identifier
-            
+
         Returns:
             Extension value or None if not found
         """
@@ -411,11 +501,44 @@ class DomainResource(BaseResource):
     def has_extension(self, url: str) -> bool:
         """
         Check if an extension exists.
-        
+
         Args:
             url: Extension URL/identifier
-            
+
         Returns:
             True if extension exists
         """
         return self.extension is not None and url in self.extension
+
+    def get_patient_id(self) -> str | None:
+        """
+        Get the patient ID associated with this resource.
+
+        Implements the ClinicalResource protocol method. Default implementation
+        looks for common patient reference patterns. Override in subclasses
+        for resource-specific logic.
+
+        Returns:
+            Patient ID if found, None otherwise
+        """
+        # Check for direct patient_id field
+        if hasattr(self, 'patient_id'):
+            return getattr(self, 'patient_id')
+
+        # Check for subject field (common in FHIR resources)
+        if hasattr(self, 'subject'):
+            subject = getattr(self, 'subject')
+            if hasattr(subject, 'id'):
+                return subject.id
+            elif isinstance(subject, str):
+                return subject
+
+        # Check for patient field
+        if hasattr(self, 'patient'):
+            patient = getattr(self, 'patient')
+            if hasattr(patient, 'id'):
+                return patient.id
+            elif isinstance(patient, str):
+                return patient
+
+        return None

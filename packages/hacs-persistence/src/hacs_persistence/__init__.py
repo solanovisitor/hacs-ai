@@ -7,6 +7,9 @@ database adapters, schema management, data mapping, and migrations.
 
 # from hacs_tools.vectorization import VectorMetadata, VectorStore
 from .adapter import PostgreSQLAdapter, create_postgres_adapter
+from .connection_factory import (
+    HACSConnectionFactory, get_default_adapter, get_test_adapter, ensure_database_ready
+)
 
 # Optional granular adapter – depends on hacs_models package
 try:
@@ -15,6 +18,20 @@ except ModuleNotFoundError:
     GranularPostgreSQLAdapter = None  # type: ignore
 from .resource_mapper import ResourceMapper
 from .schema import HACSSchemaManager
+
+# Repository pattern implementations
+try:
+    from .repositories import (
+        BaseRepository, ResourceRepository, PatientRepository,
+        ObservationRepository, EncounterRepository, RepositoryFactory,
+        create_repository_factory
+    )
+    REPOSITORIES_AVAILABLE = True
+except ImportError:
+    BaseRepository = ResourceRepository = PatientRepository = None
+    ObservationRepository = EncounterRepository = RepositoryFactory = None
+    create_repository_factory = None
+    REPOSITORIES_AVAILABLE = False
 
 # Import migration functionality
 try:
@@ -51,7 +68,22 @@ __all__ = [
     "HACSVectorStore",
     "create_vector_store",
     "initialize_hacs_database",
-    "get_migration_status"
+    "get_migration_status",
+    # Connection factory
+    "HACSConnectionFactory",
+    "get_default_adapter",
+    "get_test_adapter", 
+    "ensure_database_ready",
+    # Repository pattern
+    "BaseRepository",
+    "ResourceRepository",
+    "PatientRepository",
+    "ObservationRepository",
+    "EncounterRepository",
+    "RepositoryFactory",
+    "create_repository_factory",
+    # Availability flags
+    "REPOSITORIES_AVAILABLE",
 ]
 
 def initialize_hacs_database(database_url: str, force_migration: bool = False) -> bool:

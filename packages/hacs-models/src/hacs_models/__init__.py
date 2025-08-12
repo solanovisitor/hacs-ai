@@ -1,7 +1,7 @@
 """
 HACS Models - Pure Healthcare Data Models
 
-This package provides type-safe, FHIR-compliant healthcare data models 
+This package provides type-safe, FHIR-compliant healthcare data models
 optimized for AI agent communication and healthcare application development.
 
 Design Philosophy:
@@ -42,6 +42,16 @@ from .types import (
     AddressType,
     IdentifierUse,
     NameUse,
+    # NEW - Critical Phase 1 additions
+    AllergyIntoleranceStatus,
+    AllergyIntoleranceType,
+    AllergyCriticality,
+    AllergyReactionSeverity,
+    ServiceRequestStatus,
+    ServiceRequestIntent,
+    ServiceRequestPriority,
+    DiagnosticReportStatus,
+    MedicationStatus,
 )
 
 # Core healthcare models
@@ -53,12 +63,57 @@ from .medication import Medication, MedicationIngredient
 from .medication_request import MedicationRequest, Dosage, DosageInstruction
 from .procedure import Procedure, ProcedurePerformer, ProcedureFocalDevice
 from .goal import Goal, GoalTarget
+# NEW - Phase 1 critical resources
+from .allergy_intolerance import (
+    AllergyIntolerance,
+    AllergyIntoleranceReaction,
+    create_food_allergy,
+    create_medication_allergy,
+    create_environmental_allergy,
+)
+from .service_request import (
+    ServiceRequest,
+    create_lab_request,
+    create_imaging_request,
+    create_referral_request,
+)
+from .diagnostic_report import (
+    DiagnosticReport,
+    DiagnosticReportMedia,
+    create_lab_report,
+    create_imaging_report,
+    create_pathology_report,
+    create_microbiology_report,
+)
+from .practitioner import (
+    Practitioner,
+    PractitionerQualification,
+    create_physician,
+    create_nurse,
+    create_therapist,
+)
+from .organization import (
+    Organization,
+    OrganizationContact,
+    create_hospital,
+    create_clinic,
+    create_department,
+    create_insurance_organization,
+    create_pharmacy,
+)
 
 # Specialized models for AI agents
 from .memory import MemoryBlock, EpisodicMemory, SemanticMemory, WorkingMemory
 from .agent_message import AgentMessage, MessageRole, MessageType
 from .resource_bundle import ResourceBundle, BundleEntry, BundleType
 from .workflow import WorkflowDefinition, WorkflowStep, WorkflowAction
+from .actor import Actor, ActorRole, PermissionLevel, SessionStatus
+from .evidence import Evidence, EvidenceType
+from .results import (
+    HACSResult, ResourceSchemaResult, ResourceDiscoveryResult, FieldAnalysisResult,
+    DataQueryResult, WorkflowResult, GuidanceResult, MemoryResult, VersionResult,
+    ResourceStackResult, ResourceTemplateResult, VectorStoreResult
+)
 
 # Version info
 __version__ = "0.1.0"
@@ -70,12 +125,12 @@ __all__ = [
     # Base classes
     "BaseResource",
     "DomainResource",
-    
+
     # Type definitions
     "HealthcareDomain",
     "Gender",
     "ObservationStatus",
-    "EncounterStatus", 
+    "EncounterStatus",
     "ConditionClinicalStatus",
     "ConditionVerificationStatus",
     "MedicationRequestStatus",
@@ -87,63 +142,131 @@ __all__ = [
     "AddressType",
     "IdentifierUse",
     "NameUse",
-    
+    # NEW - Phase 1 critical types
+    "AllergyIntoleranceStatus",
+    "AllergyIntoleranceType",
+    "AllergyCriticality",
+    "AllergyReactionSeverity",
+    "ServiceRequestStatus",
+    "ServiceRequestIntent",
+    "ServiceRequestPriority",
+    "DiagnosticReportStatus",
+    "MedicationStatus",
+
     # Patient and related structures
     "Patient",
     "HumanName",
-    "ContactPoint", 
+    "ContactPoint",
     "Address",
     "Identifier",
-    
+
     # Observation and clinical data
     "Observation",
     "Quantity",
     "CodeableConcept",
     "Coding",
     "Range",
-    
+
     # Encounter management
     "Encounter",
     "EncounterParticipant",
     "EncounterDiagnosis",
-    
+
     # Condition tracking
     "Condition",
     "ConditionStage",
     "ConditionEvidence",
-    
+
     # Medication management
     "Medication",
     "MedicationIngredient",
     "MedicationRequest",
     "Dosage",
     "DosageInstruction",
-    
+
     # Procedure documentation
     "Procedure",
     "ProcedurePerformer",
     "ProcedureFocalDevice",
-    
+
     # Goal management
     "Goal",
     "GoalTarget",
-    
+
+    # NEW - Phase 1 critical resources
+    # Allergy/Intolerance management (safety-critical)
+    "AllergyIntolerance",
+    "AllergyIntoleranceReaction",
+    "create_food_allergy",
+    "create_medication_allergy",
+    "create_environmental_allergy",
+    # Service request management (care coordination)
+    "ServiceRequest",
+    "create_lab_request",
+    "create_imaging_request",
+    "create_referral_request",
+    # Diagnostic reporting (clinical decisions)
+    "DiagnosticReport",
+    "DiagnosticReportMedia",
+    "create_lab_report",
+    "create_imaging_report",
+    "create_pathology_report",
+    "create_microbiology_report",
+    # Healthcare provider management (care teams)
+    "Practitioner",
+    "PractitionerQualification",
+    "create_physician",
+    "create_nurse",
+    "create_therapist",
+    # Healthcare facility management (organizations)
+    "Organization",
+    "OrganizationContact",
+    "create_hospital",
+    "create_clinic",
+    "create_department",
+    "create_insurance_organization",
+    "create_pharmacy",
+
     # AI agent models
     "MemoryBlock",
     "EpisodicMemory",
-    "SemanticMemory", 
+    "SemanticMemory",
     "WorkingMemory",
     "AgentMessage",
     "MessageRole",
     "MessageType",
-    
+
     # Bundle and workflow
     "ResourceBundle",
     "BundleEntry",
     "BundleType",
     "WorkflowDefinition",
-    "WorkflowStep", 
+    "WorkflowStep",
     "WorkflowAction",
+
+    # Actor and authentication
+    "Actor",
+    "ActorRole",
+    "PermissionLevel",
+    "SessionStatus",
+
+    # Evidence and clinical reasoning
+    "Evidence",
+    "EvidenceType",
+
+    # Result types
+    "HACSResult",
+    "ResourceSchemaResult",
+    "ResourceDiscoveryResult",
+    "FieldAnalysisResult",
+    "DataQueryResult",
+    "WorkflowResult",
+    "GuidanceResult",
+    "MemoryResult",
+    "VersionResult",
+    "ResourceStackResult",
+    "ResourceTemplateResult",
+    "VectorStoreResult",
 ]
 
 # Package metadata for introspection
@@ -163,10 +286,10 @@ PACKAGE_INFO = {
 def get_model_registry() -> dict[str, type[BaseResource]]:
     """
     Get registry of all available healthcare models.
-    
+
     Returns:
         Dictionary mapping model names to model classes
-        
+
     Example:
         >>> registry = get_model_registry()
         >>> PatientModel = registry["Patient"]
@@ -193,7 +316,7 @@ def get_model_registry() -> dict[str, type[BaseResource]]:
 def get_fhir_resources() -> list[type[BaseResource]]:
     """
     Get list of FHIR-compliant resource models.
-    
+
     Returns:
         List of model classes that comply with FHIR standards
     """
@@ -211,24 +334,24 @@ def get_fhir_resources() -> list[type[BaseResource]]:
 def validate_model_compatibility() -> bool:
     """
     Validate that all models are properly configured and compatible.
-    
+
     Returns:
         True if all models pass validation checks
-        
+
     Raises:
         ValueError: If model configuration issues are found
     """
     try:
         # Test model instantiation
         registry = get_model_registry()
-        
+
         for model_name, model_class in registry.items():
             # Verify model has required base fields
             required_fields = {"id", "resource_type", "created_at", "updated_at"}
             if not required_fields.issubset(model_class.model_fields.keys()):
                 missing = required_fields - set(model_class.model_fields.keys())
                 raise ValueError(f"{model_name} missing required fields: {missing}")
-            
+
             # Verify model can be instantiated with minimal data
             try:
                 # Special handling for models with specific requirements
@@ -253,13 +376,13 @@ def validate_model_compatibility() -> bool:
                     instance = model_class(**kwargs)
                 else:
                     instance = model_class(resource_type=model_name)
-                
+
                 if not instance.id or not instance.created_at:
                     raise ValueError(f"{model_name} auto-generation not working")
             except Exception as e:
                 raise ValueError(f"{model_name} instantiation failed: {e}") from e
-        
+
         return True
-        
+
     except Exception as e:
         raise ValueError(f"Model compatibility validation failed: {e}") from e

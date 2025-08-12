@@ -22,9 +22,9 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-from hacs_core import Actor
-from hacs_core.results import HACSResult
-from hacs_core.tool_protocols import healthcare_tool, ToolCategory
+from hacs_models import Actor
+from hacs_models import HACSResult
+from hacs_core.tool_protocols import hacs_tool, ToolCategory
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ from .descriptions import (
     PERFORM_RISK_STRATIFICATION_DESCRIPTION,
 )
 
-@healthcare_tool(
+@hacs_tool(
     name="calculate_quality_measures",
     description="Calculate clinical quality measures for healthcare performance monitoring",
     category=ToolCategory.HEALTHCARE_ANALYTICS,
@@ -99,7 +99,7 @@ def calculate_quality_measures(
                     "improvement_opportunity": 22
                 },
                 {
-                    "measure_id": "HTN-BP-Control", 
+                    "measure_id": "HTN-BP-Control",
                     "measure_name": "Hypertension Blood Pressure Control",
                     "numerator": 156,
                     "denominator": 200,
@@ -132,7 +132,7 @@ def calculate_quality_measures(
             actor_id=actor_name
         )
 
-@healthcare_tool(
+@hacs_tool(
     name="analyze_population_health",
     description="Analyze population health patterns, trends, and outcomes for healthcare management",
     category=ToolCategory.HEALTHCARE_ANALYTICS,
@@ -235,7 +235,7 @@ def analyze_population_health(
             actor_id=actor_name
         )
 
-@healthcare_tool(
+@hacs_tool(
     name="generate_clinical_dashboard",
     description="Generate interactive clinical dashboards for healthcare performance monitoring",
     category=ToolCategory.HEALTHCARE_ANALYTICS,
@@ -327,7 +327,7 @@ def generate_clinical_dashboard(
             actor_id=actor_name
         )
 
-@healthcare_tool(
+@hacs_tool(
     name="perform_risk_stratification",
     description="Perform patient risk stratification and predictive analytics for proactive care",
     category=ToolCategory.HEALTHCARE_ANALYTICS,
@@ -423,4 +423,4 @@ __all__ = [
     "analyze_population_health",
     "generate_clinical_dashboard",
     "perform_risk_stratification",
-] 
+]

@@ -28,7 +28,7 @@ import logging
 
 from .observability import ObservabilityManager, get_observability_manager
 from .healthcare_monitoring import (
-    HealthcareMonitoringManager, 
+    HealthcareMonitoringManager,
     get_healthcare_monitoring,
     ClinicalSeverity,
     ComplianceStatus
@@ -39,7 +39,7 @@ from .monitoring import MetricsCollector, HealthMonitor
 class DashboardType(str, Enum):
     """Types of monitoring dashboards."""
     CLINICAL_OVERVIEW = "clinical_overview"
-    COMPLIANCE_TRACKING = "compliance_tracking" 
+    COMPLIANCE_TRACKING = "compliance_tracking"
     PERFORMANCE_MONITORING = "performance_monitoring"
     SECURITY_MONITORING = "security_monitoring"
     RESOURCE_UTILIZATION = "resource_utilization"
@@ -88,7 +88,7 @@ class Dashboard:
 
 class HealthcareDashboardManager:
     """Healthcare-specific dashboard manager."""
-    
+
     def __init__(
         self,
         observability_manager: Optional[ObservabilityManager] = None,
@@ -98,22 +98,22 @@ class HealthcareDashboardManager:
         self.observability = observability_manager or get_observability_manager()
         self.healthcare_monitoring = healthcare_monitoring or get_healthcare_monitoring()
         self.logger = self.observability.get_logger("hacs.dashboards")
-        
+
         # Dashboard registry
         self.dashboards: Dict[str, Dashboard] = {}
         self._data_sources: Dict[str, Callable] = {}
-        
+
         # Cache for dashboard data
         self._cache = {}
         self._cache_ttl = {}
-        
+
         # Initialize default dashboards
         self._create_default_dashboards()
         self._register_data_sources()
-    
+
     def _create_default_dashboards(self):
         """Create default healthcare monitoring dashboards."""
-        
+
         # Clinical Overview Dashboard
         clinical_dashboard = Dashboard(
             id="clinical_overview",
@@ -133,7 +133,7 @@ class HealthcareDashboardManager:
                         "columns": ["timestamp", "severity", "alert_type", "message", "patient_id_hash"],
                         "severity_colors": {
                             "life_threatening": "#dc3545",
-                            "critical": "#fd7e14", 
+                            "critical": "#fd7e14",
                             "high": "#ffc107",
                             "moderate": "#17a2b8",
                             "low": "#28a745"
@@ -178,7 +178,7 @@ class HealthcareDashboardManager:
                 )
             ]
         )
-        
+
         # Compliance Tracking Dashboard
         compliance_dashboard = Dashboard(
             id="compliance_tracking",
@@ -237,7 +237,7 @@ class HealthcareDashboardManager:
                 )
             ]
         )
-        
+
         # Performance Monitoring Dashboard
         performance_dashboard = Dashboard(
             id="performance_monitoring",
@@ -284,7 +284,7 @@ class HealthcareDashboardManager:
                 )
             ]
         )
-        
+
         # Executive Summary Dashboard
         executive_dashboard = Dashboard(
             id="executive_summary",
@@ -334,7 +334,7 @@ class HealthcareDashboardManager:
                 )
             ]
         )
-        
+
         # Register dashboards
         self.dashboards.update({
             "clinical_overview": clinical_dashboard,
@@ -342,7 +342,7 @@ class HealthcareDashboardManager:
             "performance_monitoring": performance_dashboard,
             "executive_summary": executive_dashboard
         })
-    
+
     def _register_data_sources(self):
         """Register data source functions."""
         self._data_sources.update({
@@ -361,11 +361,11 @@ class HealthcareDashboardManager:
             "get_monthly_trends": self._get_monthly_trends,
             "get_alert_summary": self._get_alert_summary
         })
-    
+
     async def get_dashboard(self, dashboard_id: str) -> Optional[Dashboard]:
         """Get dashboard configuration."""
         return self.dashboards.get(dashboard_id)
-    
+
     async def get_dashboard_data(
         self,
         dashboard_id: str,
@@ -376,14 +376,14 @@ class HealthcareDashboardManager:
         dashboard = self.dashboards.get(dashboard_id)
         if not dashboard:
             return {"error": "Dashboard not found"}
-        
+
         # Check cache
         cache_key = f"{dashboard_id}_{organization or 'all'}"
         if not refresh and cache_key in self._cache:
             cache_time = self._cache_ttl.get(cache_key, 0)
             if time.time() - cache_time < dashboard.auto_refresh_seconds:
                 return self._cache[cache_key]
-        
+
         # Gather widget data
         widget_data = {}
         for widget in dashboard.widgets:
@@ -401,7 +401,7 @@ class HealthcareDashboardManager:
             except Exception as e:
                 self.logger.error(f"Error fetching data for widget {widget.id}: {e}")
                 widget_data[widget.id] = {"error": str(e)}
-        
+
         dashboard_data = {
             "dashboard": {
                 "id": dashboard.id,
@@ -413,13 +413,13 @@ class HealthcareDashboardManager:
             "widgets": widget_data,
             "organization": organization
         }
-        
+
         # Cache the data
         self._cache[cache_key] = dashboard_data
         self._cache_ttl[cache_key] = time.time()
-        
+
         return dashboard_data
-    
+
     async def get_widget_data(
         self,
         dashboard_id: str,
@@ -430,11 +430,11 @@ class HealthcareDashboardManager:
         dashboard = self.dashboards.get(dashboard_id)
         if not dashboard:
             return {"error": "Dashboard not found"}
-        
+
         widget = next((w for w in dashboard.widgets if w.id == widget_id), None)
         if not widget:
             return {"error": "Widget not found"}
-        
+
         try:
             data_func = self._data_sources.get(widget.data_source)
             if data_func:
@@ -449,18 +449,18 @@ class HealthcareDashboardManager:
         except Exception as e:
             self.logger.error(f"Error fetching data for widget {widget_id}: {e}")
             return {"error": str(e)}
-    
+
     def list_dashboards(self, user_permissions: List[str] = None) -> List[Dict[str, Any]]:
         """List available dashboards based on user permissions."""
         user_permissions = user_permissions or []
-        
+
         available_dashboards = []
         for dashboard in self.dashboards.values():
             # Check permissions
             if dashboard.permissions and user_permissions:
                 if not any(perm in user_permissions for perm in dashboard.permissions):
                     continue
-            
+
             available_dashboards.append({
                 "id": dashboard.id,
                 "name": dashboard.name,
@@ -468,30 +468,30 @@ class HealthcareDashboardManager:
                 "type": dashboard.dashboard_type.value,
                 "widget_count": len(dashboard.widgets)
             })
-        
+
         return available_dashboards
-    
+
     def register_custom_dashboard(self, dashboard: Dashboard):
         """Register a custom dashboard."""
         self.dashboards[dashboard.id] = dashboard
         self.logger.info(f"Registered custom dashboard: {dashboard.id}")
-    
+
     def register_data_source(self, name: str, func: Callable):
         """Register a custom data source function."""
         self._data_sources[name] = func
         self.logger.info(f"Registered data source: {name}")
-    
+
     # Data source implementations
     async def _get_clinical_alerts(self, widget: DashboardWidget, organization: Optional[str]) -> List[Dict]:
         """Get clinical alerts data."""
         alerts_summary = self.healthcare_monitoring.metrics.get_clinical_alerts_summary(24)
-        
+
         # Convert to widget format
         alerts = []
         for alert in self.healthcare_monitoring.metrics._clinical_alerts[-50:]:  # Last 50 alerts
             if organization and alert.clinical_context.get("organization") != organization:
                 continue
-                
+
             alerts.append({
                 "timestamp": alert.timestamp.isoformat(),
                 "severity": alert.severity.value,
@@ -501,85 +501,85 @@ class HealthcareDashboardManager:
                 "acknowledged": alert.acknowledged,
                 "resolved": alert.resolved
             })
-        
+
         return sorted(alerts, key=lambda x: x["timestamp"], reverse=True)
-    
+
     async def _get_workflow_metrics(self, widget: DashboardWidget, organization: Optional[str]) -> Dict:
         """Get workflow performance metrics."""
         # Simulate workflow metrics
         now = time.time()
         hours_back = 24
-        
+
         metrics = {
             "timestamps": [],
             "response_times": [],
             "success_rates": []
         }
-        
+
         # Generate hourly data points
         for i in range(hours_back):
             timestamp = now - (i * 3600)
             metrics["timestamps"].append(datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat())
             metrics["response_times"].append(250 + (i * 10) % 500)  # Mock data
             metrics["success_rates"].append(95 + (i % 5))  # Mock data
-        
+
         return metrics
-    
+
     async def _get_workflow_count(self, widget: DashboardWidget, organization: Optional[str]) -> Dict:
         """Get workflow count metrics."""
         total_workflows = self.healthcare_monitoring.metrics.get_counter("healthcare.workflow.count")
-        
+
         return {
             "current": total_workflows,
             "previous": max(0, total_workflows - 50),  # Mock comparison
             "change_percent": 15.2  # Mock percentage change
         }
-    
+
     async def _get_active_sessions(self, widget: DashboardWidget, organization: Optional[str]) -> Dict:
         """Get active sessions count."""
         active_sessions = 42  # Mock data
         max_sessions = widget.config.get("max_value", 100)
-        
+
         return {
             "value": active_sessions,
             "max": max_sessions,
             "percentage": (active_sessions / max_sessions) * 100
         }
-    
+
     async def _get_compliance_score(self, widget: DashboardWidget, organization: Optional[str]) -> Dict:
         """Get HIPAA compliance score."""
         compliance_summary = self.healthcare_monitoring.metrics.get_compliance_summary(24)
         score = compliance_summary.get("compliance_score", 95.0)
-        
+
         return {
             "value": score,
             "max": 100,
             "percentage": score,
             "status": "good" if score >= 90 else "warning" if score >= 70 else "critical"
         }
-    
+
     async def _get_phi_access_timeline(self, widget: DashboardWidget, organization: Optional[str]) -> Dict:
         """Get PHI access timeline data."""
         access_summary = self.healthcare_monitoring.metrics.get_phi_access_summary(24 * 7)  # Last week
-        
+
         # Generate timeline data
         now = time.time()
         timeline = {
             "timestamps": [],
             "access_counts": []
         }
-        
+
         for i in range(24 * 7):  # Hourly for last week
             timestamp = now - (i * 3600)
             timeline["timestamps"].append(datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat())
             timeline["access_counts"].append(max(0, 10 + (i % 15) - 5))  # Mock data
-        
+
         return timeline
-    
+
     async def _get_compliance_violations(self, widget: DashboardWidget, organization: Optional[str]) -> List[Dict]:
         """Get compliance violations data."""
         violations = []
-        
+
         for event in self.healthcare_monitoring.metrics._compliance_events[-20:]:
             if event.status in [ComplianceStatus.VIOLATION, ComplianceStatus.CRITICAL_VIOLATION]:
                 violations.append({
@@ -589,9 +589,9 @@ class HealthcareDashboardManager:
                     "description": event.description,
                     "status": "remediated" if event.remediation_required else "open"
                 })
-        
+
         return violations
-    
+
     async def _get_audit_coverage(self, widget: DashboardWidget, organization: Optional[str]) -> Dict:
         """Get audit coverage data."""
         return {
@@ -599,13 +599,13 @@ class HealthcareDashboardManager:
             "values": [85, 10, 5],
             "total": 100
         }
-    
+
     async def _get_system_metrics(self, widget: DashboardWidget, organization: Optional[str]) -> Dict:
         """Get system performance metrics."""
         # Get current system metrics
         cpu_usage = self.healthcare_monitoring.metrics.get_gauge("system.cpu.usage_percent")
         memory_usage = self.healthcare_monitoring.metrics.get_gauge("system.memory.usage_percent")
-        
+
         now = time.time()
         metrics = {
             "timestamps": [],
@@ -613,7 +613,7 @@ class HealthcareDashboardManager:
             "memory_usage": [],
             "disk_usage": []
         }
-        
+
         # Generate hourly data for last hour
         for i in range(60):  # Last 60 minutes
             timestamp = now - (i * 60)
@@ -621,9 +621,9 @@ class HealthcareDashboardManager:
             metrics["cpu_usage"].append(cpu_usage + (i % 10) - 5)
             metrics["memory_usage"].append(memory_usage + (i % 8) - 4)
             metrics["disk_usage"].append(45 + (i % 5))  # Mock disk usage
-        
+
         return metrics
-    
+
     async def _get_response_time_distribution(self, widget: DashboardWidget, organization: Optional[str]) -> Dict:
         """Get response time distribution heatmap data."""
         # Mock heatmap data
@@ -634,7 +634,7 @@ class HealthcareDashboardManager:
                 [120, 180, 250] for _ in range(24)  # Mock data for each hour
             ]
         }
-    
+
     async def _get_tool_performance(self, widget: DashboardWidget, organization: Optional[str]) -> Dict:
         """Get healthcare tool performance data."""
         return {
@@ -642,7 +642,7 @@ class HealthcareDashboardManager:
             "avg_response_time": [250, 180, 320, 150],
             "success_rate": [98.5, 99.2, 97.8, 99.5]
         }
-    
+
     async def _get_kpi_summary(self, widget: DashboardWidget, organization: Optional[str]) -> Dict:
         """Get KPI summary data."""
         return {
@@ -651,18 +651,18 @@ class HealthcareDashboardManager:
             "compliance_score": {"value": "95%", "change": "+2%"},
             "system_uptime": {"value": "99.9%", "change": "0%"}
         }
-    
+
     async def _get_monthly_trends(self, widget: DashboardWidget, organization: Optional[str]) -> Dict:
         """Get monthly trend data."""
         months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        
+
         return {
             "months": months,
             "patient_volume": [980, 1050, 1120, 1180, 1200, 1250, 1300, 1350, 1280, 1320, 1380, 1450],
             "workflow_efficiency": [92, 93, 95, 94, 96, 97, 98, 97, 98, 99, 98, 99],
             "incident_count": [12, 8, 6, 9, 4, 3, 2, 1, 2, 1, 0, 1]
         }
-    
+
     async def _get_alert_summary(self, widget: DashboardWidget, organization: Optional[str]) -> Dict:
         """Get alert summary data."""
         return {
@@ -701,7 +701,7 @@ def initialize_dashboards(
 __all__ = [
     "HealthcareDashboardManager",
     "Dashboard",
-    "DashboardWidget", 
+    "DashboardWidget",
     "DashboardType",
     "ChartType",
     "get_dashboard_manager",

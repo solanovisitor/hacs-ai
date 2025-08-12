@@ -1,7 +1,7 @@
 """
 HACS Tools Descriptions
 
-This module contains comprehensive description constants for all HACS healthcare tools.
+This module contains comprehensive description constants for all HACS Hacs Tools.
 These descriptions are used by the @tool decorators to provide rich context for
 AI agents working with healthcare data and clinical workflows.
 
@@ -15,8 +15,8 @@ Version: 0.3.0
 CREATE_HACS_RECORD_DESCRIPTION = """
 Create new healthcare resource records with full FHIR compliance validation.
 
-This tool creates structured healthcare data records including Patient demographics, 
-clinical Observations, medical Conditions, Procedures, and other FHIR-compliant resources. 
+This tool creates structured healthcare data records including Patient demographics,
+clinical Observations, medical Conditions, Procedures, and other FHIR-compliant resources.
 Supports auto-ID generation, clinical validation, and audit trail creation.
 
 Key capabilities:
@@ -26,7 +26,7 @@ Key capabilities:
 - Auto-generates resource IDs if not provided
 - Clinical data validation with healthcare-specific error handling
 
-Healthcare use cases: Patient registration, clinical documentation, care plan creation, 
+Healthcare use cases: Patient registration, clinical documentation, care plan creation,
 medical record management, clinical data entry, healthcare workflow automation.
 """
 
@@ -542,7 +542,7 @@ Key capabilities:
 - FHIR operation outcome generation and error handling
 - Clinical workflow bundle processing and care coordination support
 
-Healthcare use cases: Bulk clinical data import, healthcare system integration, 
+Healthcare use cases: Bulk clinical data import, healthcare system integration,
 FHIR transaction processing, clinical care coordination, medical record bulk operations.
 """
 
@@ -560,7 +560,7 @@ Key capabilities:
 - Medical code validation and healthcare terminology compliance checking
 - Clinical concept synonyms and alternative term identification
 
-Healthcare use cases: Clinical coding support, medical terminology validation, 
+Healthcare use cases: Clinical coding support, medical terminology validation,
 healthcare documentation assistance, clinical decision support, medical education tools.
 """
 
@@ -634,6 +634,6 @@ Key capabilities:
 - Clinical decision support for proactive care and preventive medicine
 - Population health risk analysis and healthcare resource optimization
 
-Healthcare use cases: Care management programs, preventive care initiatives, 
+Healthcare use cases: Care management programs, preventive care initiatives,
 clinical decision support, population health improvement, healthcare cost management.
-""" 
+"""

@@ -5,7 +5,7 @@ Test suite for ResourceBundle and related components.
 import pytest
 from datetime import datetime, timezone
 
-from hacs_core.models import (
+from hacs_models import (
     ResourceBundle,
     BundleType,
     BundleStatus,
@@ -34,7 +34,7 @@ class TestResourceBundle:
             version="1.0.0",
             description="A test bundle for validation"
         )
-        
+
         assert bundle.title == "Test Bundle"
         assert bundle.bundle_type == BundleType.COLLECTION
         assert bundle.version == "1.0.0"
@@ -48,20 +48,20 @@ class TestResourceBundle:
             bundle_type=BundleType.COLLECTION,
             version="1.0.0"
         )
-        
+
         patient = Patient(
             id="patient-001",
             full_name="John Doe",
             birth_date="1990-01-01"
         )
-        
+
         bundle.add_resource(
             resource=patient,
             title="Primary Patient",
             tags=["primary", "test"],
             priority=1
         )
-        
+
         assert len(bundle.entries) == 1
         assert bundle.entries[0].resource.id == "patient-001"
         assert bundle.entries[0].title == "Primary Patient"
@@ -74,7 +74,7 @@ class TestResourceBundle:
             bundle_type=BundleType.STACK,
             version="1.0.0"
         )
-        
+
         bundle.add_workflow_binding(
             workflow_id="test-workflow",
             workflow_name="Test Workflow",
@@ -83,7 +83,7 @@ class TestResourceBundle:
             priority=1,
             description="Test binding"
         )
-        
+
         assert len(bundle.workflow_bindings) == 1
         binding = bundle.workflow_bindings[0]
         assert binding.workflow_id == "test-workflow"
@@ -97,7 +97,7 @@ class TestResourceBundle:
             bundle_type=BundleType.STACK,
             version="1.0.0"
         )
-        
+
         bundle.add_use_case(
             name="Test Use Case",
             description="A test use case",
@@ -106,7 +106,7 @@ class TestResourceBundle:
             outcomes=["Outcome 1"],
             tags=["test", "example"]
         )
-        
+
         assert len(bundle.use_cases) == 1
         use_case = bundle.use_cases[0]
         assert use_case.name == "Test Use Case"
@@ -119,7 +119,7 @@ class TestResourceBundle:
             bundle_type=BundleType.STACK,
             version="1.0.0"
         )
-        
+
         bundle.add_update_record(
             version="1.1.0",
             summary="Added new features",
@@ -127,7 +127,7 @@ class TestResourceBundle:
             details="Detailed changes",
             breaking_changes=False
         )
-        
+
         assert len(bundle.updates) == 1
         update = bundle.updates[0]
         assert update.version == "1.1.0"
@@ -140,16 +140,16 @@ class TestResourceBundle:
             bundle_type=BundleType.COLLECTION,
             version="1.0.0"
         )
-        
+
         patient = Patient(id="patient-001", full_name="John Doe", birth_date="1990-01-01")
         observation = Observation(id="obs-001", status="final", category="vital-signs", code="BP", subject="patient-001")
-        
+
         bundle.add_resource(patient)
         bundle.add_resource(observation)
-        
+
         patients = bundle.get_resources_by_type("Patient")
         observations = bundle.get_resources_by_type("Observation")
-        
+
         assert len(patients) == 1
         assert len(observations) == 1
         assert patients[0].id == "patient-001"
@@ -161,17 +161,17 @@ class TestResourceBundle:
             bundle_type=BundleType.COLLECTION,
             version="1.0.0"
         )
-        
+
         patient = Patient(id="patient-001", full_name="John Doe", birth_date="1990-01-01")
         bundle.add_resource(patient, tags=["primary", "important"])
-        
+
         observation = Observation(id="obs-001", status="final", category="vital-signs", code="BP", subject="patient-001")
         bundle.add_resource(observation, tags=["secondary"])
-        
+
         primary_resources = bundle.get_resources_by_tag("primary")
         important_resources = bundle.get_resources_by_tag("important")
         secondary_resources = bundle.get_resources_by_tag("secondary")
-        
+
         assert len(primary_resources) == 1
         assert len(important_resources) == 1
         assert len(secondary_resources) == 1
@@ -183,14 +183,14 @@ class TestResourceBundle:
             bundle_type=BundleType.STACK,
             version="1.0.0"
         )
-        
+
         bundle.add_workflow_binding("workflow1", WorkflowBindingType.INPUT_FILTER)
         bundle.add_workflow_binding("workflow2", WorkflowBindingType.OUTPUT_TEMPLATE)
         bundle.add_workflow_binding("workflow3", WorkflowBindingType.INPUT_FILTER)
-        
+
         input_filters = bundle.get_workflow_bindings_by_type(WorkflowBindingType.INPUT_FILTER)
         output_templates = bundle.get_workflow_bindings_by_type(WorkflowBindingType.OUTPUT_TEMPLATE)
-        
+
         assert len(input_filters) == 2
         assert len(output_templates) == 1
 
@@ -201,21 +201,21 @@ class TestResourceBundle:
             version="1.0.0",
             status=BundleStatus.ACTIVE
         )
-        
+
         # Add resources
         patient1 = Patient(id="patient-001", full_name="John Doe", birth_date="1990-01-01")
         patient2 = Patient(id="patient-002", full_name="Jane Doe", birth_date="1990-01-01")
         bundle.add_resource(patient1)
         bundle.add_resource(patient2)
-        
+
         # Add workflow binding
         bundle.add_workflow_binding("test-workflow", WorkflowBindingType.INPUT_FILTER)
-        
+
         # Add use case
         bundle.add_use_case("Test Case", "Test description")
-        
+
         validation = bundle.validate_bundle_integrity()
-        
+
         assert validation["valid"] is True
         assert validation["entry_count"] == 2
         assert validation["workflow_binding_count"] == 1
@@ -228,15 +228,15 @@ class TestResourceBundle:
             bundle_type=BundleType.COLLECTION,
             version="1.0.0"
         )
-        
+
         # Add resources with same ID
         patient1 = Patient(id="duplicate-id", full_name="John Doe", birth_date="1990-01-01")
         patient2 = Patient(id="duplicate-id", full_name="Jane Doe", birth_date="1990-01-01")
         bundle.add_resource(patient1)
         bundle.add_resource(patient2)
-        
+
         validation = bundle.validate_bundle_integrity()
-        
+
         assert validation["valid"] is False
         assert "Duplicate resource IDs found in bundle" in validation["issues"]
 
@@ -253,12 +253,12 @@ class TestBundleValidation:
             total=10
         )
         assert bundle.total == 10
-        
+
         # Should fail for other types
         with pytest.raises(ValueError, match="total field is only valid for searchset bundles"):
             ResourceBundle(
                 bundle_type=BundleType.COLLECTION,
-                version="1.0.0", 
+                version="1.0.0",
                 total=10
             )
 
@@ -284,13 +284,13 @@ class TestBundleValidation:
             bundle_type=BundleType.STACK,
             version="1.0.0"
         )
-        
+
         patient = Patient(id="patient-001", full_name="Test", birth_date="1990-01-01")
         bundle.add_resource(patient)
-        
+
         # First binding should work
         bundle.add_workflow_binding("workflow1", WorkflowBindingType.INPUT_FILTER)
-        
+
         # Duplicate workflow ID should fail during validation
         bundle.workflow_bindings.append(
             WorkflowBinding(
@@ -298,7 +298,7 @@ class TestBundleValidation:
                 binding_type=WorkflowBindingType.OUTPUT_TEMPLATE
             )
         )
-        
+
         with pytest.raises(ValueError, match="Workflow bindings must have unique workflow_ids"):
             bundle.model_validate(bundle.model_dump())
 
@@ -310,7 +310,7 @@ class TestFactoryFunctions:
         """Test create_resource_stack factory function."""
         patient = Patient(id="patient-001", full_name="John Doe", birth_date="1990-01-01")
         observation = Observation(id="obs-001", status="final", category="vital-signs", code="BP", subject="patient-001")
-        
+
         bundle = create_resource_stack(
             stack_name="Test Stack",
             version="1.0.0",
@@ -318,7 +318,7 @@ class TestFactoryFunctions:
             resources=[patient, observation],
             publisher="Test Publisher"
         )
-        
+
         assert bundle.title == "Test Stack"
         assert bundle.bundle_type == BundleType.STACK
         assert bundle.version == "1.0.0"
@@ -332,13 +332,13 @@ class TestFactoryFunctions:
             Patient(id=f"patient-{i}", full_name=f"Patient {i}", birth_date="1990-01-01")
             for i in range(3)
         ]
-        
+
         bundle = create_search_results_bundle(
             resources=patients,
             total=10,
             search_url="https://example.com/search"
         )
-        
+
         assert bundle.bundle_type == BundleType.SEARCHSET
         assert bundle.total == 10
         assert len(bundle.entries) == 3
@@ -348,7 +348,7 @@ class TestFactoryFunctions:
     def test_create_workflow_template_bundle(self):
         """Test create_workflow_template_bundle factory function."""
         template_patient = Patient(id="template", full_name="{{name}}", birth_date="{{birth_date}}")
-        
+
         bundle = create_workflow_template_bundle(
             template_name="Test Template",
             version="1.0.0",
@@ -356,7 +356,7 @@ class TestFactoryFunctions:
             template_resources=[template_patient],
             description="Test template"
         )
-        
+
         assert bundle.title == "Test Template"
         assert bundle.bundle_type == BundleType.TEMPLATE
         assert len(bundle.entries) == 1
@@ -374,10 +374,10 @@ class TestBundleTypes:
             bundle_type=BundleType.COLLECTION,
             version="1.0.0"
         )
-        
+
         # Collection bundles can be empty
         assert len(bundle.entries) == 0
-        
+
         # Can add any resources
         patient = Patient(id="patient-001", full_name="John Doe", birth_date="1990-01-01")
         bundle.add_resource(patient)
@@ -390,17 +390,17 @@ class TestBundleTypes:
             version="1.0.0",
             total=5
         )
-        
+
         # Can have total
         assert bundle.total == 5
-        
+
         # Can add search metadata to entries
         patient = Patient(id="patient-001", full_name="John Doe", birth_date="1990-01-01")
         bundle.add_resource(
             patient,
             metadata={"search": {"mode": "match", "score": 0.95}}
         )
-        
+
         assert bundle.entries[0].metadata["search"]["score"] == 0.95
 
     def test_template_bundle(self):
@@ -409,13 +409,13 @@ class TestBundleTypes:
             bundle_type=BundleType.TEMPLATE,
             version="1.0.0"
         )
-        
+
         # Template bundles are typically used with workflow bindings
         bundle.add_workflow_binding(
             "template-workflow",
             WorkflowBindingType.OUTPUT_TEMPLATE
         )
-        
+
         assert len(bundle.workflow_bindings) == 1
 
 
@@ -428,13 +428,13 @@ class TestBundleMetadata:
             bundle_type=BundleType.STACK,
             version="1.0.0"
         )
-        
+
         patient = Patient(id="patient-001", full_name="Test", birth_date="1990-01-01")
         bundle.add_resource(patient)
-        
+
         bundle.keywords = ["healthcare", "clinical", "assessment"]
         bundle.categories = ["clinical-workflow", "patient-care"]
-        
+
         assert "healthcare" in bundle.keywords
         assert "clinical-workflow" in bundle.categories
 
@@ -444,23 +444,23 @@ class TestBundleMetadata:
             bundle_type=BundleType.STACK,
             version="2.0.0"
         )
-        
+
         patient = Patient(id="patient-001", full_name="Test", birth_date="1990-01-01")
         bundle.add_resource(patient)
-        
+
         bundle.add_update_record(
             version="2.0.0",
             summary="Major update",
             breaking_changes=True,
             migration_notes="See migration guide"
         )
-        
+
         bundle.add_update_record(
             version="1.0.0",
             summary="Initial release",
             breaking_changes=False
         )
-        
+
         assert len(bundle.updates) == 2
         assert bundle.updates[0].version == "2.0.0"
         assert bundle.updates[0].breaking_changes is True
@@ -471,14 +471,14 @@ class TestBundleMetadata:
             bundle_type=BundleType.STACK,
             version="1.0.0"
         )
-        
+
         patient = Patient(id="patient-001", full_name="Test", birth_date="1990-01-01")
         bundle.add_resource(patient)
-        
+
         bundle.quality_score = 0.95
         bundle.maturity_level = "stable"
         bundle.experimental = False
-        
+
         assert bundle.quality_score == 0.95
         assert bundle.maturity_level == "stable"
         assert bundle.experimental is False

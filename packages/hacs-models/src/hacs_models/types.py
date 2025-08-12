@@ -2,7 +2,7 @@
 Common types and enums for HACS healthcare models.
 
 This module defines all the enumerations, type aliases, and common data structures
-used across HACS models. Designed for type safety, FHIR compliance, and 
+used across HACS models. Designed for type safety, FHIR compliance, and
 excellent developer experience.
 
 Key Features:
@@ -14,7 +14,7 @@ Key Features:
 
 Design Principles:
     - Comprehensive enum coverage for healthcare domains
-    - Clear, descriptive enum values  
+    - Clear, descriptive enum values
     - Type-safe constants and aliases
     - Performance optimized for runtime use
 """
@@ -26,7 +26,7 @@ from typing import Literal, Union
 class HealthcareDomain(str, Enum):
     """
     Healthcare specialty domains for organizing resources and workflows.
-    
+
     Based on medical specialty classifications and healthcare domains
     commonly used in clinical practice and healthcare systems.
     """
@@ -34,7 +34,7 @@ class HealthcareDomain(str, Enum):
     PRIMARY_CARE = "primary_care"
     FAMILY_MEDICINE = "family_medicine"
     INTERNAL_MEDICINE = "internal_medicine"
-    
+
     # Medical specialties
     CARDIOLOGY = "cardiology"
     DERMATOLOGY = "dermatology"
@@ -46,45 +46,45 @@ class HealthcareDomain(str, Enum):
     ONCOLOGY = "oncology"
     PULMONOLOGY = "pulmonology"
     RHEUMATOLOGY = "rheumatology"
-    
+
     # Surgical specialties
     GENERAL_SURGERY = "general_surgery"
     CARDIAC_SURGERY = "cardiac_surgery"
     NEUROSURGERY = "neurosurgery"
     ORTHOPEDIC_SURGERY = "orthopedic_surgery"
     PLASTIC_SURGERY = "plastic_surgery"
-    
+
     # Emergency and critical care
     EMERGENCY = "emergency"
     CRITICAL_CARE = "critical_care"
     TRAUMA = "trauma"
-    
+
     # Women's and children's health
     OBSTETRICS_GYNECOLOGY = "obstetrics_gynecology"
     PEDIATRICS = "pediatrics"
     NEONATOLOGY = "neonatology"
-    
+
     # Mental health
     PSYCHIATRY = "psychiatry"
     PSYCHOLOGY = "psychology"
     BEHAVIORAL_HEALTH = "behavioral_health"
-    
+
     # Diagnostic and therapeutic
     RADIOLOGY = "radiology"
     PATHOLOGY = "pathology"
     LABORATORY = "laboratory"
     PHARMACY = "pharmacy"
-    
+
     # Rehabilitation and therapy
     PHYSICAL_THERAPY = "physical_therapy"
     OCCUPATIONAL_THERAPY = "occupational_therapy"
     SPEECH_THERAPY = "speech_therapy"
-    
+
     # Administrative and support
     ADMINISTRATION = "administration"
     QUALITY_ASSURANCE = "quality_assurance"
     RESEARCH = "research"
-    
+
     # General/unspecified
     GENERAL = "general"
 
@@ -92,7 +92,7 @@ class HealthcareDomain(str, Enum):
 class Gender(str, Enum):
     """
     Gender values following FHIR AdministrativeGender value set.
-    
+
     Based on FHIR R4/R5 AdministrativeGender:
     http://hl7.org/fhir/administrative-gender
     """
@@ -105,7 +105,7 @@ class Gender(str, Enum):
 class ObservationStatus(str, Enum):
     """
     Status of observation following FHIR ObservationStatus value set.
-    
+
     Based on FHIR R4/R5 ObservationStatus:
     http://hl7.org/fhir/observation-status
     """
@@ -122,7 +122,7 @@ class ObservationStatus(str, Enum):
 class EncounterStatus(str, Enum):
     """
     Status of encounter following FHIR EncounterStatus value set.
-    
+
     Based on FHIR R4/R5 EncounterStatus:
     http://hl7.org/fhir/encounter-status
     """
@@ -140,7 +140,7 @@ class EncounterStatus(str, Enum):
 class ConditionClinicalStatus(str, Enum):
     """
     Clinical status of condition following FHIR ConditionClinicalStatus.
-    
+
     Based on FHIR R4/R5 ConditionClinicalStatus:
     http://terminology.hl7.org/CodeSystem/condition-clinical
     """
@@ -155,7 +155,7 @@ class ConditionClinicalStatus(str, Enum):
 class ConditionVerificationStatus(str, Enum):
     """
     Verification status of condition following FHIR ConditionVerificationStatus.
-    
+
     Based on FHIR R4/R5 ConditionVerificationStatus:
     http://terminology.hl7.org/CodeSystem/condition-ver-status
     """
@@ -170,7 +170,7 @@ class ConditionVerificationStatus(str, Enum):
 class MedicationRequestStatus(str, Enum):
     """
     Status of medication request following FHIR MedicationRequestStatus.
-    
+
     Based on FHIR R4/R5 MedicationRequestStatus:
     http://hl7.org/fhir/CodeSystem/medicationrequest-status
     """
@@ -187,7 +187,7 @@ class MedicationRequestStatus(str, Enum):
 class ProcedureStatus(str, Enum):
     """
     Status of procedure following FHIR EventStatus value set.
-    
+
     Based on FHIR R4/R5 EventStatus:
     http://hl7.org/fhir/event-status
     """
@@ -204,7 +204,7 @@ class ProcedureStatus(str, Enum):
 class GoalLifecycleStatus(str, Enum):
     """
     Lifecycle status of goal following FHIR GoalLifecycleStatus.
-    
+
     Based on FHIR R4/R5 GoalLifecycleStatus:
     http://hl7.org/fhir/goal-status
     """
@@ -222,13 +222,13 @@ class GoalLifecycleStatus(str, Enum):
 class ContactPointSystem(str, Enum):
     """
     Contact point system following FHIR ContactPointSystem value set.
-    
+
     Based on FHIR R4/R5 ContactPointSystem:
     http://hl7.org/fhir/contact-point-system
     """
     PHONE = "phone"                   # Phone number
     FAX = "fax"                       # Fax number
-    EMAIL = "email"                   # Email address  
+    EMAIL = "email"                   # Email address
     PAGER = "pager"                   # Pager number
     URL = "url"                       # URL/website
     SMS = "sms"                       # SMS number
@@ -238,7 +238,7 @@ class ContactPointSystem(str, Enum):
 class ContactPointUse(str, Enum):
     """
     Contact point use following FHIR ContactPointUse value set.
-    
+
     Based on FHIR R4/R5 ContactPointUse:
     http://hl7.org/fhir/contact-point-use
     """
@@ -252,7 +252,7 @@ class ContactPointUse(str, Enum):
 class AddressUse(str, Enum):
     """
     Address use following FHIR AddressUse value set.
-    
+
     Based on FHIR R4/R5 AddressUse:
     http://hl7.org/fhir/address-use
     """
@@ -266,7 +266,7 @@ class AddressUse(str, Enum):
 class AddressType(str, Enum):
     """
     Address type following FHIR AddressType value set.
-    
+
     Based on FHIR R4/R5 AddressType:
     http://hl7.org/fhir/address-type
     """
@@ -278,7 +278,7 @@ class AddressType(str, Enum):
 class IdentifierUse(str, Enum):
     """
     Identifier use following FHIR IdentifierUse value set.
-    
+
     Based on FHIR R4/R5 IdentifierUse:
     http://hl7.org/fhir/identifier-use
     """
@@ -292,7 +292,7 @@ class IdentifierUse(str, Enum):
 class NameUse(str, Enum):
     """
     Name use following FHIR NameUse value set.
-    
+
     Based on FHIR R4/R5 NameUse:
     http://hl7.org/fhir/name-use
     """
@@ -308,7 +308,7 @@ class NameUse(str, Enum):
 class MessageRole(str, Enum):
     """
     Role of message sender in agent communication.
-    
+
     Used for AI agent message routing and conversation management.
     """
     SYSTEM = "system"                 # System message
@@ -322,7 +322,7 @@ class MessageRole(str, Enum):
 class MessageType(str, Enum):
     """
     Type of message content in agent communication.
-    
+
     Used for message processing and routing in AI agent systems.
     """
     TEXT = "text"                     # Plain text message
@@ -338,7 +338,7 @@ class MessageType(str, Enum):
 class BundleType(str, Enum):
     """
     Type of bundle following FHIR BundleType value set.
-    
+
     Based on FHIR R4/R5 BundleType:
     http://hl7.org/fhir/bundle-type
     """
@@ -361,10 +361,10 @@ TimestampStr = str      # ISO 8601 timestamp string
 UuidStr = str          # UUID string
 UrlStr = str           # HTTP/HTTPS URL string
 
-# Union types for flexibility  
+# Union types for flexibility
 StatusType = Union[
     ObservationStatus,
-    EncounterStatus, 
+    EncounterStatus,
     ConditionClinicalStatus,
     MedicationRequestStatus,
     ProcedureStatus,
@@ -375,9 +375,114 @@ ContactType = Union[ContactPointSystem, ContactPointUse]
 AddressInfo = Union[AddressUse, AddressType]
 IdentifierInfo = Union[IdentifierUse, NameUse]
 
+# =============================================================================
+# NEW CRITICAL STATUS ENUMS FOR PHASE 1 IMPLEMENTATION
+# =============================================================================
+
+class AllergyIntoleranceStatus(str, Enum):
+    """AllergyIntolerance status values per FHIR R4."""
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    RESOLVED = "resolved"
+
+
+class AllergyIntoleranceType(str, Enum):
+    """AllergyIntolerance category values per FHIR R4."""
+    FOOD = "food"
+    MEDICATION = "medication"
+    ENVIRONMENT = "environment"
+    BIOLOGIC = "biologic"
+
+
+class AllergyCriticality(str, Enum):
+    """AllergyIntolerance criticality values per FHIR R4."""
+    LOW = "low"
+    HIGH = "high"
+    UNABLE_TO_ASSESS = "unable-to-assess"
+
+
+class AllergyReactionSeverity(str, Enum):
+    """Allergy reaction severity values per FHIR R4."""
+    MILD = "mild"
+    MODERATE = "moderate"
+    SEVERE = "severe"
+
+
+class ServiceRequestStatus(str, Enum):
+    """ServiceRequest status values per FHIR R4."""
+    DRAFT = "draft"
+    ACTIVE = "active"
+    ON_HOLD = "on-hold"
+    REVOKED = "revoked"
+    COMPLETED = "completed"
+    ENTERED_IN_ERROR = "entered-in-error"
+    UNKNOWN = "unknown"
+
+
+class ServiceRequestIntent(str, Enum):
+    """ServiceRequest intent values per FHIR R4."""
+    PROPOSAL = "proposal"
+    PLAN = "plan"
+    DIRECTIVE = "directive"
+    ORDER = "order"
+    ORIGINAL_ORDER = "original-order"
+    REFLEX_ORDER = "reflex-order"
+    FILLER_ORDER = "filler-order"
+    INSTANCE_ORDER = "instance-order"
+    OPTION = "option"
+
+
+class ServiceRequestPriority(str, Enum):
+    """ServiceRequest priority values per FHIR R4."""
+    ROUTINE = "routine"
+    URGENT = "urgent"
+    ASAP = "asap"
+    STAT = "stat"
+
+
+class DiagnosticReportStatus(str, Enum):
+    """DiagnosticReport status values per FHIR R4."""
+    REGISTERED = "registered"
+    PARTIAL = "partial"
+    PRELIMINARY = "preliminary"
+    FINAL = "final"
+    AMENDED = "amended"
+    CORRECTED = "corrected"
+    APPENDED = "appended"
+    CANCELLED = "cancelled"
+    ENTERED_IN_ERROR = "entered-in-error"
+    UNKNOWN = "unknown"
+
+
+class MedicationStatus(str, Enum):
+    """Medication status values per FHIR R4."""
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    ENTERED_IN_ERROR = "entered-in-error"
+
+
+# =============================================================================
+# ENHANCED TYPE UNIONS FOR NEW RESOURCES
+# =============================================================================
+
+# Update StatusType union to include new statuses
+StatusType = Union[
+    ObservationStatus,
+    EncounterStatus,
+    ConditionClinicalStatus,
+    MedicationRequestStatus,
+    ProcedureStatus,
+    GoalLifecycleStatus,
+    # NEW - Critical additions
+    AllergyIntoleranceStatus,
+    ServiceRequestStatus,
+    DiagnosticReportStatus,
+    MedicationStatus,
+]
+
 # Literal types for specific use cases
 GenderLiteral = Literal["male", "female", "other", "unknown"]
 DomainLiteral = Literal[
-    "primary_care", "cardiology", "dermatology", "emergency", 
+    "primary_care", "cardiology", "dermatology", "emergency",
     "pediatrics", "psychiatry", "general"
 ]

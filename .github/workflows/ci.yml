@@ -55,7 +55,7 @@ jobs:
           echo "🧬 Testing HACS Core (foundation models)..."
           uv run pytest tests/test_hacs_core_unit.py -v --tb=short -m "unit" || echo "⚠️ Some HACS Core tests failed (non-blocking)"
 
-          echo "🛠️ Testing HACS Tools (25+ healthcare tools)..."
+          echo "🛠️ Testing HACS Tools (25+ Hacs Tools)..."
           uv run pytest tests/test_hacs_tools_unit.py -v --tb=short -m "unit" || echo "⚠️ Some HACS Tools tests failed (non-blocking)"
 
           echo "🔧 Testing HACS Utils (integrations)..."
@@ -133,7 +133,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🧪 Comprehensive Unit Tests" >> $GITHUB_STEP_SUMMARY
           echo "- **HACS Core**: Foundation models (Patient, MemoryBlock, Actor, etc.)" >> $GITHUB_STEP_SUMMARY
-          echo "- **HACS Tools**: 25+ healthcare tools via MCP protocol" >> $GITHUB_STEP_SUMMARY
+          echo "- **HACS Tools**: 25+ Hacs Tools via MCP protocol" >> $GITHUB_STEP_SUMMARY
           echo "- **HACS Utils**: Integrations (OpenAI, Anthropic, LangChain, etc.)" >> $GITHUB_STEP_SUMMARY
           echo "- **HACS Persistence**: Database operations and vector storage" >> $GITHUB_STEP_SUMMARY
           echo "- **HACS Registry**: Resource definitions and templates" >> $GITHUB_STEP_SUMMARY

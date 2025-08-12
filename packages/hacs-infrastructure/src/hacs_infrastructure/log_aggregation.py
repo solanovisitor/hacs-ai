@@ -74,7 +74,7 @@ class LogEntry:
     ip_address: Optional[str] = None
     extra_fields: Dict[str, Any] = field(default_factory=dict)
     tags: List[str] = field(default_factory=list)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
@@ -119,7 +119,7 @@ class LogCorrelation:
     entry_count: int
     error_count: int
     services_involved: List[str]
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
@@ -137,7 +137,7 @@ class LogCorrelation:
 
 class LogAggregator:
     """Centralized log aggregation system."""
-    
+
     def __init__(
         self,
         buffer_size: int = 10000,
@@ -148,30 +148,30 @@ class LogAggregator:
         self.buffer_size = buffer_size
         self.flush_interval_seconds = flush_interval_seconds
         self.retention_days = retention_days
-        
+
         # Log storage
         self._log_buffer: deque = deque(maxlen=buffer_size)
         self._log_index: Dict[str, List[LogEntry]] = defaultdict(list)
         self._correlation_cache: Dict[str, LogCorrelation] = {}
-        
+
         # Pattern matching
         self._patterns: List[LogPattern] = []
         self._pattern_matches: Dict[str, int] = defaultdict(int)
-        
+
         # Streaming subscribers
         self._stream_subscribers: List[Callable[[LogEntry], None]] = []
-        
+
         # Background tasks
         self._running = False
         self._flush_task: Optional[asyncio.Task] = None
         self._cleanup_task: Optional[asyncio.Task] = None
-        
+
         # Healthcare-specific patterns
         self._setup_healthcare_patterns()
-        
+
         # Logger
         self.logger = logging.getLogger("hacs.log_aggregation")
-    
+
     def _setup_healthcare_patterns(self):
         """Setup healthcare-specific log patterns."""
         patterns = [
@@ -230,43 +230,43 @@ class LogAggregator:
                 tags=["security", "threat", "incident"]
             )
         ]
-        
+
         self._patterns.extend(patterns)
-    
+
     async def start(self):
         """Start log aggregation."""
         if self._running:
             return
-        
+
         self._running = True
         self._flush_task = asyncio.create_task(self._flush_loop())
         self._cleanup_task = asyncio.create_task(self._cleanup_loop())
-        
+
         self.logger.info("Log aggregation started")
-    
+
     async def stop(self):
         """Stop log aggregation."""
         if not self._running:
             return
-        
+
         self._running = False
-        
+
         # Cancel tasks
         if self._flush_task:
             self._flush_task.cancel()
         if self._cleanup_task:
             self._cleanup_task.cancel()
-        
+
         # Wait for tasks to complete
         tasks = [t for t in [self._flush_task, self._cleanup_task] if t]
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         # Final flush
         await self._flush_logs()
-        
+
         self.logger.info("Log aggregation stopped")
-    
+
     def add_log_entry(
         self,
         level: LogSeverity,
@@ -284,23 +284,23 @@ class LogAggregator:
             logger_name=logger_name,
             **kwargs
         )
-        
+
         # Add to buffer
         self._log_buffer.append(entry)
-        
+
         # Index for correlation
         self._index_log_entry(entry)
-        
+
         # Pattern matching
         self._match_patterns(entry)
-        
+
         # Notify stream subscribers
         for subscriber in self._stream_subscribers:
             try:
                 subscriber(entry)
             except Exception as e:
                 self.logger.error(f"Error notifying subscriber: {e}")
-    
+
     def add_structured_log(self, log_data: Dict[str, Any]):
         """Add structured log data."""
         try:
@@ -321,27 +321,27 @@ class LogAggregator:
                 tags=log_data.get("tags", []),
                 extra_fields={k: v for k, v in log_data.items() if k not in [
                     "timestamp", "level", "service", "message", "logger",
-                    "trace_id", "span_id", "session_id", "user_id", 
+                    "trace_id", "span_id", "session_id", "user_id",
                     "patient_id_hash", "organization", "workflow_type",
                     "ip_address", "tags"
                 ]}
             )
-            
+
             # Add to buffer
             self._log_buffer.append(entry)
             self._index_log_entry(entry)
             self._match_patterns(entry)
-            
+
             # Notify subscribers
             for subscriber in self._stream_subscribers:
                 try:
                     subscriber(entry)
                 except Exception as e:
                     self.logger.error(f"Error notifying subscriber: {e}")
-                    
+
         except Exception as e:
             self.logger.error(f"Error processing structured log: {e}")
-    
+
     def _index_log_entry(self, entry: LogEntry):
         """Index log entry for correlation."""
         # Index by various correlation fields
@@ -359,24 +359,24 @@ class LogAggregator:
             self._log_index[f"ip:{entry.ip_address}"].append(entry)
         if entry.organization:
             self._log_index[f"org:{entry.organization}"].append(entry)
-    
+
     def _match_patterns(self, entry: LogEntry):
         """Match log entry against known patterns."""
         full_text = f"{entry.message} {' '.join(entry.extra_fields.values() if isinstance(v, str) else str(v) for v in entry.extra_fields.values())}"
-        
+
         for pattern in self._patterns:
             if re.search(pattern.pattern, full_text, re.IGNORECASE):
                 self._pattern_matches[pattern.name] += 1
-                
+
                 # Add pattern tags
                 if pattern.tags:
                     entry.tags.extend(pattern.tags)
                     entry.tags = list(set(entry.tags))  # Remove duplicates
-                
+
                 # Execute action if defined
                 if pattern.action:
                     asyncio.create_task(self._execute_pattern_action(pattern, entry))
-    
+
     async def _execute_pattern_action(self, pattern: LogPattern, entry: LogEntry):
         """Execute action for matched pattern."""
         try:
@@ -395,10 +395,10 @@ class LogAggregator:
             elif pattern.action == "security_incident":
                 # Trigger security incident response
                 pass
-                
+
         except Exception as e:
             self.logger.error(f"Error executing pattern action {pattern.action}: {e}")
-    
+
     def correlate_logs(
         self,
         correlation_type: CorrelationType,
@@ -407,34 +407,34 @@ class LogAggregator:
     ) -> Optional[LogCorrelation]:
         """Correlate logs by correlation type and value."""
         correlation_key = f"{correlation_type.value}:{correlation_value}"
-        
+
         # Check cache
         if correlation_key in self._correlation_cache:
             return self._correlation_cache[correlation_key]
-        
+
         # Get correlated entries
         entries = self._log_index.get(correlation_key, [])
         if not entries:
             return None
-        
+
         # Filter by time window
         now = datetime.now(timezone.utc)
         cutoff = now - timedelta(minutes=time_window_minutes)
         recent_entries = [e for e in entries if e.timestamp >= cutoff]
-        
+
         if not recent_entries:
             return None
-        
+
         # Sort by timestamp
         recent_entries.sort(key=lambda x: x.timestamp)
-        
+
         # Calculate correlation metrics
         start_time = recent_entries[0].timestamp
         end_time = recent_entries[-1].timestamp
         duration_ms = (end_time - start_time).total_seconds() * 1000
         error_count = sum(1 for e in recent_entries if e.level in [LogSeverity.ERROR, LogSeverity.FATAL])
         services_involved = list(set(e.service for e in recent_entries))
-        
+
         correlation = LogCorrelation(
             correlation_id=correlation_value,
             correlation_type=correlation_type,
@@ -446,12 +446,12 @@ class LogAggregator:
             error_count=error_count,
             services_involved=services_involved
         )
-        
+
         # Cache correlation
         self._correlation_cache[correlation_key] = correlation
-        
+
         return correlation
-    
+
     def search_logs(
         self,
         query: str = "",
@@ -464,7 +464,7 @@ class LogAggregator:
     ) -> List[LogEntry]:
         """Search logs with filters."""
         results = []
-        
+
         for entry in reversed(list(self._log_buffer)):  # Most recent first
             # Apply filters
             if level and entry.level != level:
@@ -479,30 +479,30 @@ class LogAggregator:
                 continue
             if query and query.lower() not in entry.message.lower():
                 continue
-            
+
             results.append(entry)
-            
+
             if len(results) >= limit:
                 break
-        
+
         return results
-    
+
     def get_log_statistics(self, hours: int = 24) -> Dict[str, Any]:
         """Get log statistics for specified time period."""
         cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
         recent_logs = [e for e in self._log_buffer if e.timestamp >= cutoff]
-        
+
         # Count by level
         level_counts = defaultdict(int)
         service_counts = defaultdict(int)
         hourly_counts = defaultdict(int)
-        
+
         for entry in recent_logs:
             level_counts[entry.level.value] += 1
             service_counts[entry.service] += 1
             hour_key = entry.timestamp.strftime("%Y-%m-%d %H:00")
             hourly_counts[hour_key] += 1
-        
+
         return {
             "total_logs": len(recent_logs),
             "time_period_hours": hours,
@@ -513,16 +513,16 @@ class LogAggregator:
             "error_rate": level_counts.get("error", 0) / max(len(recent_logs), 1) * 100,
             "top_services": sorted(service_counts.items(), key=lambda x: x[1], reverse=True)[:10]
         }
-    
+
     def subscribe_to_stream(self, callback: Callable[[LogEntry], None]):
         """Subscribe to real-time log stream."""
         self._stream_subscribers.append(callback)
-    
+
     def unsubscribe_from_stream(self, callback: Callable[[LogEntry], None]):
         """Unsubscribe from log stream."""
         if callback in self._stream_subscribers:
             self._stream_subscribers.remove(callback)
-    
+
     async def stream_logs(
         self,
         level_filter: Optional[LogSeverity] = None,
@@ -530,16 +530,16 @@ class LogAggregator:
     ) -> AsyncGenerator[LogEntry, None]:
         """Stream logs asynchronously."""
         queue = asyncio.Queue()
-        
+
         def stream_callback(entry: LogEntry):
             if level_filter and entry.level != level_filter:
                 return
             if service_filter and entry.service != service_filter:
                 return
             queue.put_nowait(entry)
-        
+
         self.subscribe_to_stream(stream_callback)
-        
+
         try:
             while self._running:
                 try:
@@ -549,7 +549,7 @@ class LogAggregator:
                     continue
         finally:
             self.unsubscribe_from_stream(stream_callback)
-    
+
     async def _flush_loop(self):
         """Background log flushing loop."""
         while self._running:
@@ -560,17 +560,17 @@ class LogAggregator:
                 break
             except Exception as e:
                 self.logger.error(f"Error in flush loop: {e}")
-    
+
     async def _flush_logs(self):
         """Flush logs to persistent storage."""
         if not self._log_buffer:
             return
-        
+
         # In a real implementation, this would write to a database or file system
         # For now, we'll just log the flush operation
         log_count = len(self._log_buffer)
         self.logger.debug(f"Flushing {log_count} log entries to storage")
-    
+
     async def _cleanup_loop(self):
         """Background cleanup loop for old logs and correlations."""
         while self._running:
@@ -581,22 +581,22 @@ class LogAggregator:
                 break
             except Exception as e:
                 self.logger.error(f"Error in cleanup loop: {e}")
-    
+
     async def _cleanup_old_data(self):
         """Clean up old logs and correlations."""
         cutoff = datetime.now(timezone.utc) - timedelta(days=self.retention_days)
-        
+
         # Clean up log index
         for key, entries in list(self._log_index.items()):
             self._log_index[key] = [e for e in entries if e.timestamp >= cutoff]
             if not self._log_index[key]:
                 del self._log_index[key]
-        
+
         # Clean up correlation cache
         for key, correlation in list(self._correlation_cache.items()):
             if correlation.end_time < cutoff:
                 del self._correlation_cache[key]
-        
+
         self.logger.debug("Cleaned up old log data")
 
 

@@ -225,7 +225,7 @@ class MCPToolAdapter:
     def __init__(self, registry: ToolRegistry):
         self.registry = registry
     
-    async def call_tool(self, name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+    async def use_tool(self, name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         tool = self.registry.get_tool(name)
         if not tool:
             raise ValueError(f"Tool {name} not found")

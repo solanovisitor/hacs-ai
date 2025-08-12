@@ -6,7 +6,7 @@ Provides the Model Context Protocol server and core utilities for healthcare AI 
 
 ## 🌐 **MCP Server**
 
-The core HACS MCP server provides **25+ healthcare tools** via JSON-RPC:
+The core HACS MCP server provides **42+ Hacs Tools** via JSON-RPC:
 
 - **Port**: 8000 (default)
 - **Protocol**: Model Context Protocol (MCP)
@@ -47,20 +47,25 @@ pip install hacs-utils
 
 ### **Start MCP Server**
 ```bash
-# Via HACS setup
-python setup.py --mode local
+# Start MCP server
+python -m hacs_utils.mcp.cli
 
-# MCP server runs on http://localhost:8000
-curl http://localhost:8000/
+# Configure server URL
+export HACS_MCP_SERVER_URL=http://127.0.0.1:8000
+
+# Verify server is running
+curl $HACS_MCP_SERVER_URL
 ```
 
-### **Use Healthcare Tools**
+### **Use Hacs Tools**
 ```python
 import requests
 
-def call_tool(tool_name, arguments):
+def use_tool(tool_name, arguments):
     """Call HACS MCP tools"""
-    response = requests.post('http://localhost:8000/', json={
+    import os
+    server_url = os.getenv('HACS_MCP_SERVER_URL', 'http://127.0.0.1:8000')
+    response = requests.post(server_url, json={
         "jsonrpc": "2.0",
         "method": "tools/call",
         "params": {
@@ -72,11 +77,11 @@ def call_tool(tool_name, arguments):
     return response.json()
 
 # List all available tools
-tools = call_tool("tools/list", {})
+tools = use_tool("tools/list", {})
 print(f"Available tools: {len(tools['result']['tools'])}")
 
 # Create patient record
-patient = call_tool("create_hacs_record", {
+patient = use_tool("create_hacs_record", {
     "resource_type": "Patient",
     "resource_data": {
         "full_name": "Sarah Johnson",
@@ -91,7 +96,7 @@ patient = call_tool("create_hacs_record", {
 ### **Clinical Memory Management**
 ```python
 # Store clinical memory
-memory_result = call_tool("create_memory", {
+memory_result = use_tool("create_memory", {
     "content": "Patient reports significant improvement in symptoms after medication adjustment",
     "memory_type": "episodic",
     "importance_score": 0.9,
@@ -99,7 +104,7 @@ memory_result = call_tool("create_memory", {
 })
 
 # Search memories
-search_result = call_tool("search_memories", {
+search_result = use_tool("search_memories", {
     "query": "medication adjustment outcomes",
     "memory_type": "episodic",
     "limit": 5
@@ -109,7 +114,7 @@ search_result = call_tool("search_memories", {
 ### **Clinical Templates**
 ```python
 # Generate assessment template
-template = call_tool("create_clinical_template", {
+template = use_tool("create_clinical_template", {
     "template_type": "assessment",
     "focus_area": "cardiology",
     "complexity_level": "comprehensive"
@@ -138,7 +143,7 @@ HEALTHCARE_SYSTEM_NAME=Your Health System
 ### **MCP Server Configuration**
 ```python
 # MCP server automatically starts with HACS setup
-# Provides healthcare tools via JSON-RPC
+# Provides Hacs Tools via JSON-RPC
 # No additional configuration needed
 ```
 

@@ -7,12 +7,8 @@ vector stores, LLM providers, workflow engines, and more.
 
 import warnings
 
-# Optional integration imports with graceful degradation
-try:
-    from . import openai
-except ImportError as e:
-    openai = None
-    warnings.warn(f"OpenAI integration not available: {e}", UserWarning)
+# Optional integration imports with graceful degradation - lazy loading
+openai = None  # Lazy check
 
 try:
     from . import anthropic
@@ -67,3 +63,22 @@ __all__ = [
     "langgraph",
     "crewai",
 ]
+
+
+def __getattr__(name: str):
+    """Lazy loading for integration modules that might cause dependency conflicts."""
+    global openai
+
+    if name == "openai":
+        if openai is None:
+            try:
+                from . import openai as _openai_module
+                openai = _openai_module
+                return openai
+            except ImportError as e:
+                import warnings
+                warnings.warn(f"OpenAI integration not available: {e}", UserWarning)
+                raise AttributeError(f"OpenAI integration failed to load: {e}") from e
+        return openai
+
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

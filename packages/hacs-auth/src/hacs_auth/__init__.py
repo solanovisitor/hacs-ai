@@ -33,6 +33,11 @@ from .session import SessionManager, Session, SessionConfig
 from .decorators import require_auth, require_permission, require_role
 from .audit import AuditLogger, AuditEvent, AuditLevel
 
+# Tool security integration
+from .tool_security import (
+    ToolSecurityContext, secure_tool_execution, create_secure_actor
+)
+
 # OAuth2 support (optional)
 try:
     from .oauth2 import OAuth2Config, OAuth2Manager, OAuth2Error
@@ -40,7 +45,7 @@ try:
 except ImportError:
     _HAS_OAUTH2 = False
     OAuth2Config = None
-    OAuth2Manager = None  
+    OAuth2Manager = None
     OAuth2Error = None
 
 # Version info
@@ -52,40 +57,45 @@ __license__ = "MIT"
 __all__ = [
     # Core authentication
     "AuthManager",
-    "AuthConfig", 
+    "AuthConfig",
     "TokenData",
     "AuthError",
-    
+
     # Actor and roles
     "Actor",
     "ActorRole",
     "PermissionLevel",
     "SessionStatus",
-    
+
     # Permission management
     "PermissionManager",
     "PermissionSchema",
     "Permission",
-    
+
     # Session management
     "SessionManager",
     "Session",
     "SessionConfig",
-    
+
     # Decorators
     "require_auth",
-    "require_permission", 
+    "require_permission",
     "require_role",
-    
+
     # Audit logging
     "AuditLogger",
     "AuditEvent",
     "AuditLevel",
-    
+
     # OAuth2 (if available)
     "OAuth2Config",
     "OAuth2Manager",
     "OAuth2Error",
+    
+    # Tool security integration
+    "ToolSecurityContext",
+    "secure_tool_execution",
+    "create_secure_actor",
 ]
 
 # Package metadata
@@ -109,10 +119,10 @@ PACKAGE_INFO = {
 def get_auth_components() -> dict[str, type]:
     """
     Get registry of all available authentication components.
-    
+
     Returns:
         Dictionary mapping component names to component classes
-        
+
     Example:
         >>> components = get_auth_components()
         >>> auth_manager = components["AuthManager"]()
@@ -124,20 +134,20 @@ def get_auth_components() -> dict[str, type]:
         "SessionManager": SessionManager,
         "AuditLogger": AuditLogger,
     }
-    
+
     if _HAS_OAUTH2 and OAuth2Manager:
         components["OAuth2Manager"] = OAuth2Manager
-        
+
     return components
 
 
 def validate_auth_setup() -> bool:
     """
     Validate that authentication components are properly configured.
-    
+
     Returns:
         True if all components pass validation checks
-        
+
     Raises:
         ValueError: If configuration issues are found
     """
@@ -145,33 +155,33 @@ def validate_auth_setup() -> bool:
         # Test core components instantiation
         auth_config = AuthConfig(jwt_secret="test-secret")
         auth_manager = AuthManager(auth_config)
-        
+
         # Test token creation and verification
         test_token = auth_manager.create_access_token(
             user_id="test-user",
-            role="agent", 
+            role="agent",
             permissions=["read:patient"]
         )
         token_data = auth_manager.verify_token(test_token)
-        
+
         if token_data.user_id != "test-user":
             raise ValueError("Token verification failed")
-            
+
         # Test actor creation
         actor = Actor(
             name="Test Actor",
             role=ActorRole.AGENT,
             permissions=["read:patient"]
         )
-        
+
         # Start session to enable authentication for permission checking
         actor.start_session("test-session")
-        
+
         if not actor.has_permission("read:patient"):
             raise ValueError("Actor permission check failed")
-            
+
         return True
-        
+
     except Exception as e:
         raise ValueError(f"Authentication setup validation failed: {e}") from e
 
@@ -179,7 +189,7 @@ def validate_auth_setup() -> bool:
 def get_security_info() -> dict[str, str]:
     """
     Get information about security features and compliance.
-    
+
     Returns:
         Dictionary with security feature information
     """
@@ -187,7 +197,7 @@ def get_security_info() -> dict[str, str]:
         "jwt_support": "✅ JWT token management with healthcare claims",
         "oauth2_support": "✅ OAuth2 integration" if _HAS_OAUTH2 else "❌ OAuth2 not available",
         "role_based_access": "✅ Healthcare role-based permissions",
-        "audit_logging": "✅ Comprehensive audit trails", 
+        "audit_logging": "✅ Comprehensive audit trails",
         "session_management": "✅ Secure session handling with expiration",
         "healthcare_compliance": "✅ HIPAA-compatible security patterns",
         "ai_agent_optimized": "✅ AI agent authentication patterns",

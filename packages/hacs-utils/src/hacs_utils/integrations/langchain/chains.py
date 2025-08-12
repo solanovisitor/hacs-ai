@@ -31,37 +31,37 @@ except ImportError:
     # Fallback classes
     class BaseCallbackHandler:
         pass
-    
+
     class BaseOutputParser:
         def parse(self, text: str):
             return text
-    
+
     OutputParserException = Exception
-    
+
     class PromptTemplate:
         def __init__(self, template: str, input_variables: List[str]):
             self.template = template
             self.input_variables = input_variables
-    
+
     ChatPromptTemplate = SystemMessagePromptTemplate = HumanMessagePromptTemplate = PromptTemplate
-    
+
     class Chain:
         def __init__(self, **kwargs):
             pass
-        
+
         def run(self, **kwargs):
             return "Chain execution result"
-    
+
     class LLMChain(Chain):
         def __init__(self, llm=None, prompt=None, **kwargs):
             super().__init__(**kwargs)
             self.llm = llm
             self.prompt = prompt
-    
+
     ConversationChain = SequentialChain = LLMChain
 
 try:
-    from hacs_core.models import Patient, Observation, Condition, Procedure, Goal
+    from hacs_models import Patient, Observation, Condition, Procedure, Goal
     from hacs_core.clinical_reasoning import ClinicalReasoner
     _has_hacs_clinical = True
 except ImportError:
@@ -111,10 +111,10 @@ class ChainConfig:
 
 class HealthcareOutputParser(BaseOutputParser):
     """Output parser for healthcare-specific responses."""
-    
+
     def __init__(self, expected_format: str = "structured"):
         self.expected_format = expected_format
-    
+
     def parse(self, text: str) -> Dict[str, Any]:
         """Parse healthcare output into structured format."""
         try:
@@ -125,17 +125,17 @@ class HealthcareOutputParser(BaseOutputParser):
                 'format': self.expected_format,
                 'raw_output': text
             }
-            
+
             # Return the structured result without pattern matching
             # This should be enhanced with proper LLM-based parsing if needed
             return result
-            
+
         except Exception as e:
             raise OutputParserException(f"Failed to parse healthcare output: {e}")
 
 class ChainBuilder(ABC):
     """Abstract builder for healthcare chains."""
-    
+
     def __init__(self, config: ChainConfig):
         self.config = config
         self.chain: Optional[Chain] = None
@@ -143,7 +143,7 @@ class ChainBuilder(ABC):
         self.prompt: Optional[PromptTemplate] = None
         self.output_parser: Optional[BaseOutputParser] = None
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-    
+
     def reset(self) -> 'ChainBuilder':
         """Reset builder to initial state."""
         self.chain = None
@@ -151,27 +151,27 @@ class ChainBuilder(ABC):
         self.prompt = None
         self.output_parser = None
         return self
-    
+
     @abstractmethod
     def build_prompt(self) -> 'ChainBuilder':
         """Build the prompt template."""
         pass
-    
+
     @abstractmethod
     def build_memory(self) -> 'ChainBuilder':
         """Build the memory component."""
         pass
-    
+
     def build_output_parser(self) -> 'ChainBuilder':
         """Build the output parser."""
         self.output_parser = HealthcareOutputParser(self.config.output_format)
         return self
-    
+
     @abstractmethod
     def build_chain(self, llm: Any) -> 'ChainBuilder':
         """Build the final chain."""
         pass
-    
+
     def get_chain(self) -> Chain:
         """Get the built chain."""
         if not self.chain:
@@ -180,7 +180,7 @@ class ChainBuilder(ABC):
 
 class ClinicalAssessmentChainBuilder(ChainBuilder):
     """Builder for clinical assessment chains."""
-    
+
     def build_prompt(self) -> 'ChainBuilder':
         """Build clinical assessment prompt."""
         template = """You are a clinical AI assistant performing a comprehensive clinical assessment.
@@ -221,40 +221,40 @@ Assessment:
 Plan:
 [Provide recommended plan here]
 """
-        
+
         self.prompt = PromptTemplate(
             template=template,
             input_variables=["patient_info", "symptoms", "history"]
         )
         return self
-    
+
     def build_memory(self) -> 'ChainBuilder':
         """Build clinical memory."""
         if self.config.include_memory:
             self.memory = create_clinical_memory()
         return self
-    
+
     def build_chain(self, llm: Any) -> 'ChainBuilder':
         """Build clinical assessment chain."""
         if not _has_langchain_chains:
             self.chain = Chain()
             return self
-        
+
         chain_kwargs = {
             'llm': llm,
             'prompt': self.prompt,
             'output_parser': self.output_parser,
         }
-        
+
         if self.memory:
             chain_kwargs['memory'] = self.memory
-        
+
         self.chain = LLMChain(**chain_kwargs)
         return self
 
 class DiagnosticReasoningChainBuilder(ChainBuilder):
     """Builder for diagnostic reasoning chains."""
-    
+
     def build_prompt(self) -> 'ChainBuilder':
         """Build diagnostic reasoning prompt."""
         template = """You are a diagnostic reasoning AI assistant. Analyze the clinical presentation systematically.
@@ -304,25 +304,25 @@ Reasoning:
 Recommendations:
 [Next steps for confirmation/management]
 """
-        
+
         self.prompt = PromptTemplate(
             template=template,
             input_variables=["clinical_presentation", "lab_results", "imaging_results", "physical_exam"]
         )
         return self
-    
+
     def build_memory(self) -> 'ChainBuilder':
         """Build diagnostic memory."""
         if self.config.include_memory:
             self.memory = create_clinical_memory()
         return self
-    
+
     def build_chain(self, llm: Any) -> 'ChainBuilder':
         """Build diagnostic reasoning chain."""
         if not _has_langchain_chains:
             self.chain = Chain()
             return self
-        
+
         self.chain = LLMChain(
             llm=llm,
             prompt=self.prompt,
@@ -333,7 +333,7 @@ Recommendations:
 
 class TreatmentPlanningChainBuilder(ChainBuilder):
     """Builder for treatment planning chains."""
-    
+
     def build_prompt(self) -> 'ChainBuilder':
         """Build treatment planning prompt."""
         template = """You are a treatment planning AI assistant. Develop a comprehensive treatment plan.
@@ -390,25 +390,25 @@ Monitoring:
 Education:
 [Patient education points]
 """
-        
+
         self.prompt = PromptTemplate(
             template=template,
             input_variables=["patient_profile", "diagnosis", "current_medications", "allergies", "preferences"]
         )
         return self
-    
+
     def build_memory(self) -> 'ChainBuilder':
         """Build treatment memory."""
         if self.config.include_memory:
             self.memory = create_clinical_memory()
         return self
-    
+
     def build_chain(self, llm: Any) -> 'ChainBuilder':
         """Build treatment planning chain."""
         if not _has_langchain_chains:
             self.chain = Chain()
             return self
-        
+
         self.chain = LLMChain(
             llm=llm,
             prompt=self.prompt,
@@ -419,10 +419,10 @@ Education:
 
 class ChainDirector:
     """Director for orchestrating chain building."""
-    
+
     def __init__(self, builder: ChainBuilder):
         self.builder = builder
-    
+
     def construct_basic_chain(self, llm: Any) -> Chain:
         """Construct a basic healthcare chain."""
         return (self.builder
@@ -432,18 +432,18 @@ class ChainDirector:
                 .build_output_parser()
                 .build_chain(llm)
                 .get_chain())
-    
+
     def construct_advanced_chain(self, llm: Any, custom_prompt: str = None) -> Chain:
         """Construct an advanced healthcare chain with custom components."""
         builder = self.builder.reset().build_prompt()
-        
+
         # Use custom prompt if provided
         if custom_prompt:
             builder.prompt = PromptTemplate(
                 template=custom_prompt,
                 input_variables=["input"]
             )
-        
+
         return (builder
                 .build_memory()
                 .build_output_parser()
@@ -452,40 +452,40 @@ class ChainDirector:
 
 class HealthcareChainFactory:
     """Factory for creating healthcare-specific chains."""
-    
+
     _builders = {
         ChainType.CLINICAL_ASSESSMENT: ClinicalAssessmentChainBuilder,
         ChainType.DIAGNOSTIC_REASONING: DiagnosticReasoningChainBuilder,
         ChainType.TREATMENT_PLANNING: TreatmentPlanningChainBuilder,
         # Add more as needed
     }
-    
+
     @classmethod
     def create_chain(cls, chain_type: ChainType, llm: Any, config: ChainConfig = None) -> Chain:
         """Create a healthcare chain of the specified type."""
         config = config or ChainConfig(chain_type=chain_type)
-        
+
         builder_class = cls._builders.get(chain_type)
         if not builder_class:
             raise ValueError(f"Unknown chain type: {chain_type}")
-        
+
         builder = builder_class(config)
         director = ChainDirector(builder)
         return director.construct_basic_chain(llm)
-    
+
     @classmethod
     def create_sequential_chain(cls, chain_types: List[ChainType], llm: Any) -> Chain:
         """Create a sequential chain combining multiple healthcare chains."""
         if not _has_langchain_chains:
             return Chain()
-        
+
         chains = []
         for chain_type in chain_types:
             chain = cls.create_chain(chain_type, llm)
             chains.append(chain)
-        
+
         return SequentialChain(chains=chains)
-    
+
     @classmethod
     def register_builder(cls, chain_type: ChainType, builder_class: Type[ChainBuilder]):
         """Register a new chain builder."""
@@ -519,7 +519,7 @@ def create_treatment_planning_chain(llm: Any, max_iterations: int = 3) -> Chain:
     )
     return HealthcareChainFactory.create_chain(ChainType.TREATMENT_PLANNING, llm, config)
 
-def create_comprehensive_clinical_chain(llm: Any) -> Chain:
+def create_clinical_chain(llm: Any) -> Chain:
     """Create a comprehensive clinical chain combining assessment, diagnosis, and treatment."""
     chain_types = [
         ChainType.CLINICAL_ASSESSMENT,
@@ -537,7 +537,7 @@ __all__ = [
     'ChainDirector',
     # Specific builders
     'ClinicalAssessmentChainBuilder',
-    'DiagnosticReasoningChainBuilder', 
+    'DiagnosticReasoningChainBuilder',
     'TreatmentPlanningChainBuilder',
     # Factory and utilities
     'HealthcareChainFactory',
@@ -546,5 +546,5 @@ __all__ = [
     'create_clinical_assessment_chain',
     'create_diagnostic_chain',
     'create_treatment_planning_chain',
-    'create_comprehensive_clinical_chain',
+    'create_clinical_chain',
 ]

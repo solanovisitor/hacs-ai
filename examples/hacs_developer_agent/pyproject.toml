@@ -5,13 +5,22 @@ description = "HACS Developer Guidance Agent - A LangGraph application for healt
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "langgraph>=0.6.2",
-    "langchain-core>=0.3.0",
-    "langchain-openai>=0.2.0",
-    "langchain-anthropic>=0.2.0",
+    "langgraph>=0.3.27",
+    "langchain-core>=0.3.27",
+    "langchain-openai>=0.3.8",
+    "langchain-anthropic>=0.3.3",
     "pydantic>=2.11.7",
     "httpx>=0.25.0",
-    "langchain-mcp-adapters>=0.1.9",
+    "typing-extensions>=4.12.0",
+    # HACS packages
+    "hacs-models",
+    "hacs-core",
+    "hacs-auth",
+    "hacs-tools",
+    "hacs-utils",
+    "hacs-registry",
+    "hacs-persistence",
+    "hacs-infrastructure",
 ]
 
 [project.optional-dependencies]
@@ -41,7 +50,10 @@ dev-dependencies = [
 packages = ["."]
 
 [tool.uv.sources]
+hacs-models = { workspace = true }
 hacs-core = { workspace = true }
+hacs-auth = { workspace = true }
+hacs-infrastructure = { workspace = true }
 hacs-tools = { workspace = true }
 hacs-utils = { workspace = true }
 hacs-registry = { workspace = true }
