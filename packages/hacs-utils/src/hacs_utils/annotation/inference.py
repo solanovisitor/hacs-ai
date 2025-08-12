@@ -57,19 +57,34 @@ class AnthropicLanguageModel(BaseLanguageModel):
         self._max_tokens = kwargs.pop("max_tokens", 1024)
 
     def infer(self, batch_prompts: Sequence[str], **kwargs) -> Iterator[Sequence[ScoredOutput]]:
-        # Basic non-streaming implementation; can add streaming later
+        # Streaming support when stream=True; otherwise normal create
+        stream = kwargs.pop("stream", False)
         for prompt in batch_prompts:
-            msg = self._client.messages.create(
-                model=self._model,
-                max_tokens=kwargs.get("max_tokens", self._max_tokens),
-                messages=[{"role": "user", "content": prompt}],
-            )
-            # msg.content is a list of content blocks; concatenate text blocks
-            parts = []
-            for block in getattr(msg, "content", []) or []:
-                if getattr(block, "type", None) == "text":
-                    parts.append(getattr(block, "text", ""))
-            content = "".join(parts)
-            yield [ScoredOutput(score=None, output=content)]
+            if stream:
+                events = self._client.messages.create(
+                    model=self._model,
+                    max_tokens=kwargs.get("max_tokens", self._max_tokens),
+                    messages=[{"role": "user", "content": prompt}],
+                    stream=True,
+                )
+                buffer: list[str] = []
+                for ev in events:
+                    # aggregate text events
+                    t = getattr(ev, "delta", None)
+                    if t and hasattr(t, "text") and t.text:
+                        buffer.append(t.text)
+                yield [ScoredOutput(score=None, output="".join(buffer))]
+            else:
+                msg = self._client.messages.create(
+                    model=self._model,
+                    max_tokens=kwargs.get("max_tokens", self._max_tokens),
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                parts = []
+                for block in getattr(msg, "content", []) or []:
+                    if getattr(block, "type", None) == "text":
+                        parts.append(getattr(block, "text", ""))
+                content = "".join(parts)
+                yield [ScoredOutput(score=None, output=content)]
 
 

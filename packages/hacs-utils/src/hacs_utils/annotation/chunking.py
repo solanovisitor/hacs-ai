@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Iterable, Iterator, Sequence
 
 from .data import Document, CharInterval
-from hacs_models import TextChunk as TextChunkModel
+from hacs_models import TextChunk as TextChunkModel, ChunkingPolicy
 
 
 @dataclass
@@ -148,5 +148,119 @@ def split_with_langchain_recursive(
         cursor = end
         chunks.append(TextChunk(start_index=start, end_index=end, document=document))
     return chunks
+
+
+def split_markdown(
+    document: Document, *, chunk_size: int = 1000, chunk_overlap: int = 0
+) -> list[TextChunk]:
+    try:
+        from langchain_text_splitters import MarkdownHeaderTextSplitter
+    except Exception:
+        it = ChunkIterator(document, max_char_buffer=chunk_size, chunk_overlap=chunk_overlap)
+        return list(iter(it))
+
+    # Basic header splitter: split by headers; then enforce chunk_size via recursive splitter
+    splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=[("#", "h1"), ("##", "h2"), ("###", "h3")]
+    )
+    try:
+        md_docs = splitter.split_text(document.text)
+        # md_docs are LC Document objects; concatenate their page_content with a separator
+        text_segments = [getattr(d, "page_content", str(d)) for d in md_docs]
+        text = "\n\n".join(text_segments)
+    except Exception:
+        text = document.text
+
+    # Apply recursive size enforcement
+    rec = split_with_langchain_recursive(
+        Document(text=text, additional_context=document.additional_context),
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+    )
+    return rec
+
+
+def split_html(
+    document: Document, *, chunk_size: int = 1000, chunk_overlap: int = 0
+) -> list[TextChunk]:
+    try:
+        from langchain_text_splitters import HTMLHeaderTextSplitter
+    except Exception:
+        it = ChunkIterator(document, max_char_buffer=chunk_size, chunk_overlap=chunk_overlap)
+        return list(iter(it))
+
+    splitter = HTMLHeaderTextSplitter(headers_to_split_on=[("h1", "h1"), ("h2", "h2"), ("h3", "h3")])
+    try:
+        html_docs = splitter.split_text(document.text)
+        text_segments = [getattr(d, "page_content", str(d)) for d in html_docs]
+        text = "\n\n".join(text_segments)
+    except Exception:
+        text = document.text
+    rec = split_with_langchain_recursive(
+        Document(text=text, additional_context=document.additional_context),
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+    )
+    return rec
+
+
+def split_code(
+    document: Document, *, chunk_size: int = 1000, chunk_overlap: int = 0, language: str | None = None
+) -> list[TextChunk]:
+    try:
+        # Try language-specific splitters when available; fallback to recursive
+        from langchain_text_splitters import (
+            PythonCodeTextSplitter,
+            RecursiveCharacterTextSplitter,
+        )
+    except Exception:
+        it = ChunkIterator(document, max_char_buffer=chunk_size, chunk_overlap=chunk_overlap)
+        return list(iter(it))
+
+    if (language or "").lower() == "python":
+        try:
+            splitter = PythonCodeTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+            texts = splitter.split_text(document.text)
+            chunks: list[TextChunk] = []
+            cursor = 0
+            for t in texts:
+                idx = document.text.find(t, cursor)
+                if idx == -1:
+                    idx = document.text.find(t)
+                if idx == -1:
+                    continue
+                start = idx
+                end = idx + len(t)
+                cursor = end
+                chunks.append(TextChunk(start_index=start, end_index=end, document=document))
+            return chunks
+        except Exception:
+            pass
+
+    # generic fallback
+    return split_with_langchain_recursive(document, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+
+
+def select_chunks(document: Document, policy: ChunkingPolicy) -> list[TextChunk]:
+    """Factory to pick chunker by policy.strategy."""
+    strat = (policy.strategy or "char").lower()
+    size = policy.max_chars
+    overlap = policy.chunk_overlap
+    if strat == "char":
+        return list(ChunkIterator(document, max_char_buffer=size, chunk_overlap=overlap))
+    if strat == "token":
+        return split_with_langchain_character(
+            document, chunk_size=size, chunk_overlap=overlap, encoding_name=policy.encoding_name
+        )
+    if strat == "recursive":
+        return split_with_langchain_recursive(document, chunk_size=size, chunk_overlap=overlap)
+    if strat == "markdown":
+        return split_markdown(document, chunk_size=size, chunk_overlap=overlap)
+    if strat == "html":
+        return split_html(document, chunk_size=size, chunk_overlap=overlap)
+    if strat == "code":
+        return split_code(document, chunk_size=size, chunk_overlap=overlap)
+    # semantic: placeholder -> recursive
+    return split_with_langchain_recursive(document, chunk_size=size, chunk_overlap=overlap)
 
 
