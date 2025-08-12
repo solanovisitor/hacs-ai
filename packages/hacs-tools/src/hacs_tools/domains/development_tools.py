@@ -26,6 +26,45 @@ from typing import Any, Dict, List
 
 from hacs_models import ResourceStackResult, ResourceTemplateResult
 from hacs_core.tool_protocols import hacs_tool, ToolCategory
+@hacs_tool(
+    name="register_stack_template",
+    description="Register a reusable stack template (resources + variable bindings)",
+    category=ToolCategory.DEVELOPMENT_TOOLS,
+    healthcare_domains=["resource_management", "templates"],
+    fhir_resources=["ResourceBundle"]
+)
+def register_stack_template_tool(template: dict) -> ResourceTemplateResult:
+    """Register a stack template via registry.
+
+    Args:
+        template: JSON payload matching StackTemplate schema (name, version, variables, layers)
+    """
+    try:
+        from hacs_registry import register_stack_template
+        from hacs_models import StackTemplate
+        tmpl = StackTemplate(**template)
+        reg = register_stack_template(tmpl)
+        return ResourceTemplateResult(success=True, message="Template registered", data={"id": str(reg.id)})
+    except Exception as e:
+        return ResourceTemplateResult(success=False, message=f"Failed: {e}")
+
+
+@hacs_tool(
+    name="instantiate_stack_template",
+    description="Instantiate a registered stack template by name and variables",
+    category=ToolCategory.DEVELOPMENT_TOOLS,
+    healthcare_domains=["resource_management", "templates"],
+    fhir_resources=["ResourceBundle"]
+)
+def instantiate_stack_template_tool(template_name: str, variables: dict) -> ResourceStackResult:
+    """Instantiate a registered stack template and return resource IDs/summary."""
+    try:
+        from hacs_registry import instantiate_registered_stack
+        resources = instantiate_registered_stack(template_name, variables)
+        summary = {k: getattr(v, 'id', None) for k, v in resources.items()}
+        return ResourceStackResult(success=True, message="Stack instantiated", data=summary)
+    except Exception as e:
+        return ResourceStackResult(success=False, message=f"Failed: {e}")
 
 logger = logging.getLogger(__name__)
 

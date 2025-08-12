@@ -106,6 +106,7 @@ from .organization import (
 from .memory import MemoryBlock, EpisodicMemory, SemanticMemory, WorkingMemory
 from .agent_message import AgentMessage, MessageRole, MessageType
 from .resource_bundle import ResourceBundle, BundleEntry, BundleType
+from .stack_template import StackTemplate, LayerSpec, instantiate_stack_template
 from .workflow import WorkflowDefinition, WorkflowStep, WorkflowAction
 from .actor import Actor, ActorRole, PermissionLevel, SessionStatus
 from .evidence import Evidence, EvidenceType
@@ -240,6 +241,10 @@ __all__ = [
     "ResourceBundle",
     "BundleEntry",
     "BundleType",
+    # Stack templates
+    "StackTemplate",
+    "LayerSpec",
+    "instantiate_stack_template",
     "WorkflowDefinition",
     "WorkflowStep",
     "WorkflowAction",

@@ -45,7 +45,8 @@ try:
         # EvidenceVariable, GuidanceResponse,  # Some may not exist yet
 
         # Context and Memory
-        # ContextSummary, Memory, ResourceBundle  # Some may not exist yet
+        # ContextSummary, Memory,
+        ResourceBundle
     )
 except ImportError:
     # Fallback to available models only
@@ -68,9 +69,9 @@ except ImportError:
 # TODO: Move workflow definitions to hacs_models when available
 WorkflowDefinition = WorkflowRequest = WorkflowEvent = WorkflowExecution = None
 
-# Set undefined resource references to None for now
+# Set undefined resource references to None for now (except ResourceBundle which is available)
 Document = Library = EvidenceVariable = GuidanceResponse = None
-ContextSummary = Memory = ResourceBundle = None
+ContextSummary = Memory = None
 
 logger = logging.getLogger(__name__)
 

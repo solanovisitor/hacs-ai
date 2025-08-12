@@ -305,3 +305,57 @@ __all__.extend([
     "create_cardiology_agent",
     "create_emergency_agent",
 ])
+
+# Stack template convenience (registry-facing)
+from typing import Dict, Any
+try:
+    from hacs_models import StackTemplate, instantiate_stack_template
+except Exception:
+    StackTemplate = None
+    instantiate_stack_template = None
+
+def register_stack_template(template: "StackTemplate", **kwargs) -> RegisteredResource:
+    """Register a StackTemplate as a versioned resource bundle template.
+
+    Stores template metadata in the registry so it can be referenced by name/version.
+    """
+    if StackTemplate is None:
+        raise ValueError("StackTemplate not available")
+
+    metadata = ResourceMetadata(
+        name=template.name,
+        version=template.version,
+        description=template.description or f"StackTemplate: {template.name}",
+        category=ResourceCategory.CLINICAL,
+        tags=["template", "stack"],
+    )
+    # Persist the template structure in instance_data
+    instance_data = {
+        "variables": template.variables,
+        "layers": [layer.model_dump() for layer in template.layers],
+    }
+    registry = get_global_registry()
+    return registry.register_resource(StackTemplate, metadata, instance_data=instance_data)
+
+
+def instantiate_registered_stack(name: str, variables: Dict[str, Any]) -> Dict[str, Any]:
+    """Instantiate a previously registered StackTemplate by name and variables."""
+    if StackTemplate is None or instantiate_stack_template is None:
+        raise ValueError("StackTemplate not available")
+
+    registry = get_global_registry()
+    # naive lookup by name (latest version)
+    stacks = [r for r in registry._resources.values() if r.metadata.name == name and r.hacs_resource_class.__name__ == "StackTemplate"]
+    if not stacks:
+        raise ValueError(f"Stack template not found: {name}")
+    # take most recent
+    stack_res = sorted(stacks, key=lambda r: r.metadata.version, reverse=True)[0]
+    # rebuild StackTemplate model
+    tmpl = StackTemplate(
+        name=stack_res.metadata.name,
+        version=stack_res.metadata.version.as_string() if hasattr(stack_res.metadata.version, 'as_string') else stack_res.metadata.version,
+        description=stack_res.metadata.description,
+        variables=stack_res.instance_data.get("variables", {}),
+        layers=stack_res.instance_data.get("layers", []),
+    )
+    return instantiate_stack_template(tmpl, variables)
