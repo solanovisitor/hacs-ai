@@ -6,11 +6,9 @@ from datasets import load_dataset
 
 from hacs_models import StackTemplate, LayerSpec, instantiate_stack_template
 from hacs_models import Patient, Observation, MemoryBlock, CodeableConcept, Coding
-from hacs_models import PromptTemplateResource, ExtractionSchemaResource
-from hacs_models import AnnotationWorkflowResource, ChunkingPolicy, ModelConfig
-from hacs_utils.structured import generate_extractions, parse_extractions
-from hacs_utils.annotation.chunking import select_chunks
-from hacs_models import Document
+from hacs_utils.structured import generate_extractions
+from hacs_utils.integrations.openai.client import OpenAIClient
+from hacs_utils.integrations.anthropic.__init__ import create_anthropic_client  # may exist
 from hacs_persistence import Adapter
 
 HF_TOKEN = os.getenv("HF_TOKEN")
@@ -101,12 +99,30 @@ Return JSON with key 'extractions' and items containing extraction_class and ext
 
     # 2) Generate extractions with provider client auto-detection (OpenAI/Anthropic/generic)
     # Here we assume user provides a configured client outside; for demo we just simulate with None and fallback
-    try:
-        client = None  # replace with real client if available
-        extractions = generate_extractions(client, prompt=prompt)
-    except Exception:
+    client = None
+    openai_key = os.getenv("OPENAI_API_KEY")
+    anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+    if openai_key:
+        try:
+            client = OpenAIClient(api_key=openai_key)
+        except Exception:
+            client = None
+    elif anthropic_key:
+        try:
+            from anthropic import Anthropic
+            client = Anthropic(api_key=anthropic_key)
+        except Exception:
+            client = None
+
+    if client is not None:
+        try:
+            extractions = generate_extractions(client, prompt=prompt)
+        except Exception:
+            extractions = []
+
+    if not client or not extractions:
         # Fallback: build extractions trivially from fields
-        from hacs_models import Extraction, CharInterval
+        from hacs_models import Extraction
         extractions = [
             Extraction(extraction_class="patient_name", extraction_text=row.get("input", "Anonymous Patient")),
             Extraction(extraction_class="input_text", extraction_text=row.get("input", "")),
@@ -174,6 +190,5 @@ def main():
 
     print({"inserted": len(results), "sample_ids": results[:3]})
 
-
-+if __name__ == "__main__":
-+    main()
+if __name__ == "__main__":
+    main()
