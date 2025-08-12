@@ -20,7 +20,9 @@ wheels/
 .installed.cfg
 *.egg
 *.log
-
+*.logs
+*.txt
+*.csv
 # Virtual environments & Environment files
 .env
 .env.local

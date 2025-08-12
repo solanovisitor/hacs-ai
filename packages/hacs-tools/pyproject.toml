@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "hacs-tools"
-version = "0.4.0"
+version = "0.4.3"
 description = "Core tools and utilities for HACS (Healthcare Agent Communication Standard)"
 readme = "README.md"
 license = { text = "MIT" }
@@ -30,7 +30,7 @@ classifiers = [
     "Typing :: Typed"
 ]
 dependencies = [
-    "hacs-core>=0.4.0",
+    "hacs-core>=0.4.3",
     "pydantic>=2.11.7",
     "requests>=2.32.4",
     "typing-extensions>=4.0.0"
@@ -45,7 +45,7 @@ Changelog = "https://github.com/solanovisitor/hacs-ai/blob/main/CHANGELOG.md"
 [project.optional-dependencies]
 # Clinical operations extra
 clinical = [
-    "hacs-persistence>=0.4.0",
+    "hacs-persistence>=0.4.3",
 ]
 # All functionality
 all = [
