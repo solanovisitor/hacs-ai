@@ -299,18 +299,18 @@ async def create_resource_subset(
 # === FILE OPERATION TOOLS ===
 
 @hacs_tool(
-    name="write_healthcare_file",
-    description="Write content to a file with healthcare context",
+    name="write_file",
+    description="Write content to a file. Pass file_path and content.",
     category=ToolCategory.DEVELOPMENT_TOOLS,
     healthcare_domains=["file_management", "documentation"],
     fhir_resources=["DocumentReference"]
 )
-def write_healthcare_file(
+def write_file(
     file_path: str,
     content: str,
     clinical_metadata: Optional[Dict[str, Any]] = None
 ) -> HACSResult:
-    """Write content to a file with healthcare context."""
+    """Write content to a file."""
     try:
         with open(file_path, 'w') as f:
             f.write(content)
@@ -334,18 +334,18 @@ def write_healthcare_file(
 
 
 @hacs_tool(
-    name="read_healthcare_file",
-    description="Read content from a file with healthcare context",
+    name="read_file",
+    description="Read content from a file. Optional start_line and end_line.",
     category=ToolCategory.DEVELOPMENT_TOOLS,
     healthcare_domains=["file_management", "documentation"],
     fhir_resources=["DocumentReference"]
 )
-def read_healthcare_file(
+def read_file(
     file_path: str,
     start_line: int = 1,
     end_line: Optional[int] = None
 ) -> HACSResult:
-    """Read content from a file with healthcare context."""
+    """Read content from a file."""
     try:
         with open(file_path, 'r') as f:
             lines = f.readlines()
@@ -382,19 +382,19 @@ def read_healthcare_file(
 
 
 @hacs_tool(
-    name="edit_healthcare_file",
-    description="Edit specific lines in a file with healthcare context",
+    name="edit_file",
+    description="Replace a specific line in a file. Pass file_path, line_number, new_content.",
     category=ToolCategory.DEVELOPMENT_TOOLS,
     healthcare_domains=["file_management", "documentation"],
     fhir_resources=["DocumentReference"]
 )
-def edit_healthcare_file(
+def edit_file(
     file_path: str,
     line_number: int,
     new_content: str,
     clinical_metadata: Optional[Dict[str, Any]] = None
 ) -> HACSResult:
-    """Edit specific lines in a file with healthcare context."""
+    """Edit a specific line in a file."""
     try:
         # Read existing content
         with open(file_path, 'r') as f:
@@ -491,9 +491,9 @@ async def discover_available_tools() -> HACSResult:
         create_healthcare_resource,
         get_healthcare_resource_schema,
         create_resource_subset,
-        write_healthcare_file,
-        read_healthcare_file,
-        edit_healthcare_file,
+        write_file,
+        read_file,
+        edit_file,
         validate_hacs_integration,
         discover_available_tools
     ]
@@ -563,9 +563,9 @@ CUSTOM_LANGGRAPH_TOOLS = [
     create_healthcare_resource,
     get_healthcare_resource_schema,
     create_resource_subset,
-    write_healthcare_file,
-    read_healthcare_file,
-    edit_healthcare_file,
+    write_file,
+    read_file,
+    edit_file,
     validate_hacs_integration,
     discover_available_tools,
     delegate_to_subagent
@@ -579,9 +579,9 @@ __all__ = [
     "create_healthcare_resource",
     "get_healthcare_resource_schema",
     "create_resource_subset",
-    "write_healthcare_file",
-    "read_healthcare_file",
-    "edit_healthcare_file",
+    "write_file",
+    "read_file",
+    "edit_file",
     "validate_hacs_integration",
     "discover_available_tools",
     "delegate_to_subagent"

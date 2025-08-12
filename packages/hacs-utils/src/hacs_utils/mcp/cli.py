@@ -45,7 +45,7 @@ async def run_server_async(host: str | None = None, port: int | None = None, log
     if settings.is_production:
         api_keys = settings.get_effective_api_keys()
         if not api_keys:
-            logger.error("❌ Production mode requires API keys. Set HACS_API_KEYS or HACS_API_KEYS_FILE")
+            logger.error("❌ Production mode requires API keys. Set HACS_API_KEY or HACS_API_KEY_FILE")
             sys.exit(1)
         logger.info("✅ API authentication configured for production")
 
@@ -107,8 +107,8 @@ def main() -> None:
         import secrets
         api_key = secrets.token_urlsafe(32)
         print(f"Generated API key: {api_key}")
-        print(f"Add to your environment: export HACS_API_KEYS='{api_key}'")
-        print(f"Or save to file: echo '{api_key}' > /path/to/api_keys.txt && export HACS_API_KEYS_FILE='/path/to/api_keys.txt'")
+        print(f"Add to your environment: export HACS_API_KEY='{api_key}'")
+        print(f"Or save to file: echo '{api_key}' > /path/to/api_keys.txt && export HACS_API_KEY_FILE='/path/to/api_keys.txt'")
         return
 
     try:

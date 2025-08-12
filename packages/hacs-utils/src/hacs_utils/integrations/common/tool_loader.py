@@ -307,12 +307,44 @@ async def get_all_hacs_tools(framework: str = "langchain") -> List[Any]:
     return tools
 
 def get_all_hacs_tools_sync(framework: str = "langchain") -> List[Any]:
-    """Synchronous wrapper for get_all_hacs_tools."""
+    """Synchronous wrapper for get_all_hacs_tools that works inside running event loops.
+
+    If called from within an active asyncio loop (e.g., inside the LangGraph dev server),
+    we spawn a temporary thread that runs an isolated event loop to avoid
+    'asyncio.run() cannot be called from a running event loop' errors.
+    """
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        # Run the coroutine in a background thread with its own loop
+        from threading import Thread
+        result: List[Any] | None = None
+        err: Exception | None = None
+
+        def _runner():
+            nonlocal result, err
+            try:
+                result = asyncio.run(get_all_hacs_tools(framework))
+            except Exception as e:  # pragma: no cover
+                err = e
+
+        t = Thread(target=_runner, daemon=True)
+        t.start()
+        t.join(timeout=10)
+        if result is not None:
+            return result
+        logger.error(f"Failed to get {framework} tools in thread: {err}")
+        return get_framework_builtin_tools(framework)
+
+    # No running loop: safe to use asyncio.run
     try:
         return asyncio.run(get_all_hacs_tools(framework))
     except Exception as e:
         logger.error(f"Failed to get {framework} tools: {e}")
-        return get_framework_builtin_tools(framework)  # Return at least builtin tools
+        return get_framework_builtin_tools(framework)
 
 # Export main functions
 __all__ = [

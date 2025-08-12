@@ -56,6 +56,9 @@ dependencies = [
     "langchain>=0.3.0,<0.4.0",
     "langchain-core>=0.3.0,<0.4.0",
     "langchain-community>=0.3.0,<0.4.0",
+    # MCP streamable HTTP server and adapters for FastMCP
+    "mcp>=1.1.2",
+    "langchain-mcp-adapters>=0.1.9",
 ]
 
 [project.urls]

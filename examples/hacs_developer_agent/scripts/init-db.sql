@@ -18,4 +18,3 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA hacs GRANT ALL ON SEQUENCES TO hacs;
 
 -- Log successful initialization
 \echo 'HACS database initialized successfully with pgvector extension'
-EOF < /dev/null

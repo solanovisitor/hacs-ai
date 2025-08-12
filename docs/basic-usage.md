@@ -103,12 +103,12 @@ uv run python -m hacs_utils.mcp.cli
 #### **Production Setup**
 ```bash
 # 1. Generate secure API keys
-uv run python -c "import secrets; print(secrets.token_urlsafe(32))" > /secrets/hacs_api_keys.txt
+uv run python -c "import secrets; print(secrets.token_urlsafe(32))" > /secrets/HACS_API_KEY.txt
 
 # 2. Configure production environment
 export HACS_ENVIRONMENT=production
 export HACS_MCP_SERVER_URL=https://your-domain.com:8000
-export HACS_API_KEYS_FILE=/secrets/hacs_api_keys.txt
+export HACS_API_KEY_FILE=/secrets/HACS_API_KEY.txt
 export HACS_ALLOWED_ORIGINS=https://your-frontend.com,https://your-admin.com
 export HACS_ALLOWED_HOSTS=your-domain.com
 export HACS_RATE_LIMIT_PER_MINUTE=120
@@ -471,7 +471,7 @@ export HACS_DEV_MODE=true  # Optional auth, permissive CORS
 
 # Production (strict security)
 export HACS_ENVIRONMENT=production
-export HACS_API_KEYS_FILE=/secrets/api_keys.txt  # Required auth
+export HACS_API_KEY_FILE=/secrets/api_keys.txt  # Required auth
 export HACS_ALLOWED_ORIGINS=https://your-app.com  # CORS restrictions
 export HACS_ALLOWED_HOSTS=your-domain.com  # Host validation
 export HACS_RATE_LIMIT_PER_MINUTE=120  # Rate limiting

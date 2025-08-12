@@ -9,6 +9,7 @@ services:
       POSTGRES_DB: hacs
       POSTGRES_USER: hacs
       DB_PASSWORD: ${DB_PASSWORD:-hacs_dev}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-hacs_dev}
       # Enable pgvector extension
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
     ports:
@@ -57,21 +58,17 @@ services:
     container_name: hacs-mcp-server
     ports:
       - "8000:8000"
+    command: ["python", "-m", "hacs_utils.mcp.fastmcp_server", "--host", "0.0.0.0", "--port", "8000"]
+    env_file:
+      - .env
     environment:
-      # Database Configuration
-      - DATABASE_URL=${DATABASE_URL:-postgresql://hacs:${DB_PASSWORD:-hacs_dev}@postgres:5432/hacs}
+      # Database Configuration (container-specific overrides)
+      - DATABASE_URL=postgresql://hacs:${DB_PASSWORD:-hacs_dev}@postgres:5432/hacs
+      - DB_HOST=postgres
+      - DB_PORT=5432
       
-      # API Keys for LLM providers
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      
-      # Vector Store Configuration (optional)
+      # Vector Store Configuration (container-specific overrides)  
       - QDRANT_URL=${QDRANT_URL:-http://qdrant:6333}
-      - QDRANT_API_KEY=${QDRANT_API_KEY:-}
-      
-      # HACS Configuration
-      - HACS_API_KEY=${HACS_API_KEY:-dev_key_123}
-      - HACS_ENVIRONMENT=${HACS_ENVIRONMENT:-development}
       
       # Performance and Security
       - MAX_CONCURRENT_REQUESTS=${MAX_CONCURRENT_REQUESTS:-10}
