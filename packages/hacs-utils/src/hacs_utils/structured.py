@@ -18,7 +18,7 @@ from .annotation.conversations import (
     to_openai_messages,
     to_anthropic_messages,
 )
-from .annotation.data import Extraction as ExtractionDC, CharInterval, AlignmentStatus, AnnotatedDocument, Document
+from hacs_models import Extraction as ExtractionDC, CharInterval, AlignmentStatus
 
 T = TypeVar('T', bound=BaseModel)
 

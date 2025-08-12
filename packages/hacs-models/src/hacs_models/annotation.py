@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Literal
 from pydantic import BaseModel, Field
+from enum import Enum
+from uuid import uuid4
 
 from .base_resource import BaseResource
 
@@ -169,3 +171,43 @@ class TextChunk(BaseModel):
     token_start_idx: Optional[int] = Field(default=None, description="Start token index if tokenization used")
     token_end_idx: Optional[int] = Field(default=None, description="End token index (exclusive) if tokenization used")
     chunk_index: Optional[int] = Field(default=None, description="Sequential chunk index")
+
+
+class AlignmentStatus(str, Enum):
+    MATCH_EXACT = "match_exact"
+    MATCH_GREATER = "match_greater"
+    MATCH_LESSER = "match_lesser"
+    MATCH_FUZZY = "match_fuzzy"
+
+
+class CharInterval(BaseModel):
+    start_pos: Optional[int] = None
+    end_pos: Optional[int] = None
+
+
+class Extraction(BaseModel):
+    extraction_class: str
+    extraction_text: str
+    char_interval: Optional[CharInterval] = None
+    alignment_status: Optional[AlignmentStatus] = None
+    extraction_index: Optional[int] = None
+    group_index: Optional[int] = None
+    description: Optional[str] = None
+    attributes: Optional[Dict[str, Any]] = None
+
+
+class FormatType(str, Enum):
+    YAML = "yaml"
+    JSON = "json"
+
+
+class Document(BaseModel):
+    text: str
+    additional_context: Optional[str] = None
+    document_id: str = Field(default_factory=lambda: f"doc_{uuid4().hex[:8]}")
+
+
+class AnnotatedDocument(BaseModel):
+    document_id: str = Field(default_factory=lambda: f"doc_{uuid4().hex[:8]}")
+    extractions: Optional[List[Extraction]] = None
+    text: Optional[str] = None

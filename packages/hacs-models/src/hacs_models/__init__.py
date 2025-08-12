@@ -120,6 +120,12 @@ from .annotation import (
     PersistencePolicy,
     AnnotationWorkflowResource,
     TextChunk,
+    AlignmentStatus,
+    CharInterval,
+    Extraction,
+    FormatType,
+    Document,
+    AnnotatedDocument,
 )
 from .actor import Actor, ActorRole, PermissionLevel, SessionStatus
 from .evidence import Evidence, EvidenceType
@@ -273,6 +279,12 @@ __all__ = [
     "PersistencePolicy",
     "AnnotationWorkflowResource",
     "TextChunk",
+    "AlignmentStatus",
+    "CharInterval",
+    "Extraction",
+    "FormatType",
+    "Document",
+    "AnnotatedDocument",
 
     # Actor and authentication
     "Actor",
