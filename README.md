@@ -1,53 +1,55 @@
-# 🏥 HACS — Healthcare Context Engineering for AI Agents
+# 🏥 HACS — Context‑engineering framework for healthcare agents
 
 [![License](https://img.shields.io/github/license/solanovisitor/hacs-ai)](https://github.com/solanovisitor/hacs-ai/blob/main/LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-blue)](https://python.org)
 [![PyPI](https://img.shields.io/pypi/v/hacs-core)](https://pypi.org/project/hacs-core/)
 [![Docs](https://img.shields.io/badge/docs-latest-blue)](./docs/README.md)
 
-HACS (Healthcare Agent Communication Standard) is a protocol‑first framework for building healthcare AI agents. It provides healthcare‑native models, tools, and security to implement the four essential strategies of context engineering — Write, Select, Compress, Isolate — safely and efficiently.
+HACS (Healthcare Agent Communication Standard) is a protocol‑first, context‑engineering framework for building safe, capable healthcare agents. It operationalizes the four strategies of context engineering — Write, Select, Compress, Isolate — for clinical settings with healthcare‑native models, tools, and security.
 
 ## Get started
+
+Install the core packages:
 
 ```bash
 pip install -U hacs-core hacs-auth hacs-models hacs-tools hacs-utils hacs-persistence
 ```
 
-- Try the runnable LangGraph developer agent: `examples/hacs_developer_agent/`
-- Use `docker-compose.yml` to start the MCP server and PostgreSQL (with pgvector)
+Then follow the Quick Start to run the MCP server and the LangGraph developer agent:
+- Quick Start: `docs/quick-start.md`
 
-## Core benefits
+## Why HACS
 
-- Healthcare context engineering: built‑in patterns to write clinical memory, select essential data, compress safely, and isolate per regulatory boundaries
-- Actor‑based security: roles, permissions, and audit trails designed for PHI and compliance
-- FHIR‑aligned models: type‑safe Pydantic models for Patient, Observation, Encounter, and more
-- Protocol‑first tools (MCP): 40+ tools exposed via Model Context Protocol, usable from any agent framework
-- Framework integrations: Works with LangGraph/LangChain and any LLM provider (Anthropic, OpenAI, etc.)
+- **Context engineering for healthcare**: Write clinical memory; Select essential data; Compress safely; Isolate by regulatory boundaries.
+- **Protocol‑first tools (MCP)**: 40+ tools via Model Context Protocol; usable from any agent framework.
+- **Healthcare‑native models**: FHIR‑aligned, type‑safe Pydantic models for core clinical entities.
+- **Actor‑based security**: Roles, permissions, sessions, and audit trails for PHI and compliance.
+- **Ecosystem‑ready**: Works with LangGraph/LangChain and common LLM providers (Anthropic, OpenAI, etc.).
 
-## Packages at a glance
+## Components (high‑level)
 
-- `hacs-core`: Clinical protocols and foundational abstractions
-- `hacs-models`: Pure, FHIR‑aligned healthcare data models
-- `hacs-tools`: 40+ HACS tools for clinical workflows and data operations
-- `hacs-utils`: Integrations, MCP server, and developer utilities
-- `hacs-persistence`: PostgreSQL + pgvector adapters and repositories
-- `hacs-registry`: Resource and tool registration, validation, and versioning
-- `hacs-auth`: Authentication, actors, permissions, and audit logging
+- Models & protocols: `hacs-core`, `hacs-models`
+- Tools & registry: `hacs-tools`, `hacs-registry`
+- Integrations & MCP server: `hacs-utils`
+- Persistence adapters: `hacs-persistence` (PostgreSQL + pgvector)
+- Security & IAM: `hacs-auth`
 
-See package READMEs and the docs for details.
+Note: Package‑level docs evolve; use the links below for the most up‑to‑date guidance.
+
+## Learn more
+
+- Quick Start: `docs/quick-start.md`
+- HACS Tools reference: `docs/healthcare-tools.md`
+- Use MCP with LangGraph: `docs/mcp_langgraph.md`
+- Integrations overview: `docs/integrations.md`
+- Testing and CI: `docs/testing.md`
+- API reference (selected): `docs/api-reference.md`
 
 ## Optional services
 
-- MCP Server: expose HACS tools via JSON‑RPC and streamable HTTP
-- PostgreSQL + pgvector: persistence and vector search for clinical embeddings
-- LangGraph Developer Agent: a ready‑to‑run agent for local development
-
-## Documentation
-
-- Quick start: `docs/quick-start.md`
-- Hacs Tools reference: `docs/healthcare-tools.md`
-- Using MCP with LangGraph: `docs/mcp_langgraph.md`
-- API reference: `docs/api-reference.md`
+- MCP Server — expose HACS tools via JSON‑RPC and streamable HTTP
+- PostgreSQL + pgvector — persistence and vector search for clinical embeddings
+- LangGraph Developer Agent — a ready‑to‑run agent for local development (`examples/hacs_developer_agent/`)
 
 ## Community & support
 
