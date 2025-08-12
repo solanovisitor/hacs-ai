@@ -108,6 +108,18 @@ from .agent_message import AgentMessage, MessageRole, MessageType
 from .resource_bundle import ResourceBundle, BundleEntry, BundleType
 from .stack_template import StackTemplate, LayerSpec, instantiate_stack_template
 from .workflow import WorkflowDefinition, WorkflowStep, WorkflowAction
+from .annotation import (
+    PromptTemplateResource,
+    ExtractionSchemaResource,
+    TransformSpec,
+    SourceBinding,
+    OutputSpec,
+    MappingSpec,
+    ChunkingPolicy,
+    ModelConfig,
+    PersistencePolicy,
+    AnnotationWorkflowResource,
+)
 from .actor import Actor, ActorRole, PermissionLevel, SessionStatus
 from .evidence import Evidence, EvidenceType
 from .results import (
@@ -248,6 +260,17 @@ __all__ = [
     "WorkflowDefinition",
     "WorkflowStep",
     "WorkflowAction",
+    # Annotation entities
+    "PromptTemplateResource",
+    "ExtractionSchemaResource",
+    "TransformSpec",
+    "SourceBinding",
+    "OutputSpec",
+    "MappingSpec",
+    "ChunkingPolicy",
+    "ModelConfig",
+    "PersistencePolicy",
+    "AnnotationWorkflowResource",
 
     # Actor and authentication
     "Actor",

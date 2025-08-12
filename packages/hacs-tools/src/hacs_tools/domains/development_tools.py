@@ -27,6 +27,46 @@ from typing import Any, Dict, List
 from hacs_models import ResourceStackResult, ResourceTemplateResult
 from hacs_core.tool_protocols import hacs_tool, ToolCategory
 @hacs_tool(
+    name="register_prompt_template",
+    description="Register an annotation PromptTemplate into the registry",
+    category=ToolCategory.DEVELOPMENT_TOOLS,
+    healthcare_domains=["templates", "annotation"],
+    fhir_resources=["WorkflowDefinition"]
+)
+def register_prompt_template_tool(template: dict) -> ResourceTemplateResult:
+    try:
+        from hacs_registry import register_prompt_template
+        name = template.get("name")
+        version = template.get("version", "1.0.0")
+        template_text = template.get("template_text", "")
+        variables = template.get("variables", [])
+        format = template.get("format", "json")
+        fenced_output = template.get("fenced_output", True)
+        reg = register_prompt_template(name, template_text, version=version, variables=variables, format=format, fenced_output=fenced_output)
+        return ResourceTemplateResult(success=True, message="Prompt template registered", template=reg.model_dump())
+    except Exception as e:
+        return ResourceTemplateResult(success=False, message=str(e))
+
+
+@hacs_tool(
+    name="register_extraction_schema",
+    description="Register an ExtractionSchema for annotation",
+    category=ToolCategory.DEVELOPMENT_TOOLS,
+    healthcare_domains=["templates", "annotation"],
+    fhir_resources=["WorkflowDefinition"]
+)
+def register_extraction_schema_tool(schema: dict) -> ResourceTemplateResult:
+    try:
+        from hacs_registry import register_extraction_schema
+        name = schema.get("name")
+        version = schema.get("version", "1.0.0")
+        response_schema = schema.get("response_schema")
+        reg = register_extraction_schema(name, response_schema, version=version)
+        return ResourceTemplateResult(success=True, message="Extraction schema registered", template=reg.model_dump())
+    except Exception as e:
+        return ResourceTemplateResult(success=False, message=str(e))
+
+@hacs_tool(
     name="register_stack_template",
     description="Register a reusable stack template (resources + variable bindings)",
     category=ToolCategory.DEVELOPMENT_TOOLS,

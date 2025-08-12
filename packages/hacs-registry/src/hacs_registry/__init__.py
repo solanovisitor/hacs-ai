@@ -359,3 +359,78 @@ def instantiate_registered_stack(name: str, variables: Dict[str, Any]) -> Dict[s
         layers=stack_res.instance_data.get("layers", []),
     )
     return instantiate_stack_template(tmpl, variables)
+
+# Annotation registry conveniences
+try:
+    from hacs_models import (
+        PromptTemplateResource,
+        ExtractionSchemaResource,
+        AnnotationWorkflowResource,
+    )
+except Exception:
+    PromptTemplateResource = ExtractionSchemaResource = AnnotationWorkflowResource = None
+
+
+def register_prompt_template(
+    name: str,
+    template_text: str,
+    *,
+    version: str = "1.0.0",
+    variables: list[str] | None = None,
+    format: str = "json",
+    fenced_output: bool = True,
+    **kwargs,
+) -> RegisteredResource:
+    if PromptTemplateResource is None:
+        raise ValueError("PromptTemplateResource not available")
+    metadata = ResourceMetadata(
+        name=name,
+        version=version,
+        description=f"Prompt template: {name}",
+        category=ResourceCategory.WORKFLOW,
+        tags=["prompt", "annotation"],
+    )
+    instance = PromptTemplateResource(
+        name=name,
+        version=version,
+        template_text=template_text,
+        variables=variables or [],
+        format=format,
+        fenced_output=fenced_output,
+    )
+    return get_global_registry().register_resource(PromptTemplateResource, metadata, instance_data=instance.model_dump())
+
+
+def register_extraction_schema(
+    name: str,
+    response_schema: dict,
+    *,
+    version: str = "1.0.0",
+    **kwargs,
+) -> RegisteredResource:
+    if ExtractionSchemaResource is None:
+        raise ValueError("ExtractionSchemaResource not available")
+    metadata = ResourceMetadata(
+        name=name,
+        version=version,
+        description=f"Extraction schema: {name}",
+        category=ResourceCategory.WORKFLOW,
+        tags=["schema", "annotation"],
+    )
+    instance = ExtractionSchemaResource(name=name, version=version, response_schema=response_schema)
+    return get_global_registry().register_resource(ExtractionSchemaResource, metadata, instance_data=instance.model_dump())
+
+
+def register_annotation_workflow(
+    workflow: "AnnotationWorkflowResource",
+) -> RegisteredResource:
+    if AnnotationWorkflowResource is None:
+        raise ValueError("AnnotationWorkflowResource not available")
+    metadata = ResourceMetadata(
+        name=workflow.name,
+        version=workflow.version,
+        description=f"Annotation workflow: {workflow.name}",
+        category=ResourceCategory.WORKFLOW,
+        tags=["workflow", "annotation"],
+    )
+    return get_global_registry().register_resource(AnnotationWorkflowResource, metadata, instance_data=workflow.model_dump())
