@@ -1,14 +1,23 @@
 """
 Structured output generation utilities for HACS applications.
 
-This module provides utilities for generating structured Pydantic models
-from LLM responses using prompt engineering, designed to work with any
-HACS-compatible LLM provider.
+Core responsibilities:
+- Generate Pydantic models from LLM responses (single object or list)
+- Parse fenced JSON/YAML reliably
+- Support both async providers (ainvoke) and concrete clients (OpenAI/Anthropic)
+- Accept chat messages in OpenAI/Anthropic/LangChain forms
 """
 
 import json
-from typing import Any, TypeVar, Type
+from typing import Any, TypeVar, Type, Sequence
 from pydantic import BaseModel
+import yaml
+
+from .annotation.conversations import (
+    ChatMessage,
+    to_openai_messages,
+    to_anthropic_messages,
+)
 
 T = TypeVar('T', bound=BaseModel)
 
@@ -34,9 +43,13 @@ async def generate_structured_output(
         ValueError: If LLM provider doesn't support required methods
     """
     if not hasattr(llm_provider, 'ainvoke'):
-        raise ValueError("LLM provider must support 'ainvoke' method")
+        # Try sync path via invoke/chat if available
+        if hasattr(llm_provider, 'invoke'):
+            response = llm_provider.invoke(prompt)
+            return _parse_to_model(_to_text(response), output_model)
+        raise ValueError("LLM provider must support 'ainvoke' or 'invoke' method")
 
-    # Create a prompt that asks for JSON output
+    # Create a prompt that asks for JSON output (can be overridden by caller)
     structured_prompt = f"""
 {prompt}
 
@@ -49,26 +62,7 @@ Required JSON format:
     # Get response from LLM
     response = await llm_provider.ainvoke(structured_prompt)
 
-    # Extract JSON from response
-    response_text = response.content if hasattr(response, 'content') else str(response)
-
-    # Try to parse JSON and create model instance
-    try:
-        # Look for JSON in the response
-        json_start = response_text.find('{')
-        json_end = response_text.rfind('}') + 1
-
-        if json_start >= 0 and json_end > json_start:
-            json_text = response_text[json_start:json_end]
-            data = json.loads(json_text)
-            return output_model(**data)
-        else:
-            # Fallback: create a basic instance with default values
-            return _create_fallback_instance(output_model)
-
-    except Exception:
-        # If parsing fails, create a fallback instance
-        return _create_fallback_instance(output_model)
+    return _parse_to_model(_to_text(response), output_model)
 
 async def generate_structured_list(
     llm_provider: Any,
@@ -94,7 +88,10 @@ async def generate_structured_list(
         ValueError: If LLM provider doesn't support required methods
     """
     if not hasattr(llm_provider, 'ainvoke'):
-        raise ValueError("LLM provider must support 'ainvoke' method")
+        if hasattr(llm_provider, 'invoke'):
+            response = llm_provider.invoke(prompt)
+            return _parse_to_model_list(_to_text(response), output_model, max_items=max_items)
+        raise ValueError("LLM provider must support 'ainvoke' or 'invoke' method")
 
     structured_prompt = f"""
 {prompt}
@@ -109,30 +106,86 @@ Required JSON format (array of objects):
 ]
 """
 
-    # Get response from LLM
     response = await llm_provider.ainvoke(structured_prompt)
+    return _parse_to_model_list(_to_text(response), output_model, max_items=max_items)
 
-    # Extract JSON from response
-    response_text = response.content if hasattr(response, 'content') else str(response)
 
-    try:
-        # Look for JSON array in the response
-        json_start = response_text.find('[')
-        json_end = response_text.rfind(']') + 1
+def generate_structured_output_openai(
+    client: Any,
+    prompt: str,
+    output_model: Type[T],
+    **kwargs,
+) -> T:
+    """Sync helper using hacs_utils.integrations.openai client.chat interface."""
+    messages = [{"role": "user", "content": prompt}]
+    resp = client.chat(messages, **kwargs)
+    return _parse_to_model(_to_text(resp), output_model)
 
-        if json_start >= 0 and json_end > json_start:
-            json_text = response_text[json_start:json_end]
-            data_list = json.loads(json_text)
-            # Limit to max_items
-            limited_data = data_list[:max_items] if len(data_list) > max_items else data_list
-            return [output_model(**item) for item in limited_data]
-        else:
-            # Fallback: create a list with one default instance
-            return [_create_fallback_instance(output_model)]
 
-    except Exception:
-        # If parsing fails, create a fallback list
-        return [_create_fallback_instance(output_model)]
+def generate_structured_output_anthropic(
+    client: Any,
+    prompt: str,
+    output_model: Type[T],
+    *,
+    model: str | None = None,
+    stream: bool = False,
+    max_tokens: int = 1024,
+    **kwargs,
+) -> T:
+    """Sync helper using official anthropic client.messages.create."""
+    msgs = [{"role": "user", "content": prompt}]
+    if stream:
+        evs = client.messages.create(model=model or "claude-3-7-sonnet-latest", max_tokens=max_tokens, messages=msgs, stream=True)
+        buf: list[str] = []
+        for ev in evs:
+            delta = getattr(ev, "delta", None)
+            if delta and hasattr(delta, "text") and delta.text:
+                buf.append(delta.text)
+        return _parse_to_model("".join(buf), output_model)
+    else:
+        msg = client.messages.create(model=model or "claude-3-7-sonnet-latest", max_tokens=max_tokens, messages=msgs)
+        return _parse_to_model(_to_text(msg), output_model)
+
+
+def generate_structured_from_messages_openai(
+    client: Any,
+    messages: Sequence[ChatMessage] | Sequence[dict],
+    output_model: Type[T],
+    **kwargs,
+) -> T:
+    if messages and isinstance(messages[0], ChatMessage):
+        msgs = to_openai_messages(messages)  # type: ignore[arg-type]
+    else:
+        msgs = list(messages)  # type: ignore[assignment]
+    resp = client.chat(msgs, **kwargs)
+    return _parse_to_model(_to_text(resp), output_model)
+
+
+def generate_structured_from_messages_anthropic(
+    client: Any,
+    messages: Sequence[ChatMessage] | Sequence[dict],
+    output_model: Type[T],
+    *,
+    model: str | None = None,
+    stream: bool = False,
+    max_tokens: int = 1024,
+    **kwargs,
+) -> T:
+    if messages and isinstance(messages[0], ChatMessage):
+        msgs = to_anthropic_messages(messages)  # type: ignore[arg-type]
+    else:
+        msgs = list(messages)  # type: ignore[assignment]
+    if stream:
+        evs = client.messages.create(model=model or "claude-3-7-sonnet-latest", max_tokens=max_tokens, messages=msgs, stream=True)
+        buf: list[str] = []
+        for ev in evs:
+            delta = getattr(ev, "delta", None)
+            if delta and hasattr(delta, "text") and delta.text:
+                buf.append(delta.text)
+        return _parse_to_model("".join(buf), output_model)
+    else:
+        msg = client.messages.create(model=model or "claude-3-7-sonnet-latest", max_tokens=max_tokens, messages=msgs)
+        return _parse_to_model(_to_text(msg), output_model)
 
 def _get_model_schema_example(model_class: Type[BaseModel]) -> str:
     """Get a JSON schema example for the model class."""
@@ -219,3 +272,57 @@ def _create_fallback_instance(model_class: Type[T]) -> T:
                     defaults[field_name] = None
 
             return model_class(**defaults)
+
+
+def _extract_fenced(text: str) -> str:
+    text = text.strip()
+    if text.startswith("```"):
+        parts = text.split("\n", 1)
+        if len(parts) == 2:
+            body = parts[1]
+            if "```" in body:
+                return body.rsplit("```", 1)[0].strip()
+    return text
+
+
+def _parse_to_model(response_text: str, output_model: Type[T]) -> T:
+    response_text = _extract_fenced(response_text)
+    # Try JSON, then YAML
+    try:
+        data = json.loads(response_text)
+        return output_model(**data)
+    except Exception:
+        try:
+            data = yaml.safe_load(response_text)
+            return output_model(**data)
+        except Exception:
+            return _create_fallback_instance(output_model)
+
+
+def _parse_to_model_list(response_text: str, output_model: Type[T], *, max_items: int) -> list[T]:
+    response_text = _extract_fenced(response_text)
+    try:
+        data_list = json.loads(response_text)
+    except Exception:
+        try:
+            data_list = yaml.safe_load(response_text)
+        except Exception:
+            return [_create_fallback_instance(output_model)]
+    if not isinstance(data_list, list):
+        return [_create_fallback_instance(output_model)]
+    limited = data_list[:max_items] if len(data_list) > max_items else data_list
+    result: list[T] = []
+    for item in limited:
+        try:
+            result.append(output_model(**item))
+        except Exception:
+            continue
+    return result or [_create_fallback_instance(output_model)]
+
+
+def _to_text(response: Any) -> str:
+    if response is None:
+        return ""
+    if hasattr(response, 'content'):
+        return str(response.content)
+    return str(response)
