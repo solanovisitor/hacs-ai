@@ -18,9 +18,23 @@ from typing import Any, Dict, List, Optional
 from langgraph.func import entrypoint, task
 from langgraph.checkpoint.memory import InMemorySaver
 
-# Deprecated: StackTemplate path retained for compatibility during migration
-from hacs_models import StackTemplate, LayerSpec
-from hacs_registry import instantiate_registered_stack, get_global_registry, register_stack_template
+# Composition + ResourceBundle + MappingSpec path (StackTemplate deprecated)
+from hacs_registry import get_global_registry
+from hacs_models import (
+    MappingSpec,
+    OutputSpec,
+    SourceBinding,
+    AnnotationWorkflowResource,
+    Document as HACSDocument,
+    ResourceBundle as HACSResourceBundle,
+    get_model_registry,
+)
+from hacs_models.utils import set_nested_field
+from hacs_registry import (
+    register_prompt_template,
+    register_extraction_schema,
+    register_annotation_workflow,
+)
 from hacs_persistence.adapter import PostgreSQLAdapter
 from hacs_core import Actor
 
@@ -51,6 +65,13 @@ from hacs_utils.annotation.data import (
     Document as HDocument,
 )
 from hacs_utils.structured import generate_extractions
+from hacs_registry import (
+    register_prompt_template,
+    register_extraction_schema,
+    register_annotation_workflow,
+)
+# Optional: tool loader (used by _get_hacs_tool_by_name fallback)
+from hacs_utils.integrations.common.tool_loader import get_all_hacs_tools_sync
 # Remove generic tool loader dependency; we use explicit imports above
 
 logger = logging.getLogger(__name__)
@@ -71,6 +92,144 @@ def _build_type_hints_from_registry_schemas(available_types: list[str]) -> dict:
                 "required": sch.get("required_fields", []),
             }
     return hints
+
+
+def _build_default_mapping_spec() -> MappingSpec:
+    """Return a conservative MappingSpec using Composition Document + Patient.
+
+    Variables expected: document_title, patient_name, clinical_note
+    """
+    return MappingSpec(
+        outputs=[
+            OutputSpec(
+                resource="Document",
+                operation="create",
+                fields={
+                    "title": SourceBinding(var="document_title"),
+                    "subject_name": SourceBinding(var="patient_name"),
+                },
+            ),
+            OutputSpec(
+                resource="Patient",
+                operation="create",
+                fields={
+                    "full_name": SourceBinding(var="patient_name"),
+                },
+            ),
+        ]
+    )
+
+
+def _register_annotation_workflow(
+    name: str,
+    mapping_spec: MappingSpec,
+    instruction_md: str,
+) -> dict:
+    """Create and register prompt/extraction schema + annotation workflow.
+
+    Returns registry result dict including template_name and mapping summary.
+    """
+    # Build minimal, real prompt and response schema based on mapping variables
+    variable_names: list[str] = []
+    for out in mapping_spec.outputs:
+        for b in out.fields.values():
+            if isinstance(b, SourceBinding) and b.var and b.var not in variable_names:
+                variable_names.append(b.var)
+
+    prompt_text = (
+        "You will extract strictly the following variables from the given clinical context.\n"
+        "Return a JSON object with only these keys.\n\n"
+        f"Variables: {', '.join(variable_names)}\n\n"
+        "Context:\n{context}\n"
+    )
+    prompt_res = register_prompt_template(
+        name=f"{name}-prompt",
+        template_text=prompt_text,
+        version="1.0.0",
+        variables=["context"],
+        format="json",
+        fenced_output=True,
+    )
+
+    # Build JSON Schema with variables as string properties
+    schema_props = {vn: {"type": "string"} for vn in variable_names}
+    response_schema = {"type": "object", "properties": schema_props, "required": variable_names}
+    schema_res = register_extraction_schema(
+        name=f"{name}-schema",
+        response_schema=response_schema,
+        version="1.0.0",
+    )
+
+    workflow = AnnotationWorkflowResource(
+        name=name,
+        version="1.0.0",
+        prompt_template_ref=f"{prompt_res.metadata.name}:{prompt_res.metadata.version}",
+        extraction_schema_ref=f"{schema_res.metadata.name}:{schema_res.metadata.version}",
+        mapping_spec=mapping_spec,
+    )
+    reg_res = register_annotation_workflow(workflow)
+    return {
+        "success": True,
+        "template_name": name,
+        "data": {
+            "mapping_spec": workflow.mapping_spec.model_dump(),
+            "variables": variable_names,
+        },
+        "message": f"AnnotationWorkflow '{name}' registered",
+        "registry_id": getattr(reg_res, "registry_id", None),
+    }
+
+
+def _instantiate_from_mapping(mapping: MappingSpec, variables: dict[str, Any]) -> dict[str, Any]:
+    """Instantiate resources defined by MappingSpec using provided variables.
+
+    Returns dict of layer_name -> resource objects, plus a 'document_bundle' ResourceBundle.
+    """
+    resources: dict[str, Any] = {}
+    model_registry = get_model_registry()
+
+    # Create resources per output spec
+    for idx, out in enumerate(mapping.outputs):
+        resource_name = out.resource
+        if not isinstance(resource_name, str):
+            continue
+        model_cls = model_registry.get(resource_name)
+        if model_cls is None:
+            continue
+        data: dict[str, Any] = {}
+        for path, binding in (out.fields or {}).items():
+            if isinstance(binding, SourceBinding):
+                if binding.var is not None and binding.var in variables:
+                    value = variables[binding.var]
+                elif binding.from_ is not None:
+                    # Not implemented: JSONPath-like extraction; skip for now
+                    continue
+                else:
+                    continue
+                # Assign nested value into data
+                set_nested_field(data, path, value)
+        try:
+            instance = model_cls(**data)
+        except Exception:
+            # Skip invalid instance
+            continue
+        layer_key = f"{resource_name.lower()}_{idx}"
+        resources[layer_key] = instance
+
+    # Build ResourceBundle and add entries for created resources
+    bundle = HACSResourceBundle(title=f"Generated Bundle", bundle_type="document")
+    for layer_name, resource in resources.items():
+        try:
+            bundle.add_entry(
+                resource=resource,
+                title=f"{getattr(resource, 'resource_type', type(resource).__name__)} - {layer_name}",
+                tags=[getattr(resource, 'resource_type', type(resource).__name__).lower(), layer_name],
+                priority=1 if getattr(resource, 'resource_type', None) == 'Patient' else 0,
+            )
+        except Exception:
+            continue
+    resources["document_bundle"] = bundle
+    return resources
 
 
 def _resource_type_hints_markdown(available_types: list[str]) -> str:
@@ -474,125 +633,12 @@ async def _build_and_register_template_via_llm(instruction_md: str, template_nam
         except Exception:
             pass
 
-        # LLM Call 2: produce StackTemplate JSON
-        tpl_name = (template_name or "auto_template").strip() or "auto_template"
-        sys2 = (
-            "Produce a strict JSON HACS StackTemplate for the instruction TEMPLATE using the SELECTED_RESOURCES. "
-            "The JSON MUST be:\n{\n  \"name\": \"...\",\n  \"version\": \"1.0.0\",\n  \"variables\": { varName: {type: \"string\"|... } },\n  \"layers\": [\n    {\"resource_type\": \"ResourceBundle\", \"layer_name\": \"document_bundle\", \"bindings\": {}, \"constant_fields\": {\"bundle_type\": \"document\", \"title\": \"...\"}},\n    {\"resource_type\": \"Patient\", \"layer_name\": \"patient\", \"bindings\": {...}, \"constant_fields\": {}},\n    ... more layers ...\n  ]\n}\n"
-            "Rules: (1) Prefer Encounter as the parent when appropriate; alternatively choose another suitable parent such as MedicationRequest, Procedure or ServiceRequest. "
-            "(2) Include at least 4 clinical layers when content permits (e.g., Encounter, Condition, Observation, Procedure, MedicationRequest, ServiceRequest, DiagnosticReport, DocumentReference). Avoid returning only ResourceBundle and Patient. "
-            "(3) Include a Patient layer only if patient-identifying data appear in TEMPLATE; otherwise omit Patient. "
-            "(4) Define variables covering all included layers; every variable must be used in at least one binding. Do not define unused variables. "
-            "(5) Only include fields that are suggested by TEMPLATE; do not fabricate. "
-            "(6) Ensure required fields for strict resources are supplied via bindings or constant_fields. "
-            "(7) Keep ResourceBundle minimal (bundle_type/title only)."
-        )
-        # Minimal hints only; rely on registry-backed schema info, not custom descriptions
-        hints_md = _resource_type_hints_markdown(list(type_hints.keys()))
-        logger.info(f"Generated schema-backed hints for template synthesis ({len(hints_md)} chars)")
-        
-        user2 = (
-            f"TEMPLATE (markdown):\n{instruction_md}\n\n"
-            f"SELECTED_RESOURCES:\n{', '.join(selected_types)}\n\n"
-            f"SCHEMA_HINTS (per resource):\n{_json.dumps(type_hints, ensure_ascii=False)}\n\n"
-            f"{hints_md}"
-        )
-        variables: dict[str, Any] = {}
-        layers: list[dict[str, Any]] = []
+        # Build MappingSpec instead of StackTemplate and register AnnotationWorkflowResource
+        tpl_name = (template_name or "auto_workflow").strip() or "auto_workflow"
+        mapping_spec = _build_default_mapping_spec()
         try:
-            logger.info(f"🤖 Sending Template Synthesis Request to LLM...")
-            logger.info(f"📝 System Prompt ({len(sys2)} chars): {sys2[:200]}...")
-            logger.info(f"📝 User Prompt ({len(user2)} chars): {user2[:500]}...")
-            
-            r2 = client.chat([{"role": "system", "content": sys2}, {"role": "user", "content": user2}])
-            raw2 = str(getattr(r2, "content", r2) or "").strip()
-            logger.info(f"🤖 LLM Template Synthesis Raw Response ({len(raw2)} chars):\n{raw2}")
-            
-            m2 = _re.search(r"\{[\s\S]*\}$", raw2)
-            extracted_template_json = m2.group(0) if m2 else raw2
-            logger.info(f"📊 Extracted Template JSON for parsing:\n{extracted_template_json}")
-            
-            data2 = _json.loads(extracted_template_json)
-            logger.info(f"🎯 Parsed Template Structure: {_json.dumps(data2, indent=2)}")
-            
-            tpl_name = str(data2.get("name") or tpl_name)
-            version = str(data2.get("version") or "1.0.0")
-            variables = data2.get("variables") or {}
-            layers = data2.get("layers") or []
-            
-            logger.info(f"📋 Template Analysis:")
-            logger.info(f"  Name: {tpl_name}")
-            logger.info(f"  Version: {version}")
-            logger.info(f"  Variables Count: {len(variables)}")
-            logger.info(f"  Variables: {list(variables.keys())}")
-            logger.info(f"  Layers Count: {len(layers)}")
-            
-            try:
-                layer_types = [l.get("resource_type") for l in layers if isinstance(l, dict)]
-                logger.info(f"  Layer Types: {layer_types}")
-                for i, layer in enumerate(layers):
-                    if isinstance(layer, dict):
-                        layer_name = layer.get("layer_name", f"layer_{i}")
-                        resource_type = layer.get("resource_type", "Unknown")
-                        bindings = layer.get("bindings", {})
-                        constants = layer.get("constant_fields", {})
-                        logger.info(f"    Layer {i+1}: {resource_type} ({layer_name}) - {len(bindings)} bindings, {len(constants)} constants")
-            except Exception as e:
-                logger.warning(f"Failed to analyze layers: {e}")
-            # Retry once if too few clinical layers (excluding ResourceBundle)
-            non_bundle = [l for l in layers if isinstance(l, dict) and l.get("resource_type") != "ResourceBundle"]
-            if len(non_bundle) < 2:
-                sys2_retry = sys2 + " You MUST include at least 4 clinical layers (excluding ResourceBundle) when content permits; avoid minimal outputs."
-                r2b = client.chat([{"role": "system", "content": sys2_retry}, {"role": "user", "content": user2}])
-                raw2b = str(getattr(r2b, "content", r2b) or "").strip()
-                m2b = _re.search(r"\{[\s\S]*\}$", raw2b)
-                data2b = _json.loads(m2b.group(0) if m2b else raw2b)
-                layers_b = data2b.get("layers") or []
-                non_bundle_b = [l for l in layers_b if isinstance(l, dict) and l.get("resource_type") != "ResourceBundle"]
-                if len(non_bundle_b) > len(non_bundle):
-                    variables = data2b.get("variables") or variables
-                    layers = layers_b
-        except Exception as e:
-            logger.warning(f"LLM template synthesis failed, using fallback: {e}")
-            version = "1.0.0"
-            variables = {
-                "patient_name": {"type": "string"},
-                "clinical_note": {"type": "string"}
-            }
-            layers = [
-                {"resource_type": "ResourceBundle", "layer_name": "document_bundle", "bindings": {}, "constant_fields": {"bundle_type": "document", "title": tpl_name[:200]}},
-                {"resource_type": "Patient", "layer_name": "patient", "bindings": {"full_name": "{{ patient_name }}"}, "constant_fields": {}},
-                {"resource_type": "Observation", "layer_name": "clinical_note", "bindings": {"value_string": "{{ clinical_note }}"}, "constant_fields": {"status": "final", "code": {"text": "Clinical Note"}}}
-            ]
-
-        # Register template via tool dispatcher (prefer explicit tool names)
-        template_payload = {
-            "name": tpl_name,
-            "version": version,
-            "variables": variables,
-            "layers": layers,
-            "description": "LLM-generated template from instruction markdown",
-        }
-        
-        logger.info(f"🔧 Template Registration Payload:")
-        logger.info(f"📋 Final Template Structure: {_json.dumps(template_payload, indent=2)}")
-        
-        # Register template via registry API (no dev-tools)
-        try:
-            template = StackTemplate(
-                name=tpl_name,
-                version=version,
-                variables=variables,
-                layers=[LayerSpec(**layer) if isinstance(layer, dict) else layer for layer in layers],
-                description="LLM-generated template from instruction markdown",
-            )
-            register_stack_template(template)
-            return {
-                "success": True,
-                "template_name": tpl_name,
-                "data": {"variables": variables, "layers": layers},
-                "message": f"Template '{tpl_name}' registered via registry",
-            }
+            reg_out = _register_annotation_workflow(tpl_name, mapping_spec, instruction_md)
+            return reg_out
         except Exception as _e:
             return {"success": False, "message": str(_e)}
     except Exception as e:
@@ -604,7 +650,7 @@ async def _build_and_register_template_via_llm(instruction_md: str, template_nam
 async def _extract_variables_and_instantiate(template_name: str, context_text: str, use_llm: bool = False) -> Dict[str, Any]:
     """LLM-first variable extraction and instantiation inside workflow."""
     try:
-        from hacs_registry import get_global_registry, instantiate_registered_stack
+        from hacs_registry import get_global_registry
         variables: dict[str, Any] = {}
 
         # Resolve template variables schema
@@ -711,8 +757,24 @@ async def _extract_variables_and_instantiate(template_name: str, context_text: s
         import json as _json2
         logger.info(f"📋 Variables for instantiation: {_json2.dumps(variables, indent=2)}")
         
-        # Instantiate directly via registry (no dev-tools)
-        resources = instantiate_registered_stack(template_name, variables)
+        # Retrieve registered workflow mapping
+        reg = get_global_registry()
+        candidates = [r for r in reg._resources.values() if getattr(r, 'metadata', None) and r.metadata.name == template_name]
+        workflow_res = None
+        for r in candidates:
+            if getattr(r, 'resource_class', None) == 'AnnotationWorkflowResource':
+                workflow_res = r
+                break
+        mapping = _build_default_mapping_spec()
+        if workflow_res is not None:
+            wf_instance = getattr(workflow_res, 'resource_instance', {}) or {}
+            mapping_dict = (wf_instance.get('mapping_spec') if isinstance(wf_instance, dict) else None) or {}
+            try:
+                mapping = MappingSpec(**mapping_dict)
+            except Exception:
+                mapping = _build_default_mapping_spec()
+        # Instantiate via mapping spec
+        resources = _instantiate_from_mapping(mapping, variables)
             
         logger.info(f"🏗️ Instantiated Resources ({len(resources)} total):")
         for layer_name, resource in resources.items():
@@ -1042,17 +1104,28 @@ async def instantiate_and_persist_stack(inputs: Dict[str, Any]) -> Dict[str, Any
             "stack_preview": {}
         }
     
-    # Get the latest version of the template
+    # Determine variables from MappingSpec in registered workflow
     tpl_res = sorted(candidates, key=lambda r: r.metadata.version, reverse=True)[0]
-    instance = getattr(tpl_res, "resource_instance", {}) or {}
-    variables_keys = list(instance.get("variables", {}).keys())
-    
-    # Fill variables with context (simplified approach)
-    variables = {k: context_text for k in variables_keys}
+    wf_instance = getattr(tpl_res, "resource_instance", {}) or {}
+    mapping_dict = (wf_instance.get("mapping_spec") if isinstance(wf_instance, dict) else None) or {}
+    try:
+        mapping = MappingSpec(**mapping_dict)
+    except Exception:
+        mapping = _build_default_mapping_spec()
+    needed_vars: list[str] = []
+    for out in mapping.outputs:
+        for b in out.fields.values():
+            if isinstance(b, dict):
+                var_name = b.get("var")
+                if isinstance(var_name, str) and var_name not in needed_vars:
+                    needed_vars.append(var_name)
+            elif isinstance(b, SourceBinding) and b.var and b.var not in needed_vars:
+                needed_vars.append(b.var)
+    variables = {k: context_text for k in needed_vars}
     
     try:
-        # Step 3: Instantiate the registered stack template
-        stack = instantiate_registered_stack(template_name, variables)
+        # Step 3: Instantiate resources via mapping
+        stack = _instantiate_from_mapping(mapping, variables)
         logger.info(f"Successfully instantiated stack with {len(stack)} resources")
         
         # Step 4: Persist to database
@@ -1195,15 +1268,22 @@ async def universal_extract(inputs: Dict[str, Any]) -> Dict[str, Any]:
         if persist and database_url and inst.get("success"):
             # Persist using existing persistence task
             try:
-                from hacs_registry import get_global_registry, instantiate_registered_stack
+                from hacs_registry import get_global_registry
                 registry = get_global_registry()
                 candidates = [r for r in registry._resources.values() if getattr(r, 'metadata', None) and r.metadata.name == template_name]
+                mapping = _build_default_mapping_spec()
                 if candidates:
-                    tpl_res = sorted(candidates, key=lambda r: r.metadata.version, reverse=True)[0]
-                    instance_vars = inst.get("variables", {})
-                    stack_objs = instantiate_registered_stack(template_name, instance_vars)
-                    persisted = await _persist_stack(database_url, stack_objs)
-                    result["persisted"] = persisted
+                    wf_res = sorted(candidates, key=lambda r: r.metadata.version, reverse=True)[0]
+                    wf_instance = getattr(wf_res, 'resource_instance', {}) or {}
+                    mapping_dict = (wf_instance.get('mapping_spec') if isinstance(wf_instance, dict) else None) or {}
+                    try:
+                        mapping = MappingSpec(**mapping_dict)
+                    except Exception:
+                        mapping = _build_default_mapping_spec()
+                instance_vars = inst.get("variables", {})
+                stack_objs = _instantiate_from_mapping(mapping, instance_vars)
+                persisted = await _persist_stack(database_url, stack_objs)
+                result["persisted"] = persisted
             except Exception as e:
                 result["persist_error"] = str(e)
 
