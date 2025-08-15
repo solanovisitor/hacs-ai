@@ -202,14 +202,12 @@ workflow = use_tool("execute_clinical_workflow", {
 })
 ```
 
-#### `create_clinical_template`
-Generate clinical assessment templates
+#### Template registration and instantiation
+Register and instantiate stack templates for clinical workflows
 
 ```python
-template = use_tool("create_clinical_template", {
-    "template_type": "assessment",
-    "focus_area": "cardiology", 
-    "complexity_level": "intermediate"
+result = use_tool("register_stack_template", {
+    "template": {"name": "Example", "version": "1.0.0", "layers": [], "variables": {}}
 })
 ```
 

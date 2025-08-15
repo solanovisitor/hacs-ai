@@ -1,0 +1,51 @@
+{
+  "workflow_start": 1755186277.742476,
+  "workflow_end": 1755186375.1661901,
+  "total_duration": 97.42371416091919,
+  "stages": [
+    {
+      "stage_name": "\ud83d\udcca Dataset Loading & Analysis",
+      "start_time": 1755186277.0,
+      "end_time": 1755186288.388035,
+      "duration": 11.38803505897522,
+      "success": true,
+      "resources_processed": 1,
+      "resources_created": 0,
+      "errors": [],
+      "memory_usage_mb": 0.0,
+      "throughput_per_sec": 0.08781146131192079
+    },
+    {
+      "stage_name": "\ud83c\udfe5 HACS Tools Processing",
+      "start_time": 1755186288.0,
+      "end_time": 1755186375.152879,
+      "duration": 87.15287899971008,
+      "success": true,
+      "resources_processed": 1,
+      "resources_created": 3,
+      "errors": [],
+      "memory_usage_mb": 0.0,
+      "throughput_per_sec": 0.011474090259293976
+    },
+    {
+      "stage_name": "\ud83d\udccb Report Generation & Analysis",
+      "start_time": 1755186375.0,
+      "end_time": 1755186375.154322,
+      "duration": 0.15432190895080566,
+      "success": true,
+      "resources_processed": 0,
+      "resources_created": 0,
+      "errors": [],
+      "memory_usage_mb": 0.0,
+      "throughput_per_sec": 0.0
+    }
+  ],
+  "summary": {
+    "total_stages": 3,
+    "successful_stages": 3,
+    "failed_stages": 0,
+    "total_resources_processed": 2,
+    "total_resources_created": 3,
+    "avg_throughput": 0.03309518385707159
+  }
+}

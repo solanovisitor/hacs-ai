@@ -405,6 +405,11 @@ class Patient(DomainResource):
         - Age calculation and validation
         - Comprehensive identifier management
         - Care team tracking
+        - Patient linkage and family relationships
+        - Enhanced communication preferences and accessibility
+        - Multiple birth tracking (twins, triplets)
+        - Photo attachments support
+        - Deceased patient tracking with date
         - Agent context for AI workflows
 
     Example:
@@ -469,6 +474,29 @@ class Patient(DomainResource):
     deceased_date_time: date | None = Field(
         default=None,
         description="Date of death if deceased"
+    )
+
+    # FHIR R4 Enhanced Demographics
+    multiple_birth_boolean: bool | None = Field(
+        default=None,
+        description="Whether patient is part of a multiple birth (twins, triplets, etc.)",
+        examples=[True, False]
+    )
+
+    multiple_birth_integer: int | None = Field(
+        default=None,
+        description="Birth order for multiple births (1 for first twin, 2 for second, etc.)",
+        examples=[1, 2, 3],
+        ge=1,
+        le=10
+    )
+
+    # Photo attachments
+    photo: list[str] = Field(
+        default_factory=list,
+        description="Patient photos (base64 encoded images or URLs)",
+        examples=[["data:image/jpeg;base64,/9j/4AAQ...", "https://example.com/patient-photo.jpg"]],
+        max_length=5
     )
 
     # Contact information
@@ -544,6 +572,29 @@ class Patient(DomainResource):
         description="References to care providers and team members",
         examples=[["Practitioner/dr-smith", "Organization/hospital-main"]],
         max_length=20
+    )
+
+    # FHIR R4 Patient Linkage and Relationships
+    link: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Links to other related Patient resources (family members, care partners, etc.)",
+        examples=[[{
+            "other": "Patient/mother-123",
+            "type": "seealso"  # replace | replaces | refer | seealso
+        }]],
+        max_length=10
+    )
+
+    # Enhanced Communication Preferences
+    communication_preference: dict[str, Any] | None = Field(
+        default=None,
+        description="Specific communication preferences and accessibility needs",
+        examples=[{
+            "preferred_method": "email",
+            "accessible_communication": ["sign-language"],
+            "interpreter_required": True,
+            "contact_person": "Patient/spouse-456"
+        }]
     )
 
     # Emergency contacts

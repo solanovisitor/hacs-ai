@@ -11,7 +11,7 @@ This module provides a schema-driven, resource-agnostic annotation pipeline:
 from .data import AlignmentStatus, CharInterval, Extraction, Document, AnnotatedDocument, FormatType
 from .annotator import Annotator
 from .chunking import select_chunks
-from .conversations import ChatMessage, to_openai_messages, to_langchain_messages, to_anthropic_messages
+from .conversations import ChatMessage, to_openai_messages, to_anthropic_messages
 
 __all__ = [
     "AlignmentStatus",
@@ -24,7 +24,6 @@ __all__ = [
     "select_chunks",
     "ChatMessage",
     "to_openai_messages",
-    "to_langchain_messages",
     "to_anthropic_messages",
 ]
 

@@ -87,8 +87,7 @@ class HACSToolRegistry:
         self._category_patterns = {
             "resource_management": [
                 "create_hacs_record", "get_hacs_record", "update_hacs_record",
-                "delete_hacs_record", "search_hacs_records", "validate_resource_data",
-                "list_available_resources", "find_resources"
+                "delete_hacs_record", "search_hacs_records"
             ],
             "clinical_workflows": [
                 "execute_clinical_workflow", "get_clinical_guidance",
@@ -96,18 +95,22 @@ class HACSToolRegistry:
             ],
             "schema_discovery": [
                 "discover_hacs_resources", "get_hacs_resource_schema",
-                "analyze_resource_fields", "compare_resource_schemas",
-                "get_resource_schema", "create_view_resource_schema",
-                "suggest_view_fields"
+                "analyze_resource_fields", "compare_resource_schemas"
             ],
             "development_tools": [
-                "create_resource_stack", "create_clinical_template",
-                "optimize_resource_for_llm", "create_model_stack",
-                "version_hacs_resource"
+                "create_resource_stack",
+                # Deprecated tools intentionally omitted: create_clinical_template, optimize_resource_for_llm
+                # Keep only active development tools here
+                "register_prompt_template",
+                "register_extraction_schema",
+                "register_stack_template",
+                "generate_stack_template_from_markdown",
+                "instantiate_stack_from_context",
+                "instantiate_stack_template",
             ],
             "memory_operations": [
-                "create_hacs_memory", "search_hacs_memories", "create_memory",
-                "search_memories", "consolidate_memories", "retrieve_context",
+                "create_hacs_memory", "search_hacs_memories",
+                "consolidate_memories", "retrieve_context",
                 "analyze_memory_patterns"
             ],
             "vector_search": [
@@ -132,9 +135,7 @@ class HACSToolRegistry:
                 "describe_database_schema", "get_table_structure",
                 "test_database_connection"
             ],
-            "knowledge_management": [
-                "create_knowledge_item"
-            ]
+            # No explicit knowledge_management tools currently
         }
 
     def _determine_category(self, tool_name: str) -> str:
@@ -230,68 +231,11 @@ class HACSToolRegistry:
 
     def discover_tools_from_module(self, module_name: str) -> int:
         """
-        Discover and register tools from a specific module.
-
-        Args:
-            module_name: Full module name (e.g., 'hacs_tools.domains.resource_management')
-
-        Returns:
-            Number of tools discovered and registered
+        DEPRECATED: Use auto_discover_hacs_tools() which leverages plugin discovery.
+        This method remains for backward compatibility and returns 0.
         """
-        try:
-            module = importlib.import_module(module_name)
-            discovered_count = 0
-
-            domain = module_name.split('.')[-1] if '.' in module_name else module_name
-
-            for attr_name in dir(module):
-                attr = getattr(module, attr_name)
-
-                # Check if it's a tool function
-                if (callable(attr) and
-                    not attr_name.startswith('_') and
-                    hasattr(attr, '__doc__') and
-                    not inspect.isclass(attr)):
-
-                    # Additional checks for tool detection
-                    if (hasattr(attr, '_is_tool') or  # LangChain tool marker
-                        'actor_name' in getattr(attr, '__annotations__', {}) or  # HACS tool pattern
-                        any(term in attr_name for term in ['create', 'get', 'update', 'delete', 'search', 'analyze'])):
-
-                        try:
-                            metadata = self._extract_tool_metadata(attr, module_name, domain)
-                            tool_name = metadata["tool_name"]
-                            category = self._determine_category(tool_name)
-
-                            tool_def = ToolDefinition(
-                                name=tool_name,
-                                version="1.0.0",  # Default version for discovered tools
-                                description=metadata["description"],
-                                function=attr,
-                                module_path=module_name,
-                                function_name=tool_name,
-                                category=category,
-                                domain=domain,
-                                tags=metadata["tags"],
-                                requires_actor=metadata["requires_actor"],
-                                requires_db=metadata["requires_db"],
-                                requires_vector_store=metadata["requires_vector_store"],
-                                is_async=metadata["is_async"],
-                                status=DefinitionStatus.PUBLISHED
-                            )
-
-                            self.register_tool(tool_def)
-                            discovered_count += 1
-
-                        except Exception as e:
-                            logger.warning(f"Failed to register tool {attr_name} from {module_name}: {e}")
-
-            logger.info(f"Discovered {discovered_count} tools from {module_name}")
-            return discovered_count
-
-        except ImportError as e:
-            logger.warning(f"Could not import module {module_name}: {e}")
-            return 0
+        logger.info("discover_tools_from_module is deprecated; use auto_discover_hacs_tools instead")
+        return 0
 
     def auto_discover_hacs_tools(self, base_packages: List[str] = None) -> int:
         """

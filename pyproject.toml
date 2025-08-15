@@ -13,6 +13,7 @@ dev-dependencies = [
     "psutil>=6.1.0", # For system monitoring
     "aiohttp>=3.11.10", # For HTTP health checks
     "pyjwt>=2.10.1", # For JWT authentication
+    "datasets>=2.19.0",
 ]
 
 [tool.uv.workspace]
@@ -27,6 +28,7 @@ members = [
     "packages/hacs-auth",
     "packages/hacs-infrastructure",
     "examples/hacs_developer_agent",
+    "examples/hf_ingestion",
 ]
 
 [tool.uv.sources]

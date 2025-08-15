@@ -345,18 +345,19 @@ def instantiate_registered_stack(name: str, variables: Dict[str, Any]) -> Dict[s
 
     registry = get_global_registry()
     # naive lookup by name (latest version)
-    stacks = [r for r in registry._resources.values() if r.metadata.name == name and r.hacs_resource_class.__name__ == "StackTemplate"]
+    stacks = [r for r in registry._resources.values() if r.metadata.name == name and getattr(r, "resource_class", "") == "StackTemplate"]
     if not stacks:
         raise ValueError(f"Stack template not found: {name}")
     # take most recent
     stack_res = sorted(stacks, key=lambda r: r.metadata.version, reverse=True)[0]
     # rebuild StackTemplate model
+    data = getattr(stack_res, "resource_instance", {}) or {}
     tmpl = StackTemplate(
         name=stack_res.metadata.name,
         version=stack_res.metadata.version.as_string() if hasattr(stack_res.metadata.version, 'as_string') else stack_res.metadata.version,
         description=stack_res.metadata.description,
-        variables=stack_res.instance_data.get("variables", {}),
-        layers=stack_res.instance_data.get("layers", []),
+        variables=data.get("variables", {}),
+        layers=data.get("layers", []),
     )
     return instantiate_stack_template(tmpl, variables)
 

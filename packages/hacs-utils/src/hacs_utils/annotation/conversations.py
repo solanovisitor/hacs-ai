@@ -24,24 +24,16 @@ def to_openai_messages(messages: List[ChatMessage]) -> List[Dict[str, Any]]:
     ]
 
 
-def to_langchain_messages(messages: List[ChatMessage]):
-    try:
-        from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, ToolMessage
-    except Exception:
-        return messages  # fallback raw
-    converted = []
-    for m in messages:
-        if m.role == "system":
-            converted.append(SystemMessage(content=m.content))
-        elif m.role in ("user", "human"):
-            converted.append(HumanMessage(content=m.content))
-        elif m.role in ("assistant", "ai"):
-            converted.append(AIMessage(content=m.content))
-        elif m.role == "tool":
-            converted.append(ToolMessage(content=m.content, tool_call_id=(m.tool_calls or [{}])[0].get("id")))
-        else:
-            converted.append(HumanMessage(content=m.content))
-    return converted
+def to_langchain_messages(messages: List[ChatMessage]):  # pragma: no cover
+    """Deprecated stub for backward compatibility. Use framework-native converters instead."""
+    return [
+        {k: v for k, v in {
+            "role": m.role,
+            "content": m.content,
+            "name": m.name,
+        }.items() if v is not None}
+        for m in messages
+    ]
 
 
 def to_anthropic_messages(messages: List[ChatMessage]) -> List[Dict[str, str]]:

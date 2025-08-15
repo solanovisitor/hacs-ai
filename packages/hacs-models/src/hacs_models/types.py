@@ -184,6 +184,26 @@ class MedicationRequestStatus(str, Enum):
     UNKNOWN = "unknown"               # Status unknown
 
 
+class MedicationRequestIntent(str, Enum):
+    """MedicationRequest intent values per FHIR R4."""
+    PROPOSAL = "proposal"
+    PLAN = "plan"
+    ORDER = "order"
+    ORIGINAL_ORDER = "original-order"
+    REFLEX_ORDER = "reflex-order"
+    FILLER_ORDER = "filler-order"
+    INSTANCE_ORDER = "instance-order"
+    OPTION = "option"
+
+
+class MedicationRequestPriority(str, Enum):
+    """MedicationRequest priority values per FHIR R4."""
+    ROUTINE = "routine"
+    URGENT = "urgent"
+    ASAP = "asap"
+    STAT = "stat"
+
+
 class ProcedureStatus(str, Enum):
     """
     Status of procedure following FHIR EventStatus value set.

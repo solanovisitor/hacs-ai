@@ -1,0 +1,55 @@
+{
+  "workflow_start": 1755184244.7690082,
+  "workflow_end": 1755184312.321635,
+  "total_duration": 67.55262684822083,
+  "stages": [
+    {
+      "stage_name": "\ud83d\udcca Dataset Loading & Analysis",
+      "start_time": 1755184244.0,
+      "end_time": 1755184248.8702679,
+      "duration": 4.870267868041992,
+      "success": true,
+      "resources_processed": 1,
+      "resources_created": 0,
+      "errors": [],
+      "memory_usage_mb": 0.0,
+      "throughput_per_sec": 0.20532751526088705
+    },
+    {
+      "stage_name": "\ud83c\udfe5 HACS Tools Processing",
+      "start_time": 1755184248.0,
+      "end_time": 1755184312.311291,
+      "duration": 64.31129097938538,
+      "success": true,
+      "resources_processed": 1,
+      "resources_created": 0,
+      "errors": [
+        "Template not found in registry: hf_row_template_0",
+        "Template not found in registry: hf_row_template_1",
+        "Template not found in registry: hf_row_template_2"
+      ],
+      "memory_usage_mb": 0.0,
+      "throughput_per_sec": 0.015549369088556229
+    },
+    {
+      "stage_name": "\ud83d\udccb Report Generation & Analysis",
+      "start_time": 1755184312.0,
+      "end_time": 1755184312.3119948,
+      "duration": 0.3119947910308838,
+      "success": true,
+      "resources_processed": 0,
+      "resources_created": 0,
+      "errors": [],
+      "memory_usage_mb": 0.0,
+      "throughput_per_sec": 0.0
+    }
+  ],
+  "summary": {
+    "total_stages": 3,
+    "successful_stages": 3,
+    "failed_stages": 0,
+    "total_resources_processed": 2,
+    "total_resources_created": 0,
+    "avg_throughput": 0.07362562811648109
+  }
+}

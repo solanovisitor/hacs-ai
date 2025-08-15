@@ -135,6 +135,41 @@ class Observation(DomainResource):
         description="Type of observation (code / type)"
     )
 
+    # FHIR R4 Enhanced Categorization
+    category: list[CodeableConcept] = Field(
+        default_factory=list,
+        description="Classification of type of observation (e.g., vital-signs, laboratory, imaging, survey)",
+        examples=[[{
+            "coding": [{
+                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                "code": "vital-signs",
+                "display": "Vital Signs"
+            }],
+            "text": "Vital Signs"
+        }]]
+    )
+
+    # Method used to perform the observation
+    method: CodeableConcept | None = Field(
+        default=None,
+        description="Method used to perform the observation",
+        examples=[{
+            "text": "Automated blood pressure cuff",
+            "coding": [{
+                "system": "http://snomed.info/sct",
+                "code": "261241001",
+                "display": "Arterial pressure monitoring"
+            }]
+        }]
+    )
+
+    # Device used to perform the observation
+    device: str | None = Field(
+        default=None,
+        description="Reference to device used to perform observation",
+        examples=["Device/blood-pressure-monitor-123", "Device/thermometer-456"]
+    )
+
     # Subject reference
     subject: str | None = Field(
         default=None,
@@ -180,8 +215,7 @@ class Observation(DomainResource):
 
     value_string: str | None = Field(
         default=None,
-        description="Actual result as a string",
-        max_length=1000
+        description="Actual result as a string"
     )
 
     value_boolean: bool | None = Field(
@@ -216,10 +250,50 @@ class Observation(DomainResource):
         max_length=10
     )
 
-    # Reference ranges
+    # Enhanced Reference Ranges
     reference_range: list[dict[str, Any]] = Field(
         default_factory=list,
-        description="Provides guide for interpretation"
+        description="Reference ranges for interpretation of observation values",
+        examples=[[{
+            "low": {"value": 120, "unit": "mmHg", "system": "http://unitsofmeasure.org"},
+            "high": {"value": 140, "unit": "mmHg", "system": "http://unitsofmeasure.org"},
+            "type": {
+                "coding": [{
+                    "system": "http://terminology.hl7.org/CodeSystem/referencerange-meaning",
+                    "code": "normal",
+                    "display": "Normal Range"
+                }],
+                "text": "Normal"
+            },
+            "applies_to": [{
+                "coding": [{
+                    "system": "http://snomed.info/sct",
+                    "code": "248153007",
+                    "display": "Male"
+                }],
+                "text": "Male"
+            }],
+            "age": {
+                "low": {"value": 18, "unit": "years"},
+                "high": {"value": 65, "unit": "years"}
+            },
+            "text": "Normal blood pressure range for adult males"
+        }]]
+    )
+
+    # Enhanced Interpretation with detailed context
+    interpretation_detail: dict[str, Any] | None = Field(
+        default=None,
+        description="Enhanced interpretation with clinical context and recommendations",
+        examples=[{
+            "overall_interpretation": "abnormal",
+            "clinical_significance": "high",
+            "trend_analysis": "increasing",
+            "recommended_action": "follow-up required",
+            "confidence_level": "high",
+            "comparison_to_previous": "20% increase from last measurement",
+            "clinical_context": "Patient on antihypertensive medication"
+        }]
     )
 
     # Related observations
@@ -291,8 +365,131 @@ class Observation(DomainResource):
         else:
             return "No value recorded"
 
+    def add_category(self, category_code: str, category_display: str, system: str = "http://terminology.hl7.org/CodeSystem/observation-category") -> None:
+        """Add a category to the observation."""
+        category = CodeableConcept(
+            coding=[Coding(
+                system=system,
+                code=category_code,
+                display=category_display
+            )],
+            text=category_display
+        )
+        self.category.append(category)
+        self.update_timestamp()
+
+    def add_reference_range(
+        self,
+        low_value: float | None = None,
+        high_value: float | None = None,
+        unit: str | None = None,
+        range_type: str = "normal",
+        applies_to: str | None = None,
+        text: str | None = None
+    ) -> None:
+        """Add a reference range to the observation."""
+        range_dict = {}
+        
+        if low_value is not None and unit:
+            range_dict["low"] = {
+                "value": low_value,
+                "unit": unit,
+                "system": "http://unitsofmeasure.org"
+            }
+        
+        if high_value is not None and unit:
+            range_dict["high"] = {
+                "value": high_value,
+                "unit": unit,
+                "system": "http://unitsofmeasure.org"
+            }
+        
+        range_dict["type"] = {
+            "coding": [{
+                "system": "http://terminology.hl7.org/CodeSystem/referencerange-meaning",
+                "code": range_type,
+                "display": range_type.title()
+            }],
+            "text": range_type.title()
+        }
+        
+        if applies_to:
+            range_dict["applies_to"] = [{"text": applies_to}]
+        
+        if text:
+            range_dict["text"] = text
+            
+        self.reference_range.append(range_dict)
+        self.update_timestamp()
+
+    def is_within_normal_range(self) -> bool | None:
+        """Check if the observation value is within normal reference ranges."""
+        if not self.value_quantity or not self.reference_range:
+            return None
+            
+        value = self.value_quantity.value
+        
+        for range_item in self.reference_range:
+            # Check if this is a normal range
+            range_type = range_item.get("type", {})
+            if isinstance(range_type, dict):
+                coding = range_type.get("coding", [])
+                if any(c.get("code") == "normal" for c in coding if isinstance(c, dict)):
+                    low = range_item.get("low", {})
+                    high = range_item.get("high", {})
+                    
+                    low_val = low.get("value") if isinstance(low, dict) else None
+                    high_val = high.get("value") if isinstance(high, dict) else None
+                    
+                    if low_val is not None and value < low_val:
+                        return False
+                    if high_val is not None and value > high_val:
+                        return False
+                    
+                    # If we have at least one bound and value is within it
+                    if low_val is not None or high_val is not None:
+                        return True
+                        
+        return None  # Cannot determine
+
+    def get_interpretation_summary(self) -> str:
+        """Get a summary of the observation interpretation."""
+        interpretations = []
+        
+        # Standard interpretation codes
+        for interp in self.interpretation:
+            if hasattr(interp, 'text') and interp.text:
+                interpretations.append(interp.text)
+            elif hasattr(interp, 'coding') and interp.coding:
+                for coding in interp.coding:
+                    if hasattr(coding, 'display') and coding.display:
+                        interpretations.append(coding.display)
+                        break
+        
+        # Enhanced interpretation
+        if self.interpretation_detail:
+            overall = self.interpretation_detail.get("overall_interpretation")
+            significance = self.interpretation_detail.get("clinical_significance")
+            if overall:
+                interpretations.append(overall)
+            if significance and significance != "normal":
+                interpretations.append(f"{significance} significance")
+        
+        # Reference range check
+        within_normal = self.is_within_normal_range()
+        if within_normal is not None:
+            interpretations.append("within normal range" if within_normal else "outside normal range")
+        
+        return ", ".join(interpretations) if interpretations else "No interpretation available"
+
     def __str__(self) -> str:
         """Human-readable string representation."""
         code_display = self.code.text if self.code.text else "Observation"
         value_summary = self.get_value_summary()
-        return f"{code_display}: {value_summary}"
+        interpretation = self.get_interpretation_summary()
+        
+        result = f"{code_display}: {value_summary}"
+        if interpretation and interpretation != "No interpretation available":
+            result += f" ({interpretation})"
+        
+        return result

@@ -110,7 +110,7 @@ curl -X POST -H "Content-Type: application/json" \
     "jsonrpc": "2.0",
     "method": "tools/call",
     "params": {
-      "name": "create_clinical_template",
+      "name": "register_stack_template",
       "arguments": {
         "template_type": "assessment",
         "focus_area": "cardiology"
@@ -166,7 +166,7 @@ HACS provides **42 Hacs Tools** organized into functional categories:
 - `discover_hacs_resources` - Explore available healthcare resources
 - `analyze_model_fields` - Analyze model field structure
 - `compare_model_schemas` - Compare multiple model schemas
-- `create_clinical_template` - Generate clinical workflow templates
+- Template tools: `register_stack_template`, `generate_stack_template_from_markdown`, `instantiate_stack_template`
 - `create_model_stack` - Compose complex data structures
 
 ### 📋 **Resource Management** (8 tools)

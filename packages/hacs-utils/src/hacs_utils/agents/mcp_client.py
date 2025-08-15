@@ -5,6 +5,7 @@ import json
 from typing import Any, Dict, List, Optional
 
 import aiohttp
+import os
 import anthropic
 
 
@@ -13,13 +14,29 @@ class HACSMCPClient:
 
     def __init__(
         self,
-        mcp_server_url: str = "http://localhost:8000",
+        mcp_server_url: str = "http://127.0.0.1:8000/mcp/",
         anthropic_api_key: Optional[str] = None,
     ):
-        self.mcp_server_url = mcp_server_url
+        self.mcp_server_url = self._normalize_url(mcp_server_url)
         self.anthropic_client = None
         if anthropic_api_key:
             self.anthropic_client = anthropic.Anthropic(api_key=anthropic_api_key)
+
+    @staticmethod
+    def _normalize_url(url: str) -> str:
+        try:
+            u = url.strip()
+        except Exception:
+            return "http://127.0.0.1:8000/mcp/"
+        if "/mcp" not in u:
+            u = u.rstrip("/") + "/mcp/"
+        elif not u.rstrip("/").endswith("/mcp"):
+            # If contains /mcp/ anywhere but not suffix, keep as-is
+            pass
+        else:
+            # endswith /mcp → add trailing slash for consistency
+            u = u + "/" if not u.endswith("/") else u
+        return u
 
     async def use_tool(
         self, tool_name: str, arguments: Dict[str, Any]
@@ -32,12 +49,22 @@ class HACSMCPClient:
                 "name": tool_name,
                 "arguments": arguments,
             },
-            "id": 1,
+            "id": os.getenv("HACS_SESSION_ID", "hf-ingestion"),
         }
+
+        import uuid
+        headers = {}
+        token = os.getenv("HACS_API_KEY")
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        headers["Content-Type"] = "application/json"
+        headers["Accept"] = "application/json, text/event-stream"
+        session_id = os.getenv("HACS_SESSION_ID") or f"sess-{uuid.uuid4().hex}"
+        headers["X-Session-Id"] = session_id
 
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                self.mcp_server_url, json=payload
+                self.mcp_server_url, json=payload, headers=headers
             ) as response:
                 result = await response.json()
                 if "error" in result:
@@ -50,12 +77,22 @@ class HACSMCPClient:
             "jsonrpc": "2.0",
             "method": "tools/list",
             "params": {},
-            "id": 1,
+            "id": os.getenv("HACS_SESSION_ID", "hf-ingestion"),
         }
+
+        import uuid
+        headers = {}
+        token = os.getenv("HACS_API_KEY")
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        headers["Content-Type"] = "application/json"
+        headers["Accept"] = "application/json, text/event-stream"
+        session_id = os.getenv("HACS_SESSION_ID") or f"sess-{uuid.uuid4().hex}"
+        headers["X-Session-Id"] = session_id
 
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                self.mcp_server_url, json=payload
+                self.mcp_server_url, json=payload, headers=headers
             ) as response:
                 result = await response.json()
                 if "error" in result:

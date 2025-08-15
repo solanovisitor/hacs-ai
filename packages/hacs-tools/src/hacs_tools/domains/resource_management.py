@@ -573,7 +573,7 @@ def _get_resource_class(resource_type: str):
         from hacs_models import (
             Patient, Observation, Encounter, Condition, MedicationRequest,
             Medication, AllergyIntolerance, Procedure, Goal, ServiceRequest,
-            Organization, OrganizationContact, OrganizationQualification
+            Organization, OrganizationContact
         )
 
         resource_map = {
@@ -589,7 +589,6 @@ def _get_resource_class(resource_type: str):
             "ServiceRequest": ServiceRequest,
             "Organization": Organization,
             "OrganizationContact": OrganizationContact,
-            "OrganizationQualification": OrganizationQualification,
         }
 
         return resource_map.get(resource_type)

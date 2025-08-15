@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 
 import yaml
 
-from .data import FormatType, Extraction
+from .data import FormatType, Extraction, CharInterval, AlignmentStatus
 
 
 def extract_fenced_or_raw(output: str) -> str:
@@ -49,4 +49,43 @@ class AbstractResolver:
                     )
         return extractions
 
+
+class Resolver(AbstractResolver):
+    """Concrete resolver with basic alignment to source text.
+
+    - resolve: same default behavior, mapping list of dicts to Extraction
+    - align: assigns char intervals by locating extraction_text in chunk_text
+    """
+
+    def resolve(self, parsed_output: Any) -> List[Extraction]:
+        return super().resolve(parsed_output)
+
+    def align(
+        self,
+        extractions: List[Extraction],
+        chunk_text: str,
+        *,
+        char_offset: int = 0,
+        case_insensitive: bool = True,
+    ) -> List[Extraction]:
+        aligned: List[Extraction] = []
+        haystack_ci = chunk_text.lower() if case_insensitive else chunk_text
+        for ex in extractions:
+            text = ex.extraction_text or ""
+            if not text:
+                aligned.append(ex)
+                continue
+            needle = text.lower() if case_insensitive else text
+            start_local = haystack_ci.find(needle)
+            if start_local >= 0:
+                end_local = start_local + len(text)
+                ex.char_interval = CharInterval(
+                    start_pos=char_offset + start_local,
+                    end_pos=char_offset + end_local,
+                )
+                ex.alignment_status = AlignmentStatus.MATCH_EXACT
+            else:
+                ex.alignment_status = AlignmentStatus.MATCH_FUZZY
+            aligned.append(ex)
+        return aligned
 

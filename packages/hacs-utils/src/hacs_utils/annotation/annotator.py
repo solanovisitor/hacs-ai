@@ -27,13 +27,13 @@ class Annotator:
         prompt_template: PromptTemplateStructured,
         *,
         format_type: FormatType = FormatType.JSON,
-        fence_output: bool = True,
+        fenced_output: bool = True,
     ) -> None:
         self._language_model = language_model
         self._prompt_generator = QAPromptGenerator(
             template=prompt_template,
             format_type=format_type,
-            fence_output=fence_output,
+            fenced_output=fenced_output,
         )
 
     def annotate_text(
@@ -51,6 +51,7 @@ class Annotator:
         batches = make_batches_of_textchunk(iter(chunks), batch_length)
 
         all_extractions: list = []
+        char_offset = 0
         for batch in batches:
             prompts: list[str] = []
             for ch in batch:
@@ -60,11 +61,21 @@ class Annotator:
             model_outputs = self._language_model.infer(prompts)
             for ch, outputs in zip(batch, model_outputs):
                 if not outputs:
+                    char_offset += len(ch.chunk_text) - 0
                     continue
                 top = outputs[0].output or ""
                 parsed = resolver.parse(top)
                 extractions = resolver.resolve(parsed)
+                # Align to source chunk to produce CharInterval and AlignmentStatus
+                if hasattr(resolver, "align"):
+                    try:
+                        extractions = resolver.align(extractions, ch.chunk_text, char_offset=ch.start_index)
+                    except Exception:
+                        # Best-effort: keep unaligned if align fails
+                        pass
                 all_extractions.extend(extractions)
+                # Update running offset conservatively (chunk iterator provides indices)
+            # No need to update char_offset here since align uses ch.start_index
 
         return AnnotatedDocument(document_id=doc.document_id, extractions=all_extractions, text=text)
 

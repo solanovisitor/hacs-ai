@@ -48,7 +48,11 @@ def get_tool(name: str):
     """Get a specific tool by name."""
     if _has_registry:
         registry = get_global_tool_registry()
-        return registry.get_tool_function(name)
+        func = registry.get_tool_function(name)
+        if not func and not name.endswith('_tool'):
+            # Try common *_tool suffix aliasing
+            func = registry.get_tool_function(f"{name}_tool")
+        return func
     else:
         # Fallback: try direct import
         return _get_tool_direct_import(name)
@@ -124,8 +128,13 @@ def _get_tool_direct_import(name: str):
         for domain in domain_modules:
             try:
                 module = __import__(f"hacs_tools.domains.{domain}", fromlist=[name])
+                # Exact name
                 if hasattr(module, name):
                     return getattr(module, name)
+                # Fallback: common HACS naming uses *_tool suffix
+                alt = f"{name}_tool"
+                if hasattr(module, alt):
+                    return getattr(module, alt)
             except ImportError:
                 continue
     except Exception:

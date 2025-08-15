@@ -60,7 +60,7 @@ from .observation import Observation, Quantity, CodeableConcept, Coding, Range
 from .encounter import Encounter, EncounterParticipant, EncounterDiagnosis
 from .condition import Condition, ConditionStage, ConditionEvidence
 from .medication import Medication, MedicationIngredient
-from .medication_request import MedicationRequest, Dosage, DosageInstruction
+from .medication_request import MedicationRequest, Dosage
 from .procedure import Procedure, ProcedurePerformer, ProcedureFocalDevice
 from .goal import Goal, GoalTarget
 # NEW - Phase 1 critical resources
@@ -101,6 +101,16 @@ from .organization import (
     create_insurance_organization,
     create_pharmacy,
 )
+from .document_reference import DocumentReference
+from .medication_statement import MedicationStatement
+from .family_member_history import FamilyMemberHistory
+from .immunization import Immunization
+from .appointment import Appointment
+from .service_request import ServiceRequest
+from .care_plan import CarePlan
+from .care_team import CareTeam
+from .nutrition_order import NutritionOrder
+from .plan_definition import PlanDefinition, PlanDefinitionGoal, PlanDefinitionAction
 
 # Specialized models for AI agents
 from .memory import MemoryBlock, EpisodicMemory, SemanticMemory, WorkingMemory
@@ -202,7 +212,6 @@ __all__ = [
     "MedicationIngredient",
     "MedicationRequest",
     "Dosage",
-    "DosageInstruction",
 
     # Procedure documentation
     "Procedure",
@@ -246,6 +255,23 @@ __all__ = [
     "create_department",
     "create_insurance_organization",
     "create_pharmacy",
+    # Documents and context
+    "DocumentReference",
+    # Medication usage report
+    "MedicationStatement",
+    # Family history
+    "FamilyMemberHistory",
+    # Immunization (vaccines)
+    "Immunization",
+    # Scheduling and orders
+    "Appointment",
+    "ServiceRequest",
+    "CarePlan",
+    "CareTeam",
+    "NutritionOrder",
+    "PlanDefinition",
+    "PlanDefinitionGoal", 
+    "PlanDefinitionAction",
 
     # AI agent models
     "MemoryBlock",
@@ -344,8 +370,24 @@ def get_model_registry() -> dict[str, type[BaseResource]]:
         "Condition": Condition,
         "Medication": Medication,
         "MedicationRequest": MedicationRequest,
+        "MedicationStatement": MedicationStatement,
         "Procedure": Procedure,
         "Goal": Goal,
+        "ServiceRequest": ServiceRequest,
+        "CarePlan": CarePlan,
+        "CareTeam": CareTeam,
+        "NutritionOrder": NutritionOrder,
+        "PlanDefinition": PlanDefinition,
+        "PlanDefinitionGoal": PlanDefinitionGoal,
+        "PlanDefinitionAction": PlanDefinitionAction,
+        "DiagnosticReport": DiagnosticReport,
+        "DocumentReference": DocumentReference,
+        "FamilyMemberHistory": FamilyMemberHistory,
+        "Immunization": Immunization,
+        "Appointment": Appointment,
+        "ServiceRequest": ServiceRequest,
+        "Practitioner": Practitioner,
+        "Organization": Organization,
         "MemoryBlock": MemoryBlock,
         "EpisodicMemory": EpisodicMemory,
         "SemanticMemory": SemanticMemory,
@@ -369,7 +411,23 @@ def get_fhir_resources() -> list[type[BaseResource]]:
         Condition,
         Medication,
         MedicationRequest,
+        MedicationStatement,
         Procedure,
+        ServiceRequest,
+        DiagnosticReport,
+        DocumentReference,
+        FamilyMemberHistory,
+        Immunization,
+        Appointment,
+        ServiceRequest,
+        CarePlan,
+        CareTeam,
+        NutritionOrder,
+        PlanDefinition,
+        PlanDefinitionGoal,
+        PlanDefinitionAction,
+        Practitioner,
+        Organization,
         Goal,
     ]
 
@@ -408,14 +466,56 @@ def validate_model_compatibility() -> bool:
                 elif model_name == "WorkingMemory":
                     instance = model_class(memory_type="working", content="Test content")
                 elif model_name == "Observation":
-                    from .observation import CodeableConcept, Coding
-                    test_code = CodeableConcept(coding=[Coding(code="test", display="Test")])
+                    from .observation import CodeableConcept
+                    test_code = CodeableConcept(text="Test")
                     instance = model_class(resource_type=model_name, status="final", code=test_code)
                 elif model_name == "Encounter":
                     # Use proper field name (class not class_)
                     kwargs = {"resource_type": model_name, "status": "planned"}
                     kwargs["class"] = "outpatient"  # Direct assignment to avoid alias issues
                     instance = model_class(**kwargs)
+                elif model_name == "MedicationRequest":
+                    from .observation import CodeableConcept
+                    instance = model_class(
+                        resource_type=model_name,
+                        status="active",
+                        intent="order",
+                        subject="Patient/test",
+                        medication_codeable_concept=CodeableConcept(text="TestMed")
+                    )
+                elif model_name == "Procedure":
+                    from .observation import CodeableConcept
+                    instance = model_class(
+                        resource_type=model_name,
+                        status="completed",
+                        code=CodeableConcept(text="TestProcedure"),
+                        subject="Patient/test"
+                    )
+                elif model_name == "Goal":
+                    instance = model_class(
+                        resource_type=model_name,
+                        lifecycle_status="active",
+                        description={"text": "Test Goal"},
+                        subject="Patient/test"
+                    )
+                elif model_name == "ServiceRequest":
+                    from .observation import CodeableConcept
+                    instance = model_class(
+                        resource_type=model_name,
+                        status="active",
+                        intent="order",
+                        subject="Patient/test",
+                        code=CodeableConcept(text="TestService")
+                    )
+                elif model_name == "PlanDefinitionGoal":
+                    instance = model_class(resource_type=model_name, description="Goal Desc")
+                elif model_name == "DiagnosticReport":
+                    from .observation import CodeableConcept
+                    instance = model_class(
+                        resource_type=model_name,
+                        status="final",
+                        code=CodeableConcept(text="Test Report")
+                    )
                 else:
                     instance = model_class(resource_type=model_name)
 

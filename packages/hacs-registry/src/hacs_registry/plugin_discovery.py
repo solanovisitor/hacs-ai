@@ -282,7 +282,8 @@ class PluginRegistry:
             tool_keywords = [
                 'create', 'get', 'update', 'delete', 'search', 'analyze',
                 'execute', 'validate', 'convert', 'process', 'generate',
-                'discover', 'extract', 'transform', 'deploy', 'run'
+                'discover', 'extract', 'transform', 'deploy', 'run',
+                'register', 'instantiate', 'optimize', 'compare'
             ]
 
             return any(keyword in name.lower() for keyword in tool_keywords)

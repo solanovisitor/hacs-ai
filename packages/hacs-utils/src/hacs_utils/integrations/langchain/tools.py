@@ -76,8 +76,12 @@ def _lazy_import_hacs_tools():
             analyze_resource_fields,
             compare_resource_schemas,
             create_resource_stack,
-            create_clinical_template,
-            optimize_resource_for_llm,
+            register_prompt_template_tool,
+            register_extraction_schema_tool,
+            register_stack_template_tool,
+            generate_stack_template_from_markdown_tool,
+            instantiate_stack_from_context_tool,
+            instantiate_stack_template_tool,
         )
 
         return {
@@ -91,8 +95,12 @@ def _lazy_import_hacs_tools():
             'analyze_resource_fields': analyze_resource_fields,
             'compare_resource_schemas': compare_resource_schemas,
             'create_resource_stack': create_resource_stack,
-            'create_clinical_template': create_clinical_template,
-            'optimize_resource_for_llm': optimize_resource_for_llm,
+            'register_prompt_template': register_prompt_template_tool,
+            'register_extraction_schema': register_extraction_schema_tool,
+            'register_stack_template': register_stack_template_tool,
+            'generate_stack_template_from_markdown': generate_stack_template_from_markdown_tool,
+            'instantiate_stack_from_context': instantiate_stack_from_context_tool,
+            'instantiate_stack_template': instantiate_stack_template_tool,
             'all_tools': ALL_HACS_TOOLS,
             'available': True
         }

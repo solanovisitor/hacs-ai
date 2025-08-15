@@ -253,6 +253,7 @@ class ResourceTemplateResult(BaseModel):
     fhir_compliance: bool = Field(description="Whether template is FHIR compliant")
     validation_requirements: List[str] = Field(description="Clinical validation requirements")
     message: str = Field(description="Human-readable template creation result")
+    data: Optional[Dict[str, Any]] = Field(default=None, description="Optional opaque payload (e.g., variables, layers)")
 
 
 # === VECTOR AND SEARCH RESULTS ===

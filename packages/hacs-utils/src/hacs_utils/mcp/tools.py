@@ -1,4 +1,67 @@
 """
+HACS MCP Tools - Model and Field Discovery for Workflows
+
+Expose tools over MCP to discover HACS models and their fields, enabling
+workflows to programmatically select appropriate resources and validated
+fields when generating stacks.
+"""
+
+from typing import Any, Dict, List, Optional
+import inspect
+from hacs_registry import get_global_tool_registry
+
+def _get_models_info() -> List[Dict[str, Any]]:
+    try:
+        import hacs_models as hm
+    except Exception:
+        import hacs_core as hm
+    models = []
+    for name in dir(hm):
+        cls = getattr(hm, name)
+        if hasattr(cls, "model_fields") and hasattr(cls, "model_json_schema"):
+            schema = {}
+            try:
+                schema = cls.model_json_schema()
+            except Exception:
+                pass
+            description = ""
+            try:
+                # Prefer BaseResource.get_descriptive_schema if available
+                if hasattr(cls, "get_descriptive_schema"):
+                    ds = cls.get_descriptive_schema()  # type: ignore[attr-defined]
+                    description = ds.get("description", "")
+                else:
+                    description = inspect.getdoc(cls) or ""
+            except Exception:
+                description = ""
+            models.append({
+                "name": name,
+                "fields": list(getattr(cls, "model_fields").keys()),
+                "schema": schema,
+                "description": description,
+            })
+    return models
+
+def mcp_list_models() -> Dict[str, Any]:
+    return {"success": True, "models": _get_models_info()}
+
+def mcp_get_model_schema(model_name: str) -> Dict[str, Any]:
+    try:
+        import hacs_models as hm
+    except Exception:
+        import hacs_core as hm
+    cls = getattr(hm, model_name, None)
+    if not cls or not hasattr(cls, "model_json_schema"):
+        return {"success": False, "error": f"Model not found: {model_name}"}
+    try:
+        ds = {}
+        if hasattr(cls, "get_descriptive_schema"):
+            ds = cls.get_descriptive_schema()  # type: ignore[attr-defined]
+        return {"success": True, "schema": cls.model_json_schema(), "descriptive": ds}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+"""
 HACS MCP Tools - Clean Wrapper for HACS Tools
 
 This module provides a clean, simple wrapper around the HACS tools

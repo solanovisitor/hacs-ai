@@ -40,7 +40,6 @@ def _check_hacs_availability():
         from hacs_registry import (
             get_global_iam_registry,
             get_global_tool_registry,
-            get_langchain_tools,
             AccessLevel,
             PermissionScope,
             ActorIdentity
@@ -98,8 +97,9 @@ def get_hacs_tools_from_registry() -> List[Any]:
         return []
 
     try:
-        from hacs_registry import get_langchain_tools
-        tools = get_langchain_tools()
+        # Prefer registry-native tool access
+        from hacs_registry import get_global_tool_registry
+        tools = [tool.function for tool in get_global_tool_registry().get_all_tools()]
         logger.info(f"✅ Loaded {len(tools)} tools from HACS Registry")
         return tools
     except Exception as e:
@@ -160,7 +160,7 @@ def get_hacs_tools_direct() -> List[Any]:
 
 # === PRIORITY-BASED TOOL LOADING ===
 
-async def load_hacs_tools(framework: str = "langchain") -> List[Any]:
+async def load_hacs_tools(framework: str = "langgraph") -> List[Any]:
     """
     Load HACS tools using priority-based strategy.
 
@@ -170,7 +170,7 @@ async def load_hacs_tools(framework: str = "langchain") -> List[Any]:
     3. Direct HACS Tools import (fallback)
 
     Args:
-        framework: Target framework ("langchain" or "langgraph")
+        framework: Target framework ("langgraph" or "langchain")
 
     Returns:
         List of available HACS tools
@@ -202,7 +202,7 @@ async def load_hacs_tools(framework: str = "langchain") -> List[Any]:
     logger.warning("No HACS tools available from any source")
     return []
 
-def load_hacs_tools_sync(framework: str = "langchain") -> List[Any]:
+def load_hacs_tools_sync(framework: str = "langgraph") -> List[Any]:
     """Synchronous wrapper for load_hacs_tools."""
     try:
         return asyncio.run(load_hacs_tools(framework))
@@ -286,7 +286,7 @@ def _get_langchain_builtin_tools() -> List[Any]:
 
 # === MAIN API FUNCTIONS ===
 
-async def get_all_hacs_tools(framework: str = "langchain") -> List[Any]:
+async def get_all_hacs_tools(framework: str = "langgraph") -> List[Any]:
     """
     Main function to get all HACS tools for any framework.
 
@@ -306,7 +306,7 @@ async def get_all_hacs_tools(framework: str = "langchain") -> List[Any]:
     logger.info(f"🔧 Total {framework} tools available: {len(tools)}")
     return tools
 
-def get_all_hacs_tools_sync(framework: str = "langchain") -> List[Any]:
+def get_all_hacs_tools_sync(framework: str = "langgraph") -> List[Any]:
     """Synchronous wrapper for get_all_hacs_tools that works inside running event loops.
 
     If called from within an active asyncio loop (e.g., inside the LangGraph dev server),

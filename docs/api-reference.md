@@ -73,12 +73,8 @@ search_result = use_hacs_tool("search_hacs_records", {
     "limit": 10
 })
 
-# Generate clinical templates
-template = use_hacs_tool("create_clinical_template", {
-    "template_type": "assessment",
-    "focus_area": "cardiology",
-    "complexity_level": "standard"
-})
+# Register a stack template
+result = use_hacs_tool("register_stack_template", {"template": {"name": "Example", "version": "1.0.0", "layers": [], "variables": {}}})
 ```
 
 **Tool Categories:**
@@ -294,16 +290,11 @@ memories = use_hacs_tool("search_hacs_memories", {
 
 ### Clinical Workflow Tools
 
-#### `create_clinical_template`
-Generate clinical assessment and documentation templates.
+#### Template registration and instantiation
+Register templates and instantiate stacks.
 
 ```python
-template = use_hacs_tool("create_clinical_template", {
-    "template_type": "assessment",       # Required: assessment, plan, note
-    "focus_area": "cardiology",          # Required: Clinical specialty
-    "complexity_level": "standard",      # Optional: basic, standard, comprehensive
-    "include_examples": True             # Optional: Include example content
-})
+result = use_hacs_tool("register_stack_template", {"template": {"name": "Example", "version": "1.0.0", "layers": [], "variables": {}}})
 ```
 
 #### `execute_clinical_workflow`
@@ -344,24 +335,9 @@ schema = use_hacs_tool("get_hacs_resource_schema", {
 
 ## 🔗 **Framework Integrations**
 
-### LangChain Integration
+### LangChain Integration (deprecated)
 
-```python
-from langchain.agents import create_openai_functions_agent
-from langchain_openai import ChatOpenAI
-from hacs_utils.integrations.langchain import get_hacs_tools
-
-# Get HACS tools for LangChain
-tools = get_hacs_tools()
-
-# Create agent with HACS tools
-llm = ChatOpenAI(model="gpt-4")
-agent = create_openai_functions_agent(
-    llm=llm,
-    tools=tools,
-    prompt="You are a clinical AI assistant."
-)
-```
+The LangChain adapter is deprecated and has been removed. Use LangGraph integration below.
 
 ### LangGraph Integration
 

@@ -27,7 +27,7 @@ HACS is purpose-built for healthcare AI:
 - **[CLI Reference](cli.md)** - Command-line tools and utilities
 
 ### Implementation Guides
-- **[Integration Guide](integrations.md)** - Connect to external systems (see also: [LangChain Examples](../packages/hacs-utils/src/hacs_utils/integrations/langchain/README.md))
+- **[Integration Guide](integrations.md)** - Connect to external systems (LangGraph preferred; LangChain adapter deprecated)
 - **[Use MCP](mcp_langgraph.md)** - How to use MCP tools with LangGraph, including stdio and streamable HTTP
 - **[Branch Management](branch-management.md)** - Development workflow
 - **[Phase 3 Testing Summary](phase3-testing-summary.md)** - Comprehensive testing results
@@ -68,7 +68,7 @@ HACS is structured as **core packages** with **optional service add-ons**:
 
 HACS packages enable developers to build:
 
-- **Healthcare AI Agents**: LangChain/LangGraph agents with medical knowledge
+- **Healthcare AI Agents**: LangGraph agents with medical knowledge
 - **Clinical Workflows**: CrewAI multi-agent systems for healthcare teams
 - **FHIR Applications**: Standards-compliant healthcare data processing
 - **Medical Chatbots**: Context-aware AI with structured clinical memory

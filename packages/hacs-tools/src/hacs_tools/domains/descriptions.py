@@ -454,41 +454,7 @@ Healthcare use cases: Comprehensive patient dashboards, integrated care plans, c
 workflow templates, medical record composition, healthcare data integration, clinical decision support enhancement.
 """
 
-CREATE_CLINICAL_TEMPLATE_DESCRIPTION = """
-Generate pre-configured clinical templates for common healthcare scenarios and medical workflows.
-
-This tool creates ready-to-use healthcare resource compositions for typical clinical
-workflows, medical procedures, and healthcare scenarios, eliminating manual field
-selection and ensuring clinical best practices and medical standard compliance.
-
-Key capabilities:
-- Clinical template generation for common medical scenarios (assessment, intake, discharge, consultation)
-- Medical specialty-specific templates (cardiology, emergency, mental health, pediatric)
-- SOAP note templates with structured clinical documentation
-- Healthcare workflow templates with clinical decision support integration
-- FHIR-compliant template generation with medical standard validation
-
-Healthcare use cases: Clinical documentation templates, medical workflow automation, healthcare
-form generation, clinical assessment tools, medical procedure templates, care plan creation.
-"""
-
-OPTIMIZE_RESOURCE_FOR_LLM_DESCRIPTION = """
-Optimize healthcare resources for AI/LLM interactions through intelligent clinical field selection.
-
-This tool automatically selects the most AI-friendly and clinically relevant fields
-from healthcare resources based on medical optimization goals, clinical use cases,
-and healthcare AI agent requirements for enhanced performance.
-
-Key capabilities:
-- AI-optimized healthcare field selection with clinical relevance prioritization
-- Medical terminology optimization for LLM understanding and clinical accuracy
-- Healthcare use case-specific optimization (clinical classification, medical extraction, diagnostic validation)
-- Clinical context preservation with medical accuracy and FHIR compliance
-- Healthcare AI agent interaction optimization with medical workflow enhancement
-
-Healthcare use cases: Healthcare AI optimization, clinical decision support enhancement, medical
-chatbot development, clinical documentation automation, healthcare workflow optimization, medical education AI.
-"""
+# Deprecated description blocks removed: CREATE_CLINICAL_TEMPLATE_DESCRIPTION, OPTIMIZE_RESOURCE_FOR_LLM_DESCRIPTION
 
 # === FHIR INTEGRATION TOOL DESCRIPTIONS ===
 

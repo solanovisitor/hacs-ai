@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-HACS LangChain Tools Validation Script
+HACS Tools Validation Script (LangChain shim)
 
-This script validates that all HACS tools are properly integrated with LangChain
-and functioning correctly. It tests tool discovery, validation, and execution.
+Validates that minimal LangChain compatibility functions are available and that
+tool discovery works. Full LangChain adapters are deprecated.
 
 Usage:
     python test_hacs_langchain_tools.py
@@ -38,7 +38,7 @@ def test_imports():
             HACSToolRegistry,
             validate_tool_inputs,
         )
-        print("✅ LangChain integration imports successful")
+        print("✅ LangChain shim imports successful")
         return True
     except ImportError as e:
         print(f"❌ LangChain integration import failed: {e}")
@@ -125,25 +125,17 @@ def test_individual_tools():
         else:
             print("❌ create_hacs_record tool not found")
 
-        # Test clinical template tool
-        template_tool = get_hacs_tool("create_clinical_template")
-        if template_tool:
-            print("✅ Found create_clinical_template tool")
-
-            # Test input validation
-            valid_inputs = {
-                "template_type": "assessment",
-                "focus_area": "cardiology",
-                "complexity_level": "standard",
-                "include_workflow_fields": True
-            }
-
-            if validate_tool_inputs("create_clinical_template", valid_inputs):
-                print("✅ Tool input validation successful")
-            else:
-                print("❌ Tool input validation failed")
-        else:
-            print("❌ create_clinical_template tool not found")
+        # Test template registration tools exist instead of deprecated clinical template
+        for tool_name in [
+            "register_prompt_template",
+            "register_extraction_schema",
+            "register_stack_template",
+            "generate_stack_template_from_markdown",
+            "instantiate_stack_from_context",
+            "instantiate_stack_template",
+        ]:
+            t = get_hacs_tool(tool_name)
+            print(f"{'✅' if t else '❌'} Found {tool_name} tool")
 
         return True
 
@@ -180,27 +172,9 @@ def test_tool_execution():
             except Exception as e:
                 print(f"❌ discover_hacs_resources execution failed: {e}")
 
-        # Test clinical template tool execution (read-only template generation)
-        template_tool = get_hacs_tool("create_clinical_template")
-        if template_tool:
-            try:
-                result = template_tool.invoke({
-                    "template_type": "assessment",
-                    "focus_area": "general",
-                    "complexity_level": "standard",
-                    "include_workflow_fields": True
-                })
-                print("✅ create_clinical_template execution successful")
-                print(f"📊 Result type: {type(result)}")
-
-                # Try to extract meaningful info from result
-                if hasattr(result, 'success'):
-                    print(f"📊 Success: {result.success}")
-                    if hasattr(result, 'data') and result.data:
-                        print(f"📊 Data keys: {list(result.data.keys()) if isinstance(result.data, dict) else 'Non-dict data'}")
-
-            except Exception as e:
-                print(f"❌ create_clinical_template execution failed: {e}")
+        # Sanity check: ensure instantiate tool can be retrieved
+        instantiate_tool = get_hacs_tool("instantiate_stack_template")
+        print(f"{'✅' if instantiate_tool else '❌'} instantiate_stack_template retrieval")
 
         return True
 

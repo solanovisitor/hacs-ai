@@ -22,7 +22,7 @@ Version: 0.3.0
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 from hacs_models import (
     ResourceSchemaResult,
@@ -78,65 +78,81 @@ def discover_hacs_resources(
         import inspect
         import hacs_core
         from hacs_core import BaseResource
-
-        resources = []
+        # Prefer hacs_models registry if available to include all models beyond hacs_core
+        resources: List[Dict[str, Any]] = []
         categories = set()
-        fhir_resources = []
-        clinical_resources = []
-        administrative_resources = []
+        fhir_resources: List[str] = []
+        clinical_resources: List[str] = []
+        administrative_resources: List[str] = []
 
-        for name in dir(hacs_core):
-            obj = getattr(hacs_core, name)
-            if inspect.isclass(obj) and issubclass(obj, BaseResource) and obj is not BaseResource:
-                # Determine clinical category
-                category = "administrative"
-                if any(term in name.lower() for term in ["patient", "observation", "condition", "procedure", "medication", "allergy"]):
-                    category = "clinical"
-                    clinical_resources.append(name)
-                elif any(term in name.lower() for term in ["appointment", "task", "service"]):
-                    category = "workflow"
-                elif any(term in name.lower() for term in ["goal", "risk", "family"]):
-                    category = "assessment"
-                    clinical_resources.append(name)
-                else:
-                    administrative_resources.append(name)
+        # Helper to add a resource class into the discovery list
+        def _append_resource(cls: Type[Any], name: str) -> None:
+            nonlocal resources, categories, fhir_resources, clinical_resources, administrative_resources
+            # Determine category by heuristic on name
+            category = "administrative"
+            lname = name.lower()
+            if any(term in lname for term in ["patient", "observation", "condition", "procedure", "medication", "allergy", "immunization", "diagnostic", "family", "service", "goal", "encounter", "document"]):
+                category = "clinical"
+                clinical_resources.append(name)
+            elif any(term in lname for term in ["appointment", "workflow", "task", "plan"]):
+                category = "workflow"
+            else:
+                administrative_resources.append(name)
 
-                categories.add(category)
+            categories.add(category)
 
-                # Basic resource information
-                resource_info = {
-                    "name": name,
-                    "category": category,
-                    "description": obj.__doc__.split('\n')[0] if obj.__doc__ else f"{name} healthcare resource",
-                    "resource_type": getattr(obj, 'resource_type', name),
-                }
+            resource_info = {
+                "name": name,
+                "category": category,
+                "description": cls.__doc__.split('\n')[0] if getattr(cls, "__doc__", None) else f"{name} healthcare resource",
+                "resource_type": getattr(cls, 'resource_type', name),
+            }
+            if include_field_counts:
+                try:
+                    field_count = len(getattr(cls, "model_fields", {}))
+                    required_count = len([f for f, info in getattr(cls, "model_fields", {}).items() if info.default is ... and info.default_factory is None])
+                except Exception:
+                    field_count = 0
+                    required_count = 0
+                resource_info.update({
+                    "total_fields": field_count,
+                    "required_fields": required_count,
+                    "optional_fields": max(0, field_count - required_count),
+                })
+            if include_fhir_status:
+                is_fhir_compliant = hasattr(cls, 'fhir_resource_type') or name in [
+                    "Patient", "Observation", "Encounter", "Condition",
+                    "MedicationRequest", "Medication", "AllergyIntolerance",
+                    "Procedure", "Goal", "ServiceRequest", "Organization",
+                    "DiagnosticReport", "DocumentReference", "Immunization",
+                    "MedicationStatement", "FamilyMemberHistory", "Appointment",
+                    "CarePlan", "CareTeam", "NutritionOrder", "PlanDefinition",
+                ]
+                resource_info["fhir_compliant"] = is_fhir_compliant
+                if is_fhir_compliant:
+                    fhir_resources.append(name)
 
-                # Add field count information if requested
-                if include_field_counts:
-                    field_count = len(obj.model_fields)
-                    required_count = len([f for f, info in obj.model_fields.items()
-                                        if info.default is ... and info.default_factory is None])
-                    resource_info.update({
-                        "total_fields": field_count,
-                        "required_fields": required_count,
-                        "optional_fields": field_count - required_count
-                    })
+            if not category_filter or category == category_filter:
+                resources.append(resource_info)
 
-                # Add FHIR compliance status if requested
-                if include_fhir_status:
-                    # Check for FHIR-specific attributes
-                    is_fhir_compliant = hasattr(obj, 'fhir_resource_type') or name in [
-                        "Patient", "Observation", "Encounter", "Condition",
-                        "MedicationRequest", "Medication", "AllergyIntolerance",
-                        "Procedure", "Goal", "ServiceRequest", "Organization"
-                    ]
-                    resource_info["fhir_compliant"] = is_fhir_compliant
-                    if is_fhir_compliant:
-                        fhir_resources.append(name)
+        # 1) Enumerate hacs_models via registry if available
+        try:
+            from hacs_models import get_model_registry
+            reg = get_model_registry()
+            for name, cls in reg.items():
+                if inspect.isclass(cls):
+                    _append_resource(cls, name)
+        except Exception:
+            pass
 
-                # Apply category filter
-                if not category_filter or category == category_filter:
-                    resources.append(resource_info)
+        # 2) Also include any BaseResource subclasses exposed by hacs_core (for completeness)
+        try:
+            for name in dir(hacs_core):
+                obj = getattr(hacs_core, name)
+                if inspect.isclass(obj) and issubclass(obj, BaseResource) and obj is not BaseResource:
+                    _append_resource(obj, name)
+        except Exception:
+            pass
 
         return ResourceDiscoveryResult(
             success=True,
@@ -146,8 +162,7 @@ def discover_hacs_resources(
             fhir_resources=fhir_resources,
             clinical_resources=clinical_resources,
             administrative_resources=administrative_resources,
-            message=f"Discovered {len(resources)} healthcare resources" +
-                   (f" in category '{category_filter}'" if category_filter else "")
+            message=f"Discovered {len(resources)} healthcare resources" + (f" in category '{category_filter}'" if category_filter else "")
         )
 
     except Exception as e:
@@ -226,8 +241,20 @@ def get_hacs_resource_schema(
         validation_rules = []
         if include_validation_rules:
             for field_name, field_info in resource_class.model_fields.items():
-                if field_info.constraints:
-                    validation_rules.append(f"{field_name}: {field_info.constraints}")
+                try:
+                    constraints = {}
+                    if getattr(field_info, 'ge', None) is not None:
+                        constraints['ge'] = field_info.ge
+                    if getattr(field_info, 'le', None) is not None:
+                        constraints['le'] = field_info.le
+                    if getattr(field_info, 'max_length', None) is not None:
+                        constraints['max_length'] = field_info.max_length
+                    if getattr(field_info, 'min_length', None) is not None:
+                        constraints['min_length'] = field_info.min_length
+                    if constraints:
+                        validation_rules.append(f"{field_name}: {constraints}")
+                except Exception:
+                    continue
 
         # Add clinical context
         clinical_context = _get_clinical_context(resource_type)
@@ -465,11 +492,24 @@ def compare_resource_schemas(
 
 def _get_resource_class(resource_type: str):
     """Get the resource class for a given resource type."""
+    # Try registry first to support any and all HACS models
+    try:
+        from hacs_models import get_model_registry
+        reg = get_model_registry()
+        cls = reg.get(resource_type)
+        if cls is not None:
+            return cls
+    except Exception:
+        pass
+
+    # Fallback to explicit map for commonly used resources
     try:
         from hacs_models import (
             Patient, Observation, Encounter, Condition, MedicationRequest,
             Medication, AllergyIntolerance, Procedure, Goal, ServiceRequest,
-            Organization, OrganizationContact, OrganizationQualification
+            Organization, OrganizationContact, DiagnosticReport, DocumentReference,
+            Immunization, MedicationStatement, FamilyMemberHistory, Appointment,
+            CarePlan, CareTeam, NutritionOrder, PlanDefinition
         )
 
         resource_map = {
@@ -485,7 +525,16 @@ def _get_resource_class(resource_type: str):
             "ServiceRequest": ServiceRequest,
             "Organization": Organization,
             "OrganizationContact": OrganizationContact,
-            "OrganizationQualification": OrganizationQualification,
+            "DiagnosticReport": DiagnosticReport,
+            "DocumentReference": DocumentReference,
+            "Immunization": Immunization,
+            "MedicationStatement": MedicationStatement,
+            "FamilyMemberHistory": FamilyMemberHistory,
+            "Appointment": Appointment,
+            "CarePlan": CarePlan,
+            "CareTeam": CareTeam,
+            "NutritionOrder": NutritionOrder,
+            "PlanDefinition": PlanDefinition,
         }
 
         return resource_map.get(resource_type)

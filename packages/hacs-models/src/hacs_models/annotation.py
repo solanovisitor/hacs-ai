@@ -147,7 +147,7 @@ class AnnotationWorkflowResource(BaseResource):
         description="Reference to ExtractionSchemaResource (name:version)"
     )
     chunking_policy: ChunkingPolicy = Field(default_factory=ChunkingPolicy)
-    model_config: ModelConfig = Field(default_factory=ModelConfig)
+    llm_config: ModelConfig = Field(default_factory=ModelConfig)
     mapping_spec: MappingSpec = Field(default_factory=MappingSpec)
     persistence_policy: PersistencePolicy = Field(default_factory=PersistencePolicy)
     stack_template_ref: Optional[str] = Field(

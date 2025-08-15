@@ -1,7 +1,7 @@
 """
-LangChain Integration for HACS
-
-Provides LangChain utilities for healthcare document processing and workflows.
+Deprecated LangChain shim for HACS. Minimal stubs kept only for backwards compatibility
+of get_hacs_tools imports. Prefer using hacs_utils.integrations.common.tool_loader
+or hacs_utils.integrations.langgraph.hacs_agent_tools.
 """
 
 try:
@@ -65,64 +65,7 @@ from .tools import (
 )
 
 # Import new comprehensive modules
-from .adapters import (
-    TypeAdapter,
-    ConversionStrategy,
-    ConversionContext,
-    BidirectionalConverter,
-    HACSToLangChainDocumentAdapter,
-    HACSToLangChainMessageAdapter,
-    AdapterFactory,
-    hacs_to_documents,
-    documents_to_hacs,
-    hacs_messages_to_langchain,
-    langchain_messages_to_hacs,
-)
-
-from .memory import (
-    MemoryStrategy,
-    MemoryConfig,
-    HACSMemoryStrategy,
-    EpisodicMemoryStrategy,
-    ClinicalMemoryStrategy,
-    HACSLangChainMemory,
-    MemoryFactory,
-    create_clinical_memory,
-    create_episodic_memory,
-)
-
-from .chains import (
-    ChainType,
-    ChainStrategy,
-    ChainConfig,
-    HealthcareChainFactory,
-    create_clinical_assessment_chain,
-    create_diagnostic_chain,
-    create_treatment_planning_chain,
-    create_clinical_chain,
-)
-
-from .vector_stores import (
-    VectorStoreType,
-    EmbeddingStrategy,
-    VectorStoreConfig,
-    HACSEmbeddings,
-    HACSVectorStore,
-    VectorStoreFactory,
-    create_clinical_vector_store,
-    create_general_vector_store,
-)
-
-from .retrievers import (
-    RetrievalStrategy,
-    RetrievalConfig,
-    ClinicalContext,
-    HACSRetriever,
-    RetrieverFactory,
-    create_patient_retriever,
-    create_temporal_retriever,
-    create_retriever,
-)
+# Legacy modules (adapters, memory, chains, vector_stores, retrievers) removed
 
 __all__ = [
     # Document Processing
@@ -140,57 +83,5 @@ __all__ = [
     "HACSToolRegistry",
     "validate_tool_inputs",
 
-    # Type Adapters
-    "TypeAdapter",
-    "ConversionStrategy",
-    "ConversionContext",
-    "BidirectionalConverter",
-    "HACSToLangChainDocumentAdapter",
-    "HACSToLangChainMessageAdapter",
-    "AdapterFactory",
-    "hacs_to_documents",
-    "documents_to_hacs",
-    "hacs_messages_to_langchain",
-    "langchain_messages_to_hacs",
-
-    # Memory Integration
-    "MemoryStrategy",
-    "MemoryConfig",
-    "HACSMemoryStrategy",
-    "EpisodicMemoryStrategy",
-    "ClinicalMemoryStrategy",
-    "HACSLangChainMemory",
-    "MemoryFactory",
-    "create_clinical_memory",
-    "create_episodic_memory",
-
-    # Chain Builders
-    "ChainType",
-    "ChainStrategy",
-    "ChainConfig",
-    "HealthcareChainFactory",
-    "create_clinical_assessment_chain",
-    "create_diagnostic_chain",
-    "create_treatment_planning_chain",
-    "create_clinical_chain",
-
-    # Vector Stores
-    "VectorStoreType",
-    "EmbeddingStrategy",
-    "VectorStoreConfig",
-    "HACSEmbeddings",
-    "HACSVectorStore",
-    "VectorStoreFactory",
-    "create_clinical_vector_store",
-    "create_general_vector_store",
-
-    # Retrievers
-    "RetrievalStrategy",
-    "RetrievalConfig",
-    "ClinicalContext",
-    "HACSRetriever",
-    "RetrieverFactory",
-    "create_patient_retriever",
-    "create_temporal_retriever",
-    "create_retriever",
+    # Adapters/memory/chains/vector stores/retrievers removed
 ]

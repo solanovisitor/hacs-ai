@@ -1,0 +1,18 @@
+{
+  "workflow_id": "eval_1755104640_2784153f",
+  "timestamp": "2025-08-13T14:04:00.780694",
+  "total_duration": 17.054764986038208,
+  "total_records": 0,
+  "processed_records": 0,
+  "successful_records": 0,
+  "failed_records": 0,
+  "success_rate": 0.0,
+  "stages": [
+    {
+      "stage_name": "dataset_loading",
+      "start_time": 1755104640.78086,
+      "end_time": 1755104656.517975,
+      "success": true,
+      "data_in": null,
+      "data_out": {
+        "dataset": 

@@ -139,8 +139,7 @@ The test suite covers all 42 HACS tools across 10 domains:
 
 #### 🛠️ Development Tools (3 tools)
 - `create_resource_stack` - Resource composition
-- `create_clinical_template` - Template generation
-- `optimize_resource_for_llm` - LLM optimization
+- Template tools (preferred): `register_stack_template`, `generate_stack_template_from_markdown`, `instantiate_stack_template`
 
 #### 🏥 FHIR Integration (4 tools)
 - `convert_to_fhir` - HACS to FHIR conversion

@@ -25,6 +25,7 @@ Design Principles:
 import uuid
 from datetime import datetime, timezone
 from typing import Any, ClassVar, Type, TypeVar
+import inspect
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
@@ -147,10 +148,13 @@ class BaseResource(BaseModel):
                     "resource_type": "BaseResource",
                     "created_at": "2024-08-03T12:00:00Z",
                     "updated_at": "2024-08-03T12:00:00Z",
+                    "language": "pt-BR",
+                    "meta_profile": ["http://example.org/fhir/StructureDefinition/MyProfile"],
+                    "meta_tag": ["llm-context", "summary"],
                 }
             ],
             "title": "Base Healthcare Resource",
-            "description": "Foundation for all HACS healthcare data models",
+            "description": "Foundation for all HACS healthcare data models with FHIR-inspired identity and metadata for LLM context engineering",
         },
     )
 
@@ -182,12 +186,62 @@ class BaseResource(BaseModel):
         pattern=r"^\d+\.\d+\.\d+$",
     )
 
+    # FHIR Resource-level identity and metadata (for rich context engineering)
+    identifier: list[str] = Field(
+        default_factory=list,
+        description="External identifiers for the resource (e.g., MRN, accession, system-specific IDs)",
+        examples=[["MRN:12345", "local:abc-001"]],
+    )
+
+    language: str | None = Field(
+        default=None,
+        description="Base language of the resource content (BCP-47, e.g., en, pt-BR)",
+        examples=["en", "pt-BR"],
+    )
+
+    implicit_rules: str | None = Field(
+        default=None,
+        description="Reference to rules followed when constructing the resource (URI)",
+        examples=["http://example.org/implicit-rules/v1"],
+    )
+
+    meta_profile: list[str] = Field(
+        default_factory=list,
+        description="Profiles asserting conformance of this resource (URIs)",
+        examples=[["http://hl7.org/fhir/StructureDefinition/Observation"]],
+    )
+
+    meta_source: str | None = Field(
+        default=None,
+        description="Source system that produced the resource",
+        examples=["ehr-system-x"],
+    )
+
+    meta_security: list[str] = Field(
+        default_factory=list,
+        description="Security labels applicable to this resource (policy/label codes)",
+        examples=[["very-sensitive", "phi"]],
+    )
+
+    meta_tag: list[str] = Field(
+        default_factory=list,
+        description="User or system-defined tags for search and grouping",
+        examples=[["triage", "llm-context", "draft"]],
+    )
+
     # Resource type field (required for all resources)
     resource_type: str = Field(
         description="Type identifier for this resource (Patient, Observation, etc.)",
         examples=["Patient", "Observation", "MemoryBlock", "WorkflowDefinition"],
         min_length=1,
         max_length=50,
+    )
+
+    # Generic agent context for free-form annotations or LLM-structured data
+    agent_context: dict[str, Any] | None = Field(
+        default=None,
+        description="Arbitrary, agent-provided context payload for this resource",
+        examples=[{"section_key": "free text content"}],
     )
 
     # Class-level metadata for introspection
@@ -338,6 +392,33 @@ class BaseResource(BaseModel):
             >>> ref = patient.to_reference()  # "Patient/patient-a1b2c3d4"
         """
         return f"{self.resource_type}/{self.id}"
+
+    @classmethod
+    def get_descriptive_schema(cls) -> dict[str, Any]:
+        """
+        Lightweight descriptive schema for LLM orchestration and MCP discovery.
+
+        Returns a dict containing title, docstring summary, and field descriptions.
+        """
+        try:
+            doc = inspect.getdoc(cls) or ""
+        except Exception:
+            doc = ""
+        fields: dict[str, Any] = {}
+        try:
+            for name, field in getattr(cls, "model_fields", {}).items():
+                fields[name] = {
+                    "type": str(getattr(field, "annotation", "")),
+                    "description": getattr(field, "description", None),
+                    "examples": getattr(field, "examples", None),
+                }
+        except Exception:
+            pass
+        return {
+            "title": cls.__name__,
+            "description": doc,
+            "fields": fields,
+        }
 
     def __str__(self) -> str:
         """

@@ -142,21 +142,8 @@ class ActorCapability(Protocol):
 
 ### 1. Adapter Pattern with Protocols
 ```python
-class LangChainAdapter:
-    """Adapts LangChain components to HACS protocols."""
-    
-    def __init__(self, langchain_llm):
-        self._llm = langchain_llm
-        
-    def generate_response(self, prompt: str, **kwargs) -> str:
-        return self._llm.invoke(prompt)
-    
-    def generate_structured_response(self, prompt: str, schema: Dict[str, Any]) -> Dict[str, Any]:
-        structured_llm = self._llm.with_structured_output(schema)
-        return structured_llm.invoke(prompt)
-
-# Verify protocol compliance at runtime
-assert isinstance(LangChainAdapter(llm), LLMProvider)
+# Note: Legacy LangChainAdapter has been removed. Use protocol-first adapters via LangGraph/MCP.
+assert True
 ```
 
 ### 2. Dependency Injection with Protocols
@@ -199,22 +186,9 @@ def validate_clinical_resource(resource: Any) -> bool:
 
 ## Framework Integration Examples
 
-### 1. LangChain Integration
+### 1. LangChain Integration (deprecated)
 ```python
-class HACSLangChainTool:
-    """Convert HACS tools to LangChain tools using protocols."""
-    
-    def __init__(self, hacs_tool: Callable, registry: ToolRegistry):
-        self.hacs_tool = hacs_tool
-        self.registry = registry
-    
-    def _run(self, **kwargs) -> str:
-        return self.hacs_tool(**kwargs)
-    
-    async def _arun(self, **kwargs) -> str:
-        if asyncio.iscoroutinefunction(self.hacs_tool):
-            return await self.hacs_tool(**kwargs)
-        return self.hacs_tool(**kwargs)
+"""The LangChain adapter examples have been removed in favor of LangGraph/MCP."""
 ```
 
 ### 2. MCP Integration

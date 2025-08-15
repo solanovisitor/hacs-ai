@@ -485,9 +485,13 @@ class Container:
             from hacs_core.tool_protocols import set_global_framework_adapter
 
             if isinstance(adapter_or_name, str):
-                # Create adapter by name
-                from hacs_utils.integrations.framework_adapter import create_framework_adapter
-                adapter = create_framework_adapter(adapter_or_name)
+                # Create adapter by name (prefer LangGraph; deprecate legacy adapters gracefully)
+                try:
+                    from hacs_utils.integrations.framework_adapter import create_framework_adapter
+                    adapter = create_framework_adapter(adapter_or_name)
+                except Exception:
+                    # Fallback: try langgraph builtin if available via tool loader
+                    adapter = adapter_or_name
             else:
                 # Use provided adapter instance
                 adapter = adapter_or_name

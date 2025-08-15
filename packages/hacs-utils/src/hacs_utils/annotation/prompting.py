@@ -21,17 +21,17 @@ class QAPromptGenerator:
         *,
         format_type: FormatType = FormatType.JSON,
         attribute_suffix: str = "_attributes",
-        fence_output: bool = True,
+        fenced_output: bool = True,
     ) -> None:
         self.template = template
         self.format_type = format_type
         self.attribute_suffix = attribute_suffix
-        self.fence_output = fence_output
+        self.fenced_output = fenced_output
 
     def render(self, **variables: Any) -> str:
         # naive format; developers can override at registry level
         text = self.template.template_text.format(**variables)
-        if self.fence_output:
+        if self.fenced_output:
             fence = "json" if self.format_type == FormatType.JSON else "yaml"
             return f"Return strictly {fence} within fenced code block.\n```{fence}\n" + text + "\n```"
         return text

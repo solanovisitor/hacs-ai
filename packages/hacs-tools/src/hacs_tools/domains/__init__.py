@@ -57,8 +57,12 @@ from .schema_discovery import (
 )
 from .development_tools import (
     create_resource_stack,
-    create_clinical_template,
-    optimize_resource_for_llm,
+    register_prompt_template_tool,
+    register_extraction_schema_tool,
+    register_stack_template_tool,
+    generate_stack_template_from_markdown_tool,
+    instantiate_stack_from_context_tool,
+    instantiate_stack_template_tool,
 )
 from .fhir_integration import (
     convert_to_fhir,
@@ -122,8 +126,12 @@ __all__ = [
 
     # Development Tools
     "create_resource_stack",
-    "create_clinical_template",
-    "optimize_resource_for_llm",
+    "register_prompt_template_tool",
+    "register_extraction_schema_tool",
+    "register_stack_template_tool",
+    "generate_stack_template_from_markdown_tool",
+    "instantiate_stack_from_context_tool",
+    "instantiate_stack_template_tool",
 
     # FHIR Integration Tools
     "convert_to_fhir",

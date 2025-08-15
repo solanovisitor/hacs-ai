@@ -6,7 +6,7 @@ Integrate HACS packages into your healthcare AI applications. HACS provides **co
 > - [Hacs Tools Reference](healthcare-tools.md) - Complete tool documentation
 > - [Basic Usage Guide](basic-usage.md) - Essential patterns and examples
 > - [Quick Start Guide](quick-start.md) - Get running in 5 minutes
-> - [LangGraph Examples](../packages/hacs-utils/src/hacs_utils/integrations/langchain/README.md) - LangChain integration
+- LangGraph MCP examples: see `examples/hacs_developer_agent/mcp_graph.py`
 > - [Developer Agent Example](../examples/hacs_developer_agent/README.md) - Complete LangGraph implementation
 > - [Package Documentation](README.md#core-hacs-framework) - Individual package guides
 
@@ -15,7 +15,7 @@ Integrate HACS packages into your healthcare AI applications. HACS provides **co
 HACS integrates with healthcare AI systems through:
 
 ### **🧬 Core Package Integrations**
-- **LangChain/LangGraph**: Native tool integrations for AI agents
+- **LangGraph**: Native tool integrations for AI agents (LangChain adapter deprecated)
 - **CrewAI**: Multi-agent healthcare workflows
 - **OpenAI/Anthropic**: Direct LLM provider integrations
 - **Custom Frameworks**: Protocol-based integration patterns
@@ -46,7 +46,7 @@ response = requests.post('http://localhost:8000/', json={
     "jsonrpc": "2.0",
     "method": "tools/call",
     "params": {
-        "name": "create_clinical_template",
+        "name": "register_stack_template",
         "arguments": {
             "template_type": "assessment",
             "focus_area": "cardiology",
@@ -136,21 +136,14 @@ export QDRANT_API_KEY="your-api-key"
 
 The **Model Context Protocol** is HACS's core integration layer:
 
-### JSON-RPC server (secure) vs Streamable HTTP (FastMCP)
+### JSON-RPC server (secure)
 
-- JSON-RPC server (secure):
-  - Start: `uv run python -m hacs_utils.mcp.cli`
-  - URL: `HACS_MCP_SERVER_URL` (e.g., `http://localhost:8000/`)
-  - Features: API key auth, host/CORS validation, rate limiting, health endpoints
-  - Clients: HTTP JSON-RPC clients, simple integrations
+- Start: `uv run python -m hacs_utils.mcp.cli`
+- URL: `HACS_MCP_SERVER_URL` (e.g., `http://localhost:8000/`)
+- Features: API key auth, host/CORS validation, rate limiting, health endpoints
+- Clients: HTTP JSON-RPC clients, simple integrations
 
-- Streamable HTTP (FastMCP wrapper):
-  - Start: `uv run --with mcp --with langchain-mcp-adapters python -m hacs_utils.mcp.fastmcp_server`
-  - URL: `http://localhost:8000/mcp/` (path fixed to `/mcp/`)
-  - Features: MCP-native streamable HTTP for tool streaming via adapters
-  - Clients: `langchain-mcp-adapters`, MCP-native clients
-
-Use the secure JSON-RPC server for production, and FastMCP for development or adapter-based integrations. Never hardcode ports; prefer `HACS_MCP_SERVER_URL`.
+Note: The legacy FastMCP wrapper has been removed. Prefer the secure JSON-RPC server.
 
 ### **Available Hacs Tools (25 total)**
 

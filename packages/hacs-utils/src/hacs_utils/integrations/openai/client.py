@@ -27,7 +27,7 @@ class OpenAIClient:
 
     def __init__(
         self,
-        model: str = "gpt-4.1-mini",
+        model: str = "gpt-4.1",
         api_key: str | None = None,
         base_url: str | None = None,
         organization: str | None = None,
@@ -179,67 +179,7 @@ class OpenAIClient:
         )
 
 
-class OpenAIStructuredGenerator:
-    """Specialized class for generating HACS models with OpenAI."""
-
-    def __init__(
-        self,
-        client: OpenAIClient | None = None,
-        model: str = "gpt-4.1-mini",
-        temperature: float = 0.3,  # Lower temperature for structured output
-        system_prompt: str | None = None,
-    ):
-        """Initialize structured generator."""
-        self.client = client or OpenAIClient(model=model, temperature=temperature)
-        self.system_prompt = system_prompt or self._default_system_prompt()
-
-    def _default_system_prompt(self) -> str:
-        """Default system prompt for healthcare AI."""
-        return """You are a healthcare AI assistant that generates structured,
-        FHIR-compliant healthcare data. Always use proper medical terminology
-        and follow healthcare data standards. Ensure all generated data is
-        realistic and clinically appropriate."""
-
-    def generate_hacs_resource(
-        self,
-        resource_type: type[BaseModel],
-        user_prompt: str,
-        system_prompt: str | None = None,
-        **kwargs,
-    ) -> BaseModel:
-        """Generate a HACS resource from natural language."""
-        messages = [
-            {"role": "system", "content": system_prompt or self.system_prompt},
-            {"role": "user", "content": user_prompt},
-        ]
-
-        return self.client.structured_output(
-            messages=messages, response_model=resource_type, **kwargs
-        )
-
-    def generate_batch_resources(
-        self,
-        resource_type: type[BaseModel],
-        prompts: list[str],
-        system_prompt: str | None = None,
-        **kwargs,
-    ) -> list[BaseModel]:
-        """Generate multiple HACS resources."""
-        results = []
-        for prompt in prompts:
-            try:
-                resource = self.generate_hacs_resource(
-                    resource_type=resource_type,
-                    user_prompt=prompt,
-                    system_prompt=system_prompt,
-                    **kwargs,
-                )
-                results.append(resource)
-            except Exception as e:
-                print(f"Error generating resource for prompt '{prompt}': {e}")
-                results.append(None)
-
-        return results
+"""Deprecated: OpenAIStructuredGenerator removed. Use hacs_utils.structured instead."""
 
 
 class OpenAIToolRegistry:

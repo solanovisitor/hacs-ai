@@ -18,7 +18,16 @@ from .annotation.conversations import (
     to_openai_messages,
     to_anthropic_messages,
 )
-from hacs_models import Extraction as ExtractionDC, CharInterval, AlignmentStatus
+from hacs_models import (
+    Extraction as ExtractionDC,
+    CharInterval,
+    AlignmentStatus,
+    ChunkingPolicy,
+    Document as HACSDocument,
+)
+from .annotation.chunking import select_chunks
+from .annotation.resolver import Resolver
+from .annotation.data import FormatType
 
 T = TypeVar('T', bound=BaseModel)
 
@@ -26,7 +35,12 @@ async def generate_structured_output(
     llm_provider: Any,
     prompt: str,
     output_model: Type[T],
-    **kwargs
+    *,
+    format_type: FormatType = FormatType.JSON,
+    fenced_output: bool = True,
+    max_retries: int = 1,
+    strict: bool = True,
+    **kwargs,
 ) -> T:
     """
     Generate structured output from LLM using the specified Pydantic model.
@@ -46,31 +60,63 @@ async def generate_structured_output(
     if not hasattr(llm_provider, 'ainvoke'):
         # Try sync path via invoke/chat if available
         if hasattr(llm_provider, 'invoke'):
-            response = llm_provider.invoke(prompt)
-            return _parse_to_model(_to_text(response), output_model)
+            response = llm_provider.invoke(
+                _build_structured_prompt(
+                    prompt, output_model, format_type=format_type, fenced=fenced_output, is_array=False
+                )
+            )
+            parsed = _try_parse_to_model(_to_text(response), output_model)
+            if parsed is not None:
+                return parsed
+            # Attempt one repair pass via sync path if possible
+            if max_retries > 0:
+                repair_resp = llm_provider.invoke(
+                    _build_repair_prompt(_to_text(response), output_model, format_type=format_type, fenced=fenced_output)
+                )
+                repaired = _try_parse_to_model(_to_text(repair_resp), output_model)
+                if repaired is not None:
+                    return repaired
+            if strict:
+                raise ValueError("Failed to parse structured output for provided model")
+            return _create_fallback_instance(output_model)
         raise ValueError("LLM provider must support 'ainvoke' or 'invoke' method")
 
-    # Create a prompt that asks for JSON output (can be overridden by caller)
-    structured_prompt = f"""
-{prompt}
-
-Please respond with a valid JSON object that matches this schema. Do not include any explanations or additional text.
-
-Required JSON format:
-{_get_model_schema_example(output_model)}
-"""
+    # Create a prompt that asks for structured output with fencing and example
+    structured_prompt = _build_structured_prompt(
+        prompt, output_model, format_type=format_type, fenced=fenced_output, is_array=False
+    )
 
     # Get response from LLM
     response = await llm_provider.ainvoke(structured_prompt)
-
-    return _parse_to_model(_to_text(response), output_model)
+    text = _to_text(response)
+    parsed = _try_parse_to_model(text, output_model)
+    if parsed is not None:
+        return parsed
+    # Attempt repair passes
+    attempts = 0
+    while attempts < max_retries:
+        attempts += 1
+        repair_prompt = _build_repair_prompt(text, output_model, format_type=format_type, fenced=fenced_output)
+        response = await _maybe_await_invoke(llm_provider, repair_prompt)
+        text = _to_text(response)
+        repaired = _try_parse_to_model(text, output_model)
+        if repaired is not None:
+            return repaired
+    if strict:
+        raise ValueError("Failed to parse structured output for provided model")
+    return _create_fallback_instance(output_model)
 
 async def generate_structured_list(
     llm_provider: Any,
     prompt: str,
     output_model: Type[T],
     max_items: int = 10,
-    **kwargs
+    *,
+    format_type: FormatType = FormatType.JSON,
+    fenced_output: bool = True,
+    max_retries: int = 1,
+    strict: bool = True,
+    **kwargs,
 ) -> list[T]:
     """
     Generate a list of structured outputs from LLM.
@@ -90,25 +136,47 @@ async def generate_structured_list(
     """
     if not hasattr(llm_provider, 'ainvoke'):
         if hasattr(llm_provider, 'invoke'):
-            response = llm_provider.invoke(prompt)
-            return _parse_to_model_list(_to_text(response), output_model, max_items=max_items)
+            response = llm_provider.invoke(
+                _build_structured_prompt(
+                    prompt, output_model, format_type=format_type, fenced=fenced_output, is_array=True, max_items=max_items
+                )
+            )
+            parsed = _try_parse_to_model_list(_to_text(response), output_model, max_items=max_items)
+            if parsed is not None:
+                return parsed
+            if max_retries > 0:
+                repair_resp = llm_provider.invoke(
+                    _build_repair_prompt(_to_text(response), output_model, format_type=format_type, fenced=fenced_output, is_array=True)
+                )
+                repaired = _try_parse_to_model_list(_to_text(repair_resp), output_model, max_items=max_items)
+                if repaired is not None:
+                    return repaired
+            if strict:
+                raise ValueError("Failed to parse structured list for provided model")
+            return [_create_fallback_instance(output_model)]
         raise ValueError("LLM provider must support 'ainvoke' or 'invoke' method")
 
-    structured_prompt = f"""
-{prompt}
-
-Please respond with a valid JSON array containing multiple objects (up to {max_items} items).
-Do not include any explanations or additional text.
-
-Required JSON format (array of objects):
-[
-{_get_model_schema_example(output_model)},
-{_get_model_schema_example(output_model)}
-]
-"""
+    structured_prompt = _build_structured_prompt(
+        prompt, output_model, format_type=format_type, fenced=fenced_output, is_array=True, max_items=max_items
+    )
 
     response = await llm_provider.ainvoke(structured_prompt)
-    return _parse_to_model_list(_to_text(response), output_model, max_items=max_items)
+    text = _to_text(response)
+    parsed = _try_parse_to_model_list(text, output_model, max_items=max_items)
+    if parsed is not None:
+        return parsed
+    attempts = 0
+    while attempts < max_retries:
+        attempts += 1
+        repair_prompt = _build_repair_prompt(text, output_model, format_type=format_type, fenced=fenced_output, is_array=True)
+        response = await _maybe_await_invoke(llm_provider, repair_prompt)
+        text = _to_text(response)
+        repaired = _try_parse_to_model_list(text, output_model, max_items=max_items)
+        if repaired is not None:
+            return repaired
+    if strict:
+        raise ValueError("Failed to parse structured list for provided model")
+    return [_create_fallback_instance(output_model)]
 
 
 def generate_structured_output_openai(
@@ -321,6 +389,110 @@ def _parse_to_model_list(response_text: str, output_model: Type[T], *, max_items
     return result or [_create_fallback_instance(output_model)]
 
 
+# Non-raising parse helpers used by retry logic
+def _try_parse_to_model(response_text: str, output_model: Type[T]) -> T | None:
+    response_text = _extract_fenced(response_text)
+    try:
+        data = json.loads(response_text)
+    except Exception:
+        try:
+            data = yaml.safe_load(response_text)
+        except Exception:
+            return None
+    try:
+        return output_model(**data)
+    except Exception:
+        return None
+
+
+def _try_parse_to_model_list(response_text: str, output_model: Type[T], *, max_items: int) -> list[T] | None:
+    response_text = _extract_fenced(response_text)
+    try:
+        data_list = json.loads(response_text)
+    except Exception:
+        try:
+            data_list = yaml.safe_load(response_text)
+        except Exception:
+            return None
+    if not isinstance(data_list, list):
+        return None
+    limited = data_list[:max_items] if len(data_list) > max_items else data_list
+    result: list[T] = []
+    for item in limited:
+        try:
+            result.append(output_model(**item))
+        except Exception:
+            continue
+    return result or None
+
+
+def _build_structured_prompt(
+    base_prompt: str,
+    output_model: Type[T],
+    *,
+    format_type: FormatType = FormatType.JSON,
+    fenced: bool = True,
+    is_array: bool = False,
+    max_items: int | None = None,
+) -> str:
+    schema_example = _get_model_schema_example(output_model)
+    fmt = "JSON" if format_type == FormatType.JSON else "YAML"
+    fence_open = "```json" if fenced and format_type == FormatType.JSON else ("```yaml" if fenced else "")
+    fence_close = "```" if fenced else ""
+    if is_array:
+        header = (
+            f"Please respond with a valid {fmt} array containing up to {max_items or 10} objects. "
+            "Do not include any explanations or text outside the array."
+        )
+        example = f"[\n{schema_example}\n]"
+    else:
+        header = (
+            f"Please respond with a single valid {fmt} object only. "
+            "Do not include any explanations or text outside the object."
+        )
+        example = schema_example
+    return (
+        f"{base_prompt}\n\n{header}\n\n"
+        f"Required {fmt} format example:{' (array of objects)' if is_array else ''}\n"
+        f"{fence_open}\n{example}\n{fence_close}"
+    )
+
+
+def _build_repair_prompt(
+    previous_output_text: str,
+    output_model: Type[T],
+    *,
+    format_type: FormatType = FormatType.JSON,
+    fenced: bool = True,
+    is_array: bool = False,
+) -> str:
+    fmt = "JSON" if format_type == FormatType.JSON else "YAML"
+    fence_open = "```json" if fenced and format_type == FormatType.JSON else ("```yaml" if fenced else "")
+    fence_close = "```" if fenced else ""
+    schema_example = _get_model_schema_example(output_model)
+    return (
+        "Your previous response was not valid structured output. "
+        f"Convert it into valid {fmt} that strictly matches this example schema. "
+        "Output only the structured data, no explanations.\n\n"
+        f"Example schema:\n{fence_open}\n{schema_example}\n{fence_close}\n\n"
+        f"Previous response:\n{fence_open}\n{_extract_fenced(previous_output_text)}\n{fence_close}"
+    )
+
+
+async def _maybe_await_invoke(llm_provider: Any, prompt: str) -> Any:
+    if hasattr(llm_provider, "ainvoke"):
+        try:
+            return await llm_provider.ainvoke(prompt)
+        except Exception:
+            # Fallback to sync invoke if available
+            if hasattr(llm_provider, "invoke"):
+                return llm_provider.invoke(prompt)
+            raise
+    if hasattr(llm_provider, "invoke"):
+        return llm_provider.invoke(prompt)
+    raise ValueError("LLM provider must support ainvoke or invoke")
+
+
 def _to_text(response: Any) -> str:
     if response is None:
         return ""
@@ -515,3 +687,58 @@ def generate_extractions_openai(client: Any, prompt: str, **kwargs) -> list[Extr
 def generate_extractions_anthropic(client: Any, prompt: str, **kwargs) -> list[ExtractionDC]:
     # Backward compat: delegate to unified API
     return generate_extractions(client, prompt, provider="anthropic", **kwargs)
+
+
+# === High-level LangExtract-style helper ===
+def generate_chunked_extractions(
+    client: Any,
+    text: str,
+    *,
+    base_prompt: str,
+    policy: ChunkingPolicy,
+    provider: Literal["openai", "anthropic", "auto"] = "auto",
+    model: str | None = None,
+    stream: bool = False,
+    max_tokens: int = 1024,
+    case_insensitive_align: bool = True,
+    **kwargs,
+) -> list[ExtractionDC]:
+    """Chunk the text and generate extractions with source grounding.
+
+    - Splits input using ChunkingPolicy
+    - Calls generate_extractions per chunk with a prompt derived from base_prompt + chunk content
+    - Aligns each extraction to the source chunk text to compute CharInterval and AlignmentStatus
+    - Returns the aggregated extractions across all chunks (deduplicated best-effort)
+    """
+    document = HACSDocument(text=text)
+    chunks = select_chunks(document, policy)
+    resolver = Resolver()
+    aggregated: list[ExtractionDC] = []
+    seen: set[tuple[str, str, int | None, int | None]] = set()
+
+    for ch in chunks:
+        chunk_prompt = f"{base_prompt}\n\n---\nCHUNK:\n{ch.chunk_text}\n---\n"  # keep simple, caller controls base_prompt
+        extractions = generate_extractions(
+            client,
+            prompt=chunk_prompt,
+            provider=provider,
+            model=model,
+            stream=stream,
+            max_tokens=max_tokens,
+            **kwargs,
+        )
+        # Align to chunk text
+        try:
+            aligned = resolver.align(extractions, ch.chunk_text, char_offset=ch.start_index, case_insensitive=case_insensitive_align)
+        except Exception:
+            aligned = extractions
+
+        # Deduplicate
+        for e in aligned:
+            key = (e.extraction_class or "", e.extraction_text or "", getattr(e.char_interval, "start_pos", None), getattr(e.char_interval, "end_pos", None))
+            if key in seen:
+                continue
+            seen.add(key)
+            aggregated.append(e)
+
+    return aggregated

@@ -77,7 +77,7 @@ class ChunkIterator:
         return chunk
 
 
-def split_with_langchain_character(
+def split_by_characters(
     document: Document,
     *,
     chunk_size: int = 1000,
@@ -119,7 +119,7 @@ def split_with_langchain_character(
     return chunks
 
 
-def split_with_langchain_recursive(
+def split_recursive(
     document: Document,
     *,
     chunk_size: int = 1000,
@@ -172,7 +172,7 @@ def split_markdown(
         text = document.text
 
     # Apply recursive size enforcement
-    rec = split_with_langchain_recursive(
+    rec = split_recursive(
         Document(text=text, additional_context=document.additional_context),
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
@@ -196,7 +196,7 @@ def split_html(
         text = "\n\n".join(text_segments)
     except Exception:
         text = document.text
-    rec = split_with_langchain_recursive(
+    rec = split_recursive(
         Document(text=text, additional_context=document.additional_context),
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
@@ -238,7 +238,7 @@ def split_code(
             pass
 
     # generic fallback
-    return split_with_langchain_recursive(document, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+    return split_recursive(document, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
 
 def select_chunks(document: Document, policy: ChunkingPolicy) -> list[TextChunk]:
@@ -249,11 +249,11 @@ def select_chunks(document: Document, policy: ChunkingPolicy) -> list[TextChunk]
     if strat == "char":
         return list(ChunkIterator(document, max_char_buffer=size, chunk_overlap=overlap))
     if strat == "token":
-        return split_with_langchain_character(
+        return split_by_characters(
             document, chunk_size=size, chunk_overlap=overlap, encoding_name=policy.encoding_name
         )
     if strat == "recursive":
-        return split_with_langchain_recursive(document, chunk_size=size, chunk_overlap=overlap)
+        return split_recursive(document, chunk_size=size, chunk_overlap=overlap)
     if strat == "markdown":
         return split_markdown(document, chunk_size=size, chunk_overlap=overlap)
     if strat == "html":
@@ -261,6 +261,6 @@ def select_chunks(document: Document, policy: ChunkingPolicy) -> list[TextChunk]
     if strat == "code":
         return split_code(document, chunk_size=size, chunk_overlap=overlap)
     # semantic: placeholder -> recursive
-    return split_with_langchain_recursive(document, chunk_size=size, chunk_overlap=overlap)
+    return split_recursive(document, chunk_size=size, chunk_overlap=overlap)
 
 

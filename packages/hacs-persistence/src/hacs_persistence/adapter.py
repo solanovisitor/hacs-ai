@@ -62,9 +62,9 @@ class PostgreSQLAdapter(BaseAdapter, PersistenceProvider):
                 conninfo=self.database_url,
                 min_size=2,
                 max_size=self.pool_size,
-                open=True,
-                row_factory=dict_row,
+                open=False,
             )
+            await self.pool.open()
             await self.pool.wait()
             await self._initialize_tables()
             logger.info("Async connection pool established and tables initialized.")
@@ -167,7 +167,7 @@ class PostgreSQLAdapter(BaseAdapter, PersistenceProvider):
                             f"Resource {resource_type.__name__}/{resource_id} not found"
                         )
 
-                    resource_data = result["data"]
+                    resource_data = result[0]
                     resource_instance = resource_type(**resource_data)
                     logger.info(
                         f"Resource {resource_type.__name__}/{resource_id} read successfully"
@@ -294,7 +294,7 @@ class PostgreSQLAdapter(BaseAdapter, PersistenceProvider):
                     resources = []
                     for result in results:
                         try:
-                            resource_data = result["data"]
+                            resource_data = result[0]
                             resource_instance = resource_type(**resource_data)
                             resources.append(resource_instance)
                         except (json.JSONDecodeError, TypeError) as e:
@@ -342,14 +342,14 @@ class PostgreSQLAdapter(BaseAdapter, PersistenceProvider):
                     results = await cursor.fetchall()
 
                     stats = {
-                        "total_resources": sum(row["count"] for row in results),
+                        "total_resources": sum(row[1] for row in results),
                         "connection_status": "healthy",
                         "adapter_version": self.version,
                         "resource_types": {
-                            row["resource_type"]: {
-                                "count": row["count"],
-                                "earliest": row["earliest"].isoformat() if row["earliest"] else None,
-                                "latest": row["latest"].isoformat() if row["latest"] else None,
+                            row[0]: {
+                                "count": row[1],
+                                "earliest": row[2].isoformat() if row[2] else None,
+                                "latest": row[3].isoformat() if row[3] else None,
                             }
                             for row in results
                         },

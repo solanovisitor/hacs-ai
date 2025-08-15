@@ -1,4 +1,32 @@
 """
+ServiceRequest model for HACS (minimal).
+
+HACS-native, FHIR-inspired ServiceRequest for ordering services, referrals,
+or diagnostic procedures. Lightweight with safe defaults.
+"""
+
+from typing import Literal
+from pydantic import Field
+
+from .base_resource import DomainResource
+from .observation import CodeableConcept
+from .types import ServiceRequestStatus, ServiceRequestIntent, ServiceRequestPriority
+
+
+class ServiceRequest(DomainResource):
+    resource_type: Literal["ServiceRequest"] = Field(default="ServiceRequest")
+
+    status: ServiceRequestStatus = Field(default=ServiceRequestStatus.ACTIVE)
+    intent: ServiceRequestIntent = Field(default=ServiceRequestIntent.ORDER)
+    priority: ServiceRequestPriority | None = Field(default=None)
+
+    code: CodeableConcept | None = Field(default=None, description="What is being requested")
+    subject_ref: str | None = Field(default=None, description="Patient reference")
+    encounter_ref: str | None = Field(default=None, description="Encounter reference")
+    reason_text: str | None = Field(default=None, description="Free-text reason")
+    note: list[str] = Field(default_factory=list, description="Additional notes")
+
+"""
 ServiceRequest model for HACS.
 
 This module provides a FHIR R4-compliant ServiceRequest resource model,
