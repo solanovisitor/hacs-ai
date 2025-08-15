@@ -1008,15 +1008,22 @@ async def register_template_from_instruction(inputs: Dict[str, Any]) -> Dict[str
     """
     instruction_md: str = inputs.get("instruction_md", "")
     template_name: Optional[str] = inputs.get("template_name")
-    # Default discovery is now dynamic via schema discovery; keep a broad preferred list as a hint
+    # Build comprehensive set of HACS model types suitable for this workflow
+    # Start with a broad preferred list, then union with model registry entries
     default_types: List[str] = [
         "Patient", "Encounter", "Observation", "Condition", "Procedure",
         "MedicationRequest", "Medication", "MedicationStatement", "AllergyIntolerance",
         "DiagnosticReport", "DocumentReference", "Immunization", "ServiceRequest",
         "Goal", "FamilyMemberHistory", "Organization", "Practitioner",
         "Appointment", "CarePlan", "CareTeam", "NutritionOrder", "PlanDefinition",
+        "ResourceBundle", "MemoryBlock", "Document",
     ]
-    types_to_fetch: List[str] = inputs.get("fetch_schemas_for", default_types)
+    try:
+        registry_types = [name for name in get_model_registry().keys() if isinstance(name, str)]
+    except Exception:
+        registry_types = []
+    all_types = list(dict.fromkeys(default_types + registry_types))
+    types_to_fetch: List[str] = inputs.get("fetch_schemas_for", all_types)
     
     logger.info(f"Starting template registration for: {template_name}")
     
