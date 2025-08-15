@@ -24,7 +24,7 @@ from hacs_core.tool_protocols import hacs_tool, ToolCategory
     name="create_activity_definition",
     description="Create a Workflow ActivityDefinition (adapter)",
     category=ToolCategory.CLINICAL_WORKFLOWS,
-    healthcare_domains=["workflows"]
+    domains=["workflows"]
 )
 def create_activity_definition(
     actor_name: str,
@@ -59,7 +59,7 @@ def create_activity_definition(
     name="create_plan_definition",
     description="Create a Workflow PlanDefinition (adapter)",
     category=ToolCategory.CLINICAL_WORKFLOWS,
-    healthcare_domains=["workflows"]
+    domains=["workflows"]
 )
 def create_plan_definition(
     actor_name: str,
@@ -87,7 +87,7 @@ def create_plan_definition(
     name="create_task_from_activity",
     description="Create a Task from an ActivityDefinition (adapter)",
     category=ToolCategory.CLINICAL_WORKFLOWS,
-    healthcare_domains=["workflows"]
+    domains=["workflows"]
 )
 def create_task_from_activity(
     actor_name: str,
@@ -107,7 +107,7 @@ def create_task_from_activity(
     name="complete_task",
     description="Complete a Task with outputs (adapter)",
     category=ToolCategory.CLINICAL_WORKFLOWS,
-    healthcare_domains=["workflows"]
+    domains=["workflows"]
 )
 def complete_task(actor_name: str, task: Dict[str, Any], outputs: Dict[str, Any]) -> HACSResult:
     try:
@@ -122,7 +122,7 @@ def complete_task(actor_name: str, task: Dict[str, Any], outputs: Dict[str, Any]
     name="fail_task",
     description="Fail a Task with a message (adapter)",
     category=ToolCategory.CLINICAL_WORKFLOWS,
-    healthcare_domains=["workflows"]
+    domains=["workflows"]
 )
 def fail_task(actor_name: str, task: Dict[str, Any], error_message: str) -> HACSResult:
     try:

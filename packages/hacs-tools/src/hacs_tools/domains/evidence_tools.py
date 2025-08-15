@@ -20,7 +20,7 @@ from hacs_utils.vector_ops import store_embedding, vector_similarity_search
     name="index_evidence",
     description="Index clinical evidence (content + citation) and return structured Evidence with embedding reference",
     category=ToolCategory.CLINICAL_WORKFLOWS,
-    healthcare_domains=["knowledge_management", "clinical_guidelines"]
+    domains=["knowledge_management", "clinical_guidelines"]
 )
 def index_evidence(
     actor_name: str,
@@ -88,7 +88,7 @@ def index_evidence(
     name="check_evidence",
     description="Retrieve semantically relevant clinical evidence for a query (returns structured Evidence list)",
     category=ToolCategory.CLINICAL_WORKFLOWS,
-    healthcare_domains=["knowledge_management", "clinical_guidelines"]
+    domains=["knowledge_management", "clinical_guidelines"]
 )
 def check_evidence(
     actor_name: str,

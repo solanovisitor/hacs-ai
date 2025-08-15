@@ -18,7 +18,7 @@ from hacs_models import get_model_registry
     name="create_resource_bundle",
     description="Create a HACS ResourceBundle (STACK, TEMPLATE, or DOCUMENT)",
     category=ToolCategory.RESOURCE_MANAGEMENT,
-    healthcare_domains=["bundles"]
+    domains=["bundles"]
 )
 def create_resource_bundle(
     actor_name: str,
@@ -46,7 +46,7 @@ def create_resource_bundle(
     name="add_bundle_entry",
     description="Add a resource entry to a ResourceBundle from raw resource data",
     category=ToolCategory.RESOURCE_MANAGEMENT,
-    healthcare_domains=["bundles"]
+    domains=["bundles"]
 )
 def add_bundle_entry(
     actor_name: str,
@@ -76,7 +76,7 @@ def add_bundle_entry(
     name="validate_resource_bundle",
     description="Validate bundle integrity rules and report issues",
     category=ToolCategory.RESOURCE_MANAGEMENT,
-    healthcare_domains=["bundles"]
+    domains=["bundles"]
 )
 def validate_resource_bundle(
     actor_name: str,

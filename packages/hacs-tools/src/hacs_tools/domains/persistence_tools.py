@@ -22,7 +22,7 @@ async def _get_adapter(database_url: Optional[str] = None):
     name="persist_hacs_resource",
     description="Persist a HACS resource using configured PostgreSQL adapter (async)",
     category=ToolCategory.ADMIN_OPERATIONS,
-    healthcare_domains=["persistence"]
+    domains=["persistence"]
 )
 async def persist_hacs_resource(
     actor_name: str,
@@ -60,7 +60,7 @@ async def persist_hacs_resource(
     name="read_hacs_resource",
     description="Read a HACS resource by id and type (async)",
     category=ToolCategory.ADMIN_OPERATIONS,
-    healthcare_domains=["persistence"]
+    domains=["persistence"]
 )
 async def read_hacs_resource(
     actor_name: str,

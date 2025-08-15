@@ -34,7 +34,7 @@ def _get_model_class(model_name: str):
     name="instantiate_hacs_resource",
     description="Instantiate a HACS model by name with provided data (pure adapter)",
     category=ToolCategory.RESOURCE_MANAGEMENT,
-    healthcare_domains=["resource_modeling"]
+    domains=["resource_modeling"]
 )
 def instantiate_hacs_resource(
     actor_name: str,
@@ -60,7 +60,7 @@ def instantiate_hacs_resource(
     name="validate_hacs_resource",
     description="Validate a HACS model instance from raw data and return issues (pure adapter)",
     category=ToolCategory.RESOURCE_MANAGEMENT,
-    healthcare_domains=["resource_modeling"]
+    domains=["resource_modeling"]
 )
 def validate_hacs_resource(
     actor_name: str,

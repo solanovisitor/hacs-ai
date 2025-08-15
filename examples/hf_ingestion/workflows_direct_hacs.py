@@ -24,14 +24,25 @@ from hacs_registry import instantiate_registered_stack, get_global_registry, reg
 from hacs_persistence.adapter import PostgreSQLAdapter
 from hacs_core import Actor
 
-# Direct HACS tool imports - no MCP dependency
+"""
+Direct HACS tool imports - no MCP dependency. Use schema discovery for model descriptions
+and thin modeling/bundle/persistence tools for resource operations.
+"""
 from hacs_tools.domains.schema_discovery import (
     discover_hacs_resources,
-    get_hacs_resource_schema
+    get_hacs_resource_schema,
 )
-from hacs_tools.domains.development_tools import (
-    register_stack_template_tool,
-    instantiate_stack_template_tool,
+from hacs_tools.domains.modeling_tools import (
+    instantiate_hacs_resource,
+    validate_hacs_resource,
+)
+from hacs_tools.domains.bundle_tools import (
+    create_resource_bundle,
+    add_bundle_entry,
+    validate_resource_bundle,
+)
+from hacs_tools.domains.persistence_tools import (
+    persist_hacs_resource,
 )
 from hacs_utils.annotation.chunking import ChunkIterator, make_batches_of_textchunk
 from hacs_utils.annotation.data import (
@@ -40,296 +51,47 @@ from hacs_utils.annotation.data import (
     Document as HDocument,
 )
 from hacs_utils.structured import generate_extractions
-from hacs_utils.integrations.common.tool_loader import get_all_hacs_tools_sync
+# Remove generic tool loader dependency; we use explicit imports above
 
 logger = logging.getLogger(__name__)
 
 
-def _generate_comprehensive_template_examples(type_hints: dict) -> str:
-    """Generatetemplate examples with resource previews and required fields."""
-    
-    # Core template examples with detailed explanations
-    core_examples = [
-        {
-            "name": "comprehensive_encounter_template",
-            "description": "Multi-resource clinical encounter with observations, conditions, and procedures",
-            "use_case": "Clinical consultations, emergency visits, routine check-ups",
-            "template": {
-                "name": "comprehensive_encounter_template",
-                "version": "1.0.0",
-                "variables": {
-                    "patient_name": {"type": "string", "description": "Full patient name"},
-                    "encounter_reason": {"type": "string", "description": "Chief complaint or visit reason"},
-                    "vital_signs": {"type": "string", "description": "Blood pressure, temperature, etc."},
-                    "diagnosis_text": {"type": "string", "description": "Primary diagnosis"},
-                    "treatment_plan": {"type": "string", "description": "Care plan and instructions"}
-                },
-                "layers": [
-                    {"resource_type": "ResourceBundle", "layer_name": "document_bundle", "bindings": {}, "constant_fields": {"bundle_type": "document", "title": "Clinical Encounter"}},
-                    {"resource_type": "Patient", "layer_name": "patient", "bindings": {"full_name": "{{ patient_name }}"}, "constant_fields": {}},
-                    {"resource_type": "Encounter", "layer_name": "encounter", "bindings": {"reason_code_text": "{{ encounter_reason }}", "subject": "patient"}, "constant_fields": {"status": "finished", "class_": {"code": "AMB"}}},
-                    {"resource_type": "Observation", "layer_name": "vitals", "bindings": {"value_string": "{{ vital_signs }}", "subject": "patient", "encounter": "encounter"}, "constant_fields": {"status": "final", "code": {"text": "Vital Signs"}}},
-                    {"resource_type": "Condition", "layer_name": "diagnosis", "bindings": {"code_text": "{{ diagnosis_text }}", "subject": "patient", "encounter": "encounter"}, "constant_fields": {"clinical_status": "active"}},
-                    {"resource_type": "Procedure", "layer_name": "treatment", "bindings": {"code_text": "{{ treatment_plan }}", "subject": "patient", "encounter": "encounter"}, "constant_fields": {"status": "completed"}}
-                ]
+def _build_type_hints_from_registry_schemas(available_types: list[str]) -> dict:
+    """Build compact type hints using schema discovery (registry-backed)."""
+    hints: dict[str, dict] = {}
+    # Limit to a reasonable number to keep prompts short
+    for t in available_types[:20]:
+        try:
+            sch = asyncio.run(hacs_get_schema.ainvoke({"resource_type": t})) if hasattr(hacs_get_schema, "ainvoke") else None
+        except Exception:
+            sch = None
+        if isinstance(sch, dict) and sch.get("success"):
+            hints[t] = {
+                "clinical_context": sch.get("clinical_context", ""),
+                "required": sch.get("required_fields", []),
             }
-        },
-        {
-            "name": "medication_management_template", 
-            "description": "Medication prescription with monitoring observations",
-            "use_case": "Prescriptions, medication reviews, drug therapy monitoring",
-            "template": {
-                "name": "medication_management_template",
-                "version": "1.0.0",
-                "variables": {
-                    "patient_name": {"type": "string"},
-                    "medication_name": {"type": "string"},
-                    "dosage_instruction": {"type": "string"},
-                    "monitoring_parameter": {"type": "string"}
-                },
-                "layers": [
-                    {"resource_type": "ResourceBundle", "layer_name": "document_bundle", "bindings": {}, "constant_fields": {"bundle_type": "document", "title": "Medication Management"}},
-                    {"resource_type": "Patient", "layer_name": "patient", "bindings": {"full_name": "{{ patient_name }}"}, "constant_fields": {}},
-                    {"resource_type": "MedicationRequest", "layer_name": "prescription", "bindings": {"medication_codeable_concept_text": "{{ medication_name }}", "subject": "patient"}, "constant_fields": {"status": "active", "intent": "order"}},
-                    {"resource_type": "Observation", "layer_name": "monitoring", "bindings": {"value_string": "{{ monitoring_parameter }}", "subject": "patient"}, "constant_fields": {"status": "final", "code": {"text": "Medication Monitoring"}}}
-                ]
-            }
-        },
-        {
-            "name": "diagnostic_report_template",
-            "description": "Laboratory or imaging results with multiple observations",
-            "use_case": "Lab reports, imaging studies, diagnostic workups",
-            "template": {
-                "name": "diagnostic_report_template",
-                "version": "1.0.0", 
-                "variables": {
-                    "patient_name": {"type": "string"},
-                    "report_title": {"type": "string"},
-                    "test_results": {"type": "string"},
-                    "conclusion": {"type": "string"}
-                },
-                "layers": [
-                    {"resource_type": "ResourceBundle", "layer_name": "document_bundle", "bindings": {}, "constant_fields": {"bundle_type": "document", "title": "Diagnostic Report"}},
-                    {"resource_type": "Patient", "layer_name": "patient", "bindings": {"full_name": "{{ patient_name }}"}, "constant_fields": {}},
-                    {"resource_type": "DiagnosticReport", "layer_name": "report", "bindings": {"code_text": "{{ report_title }}", "subject": "patient", "conclusion": "{{ conclusion }}"}, "constant_fields": {"status": "final"}},
-                    {"resource_type": "Observation", "layer_name": "results", "bindings": {"value_string": "{{ test_results }}", "subject": "patient"}, "constant_fields": {"status": "final", "code": {"text": "Test Result"}}}
-                ]
-            }
-        }
-    ]
-    
-    # Generate resource previews with required fields
-    resource_previews = _generate_resource_previews(type_hints)
-    
-    # Buildexamples section
-    examples_text = "COMPREHENSIVE TEMPLATE EXAMPLES AND RESOURCE REFERENCE:\n\n"
-    
-    # Add core template examples
-    examples_text += "=== TEMPLATE EXAMPLES ===\n"
-    for i, example in enumerate(core_examples, 1):
-        examples_text += f"{i}) {example['name'].upper()}:\n"
-        examples_text += f"   Description: {example['description']}\n"
-        examples_text += f"   Use Cases: {example['use_case']}\n"
-        examples_text += f"   Template JSON:\n"
-        import json as _json
-        examples_text += f"   {_json.dumps(example['template'], ensure_ascii=False, indent=2)}\n\n"
-    
-    # Add resource previews
-    examples_text += resource_previews
-    
-    return examples_text
+    return hints
 
 
-def _generate_detailed_resource_catalog(available_types: list[str]) -> str:
-    """Generate a detailed catalog of available HACS resources with clinical context and relationships."""
+def _resource_type_hints_markdown(available_types: list[str]) -> str:
+    """Produce a compact markdown of resource types with clinical context from registry-backed schemas."""
     if not available_types:
         return "No HACS resources available."
-    
-    # Detailed resource definitions with clinical context, FHIR alignment, and use cases
-    resource_definitions = {
-        "Patient": {
-            "description": "Core demographic and identification information for individuals receiving healthcare",
-            "fhir_alignment": "FHIR Patient resource - foundational resource for all clinical documentation",
-            "clinical_context": "Demographics, identifiers, contact information, emergency contacts",
-            "common_fields": ["full_name", "birth_date", "gender", "phone", "address", "emergency_contact"],
-            "relationships": "Referenced by: Observation, Encounter, Condition, MedicationRequest, Procedure",
-            "use_cases": ["Patient registration", "Demographics capture", "Identity management"]
-        },
-        "Encounter": {
-            "description": "Healthcare service interactions between patient and healthcare provider",
-            "fhir_alignment": "FHIR Encounter resource - context for clinical activities",
-            "clinical_context": "Visits, admissions, consultations, emergency encounters",
-            "common_fields": ["status", "class_", "subject", "period", "reason_code", "diagnosis"],
-            "relationships": "References: Patient, Organization, Practitioner; Referenced by: Observation, Procedure",
-            "use_cases": ["Visit documentation", "Episode tracking", "Care context establishment"]
-        },
-        "Observation": {
-            "description": "Clinical measurements, assessments, and findings about a patient",
-            "fhir_alignment": "FHIR Observation resource - central to clinical documentation",
-            "clinical_context": "Vital signs, lab results, assessments, clinical notes",
-            "common_fields": ["code", "value_string", "value_quantity", "status", "subject", "encounter"],
-            "relationships": "References: Patient, Encounter; May reference: Procedure, Condition",
-            "use_cases": ["Vital signs", "Lab results", "Clinical assessments", "Progress notes"]
-        },
-        "Condition": {
-            "description": "Patient health conditions, diagnoses, and clinical problems",
-            "fhir_alignment": "FHIR Condition resource - patient health status documentation",
-            "clinical_context": "Diagnoses, problems, health concerns, chronic conditions",
-            "common_fields": ["code", "clinical_status", "subject", "encounter", "onset_date_time", "severity"],
-            "relationships": "References: Patient, Encounter; Referenced by: MedicationRequest, Procedure",
-            "use_cases": ["Diagnosis documentation", "Problem lists", "Clinical decision support"]
-        },
-        "MedicationRequest": {
-            "description": "Prescription and medication ordering information",
-            "fhir_alignment": "FHIR MedicationRequest resource - medication orders and prescriptions",
-            "clinical_context": "Prescriptions, medication orders, therapy planning",
-            "common_fields": ["medication_codeable_concept", "status", "intent", "subject", "dosage_instruction"],
-            "relationships": "References: Patient, Encounter, Condition, Medication",
-            "use_cases": ["E-prescribing", "Medication management", "Pharmacy integration"]
-        },
-        "Procedure": {
-            "description": "Healthcare procedures, treatments, and interventions performed",
-            "fhir_alignment": "FHIR Procedure resource - clinical procedures documentation",
-            "clinical_context": "Surgeries, treatments, interventions, therapeutic procedures",
-            "common_fields": ["code", "status", "subject", "encounter", "performed_date_time", "outcome"],
-            "relationships": "References: Patient, Encounter, Condition; May create: Observation",
-            "use_cases": ["Surgery documentation", "Treatment tracking", "Procedure billing"]
-        },
-        "DiagnosticReport": {
-            "description": "Results and interpretations of diagnostic testing and investigations",
-            "fhir_alignment": "FHIR DiagnosticReport resource - diagnostic test results",
-            "clinical_context": "Lab reports, imaging studies, pathology results",
-            "common_fields": ["code", "status", "subject", "conclusion", "result", "issued"],
-            "relationships": "References: Patient, Encounter; Contains: Observation results",
-            "use_cases": ["Lab reporting", "Imaging results", "Diagnostic interpretation"]
-        },
-        "ServiceRequest": {
-            "description": "Orders and requests for healthcare services and procedures",
-            "fhir_alignment": "FHIR ServiceRequest resource - service ordering and requisitions",
-            "clinical_context": "Lab orders, imaging requests, referrals, consultations",
-            "common_fields": ["code", "status", "intent", "subject", "encounter", "reason_code"],
-            "relationships": "References: Patient, Encounter, Condition; Creates: DiagnosticReport",
-            "use_cases": ["Lab ordering", "Imaging requests", "Referral management"]
-        },
-        "Goal": {
-            "description": "Patient care goals, objectives, and targeted outcomes",
-            "fhir_alignment": "FHIR Goal resource - care planning and outcome tracking",
-            "clinical_context": "Treatment goals, health objectives, care planning",
-            "common_fields": ["description_text", "lifecycle_status", "subject", "target", "start_date"],
-            "relationships": "References: Patient, Condition; Part of: CarePlan",
-            "use_cases": ["Care planning", "Treatment monitoring", "Outcome tracking"]
-        },
-        "DocumentReference": {
-            "description": "References to clinical documents, reports, and external content",
-            "fhir_alignment": "FHIR DocumentReference resource - document management",
-            "clinical_context": "Clinical documents, reports, images, external references",
-            "common_fields": ["status", "type", "subject", "content", "description"],
-            "relationships": "References: Patient, Encounter; May contain: Attachment data",
-            "use_cases": ["Document management", "Report linking", "External content reference"]
-        },
-        "Organization": {
-            "description": "Healthcare organizations, facilities, and institutions",
-            "fhir_alignment": "FHIR Organization resource - organizational entities",
-            "clinical_context": "Hospitals, clinics, departments, healthcare systems",
-            "common_fields": ["name", "type", "address", "contact", "identifier"],
-            "relationships": "Referenced by: Encounter, Practitioner, Patient",
-            "use_cases": ["Facility management", "Provider networks", "Organizational hierarchy"]
-        },
-        "Practitioner": {
-            "description": "Healthcare providers, clinicians, and care team members",
-            "fhir_alignment": "FHIR Practitioner resource - healthcare personnel",
-            "clinical_context": "Doctors, nurses, therapists, care team members",
-            "common_fields": ["name", "qualification", "specialty", "contact", "identifier"],
-            "relationships": "Referenced by: Encounter, Procedure, MedicationRequest",
-            "use_cases": ["Provider directories", "Care team management", "Professional credentials"]
-        },
-        "Medication": {
-            "description": "Medication and pharmaceutical product definitions",
-            "fhir_alignment": "FHIR Medication resource - pharmaceutical products",
-            "clinical_context": "Drug definitions, formulations, pharmaceutical products",
-            "common_fields": ["code", "form", "ingredient", "manufacturer", "amount"],
-            "relationships": "Referenced by: MedicationRequest, MedicationStatement",
-            "use_cases": ["Drug catalogs", "Pharmaceutical management", "Medication reconciliation"]
-        },
-        "AllergyIntolerance": {
-            "description": "Patient allergies, intolerances, and adverse reactions",
-            "fhir_alignment": "FHIR AllergyIntolerance resource - allergy documentation",
-            "clinical_context": "Drug allergies, food allergies, environmental sensitivities",
-            "common_fields": ["code", "patient", "category", "reaction", "severity"],
-            "relationships": "References: Patient; Impacts: MedicationRequest decisions",
-            "use_cases": ["Allergy alerts", "Medication safety", "Clinical decision support"]
-        },
-        "Immunization": {
-            "description": "Vaccination records and immunization history",
-            "fhir_alignment": "FHIR Immunization resource - vaccination documentation",
-            "clinical_context": "Vaccines, immunizations, vaccination schedules",
-            "common_fields": ["vaccine_code", "patient", "occurrence_date_time", "status"],
-            "relationships": "References: Patient, Encounter, Organization",
-            "use_cases": ["Vaccination tracking", "Immunization records", "Public health reporting"]
-        },
-        "ResourceBundle": {
-            "description": "Container for grouping related HACS resources together",
-            "fhir_alignment": "FHIR Bundle resource - resource collection container",
-            "clinical_context": "Document bundles, transaction groups, resource collections",
-            "common_fields": ["bundle_type", "title", "entries"],
-            "relationships": "Contains: Any HACS resources as bundle entries",
-            "use_cases": ["Document assembly", "Transaction grouping", "Resource packaging"]
-        }
-    }
-    
-    catalog_text = "=== DETAILED HACS RESOURCE CATALOG ===\n\n"
-    
-    # Group resources by clinical category for better organization
-    categories = {
-        "🏥 Foundational": ["Patient", "Encounter", "Organization", "Practitioner"],
-        "📊 Clinical Data": ["Observation", "Condition", "Procedure", "DiagnosticReport"],
-        "💊 Medication": ["MedicationRequest", "Medication", "AllergyIntolerance"],
-        "📋 Care Planning": ["Goal", "ServiceRequest", "CarePlan"],
-        "📄 Documentation": ["DocumentReference", "ResourceBundle"],
-        "🛡️ Prevention": ["Immunization", "FamilyMemberHistory"]
-    }
-    
-    for category_name, category_resources in categories.items():
-        available_in_category = [r for r in category_resources if r in available_types]
-        if not available_in_category:
-            continue
-            
-        catalog_text += f"{category_name} RESOURCES:\n"
-        catalog_text += "-" * 50 + "\n"
-        
-        for resource_type in available_in_category:
-            if resource_type in resource_definitions:
-                res_def = resource_definitions[resource_type]
-                catalog_text += f"\n📌 {resource_type}:\n"
-                catalog_text += f"   Description: {res_def['description']}\n"
-                catalog_text += f"   FHIR Alignment: {res_def['fhir_alignment']}\n"
-                catalog_text += f"   Clinical Context: {res_def['clinical_context']}\n"
-                catalog_text += f"   Key Fields: {', '.join(res_def['common_fields'])}\n"
-                catalog_text += f"   Relationships: {res_def['relationships']}\n"
-                catalog_text += f"   Use Cases: {', '.join(res_def['use_cases'])}\n"
-        
-        catalog_text += "\n"
-    
-    # Add resources not in predefined categories
-    uncategorized = [r for r in available_types if not any(r in cat_resources for cat_resources in categories.values())]
-    if uncategorized:
-        catalog_text += "🔧 OTHER AVAILABLE RESOURCES:\n"
-        catalog_text += "-" * 50 + "\n"
-        for resource_type in uncategorized:
-            catalog_text += f"   • {resource_type}\n"
-        catalog_text += "\n"
-    
-    catalog_text += "=== RESOURCE SELECTION GUIDELINES ===\n"
-    catalog_text += "1. Always include Patient for individual-specific data\n"
-    catalog_text += "2. Include Encounter for visit/episode context\n"
-    catalog_text += "3. Use Observation for measurements and clinical findings\n"
-    catalog_text += "4. Use Condition for diagnoses and health problems\n"
-    catalog_text += "5. Use MedicationRequest for prescriptions and medications\n"
-    catalog_text += "6. Use Procedure for treatments and interventions\n"
-    catalog_text += "7. Consider DocumentReference for external content\n"
-    catalog_text += "8. Use ResourceBundle as the container for all resources\n\n"
-    
-    return catalog_text
+    lines = ["=== HACS RESOURCES (from registry) ===\n"]
+    # Try to fetch clinical_context via schema discovery
+    for t in available_types[:20]:
+        try:
+            sch = asyncio.run(hacs_get_schema.ainvoke({"resource_type": t})) if hasattr(hacs_get_schema, "ainvoke") else None
+        except Exception:
+            sch = None
+        ctx = ""
+        req = []
+        if isinstance(sch, dict) and sch.get("success"):
+            ctx = sch.get("clinical_context", "")
+            req = sch.get("required_fields", [])
+        req_str = f" (required: {', '.join(req)})" if req else ""
+        lines.append(f"- {t}: {ctx}{req_str}")
+    return "\n".join(lines)
 
 
 def _generate_resource_previews(type_hints: dict) -> str:
@@ -599,7 +361,8 @@ async def _build_and_register_template_via_llm(instruction_md: str, template_nam
             available_types = []
 
         # LLM Call 1: select resource types with detailed HACS resource information
-        resource_catalog = _generate_detailed_resource_catalog(available_types)
+        # Build type hints and short descriptions from schema discovery
+        type_hints = _build_type_hints_from_registry_schemas(available_types)
         
         sys1 = (
             "You are a clinical informatics assistant specializing in FHIR/HACS resource modeling. "
@@ -611,13 +374,12 @@ async def _build_and_register_template_via_llm(instruction_md: str, template_nam
         )
         user1 = (
             f"INSTRUCTION TEMPLATE (markdown):\n{instruction_md}\n\n"
-            f"AVAILABLE HACS RESOURCES CATALOG:\n{resource_catalog}\n\n"
+            f"AVAILABLE HACS RESOURCES (from registry schemas):\n{type_hints}\n\n"
             f"SELECTION CRITERIA:\n"
             f"- Prioritize resources that directly map to template content\n"
             f"- Include foundational resources (Patient, Encounter) when appropriate\n"
             f"- Consider clinical workflows and resource relationships\n"
-            f"- Ensurecoverage of all clinical domains mentioned\n"
-            f"- Balance breadth with relevance to avoid over-engineering"
+            f"- Balance breadth with relevance; avoid over-engineering"
         )
         import re as _re, json as _json
         selected_types: list[str] = []
@@ -725,14 +487,15 @@ async def _build_and_register_template_via_llm(instruction_md: str, template_nam
             "(6) Ensure required fields for strict resources are supplied via bindings or constant_fields. "
             "(7) Keep ResourceBundle minimal (bundle_type/title only)."
         )
-        examples = _generate_comprehensive_template_examples(type_hints)
-        logger.info(f"Generated examples for template synthesis ({len(examples)} characters)")
+        # Minimal hints only; rely on registry-backed schema info, not custom descriptions
+        hints_md = _resource_type_hints_markdown(list(type_hints.keys()))
+        logger.info(f"Generated schema-backed hints for template synthesis ({len(hints_md)} chars)")
         
         user2 = (
             f"TEMPLATE (markdown):\n{instruction_md}\n\n"
             f"SELECTED_RESOURCES:\n{', '.join(selected_types)}\n\n"
-            f"SCHEMA_HINTS (per resource; include ALL HACS resources with compact pick() views):\n{_json.dumps(type_hints, ensure_ascii=False)}\n\n"
-            f"{examples}"
+            f"SCHEMA_HINTS (per resource):\n{_json.dumps(type_hints, ensure_ascii=False)}\n\n"
+            f"{hints_md}"
         )
         variables: dict[str, Any] = {}
         layers: list[dict[str, Any]] = []
@@ -814,44 +577,24 @@ async def _build_and_register_template_via_llm(instruction_md: str, template_nam
         logger.info(f"🔧 Template Registration Payload:")
         logger.info(f"📋 Final Template Structure: {_json.dumps(template_payload, indent=2)}")
         
-        # Try known tool names in order of preference
-        reg_try_order = [
-            "generate_stack_template_from_markdown",
-            "register_stack_template_tool",
-            "register_stack_template",
-        ]
-        resp = {"success": False}
-        for tool_name in reg_try_order:
-            logger.info(f"🔧 Attempting template registration with tool: {tool_name}")
-            reg_res = _call_hacs_tool(tool_name, template=template_payload)
-            resp = _as_dict(reg_res)
-            logger.info(f"🔧 Tool '{tool_name}' response: {resp}")
-            if resp.get("success", False):
-                logger.info(f"✅ Template successfully registered with tool: {tool_name}")
-                break
-            else:
-                logger.warning(f"⚠️ Tool '{tool_name}' failed: {resp.get('message', 'Unknown error')}")
-        # Final fallback: direct import if dispatcher did not find a tool
-        if not resp.get("success", False):
-            try:
-                from hacs_tools.domains.development_tools import generate_stack_template_from_markdown_tool as _gen_tpl
-                dr = _gen_tpl(template=template_payload)
-                resp = _as_dict(dr)
-            except Exception:
-                try:
-                    from hacs_tools.domains.development_tools import register_stack_template_tool as _reg_tpl
-                    dr = _reg_tpl(template=template_payload)
-                    resp = _as_dict(dr)
-                except Exception as _e:
-                    resp = {"success": False, "message": str(_e)}
-        if not resp.get("success", False):
-            return {"success": False, "message": resp.get("message", "registration failed")}
-        return {
-            "success": True,
-            "template_name": tpl_name,
-            "data": {"variables": variables, "layers": layers},
-            "message": f"Template '{tpl_name}' registered"
-        }
+        # Register template via registry API (no dev-tools)
+        try:
+            template = StackTemplate(
+                name=tpl_name,
+                version=version,
+                variables=variables,
+                layers=[LayerSpec(**layer) if isinstance(layer, dict) else layer for layer in layers],
+                description="LLM-generated template from instruction markdown",
+            )
+            register_stack_template(template)
+            return {
+                "success": True,
+                "template_name": tpl_name,
+                "data": {"variables": variables, "layers": layers},
+                "message": f"Template '{tpl_name}' registered via registry",
+            }
+        except Exception as _e:
+            return {"success": False, "message": str(_e)}
     except Exception as e:
         logger.error(f"Template synthesis failed: {e}")
         return {"success": False, "error": str(e)}
@@ -968,17 +711,8 @@ async def _extract_variables_and_instantiate(template_name: str, context_text: s
         import json as _json2
         logger.info(f"📋 Variables for instantiation: {_json2.dumps(variables, indent=2)}")
         
-        # Use tools path for instantiation
-        tool_res = _call_hacs_tool("instantiate_stack_from_context", template_name=template_name, variables=variables)
-        logger.info(f"🔧 Tool instantiation response: {tool_res}")
-        
-        if tool_res.get("success") and isinstance(tool_res.get("data"), dict):
-            logger.info("✅ Tool instantiation successful, using registry fallback for persistence")
-            # Fallback to registry objects for persistence below
-            resources = instantiate_registered_stack(template_name, variables)
-        else:
-            logger.info("⚠️ Tool instantiation failed, using direct registry instantiation")
-            resources = instantiate_registered_stack(template_name, variables)
+        # Instantiate directly via registry (no dev-tools)
+        resources = instantiate_registered_stack(template_name, variables)
             
         logger.info(f"🏗️ Instantiated Resources ({len(resources)} total):")
         for layer_name, resource in resources.items():
@@ -1086,7 +820,8 @@ def _llm_rank_resources(instruction_md: str, candidates: list[str], top_k: int =
         return ranked[:top_k]
 
     # Generate detailed resource information for better LLM decision making
-    candidate_details = _generate_detailed_resource_catalog(candidates)
+    # Build concise registry-backed descriptions
+    candidate_details = _resource_type_hints_markdown(candidates)
     
     system = (
         "You are a clinical informatics assistant specializing in FHIR/HACS resource modeling. "
@@ -1358,8 +1093,7 @@ def validate_hacs_tools_availability() -> Dict[str, bool]:
     
     try:
         # Test resource discovery directly
-        from hacs_tools.domains.schema_discovery import discover_hacs_resources as direct_discover
-        result = direct_discover(category_filter="clinical")
+        result = discover_hacs_resources(category_filter="clinical")
         tools_status["discover_resources"] = getattr(result, "success", False)
     except Exception as e:
         logger.error(f"discover_resources test failed: {e}")
@@ -1367,31 +1101,20 @@ def validate_hacs_tools_availability() -> Dict[str, bool]:
     
     try:
         # Test schema retrieval directly
-        from hacs_tools.domains.schema_discovery import get_hacs_resource_schema as direct_schema
-        result = direct_schema("Patient")
+        result = get_hacs_resource_schema("Patient")
         tools_status["get_schema"] = getattr(result, "success", False)
     except Exception as e:
         logger.error(f"get_schema test failed: {e}")
         tools_status["get_schema"] = False
     
     try:
-        # Test template generation directly
-        from hacs_tools.domains.development_tools import generate_stack_template_from_markdown_tool as direct_generate
-        payload = {
-            "name": "devtools_validation_template",
-            "version": "1.0.0",
-            "variables": {},
-            "layers": [
-                {"resource_type": "ResourceBundle", "layer_name": "document_bundle", "bindings": {}, "constant_fields": {"bundle_type": "document", "title": "validation"}},
-                {"resource_type": "Patient", "layer_name": "patient", "bindings": {}, "constant_fields": {}},
-            ],
-            "description": "Validation template",
-        }
-        result = direct_generate(template=payload)
-        tools_status["generate_template"] = bool(getattr(result, "success", False))
+        # Validate modeling + bundling minimal path
+        _ = validate_hacs_resource(actor_name="validator", model_name="Patient", data={"full_name": "Test"})
+        bundle = create_resource_bundle(actor_name="validator", bundle_type="document", title="validation")
+        tools_status["modeling_bundling"] = bool(getattr(bundle, "success", False))
     except Exception as e:
-        logger.error(f"generate_template test failed: {e}")
-        tools_status["generate_template"] = False
+        logger.error(f"modeling/bundling test failed: {e}")
+        tools_status["modeling_bundling"] = False
     
     return tools_status
 

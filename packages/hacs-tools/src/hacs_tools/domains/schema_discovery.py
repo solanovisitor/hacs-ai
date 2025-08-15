@@ -46,7 +46,7 @@ from .descriptions import (
     name="discover_hacs_resources",
     description="Discover all available HACS healthcare resources withmetadata",
     category=ToolCategory.SCHEMA_DISCOVERY,
-    healthcare_domains=['resource_management']
+    domains=['resource_management']
 )
 def discover_hacs_resources(
     category_filter: Optional[str] = None,
@@ -175,7 +175,7 @@ def discover_hacs_resources(
     name="get_hacs_resource_schema",
     description="Getschema information for a healthcare resource type",
     category=ToolCategory.SCHEMA_DISCOVERY,
-    healthcare_domains=['resource_management']
+    domains=['resource_management']
 )
 def get_hacs_resource_schema(
     resource_type: str,
@@ -281,7 +281,7 @@ def get_hacs_resource_schema(
     name="analyze_resource_fields",
     description="Perform detailed analysis of healthcare resource fields for clinical usage",
     category=ToolCategory.SCHEMA_DISCOVERY,
-    healthcare_domains=['resource_management']
+    domains=['resource_management']
 )
 def analyze_resource_fields(
     resource_type: str,
@@ -397,7 +397,7 @@ def analyze_resource_fields(
     name="compare_resource_schemas",
     description="Compare schemas between two healthcare resource types for integration analysis",
     category=ToolCategory.SCHEMA_DISCOVERY,
-    healthcare_domains=['resource_management']
+    domains=['resource_management']
 )
 def compare_resource_schemas(
     resource_type_1: str,

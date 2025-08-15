@@ -45,7 +45,7 @@ from .descriptions import (
     name="create_hacs_memory",
     description="Store a new memory for healthcare AI agents with clinical context",
     category=ToolCategory.MEMORY_OPERATIONS,
-    healthcare_domains=['memory_management']
+    domains=['memory_management']
 )
 def create_hacs_memory(
     actor_name: str,
@@ -222,7 +222,7 @@ def create_hacs_memory(
     name="search_hacs_memories",
     description="Search healthcare AI agent memories using semantic similarity",
     category=ToolCategory.MEMORY_OPERATIONS,
-    healthcare_domains=['data_search']
+    domains=['data_search']
 )
 def search_hacs_memories(
     actor_name: str,
@@ -429,7 +429,7 @@ def search_hacs_memories(
     name="consolidate_memories",
     description="Consolidate related healthcare memories to reduce redundancy and enhance knowledge",
     category=ToolCategory.MEMORY_OPERATIONS,
-    healthcare_domains=['general_healthcare']
+    domains=['general_healthcare']
 )
 def consolidate_memories(
     actor_name: str,
@@ -486,7 +486,7 @@ def consolidate_memories(
     name="retrieve_context",
     description="Retrieve contextual memories for healthcare decision support",
     category=ToolCategory.MEMORY_OPERATIONS,
-    healthcare_domains=['general_healthcare']
+    domains=['general_healthcare']
 )
 def retrieve_context(
     actor_name: str,
@@ -545,7 +545,7 @@ def retrieve_context(
     name="analyze_memory_patterns",
     description="Analyze patterns in healthcare AI agent memory usage and content",
     category=ToolCategory.MEMORY_OPERATIONS,
-    healthcare_domains=['memory_management']
+    domains=['memory_management']
 )
 def analyze_memory_patterns(
     actor_name: str,
@@ -613,7 +613,7 @@ __all__ = [
     name="check_memory",
     description="Gather and filter memories for agent context (episodic/procedural, filters applied)",
     category=ToolCategory.MEMORY_OPERATIONS,
-    healthcare_domains=["memory_management"]
+    domains=["memory_management"]
 )
 def check_memory(
     actor_name: str,

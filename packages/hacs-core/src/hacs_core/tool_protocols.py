@@ -43,13 +43,13 @@ class ToolMetadata:
     version: str = "1.0.0"
     author: str = "HACS Team"
     tags: List[str] = None
-    healthcare_domains: List[str] = None
+    domains: List[str] = None
 
     def __post_init__(self):
         if self.tags is None:
             self.tags = []
-        if self.healthcare_domains is None:
-            self.healthcare_domains = []
+        if self.domains is None:
+            self.domains = []
 
 
 @runtime_checkable
@@ -328,7 +328,7 @@ def hacs_tool(
     name: str,
     description: str,
     category: ToolCategory,
-    healthcare_domains: List[str] = None,
+    domains: List[str] = None,
     enable_tracing: bool = True,
     enable_metrics: bool = True,
     **kwargs
@@ -342,7 +342,7 @@ def hacs_tool(
         name: Tool name
         description: Tool description
         category: Tool category
-        healthcare_domains: Relevant healthcare domains
+        domains: Relevant healthcare domains
         enable_tracing: Enable distributed tracing for this tool
         enable_metrics: Enable metrics collection for this tool
         **kwargs: Additional metadata
@@ -355,7 +355,7 @@ def hacs_tool(
             name=name,
             description=description,
             category=category,
-            healthcare_domains=healthcare_domains or []
+            domains=domains or []
             **kwargs
         )
 

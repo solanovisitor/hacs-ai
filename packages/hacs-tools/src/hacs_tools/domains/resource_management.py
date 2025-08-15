@@ -46,7 +46,7 @@ from .descriptions import (
     name="create_hacs_record",
     description="Create a new healthcare resource record with FHIR compliance validation",
     category=ToolCategory.RESOURCE_MANAGEMENT,
-    healthcare_domains=["clinical_data", "resource_management"]
+    domains=["clinical_data", "resource_management"]
 )
 def create_hacs_record(
     actor_name: str,
@@ -218,7 +218,7 @@ def create_hacs_record(
     name="get_hacs_record",
     description="Retrieve a healthcare resource record by ID with audit trail support",
     category=ToolCategory.RESOURCE_MANAGEMENT,
-    healthcare_domains=["clinical_data", "resource_retrieval"]
+    domains=["clinical_data", "resource_retrieval"]
 )
 def get_hacs_record(
     actor_name: str,
@@ -312,7 +312,7 @@ def get_hacs_record(
     name="update_hacs_record",
     description="Update an existing healthcare resource record with validation",
     category=ToolCategory.RESOURCE_MANAGEMENT,
-    healthcare_domains=["clinical_data", "resource_management"]
+    domains=["clinical_data", "resource_management"]
 )
 def update_hacs_record(
     actor_name: str,
@@ -401,7 +401,7 @@ def update_hacs_record(
     name="delete_hacs_record",
     description="Delete a healthcare resource record with audit trail preservation",
     category=ToolCategory.RESOURCE_MANAGEMENT,
-    healthcare_domains=["clinical_data", "resource_management"]
+    domains=["clinical_data", "resource_management"]
 )
 def delete_hacs_record(
     actor_name: str,
@@ -483,7 +483,7 @@ def delete_hacs_record(
     name="search_hacs_records",
     description="Search healthcare resource records with advanced filtering capabilities",
     category=ToolCategory.RESOURCE_MANAGEMENT,
-    healthcare_domains=["clinical_data", "resource_search"]
+    domains=["clinical_data", "resource_search"]
 )
 def search_hacs_records(
     actor_name: str,

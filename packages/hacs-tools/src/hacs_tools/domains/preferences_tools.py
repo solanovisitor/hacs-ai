@@ -17,7 +17,7 @@ from hacs_utils.preferences import merge_preferences
     name="set_actor_preference",
     description="Create or update an actor preference (no resolution logic)",
     category=ToolCategory.ADMIN_OPERATIONS,
-    healthcare_domains=["preferences"]
+    domains=["preferences"]
 )
 def set_actor_preference(
     actor_name: str,
@@ -47,7 +47,7 @@ def set_actor_preference(
     name="list_actor_preferences",
     description="List actor preferences filtered by scope/target (no persistence)",
     category=ToolCategory.ADMIN_OPERATIONS,
-    healthcare_domains=["preferences"]
+    domains=["preferences"]
 )
 def list_actor_preferences(
     actor_name: str,
@@ -89,7 +89,7 @@ __all__ = [
     name="gather_preferences_context",
     description="Gather effective actor preferences for the current context (actor/org/workflow/agent/tool/session)",
     category=ToolCategory.MEMORY_OPERATIONS,
-    healthcare_domains=["preferences"]
+    domains=["preferences"]
 )
 async def gather_preferences_context(
     actor_name: str,

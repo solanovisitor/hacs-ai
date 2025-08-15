@@ -24,7 +24,7 @@ from hacs_utils.vector_ops import (
     name="store_embedding",
     description="[Deprecated] Store content as vector embedding. Prefer context-specific tools (e.g., index_evidence).",
     category=ToolCategory.VECTOR_SEARCH,
-    healthcare_domains=["general"]
+    domains=["general"]
 )
 def store_embedding(
     actor_name: str,
@@ -50,7 +50,7 @@ def store_embedding(
     name="vector_similarity_search",
     description="[Deprecated] Semantic similarity search. Prefer context-specific tools.",
     category=ToolCategory.VECTOR_SEARCH,
-    healthcare_domains=["general"]
+    domains=["general"]
 )
 def vector_similarity_search(
     actor_name: str,
@@ -76,7 +76,7 @@ def vector_similarity_search(
     name="vector_hybrid_search",
     description="[Deprecated] Hybrid search. Prefer context-specific tools.",
     category=ToolCategory.VECTOR_SEARCH,
-    healthcare_domains=["general"]
+    domains=["general"]
 )
 def vector_hybrid_search(
     actor_name: str,
@@ -104,7 +104,7 @@ def vector_hybrid_search(
     name="get_vector_collection_stats",
     description="[Deprecated] Get vector collection statistics.",
     category=ToolCategory.VECTOR_SEARCH,
-    healthcare_domains=["general"]
+    domains=["general"]
 )
 def get_vector_collection_stats(
     actor_name: str,
@@ -122,7 +122,7 @@ def get_vector_collection_stats(
     name="optimize_vector_collection",
     description="[Deprecated] Optimize vector collection.",
     category=ToolCategory.VECTOR_SEARCH,
-    healthcare_domains=["general"]
+    domains=["general"]
 )
 def optimize_vector_collection(
     actor_name: str,
