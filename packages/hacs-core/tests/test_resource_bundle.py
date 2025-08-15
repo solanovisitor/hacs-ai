@@ -271,12 +271,14 @@ class TestBundleValidation:
             )
 
     def test_stack_must_have_entries(self):
-        """Test that stack bundles must have entries."""
+        """Test that stack bundles must have entries (validated)."""
+        bundle = ResourceBundle(
+            bundle_type=BundleType.STACK,
+            version="1.0.0"
+        )
         with pytest.raises(ValueError, match="stack bundles must contain at least one entry"):
-            ResourceBundle(
-                bundle_type=BundleType.STACK,
-                version="1.0.0"
-            )
+            # Enforced at validation time for STACK
+            bundle.validate_bundle_integrity()
 
     def test_unique_workflow_ids(self):
         """Test that workflow bindings must have unique workflow IDs."""

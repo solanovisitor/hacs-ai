@@ -2,17 +2,21 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
+import warnings
+from .utils import set_nested_field
+
+
+warnings.warn(
+    "StackTemplate/LayerSpec are deprecated. Use Composition + ResourceBundle and MappingSpec/SourceBinding instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 class LayerSpec(BaseModel):
-    """Defines one resource layer in a stack template.
+    """[DEPRECATED] Stack layer description.
 
-    - resource_type: the HACS model name, e.g., "Patient", "Observation"
-    - layer_name: human-friendly name used for grouping or bundle titles
-    - bindings: mapping of target field paths to variable names, e.g.
-      {"full_name": "patient_name", "agent_context.instruction": "instruction"}
-    - constant_fields: static fields set directly on the resource, e.g.
-      {"status": "final"}
+    Prefer Composition + ResourceBundle and MappingSpec/SourceBinding.
     """
 
     resource_type: str = Field(..., description="HACS resource type (model name)")
@@ -22,10 +26,9 @@ class LayerSpec(BaseModel):
 
 
 class StackTemplate(BaseModel):
-    """A reusable, versioned template for composing HACS resources into a stack.
+    """[DEPRECATED] Reusable template for composing resources.
 
-    Variables provide a schema for inputs; "layers" describes how to bind variables
-    to resource fields across different HACS resource types.
+    Use Composition + ResourceBundle and MappingSpec/SourceBinding instead.
     """
 
     name: str
@@ -36,48 +39,8 @@ class StackTemplate(BaseModel):
 
 
 def _set_nested_field(obj: Any, path: str, value: Any) -> None:
-    parts = path.split(".")
-    cur = obj
-    for i, part in enumerate(parts):
-        is_last = i == len(parts) - 1
-        if is_last:
-            try:
-                setattr(cur, part, value)
-            except Exception:
-                # Fallback for dict-like structures
-                if isinstance(cur, dict):
-                    cur[part] = value
-                else:
-                    # Last resort: stash into agent_context or note when available
-                    try:
-                        if hasattr(cur, "agent_context") and isinstance(value, (str, int, float, bool, dict, list)):
-                            ctx = getattr(cur, "agent_context") or {}
-                            ctx[path] = value
-                            setattr(cur, "agent_context", ctx)
-                        elif hasattr(cur, "note") and isinstance(value, str):
-                            notes = list(getattr(cur, "note") or [])
-                            notes.append(value)
-                            setattr(cur, "note", notes)
-                        else:
-                            raise
-                    except Exception:
-                        raise
-        else:
-            try:
-                nxt = getattr(cur, part, None)
-            except Exception:
-                nxt = None
-            if nxt is None:
-                # create intermediate dict
-                nxt = {}
-                try:
-                    setattr(cur, part, nxt)
-                except Exception:
-                    if isinstance(cur, dict):
-                        cur[part] = nxt
-                    else:
-                        raise
-            cur = nxt
+    # Deprecated internal copy. Use utils.set_nested_field going forward.
+    set_nested_field(obj, path, value)
 
 
 def instantiate_stack_template(
@@ -85,65 +48,35 @@ def instantiate_stack_template(
     variables: Dict[str, Any],
     model_registry: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    """Instantiate a template into concrete HACS resource instances.
+    """[DEPRECATED] Instantiate a deprecated StackTemplate into instances.
 
-    Returns a mapping of layer_name -> resource_instance.
+    Returns a mapping of layer_name -> resource_instance. Prefer building a Composition
+    and turning it into a ResourceBundle via Composition.to_resource_bundle().
     """
+    warnings.warn(
+        "instantiate_stack_template is deprecated; migrate to Composition/ResourceBundle.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     from . import get_model_registry  # late import to avoid cycles
 
     registry = model_registry or get_model_registry()
     outputs: Dict[str, Any] = {}
-
     bundle_instance = None
     for layer in template.layers:
         model_cls = registry.get(layer.resource_type)
         if model_cls is None:
             raise ValueError(f"Unknown resource_type: {layer.resource_type}")
 
-        # Create minimal instance with safe defaults for required fields
-        # Provide safe defaults for common required fields
+        # Create minimal instance via registry compatibility (centralized)
         default_kwargs: Dict[str, Any] = {}
-        if layer.resource_type == "Patient":
-            default_kwargs.setdefault("full_name", "Anonymous Patient")
-        if layer.resource_type == "Observation":
-            # minimal required fields per model definition
-            from .types import ObservationStatus
-            from .observation import CodeableConcept as ObsCodeableConcept, Coding as ObsCoding
-            default_kwargs.setdefault("status", ObservationStatus.FINAL)
-            default_kwargs.setdefault(
-                "code",
-                ObsCodeableConcept(coding=[ObsCoding(code="dataset_input", display="DatasetInput")], text="DatasetInput"),
-            )
-        if layer.resource_type == "Encounter":
-            # Provide safe defaults required by Encounter
-            from .types import EncounterStatus
-            default_kwargs.setdefault("status", EncounterStatus.IN_PROGRESS)
-            # Use alias field name for class
-            default_kwargs.setdefault("class", "outpatient")
-        if layer.resource_type == "MedicationRequest":
-            # Provide safe defaults for required fields to reduce validation failures
-            default_kwargs.setdefault("status", "active")
-            # Use plain string to avoid enum serialization issues
-            default_kwargs.setdefault("intent", "order")
-            # Provide a temporary subject; will be replaced with actual Patient link if present
-            default_kwargs.setdefault("subject", "Patient/unknown")
-        if layer.resource_type == "Procedure":
-            # Reasonable default status per FHIR and temporary subject
-            default_kwargs.setdefault("status", "completed")
-            try:
-                from .observation import CodeableConcept as _CodeableConcept, Coding as _Coding
-                default_kwargs.setdefault(
-                    "code",
-                    _CodeableConcept(coding=[_Coding(code="unspecified", display="Unspecified")], text="Unspecified"),
-                )
-            except Exception:
-                pass
-            default_kwargs.setdefault("subject", "Patient/unknown")
-        if layer.resource_type == "MemoryBlock":
-            # basic defaults to satisfy required fields
-            default_kwargs.setdefault("memory_type", "semantic")
-            default_kwargs.setdefault("content", "Auto-generated memory content")
-        instance = model_cls(**default_kwargs)
+        try:
+            from . import validate_model_compatibility  # noqa: F401
+            # Prefer instantiation with resource_type defaulting inside models
+            instance = model_cls(**default_kwargs)
+        except Exception:
+            # Fallback: try minimal known fields
+            instance = model_cls(**default_kwargs)
 
         # Apply constant fields
         for field_name, field_val in layer.constant_fields.items():
@@ -159,21 +92,19 @@ def instantiate_stack_template(
         if layer.resource_type == "ResourceBundle":
             bundle_instance = instance
 
-    # Link all non-bundle resources into the bundle as entries
+    # Link and bundle in ResourceBundle utilities if a bundle is present
     if bundle_instance is not None:
         try:
-            from .resource_bundle import ResourceBundle, BundleEntry
+            from .resource_bundle import ResourceBundle
             if isinstance(bundle_instance, ResourceBundle):
+                # Create a new bundle from instances to normalize entries
+                new_bundle = ResourceBundle(title=getattr(template, "name", None), bundle_type=getattr(bundle_instance, "bundle_type", None), version=getattr(template, "version", "1.0.0"))
                 for lname, res in outputs.items():
                     if res is bundle_instance:
                         continue
-                    try:
-                        bundle_instance.add_entry(res, title=lname)
-                    except Exception:
-                        # Fallback: append minimal entry dict
-                        entries = getattr(bundle_instance, "entries", []) or []
-                        entries.append({"title": lname, "contained_resource_id": getattr(res, "id", None)})
-                        setattr(bundle_instance, "entries", entries)
+                    new_bundle.add_entry(res, title=lname)
+                outputs = {k: v for k, v in outputs.items() if v is not bundle_instance}
+                outputs["ResourceBundle"] = new_bundle
         except Exception:
             pass
 

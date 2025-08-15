@@ -371,6 +371,100 @@ class BundleType(str, Enum):
     HISTORY = "history"               # History bundle
     SEARCHSET = "searchset"           # Search result set
     COLLECTION = "collection"         # Collection bundle
+    STACK = "stack"
+    TEMPLATE = "template"
+
+
+# -----------------------------------------------------------------------------
+# Additional enums for documents and workflows (compatibility + FHIR-aligned)
+# -----------------------------------------------------------------------------
+
+class DocumentStatus(str, Enum):
+    """Status of a clinical document (FHIR Composition.status alignment)."""
+    PRELIMINARY = "preliminary"
+    FINAL = "final"
+    AMENDED = "amended"
+    ENTERED_IN_ERROR = "entered-in-error"
+
+
+class ConfidentialityLevel(str, Enum):
+    """Confidentiality level (inspired by FHIR Composition.confidentiality)."""
+    NORMAL = "normal"
+    LOW = "low"
+    MODERATE = "moderate"
+    RESTRICTED = "restricted"
+    VERY_RESTRICTED = "very_restricted"
+
+
+class DocumentType(str, Enum):
+    """Common clinical document types (not exhaustive)."""
+    PROGRESS_NOTE = "progress_note"
+    DISCHARGE_SUMMARY = "discharge_summary"
+    CONSULTATION_NOTE = "consultation_note"
+    CLINICAL_SUMMARY = "clinical_summary"
+
+
+class BundleStatus(str, Enum):
+    """Informal bundle lifecycle for HACS bundles."""
+    DRAFT = "draft"
+    ACTIVE = "active"
+    ARCHIVED = "archived"
+
+
+class WorkflowStatus(str, Enum):
+    """Workflow lifecycle status (generalized)."""
+    DRAFT = "draft"
+    ACTIVE = "active"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+
+class WorkflowRequestIntent(str, Enum):
+    """Intent for workflow requests."""
+    ORDER = "order"
+    PLAN = "plan"
+    PROPOSAL = "proposal"
+
+
+class WorkflowRequestPriority(str, Enum):
+    """Priority for workflow requests."""
+    ROUTINE = "routine"
+    URGENT = "urgent"
+    ASAP = "asap"
+    STAT = "stat"
+
+
+class EventStatus(str, Enum):
+    """Status for workflow events."""
+    PREPARATION = "preparation"
+    IN_PROGRESS = "in-progress"
+    COMPLETED = "completed"
+    ENTERED_IN_ERROR = "entered-in-error"
+    STOPPED = "stopped"
+
+
+class WorkflowTaskStatus(str, Enum):
+    """Task status for workflow tasks (inspired by FHIR Task.status)."""
+    DRAFT = "draft"
+    REQUESTED = "requested"
+    ACCEPTED = "accepted"
+    IN_PROGRESS = "in-progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class WorkflowTaskIntent(str, Enum):
+    """Task intent for workflow tasks."""
+    ORDER = "order"
+    PLAN = "plan"
+    PROPOSAL = "proposal"
+
+
+class WorkflowActivityDefinitionKind(str, Enum):
+    """Activity definition kind for workflow activities (simplified)."""
+    TASK = "Task"
+    SERVICE_REQUEST = "ServiceRequest"
+    COMMUNICATION = "Communication"
 
 
 # Type aliases for commonly used complex types

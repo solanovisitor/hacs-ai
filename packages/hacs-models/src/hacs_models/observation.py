@@ -9,7 +9,7 @@ healthcare observations.
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
 from .base_resource import DomainResource
 from .types import ObservationStatus
@@ -421,6 +421,21 @@ class Observation(DomainResource):
             
         self.reference_range.append(range_dict)
         self.update_timestamp()
+
+    # ---------------------------------------------------------------------
+    # Compatibility: allow simple strings for code and category for tests
+    # ---------------------------------------------------------------------
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_simple_fields(cls, values):  # type: ignore[override]
+        if isinstance(values, dict):
+            # code as string -> CodeableConcept{text=string}
+            if isinstance(values.get("code"), str):
+                values["code"] = CodeableConcept(text=values["code"]) 
+            # category as string -> [CodeableConcept{text=string}]
+            if isinstance(values.get("category"), str):
+                values["category"] = [CodeableConcept(text=values["category"])]
+        return values
 
     def is_within_normal_range(self) -> bool | None:
         """Check if the observation value is within normal reference ranges."""

@@ -52,6 +52,18 @@ from .types import (
     ServiceRequestPriority,
     DiagnosticReportStatus,
     MedicationStatus,
+    # Added for compatibility with legacy tests and FHIR alignment
+    DocumentStatus,
+    DocumentType,
+    ConfidentialityLevel,
+    BundleStatus,
+    WorkflowStatus,
+    WorkflowRequestIntent,
+    WorkflowRequestPriority,
+    EventStatus,
+    WorkflowTaskStatus,
+    WorkflowTaskIntent,
+    WorkflowActivityDefinitionKind,
 )
 
 # Core healthcare models
@@ -116,8 +128,29 @@ from .plan_definition import PlanDefinition, PlanDefinitionGoal, PlanDefinitionA
 from .memory import MemoryBlock, EpisodicMemory, SemanticMemory, WorkingMemory
 from .agent_message import AgentMessage, MessageRole, MessageType
 from .resource_bundle import ResourceBundle, BundleEntry, BundleType
+from .resource_bundle import WorkflowBindingType, WorkflowBinding, LinkRelation
+from .resource_bundle import ResourceBundle as _RB
+UseCase = _RB.UseCase
+BundleUpdate = _RB.BundleUpdate
+create_resource_stack = _RB.create_resource_stack
+create_search_results_bundle = _RB.create_search_results_bundle
+create_workflow_template_bundle = _RB.create_workflow_template_bundle
 from .stack_template import StackTemplate, LayerSpec, instantiate_stack_template
 from .workflow import WorkflowDefinition, WorkflowStep, WorkflowAction
+from .workflow import (
+    WorkflowRequest,
+    WorkflowEvent,
+    WorkflowTaskResource,
+    WorkflowActivityDefinition,
+    WorkflowParticipant,
+    WorkflowPlanDefinition,
+    WorkflowPlanDefinitionAction,
+    WorkflowServiceRequest,
+    WorkflowExecution,
+    create_simple_task,
+    create_document_processing_workflow,
+    create_clinical_workflow_execution,
+)
 from .annotation import (
     PromptTemplateResource,
     ExtractionSchemaResource,
@@ -136,6 +169,15 @@ from .annotation import (
     FormatType,
     Document,
     AnnotatedDocument,
+    # Minimal document-related types for compatibility
+    DocumentAuthor,
+    DocumentAttester,
+    DocumentSection,
+    DocumentEncounter,
+    create_discharge_summary,
+    create_progress_note,
+    create_consultation_note,
+    create_clinical_summary,
 )
 from .actor import Actor, ActorRole, PermissionLevel, SessionStatus
 from .evidence import Evidence, EvidenceType
@@ -172,6 +214,18 @@ __all__ = [
     "AddressType",
     "IdentifierUse",
     "NameUse",
+    # Added compatibility enums
+    "DocumentStatus",
+    "DocumentType",
+    "ConfidentialityLevel",
+    "BundleStatus",
+    "WorkflowStatus",
+    "WorkflowRequestIntent",
+    "WorkflowRequestPriority",
+    "EventStatus",
+    "WorkflowTaskStatus",
+    "WorkflowTaskIntent",
+    "WorkflowActivityDefinitionKind",
     # NEW - Phase 1 critical types
     "AllergyIntoleranceStatus",
     "AllergyIntoleranceType",
@@ -286,6 +340,14 @@ __all__ = [
     "ResourceBundle",
     "BundleEntry",
     "BundleType",
+    "WorkflowBindingType",
+    "WorkflowBinding",
+    "LinkRelation",
+    "UseCase",
+    "BundleUpdate",
+    "create_resource_stack",
+    "create_search_results_bundle",
+    "create_workflow_template_bundle",
     # Stack templates
     "StackTemplate",
     "LayerSpec",
@@ -293,6 +355,18 @@ __all__ = [
     "WorkflowDefinition",
     "WorkflowStep",
     "WorkflowAction",
+    "WorkflowRequest",
+    "WorkflowEvent",
+    "WorkflowTaskResource",
+    "WorkflowActivityDefinition",
+    "WorkflowParticipant",
+    "WorkflowPlanDefinition",
+    "WorkflowPlanDefinitionAction",
+    "WorkflowServiceRequest",
+    "WorkflowExecution",
+    "create_simple_task",
+    "create_document_processing_workflow",
+    "create_clinical_workflow_execution",
     # Annotation entities
     "PromptTemplateResource",
     "ExtractionSchemaResource",
@@ -311,6 +385,14 @@ __all__ = [
     "FormatType",
     "Document",
     "AnnotatedDocument",
+    "DocumentAuthor",
+    "DocumentAttester",
+    "DocumentSection",
+    "DocumentEncounter",
+    "create_discharge_summary",
+    "create_progress_note",
+    "create_consultation_note",
+    "create_clinical_summary",
 
     # Actor and authentication
     "Actor",

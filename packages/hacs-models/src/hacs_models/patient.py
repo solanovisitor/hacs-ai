@@ -23,7 +23,7 @@ Design Philosophy:
 from datetime import date
 from typing import Any, Literal
 
-from pydantic import Field, computed_field, field_validator
+from pydantic import Field, computed_field, field_validator, model_validator
 
 from .base_resource import DomainResource
 from .types import Gender, ContactPointSystem, ContactPointUse, IdentifierUse, AddressUse, NameUse
@@ -451,10 +451,10 @@ class Patient(DomainResource):
         examples=["male", "female", "other", "unknown"]
     )
 
-    birth_date: date | None = Field(
+    birth_date: date | str | None = Field(
         default=None,
         description="Date of birth",
-        examples=["1985-03-15", "1992-12-01"]
+        examples=["1985-03-15", "1992-12-01", "{{birth_date}}"]
     )
 
     # AI-friendly age input (will calculate birth_date if not provided)
@@ -626,6 +626,16 @@ class Patient(DomainResource):
         }]
     )
 
+    @model_validator(mode="before")
+    @classmethod
+    def _allow_templated_birth_date(cls, values):  # type: ignore[override]
+        if isinstance(values, dict):
+            bd = values.get("birth_date")
+            if isinstance(bd, str) and "{{" in bd and "}}" in bd:
+                # Leave as string; later templating will resolve
+                return values
+        return values
+
     def model_post_init(self, __context: Any) -> None:
         """Post-initialization processing for AI-friendly features."""
         super().model_post_init(__context)
@@ -781,7 +791,7 @@ class Patient(DomainResource):
         if self.age is not None:
             return self.age
 
-        if self.birth_date is None:
+        if self.birth_date is None or isinstance(self.birth_date, str):
             return None
 
         end_date = self.deceased_date_time if self.deceased_boolean and self.deceased_date_time else date.today()
