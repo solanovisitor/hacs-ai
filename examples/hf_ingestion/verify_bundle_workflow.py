@@ -198,7 +198,7 @@ async def test_stack_instantiation(template_name: str, context: str) -> Dict[str
 
 async def test_full_workflow() -> Dict[str, Any]:
     """Test the complete workflow end-to-end."""
-    logger.info("🚀 Starting comprehensive bundle workflow verification...")
+    logger.info("🚀 Startingbundle workflow verification...")
     
     # Test data
     test_instruction = """Aja como um médico. Use [TRANSCRIÇÃO] para preencher o [TEMPLATE].
@@ -344,7 +344,7 @@ Prescrição: Losartana 50mg, 1 comprimido ao dia
 
 
 def print_verification_report(result: Dict[str, Any]):
-    """Print a comprehensive verification report."""
+    """Print averification report."""
     print("\n" + "="*80)
     print("📋 RESOURCEBUNDLE WORKFLOW VERIFICATION REPORT")
     print("="*80)

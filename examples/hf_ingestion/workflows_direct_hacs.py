@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional
 from langgraph.func import entrypoint, task
 from langgraph.checkpoint.memory import InMemorySaver
 
+# Deprecated: StackTemplate path retained for compatibility during migration
 from hacs_models import StackTemplate, LayerSpec
 from hacs_registry import instantiate_registered_stack, get_global_registry, register_stack_template
 from hacs_persistence.adapter import PostgreSQLAdapter
@@ -45,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 
 def _generate_comprehensive_template_examples(type_hints: dict) -> str:
-    """Generate comprehensive template examples with resource previews and required fields."""
+    """Generatetemplate examples with resource previews and required fields."""
     
     # Core template examples with detailed explanations
     core_examples = [
@@ -120,7 +121,7 @@ def _generate_comprehensive_template_examples(type_hints: dict) -> str:
     # Generate resource previews with required fields
     resource_previews = _generate_resource_previews(type_hints)
     
-    # Build comprehensive examples section
+    # Buildexamples section
     examples_text = "COMPREHENSIVE TEMPLATE EXAMPLES AND RESOURCE REFERENCE:\n\n"
     
     # Add core template examples
@@ -615,7 +616,7 @@ async def _build_and_register_template_via_llm(instruction_md: str, template_nam
             f"- Prioritize resources that directly map to template content\n"
             f"- Include foundational resources (Patient, Encounter) when appropriate\n"
             f"- Consider clinical workflows and resource relationships\n"
-            f"- Ensure comprehensive coverage of all clinical domains mentioned\n"
+            f"- Ensurecoverage of all clinical domains mentioned\n"
             f"- Balance breadth with relevance to avoid over-engineering"
         )
         import re as _re, json as _json

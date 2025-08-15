@@ -1,12 +1,12 @@
 """
 LangChain Tools Integration for HACS
 
-This module provides a comprehensive LangChain integration for all HACS tools,
+This module provides aLangChain integration for all HACS tools,
 following LangChain best practices for tool creation, validation, and error handling.
 
 Key Features:
     🔧 Proper @tool decorator usage with validation
-    📋 Comprehensive Pydantic schemas for all inputs
+    📋Pydantic schemas for all inputs
     🛡️ Error handling with ToolException
     🔍 Tool discovery and registration
     ⚡ Async/sync support for all tools

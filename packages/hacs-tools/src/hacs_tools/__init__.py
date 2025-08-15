@@ -1,6 +1,6 @@
 """HACS Tools Package
 
-This package provides a comprehensive suite of tools for healthcare AI agents.
+This package provides asuite of tools for healthcare AI agents.
 All tools are organized via an automatic registry system following SOLID principles.
 """
 

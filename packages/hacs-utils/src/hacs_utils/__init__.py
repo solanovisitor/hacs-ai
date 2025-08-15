@@ -101,6 +101,23 @@ except ImportError:
 
 # Core adapter (always available)
 from .adapter import AbstractAdapter, AdapterConfig
+from .preferences import consult_preferences, inject_preferences
+from .memory_utils import merge_memories, filter_memories, gather_memories, feed_memories
+from .semantic_index import (
+    build_resource_document,
+    build_tool_documents,
+    index_resource,
+    index_tool_catalog,
+    semantic_tool_loadout,
+    semantic_resource_search,
+)
+from .vector_ops import (
+    store_embedding as utils_store_embedding,
+    vector_similarity_search as utils_vector_similarity_search,
+    vector_hybrid_search as utils_vector_hybrid_search,
+    get_vector_collection_stats as utils_get_vector_collection_stats,
+    optimize_vector_collection as utils_optimize_vector_collection,
+)
 
 
 def list_available_integrations() -> list[str]:
@@ -256,6 +273,27 @@ __all__ = [
     # Core
     "AbstractAdapter",
     "AdapterConfig",
+    # Preferences helpers
+    "consult_preferences",
+    "inject_preferences",
+    # Memory helpers
+    "merge_memories",
+    "filter_memories",
+    "gather_memories",
+    "feed_memories",
+    # Semantic index
+    "build_resource_document",
+    "build_tool_documents",
+    "index_resource",
+    "index_tool_catalog",
+    "semantic_tool_loadout",
+    "semantic_resource_search",
+    # Vector ops (canonical in utils; tools wrap them)
+    "utils_store_embedding",
+    "utils_vector_similarity_search",
+    "utils_vector_hybrid_search",
+    "utils_get_vector_collection_stats",
+    "utils_optimize_vector_collection",
     # Utilities
     "list_available_integrations",
     "get_integration_info",

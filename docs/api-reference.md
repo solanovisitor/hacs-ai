@@ -5,7 +5,7 @@
 This reference covers all HACS packages, tools, and integration patterns for healthcare AI development.
 
 > **📚 Related Documentation:**
-> - [Hacs Tools Reference](healthcare-tools.md) - Detailed tool documentation
+> - [Hacs Tools Reference](hacs-tools.md) - Detailed tool documentation
 > - [Basic Usage Guide](basic-usage.md) - Essential patterns and examples
 > - [Integration Guide](integrations.md) - Framework integrations
 > - [Quick Start Guide](quick-start.md) - Get running in 5 minutes
@@ -55,7 +55,7 @@ memory = MemoryBlock(
 
 ### `hacs-tools` - Healthcare Tool Registry
 
-**42+ Hacs Tools for clinical workflows**
+**Low-level HACS tools for modeling, bundles, schema discovery, memory, and minimal workflow modeling**
 
 ```python
 from hacs_tools import use_hacs_tool
@@ -77,12 +77,11 @@ search_result = use_hacs_tool("search_hacs_records", {
 result = use_hacs_tool("register_stack_template", {"template": {"name": "Example", "version": "1.0.0", "layers": [], "variables": {}}})
 ```
 
-**Tool Categories:**
-- **Resource Management** - CRUD operations for healthcare data
+**Tool Categories (low-level only):**
+- **Resource Management** - CRUD, modeling, bundles
 - **Memory Operations** - Clinical memory and context management
 - **Schema Discovery** - Resource type exploration and analysis
-- **Clinical Workflows** - Template generation and protocol execution
-- **Vector Search** - Semantic search for medical knowledge
+- **Workflow Modeling** - ActivityDefinition, PlanDefinition, Task adapters
 
 ### `hacs-auth` - Healthcare Security
 
@@ -288,7 +287,19 @@ memories = use_hacs_tool("search_hacs_memories", {
 })
 ```
 
-### Clinical Workflow Tools
+#### `check_memory`
+Gather and filter memories for agent context construction.
+
+```python
+ctx = use_hacs_tool("check_memory", {
+    "actor_id": actor.id,
+    "memory_types": ["episodic", "procedural"],
+    "min_importance": 0.5,
+    "limit": 20
+})
+```
+
+### Workflow Modeling Tools
 
 #### Template registration and instantiation
 Register templates and instantiate stacks.
@@ -297,17 +308,8 @@ Register templates and instantiate stacks.
 result = use_hacs_tool("register_stack_template", {"template": {"name": "Example", "version": "1.0.0", "layers": [], "variables": {}}})
 ```
 
-#### `execute_clinical_workflow`
-Execute structured clinical protocols.
-
-```python
-workflow = use_hacs_tool("execute_clinical_workflow", {
-    "workflow_type": "diabetes_assessment",  # Required: Workflow type
-    "patient_id": "patient-123",            # Required: Patient ID
-    "template_id": "template-456",          # Optional: Template to use
-    "actor_id": "physician-789"             # Required: Executing provider
-})
-```
+#### `create_activity_definition`, `create_plan_definition`, `create_task_from_activity`, `complete_task`, `fail_task`
+Low-level adapters for workflow resources; keep business logic in workflows.
 
 ### Discovery and Schema Tools
 
@@ -337,7 +339,7 @@ schema = use_hacs_tool("get_hacs_resource_schema", {
 
 ### LangChain Integration (deprecated)
 
-The LangChain adapter is deprecated and has been removed. Use LangGraph integration below.
+Minimal shims remain; prefer LangGraph direct tool calls or MCP.
 
 ### LangGraph Integration
 
@@ -354,6 +356,27 @@ workflow.add_node("agent", agent_with_tools)
 workflow.add_edge("agent", END)
 
 healthcare_agent = workflow.compile()
+```
+
+### Knowledge Management (Evidence)
+
+#### `index_evidence`
+
+```python
+result = use_hacs_tool("index_evidence", {
+  "citation": "Doe et al. Diabetes Care (2023)",
+  "content": "Guideline summary...",
+  "evidence_type": "guideline"
+})
+```
+
+#### `check_evidence`
+
+```python
+evidence = use_hacs_tool("check_evidence", {
+  "query": "beta-blockers in heart failure",
+  "limit": 5
+})
 ```
 
 ### CrewAI Integration
@@ -486,7 +509,7 @@ patient_data = patient.model_dump(include={
 patient_data = patient.model_dump()  # Includes FHIR overhead
 
 # ✅ GOOD: Use text summaries for LLM context
-summary = patient.get_text_summary()  # "Patient patient-123"
+summary = patient.summary()  # "Patient patient-123"
 
 # ✅ GOOD: Batch operations
 results = use_hacs_tool("search_hacs_records", {
@@ -569,7 +592,7 @@ else:
 - **[GitHub Repository](https://github.com/solanovisitor/hacs-ai)** - Source code and issues
 - **[Documentation Hub](README.md)** - Complete documentation index
 - **[Quick Start Guide](quick-start.md)** - Get running in 5 minutes
-- **[Healthcare Tools](healthcare-tools.md)** - Detailed tool documentation
+- **[Healthcare Tools](hacs-tools.md)** - Detailed tool documentation
 - **[Integration Examples](integrations.md)** - Framework integration patterns
 
 ---

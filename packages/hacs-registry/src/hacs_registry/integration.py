@@ -659,7 +659,7 @@ class HACSToolIntegrationManager:
         )
 
     def get_integration_stats(self) -> Dict[str, Any]:
-        """Get comprehensive integration statistics."""
+        """Getintegration statistics."""
         stats = self.registry.get_tool_stats()
 
         integration_stats = {

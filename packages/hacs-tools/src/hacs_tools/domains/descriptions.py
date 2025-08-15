@@ -1,7 +1,7 @@
 """
 HACS Tools Descriptions
 
-This module contains comprehensive description constants for all HACS Hacs Tools.
+This module containsdescription constants for all HACS Hacs Tools.
 These descriptions are used by the @tool decorators to provide rich context for
 AI agents working with healthcare data and clinical workflows.
 
@@ -31,7 +31,7 @@ medical record management, clinical data entry, healthcare workflow automation.
 """
 
 GET_HACS_RECORD_DESCRIPTION = """
-Retrieve healthcare resource records by ID with comprehensive audit trail support.
+Retrieve healthcare resource records by ID withaudit trail support.
 
 This tool fetches healthcare resource data with proper access control validation,
 clinical context preservation, and optional audit trail information for regulatory
@@ -52,7 +52,7 @@ UPDATE_HACS_RECORD_DESCRIPTION = """
 Update existing healthcare resource records with clinical validation and audit trails.
 
 This tool modifies healthcare resource data while maintaining FHIR compliance,
-preserving clinical integrity, and creating comprehensive audit trails for
+preserving clinical integrity, and creatingaudit trails for
 regulatory requirements and clinical governance.
 
 Key capabilities:
@@ -103,6 +103,20 @@ population health analytics, clinical decision support, quality measure reportin
 """
 
 # === CLINICAL WORKFLOW TOOL DESCRIPTIONS ===
+# === MODELING TOOL DESCRIPTIONS ===
+
+INSTANTIATE_HACS_RESOURCE_DESCRIPTION = """
+Instantiate a HACS model using provided data via a thin adapter.
+
+This tool simply constructs the requested model using hacs-models without
+adding business logic. Use when you already decided the resource type.
+"""
+
+VALIDATE_HACS_RESOURCE_DESCRIPTION = """
+Validate a HACS model instance from raw data and return issues.
+
+This tool wraps Pydantic validation to surface model issues cleanly to agents.
+"""
 
 EXECUTE_CLINICAL_WORKFLOW_DESCRIPTION = """
 Execute structured clinical workflows using FHIR PlanDefinition specifications.
@@ -161,7 +175,7 @@ queries, care gap analysis, performance measurement, clinical quality improvemen
 VALIDATE_CLINICAL_PROTOCOL_DESCRIPTION = """
 Validate clinical protocols and care pathways for compliance and clinical best practices.
 
-This tool performs comprehensive validation of clinical protocols against healthcare
+This tool performsvalidation of clinical protocols against healthcare
 standards, regulatory requirements, evidence-based guidelines, and best practice
 recommendations to ensure clinical safety and effectiveness.
 
@@ -217,7 +231,7 @@ assistance, medical knowledge lookup, clinical experience sharing, evidence-base
 CONSOLIDATE_MEMORIES_DESCRIPTION = """
 Consolidate related healthcare memories to enhance clinical knowledge and reduce redundancy.
 
-This tool combines similar clinical memories to create more comprehensive medical
+This tool combines similar clinical memories to create moremedical
 knowledge representations while preserving important clinical nuances, treatment
 variations, and patient-specific considerations.
 
@@ -233,14 +247,14 @@ treatment guideline consolidation, clinical experience synthesis, medical educat
 """
 
 RETRIEVE_CONTEXT_DESCRIPTION = """
-Retrieve contextual clinical memories for comprehensive healthcare decision support.
+Retrieve contextual clinical memories forhealthcare decision support.
 
 This tool gathers relevant clinical memories, treatment protocols, and patient context
-to provide comprehensive background information for informed clinical decision making
+to providebackground information for informed clinical decision making
 and evidence-based care planning.
 
 Key capabilities:
-- Patient-specific clinical context retrieval with comprehensive medical history
+- Patient-specific clinical context retrieval withmedical history
 - Contextual clinical memory gathering for decision support
 - Treatment protocol and guideline context assembly
 - Clinical experience and outcome context for similar cases
@@ -307,10 +321,10 @@ protocol discovery, diagnostic assistance, clinical research support, medical ed
 """
 
 VECTOR_HYBRID_SEARCH_DESCRIPTION = """
-Perform hybrid search combining keyword and semantic vector search for comprehensive clinical retrieval.
+Perform hybrid search combining keyword and semantic vector search forclinical retrieval.
 
 This tool combines traditional medical keyword search with semantic vector search
-to provide comprehensive clinical information retrieval, covering both exact
+to provideclinical information retrieval, covering both exact
 medical terminology matches and conceptual healthcare relationships.
 
 Key capabilities:
@@ -318,14 +332,14 @@ Key capabilities:
 - Weighted combination of keyword and semantic relevance for optimal clinical results
 - Medical terminology and clinical concept integrated search
 - Clinical context filtering and healthcare specialty-specific results
-- Comprehensive medical literature and clinical guideline coverage
+-medical literature and clinical guideline coverage
 
-Healthcare use cases: Comprehensive medical research, clinical guideline discovery, treatment
+Healthcare use cases:medical research, clinical guideline discovery, treatment
 protocol identification, diagnostic support, medical education content retrieval, clinical decision support.
 """
 
 GET_VECTOR_COLLECTION_STATS_DESCRIPTION = """
-Get comprehensive statistics and analytics for healthcare vector collections.
+Getstatistics and analytics for healthcare vector collections.
 
 This tool provides detailed analytics about clinical vector collections including
 medical specialty distribution, embedding quality metrics, clinical content
@@ -363,7 +377,7 @@ healthcare AI performance improvement, clinical data management, medical educati
 # === SCHEMA DISCOVERY TOOL DESCRIPTIONS ===
 
 DISCOVER_HACS_RESOURCES_DESCRIPTION = """
-Discover all available HACS healthcare resources with comprehensive medical metadata and clinical context.
+Discover all available HACS healthcare resources withmedical metadata and clinical context.
 
 This tool helps healthcare AI agents understand available clinical resources,
 their medical purposes, FHIR compliance status, clinical applications, and
@@ -381,7 +395,7 @@ application development, FHIR implementation planning, clinical data modeling, h
 """
 
 GET_HACS_RESOURCE_SCHEMA_DESCRIPTION = """
-Get comprehensive schema information for healthcare resources with clinical context and FHIR compliance details.
+Getschema information for healthcare resources with clinical context and FHIR compliance details.
 
 This tool provides detailed JSON schema definitions for healthcare resources
 including medical field types, clinical validation rules, FHIR compliance
@@ -437,20 +451,20 @@ harmonization, FHIR implementation planning, clinical decision support optimizat
 # === DEVELOPMENT TOOL DESCRIPTIONS ===
 
 CREATE_RESOURCE_STACK_DESCRIPTION = """
-Create sophisticated healthcare resource stacks by layering multiple clinical resources for comprehensive medical workflows.
+Create sophisticated healthcare resource stacks by layering multiple clinical resources formedical workflows.
 
 This advanced tool enables building complex clinical data structures by stacking
-healthcare resources, creating comprehensive patient views, integrated care plans,
+healthcare resources, creatingpatient views, integrated care plans,
 and sophisticated medical workflow templates for healthcare AI applications.
 
 Key capabilities:
 - Multi-resource healthcare stacking with clinical relationship preservation
-- Comprehensive patient view creation with integrated medical data
+-patient view creation with integrated medical data
 - Clinical workflow template generation with care pathway integration
 - Medical data composition with FHIR compliance and healthcare standard alignment
 - Healthcare resource dependency management with clinical context preservation
 
-Healthcare use cases: Comprehensive patient dashboards, integrated care plans, clinical
+Healthcare use cases:patient dashboards, integrated care plans, clinical
 workflow templates, medical record composition, healthcare data integration, clinical decision support enhancement.
 """
 
@@ -459,7 +473,7 @@ workflow templates, medical record composition, healthcare data integration, cli
 # === FHIR INTEGRATION TOOL DESCRIPTIONS ===
 
 CONVERT_TO_FHIR_DESCRIPTION = """
-Convert healthcare resource data to FHIR-compliant format with comprehensive validation.
+Convert healthcare resource data to FHIR-compliant format withvalidation.
 
 This tool converts HACS resource data or other healthcare formats (HL7v2, CCD, custom)
 to FHIR-compliant JSON representation with proper resource structure, terminology
@@ -479,7 +493,7 @@ clinical data exchange, medical record conversion, healthcare system interoperab
 VALIDATE_FHIR_COMPLIANCE_DESCRIPTION = """
 Validate FHIR resource compliance against healthcare standards and regulatory requirements.
 
-This tool performs comprehensive FHIR compliance validation including structure
+This tool performsFHIR compliance validation including structure
 validation, terminology checking, cardinality rules, and healthcare-specific
 business rules validation for regulatory compliance and data quality assurance.
 
@@ -497,7 +511,7 @@ clinical data quality assurance, regulatory submission preparation, healthcare s
 PROCESS_FHIR_BUNDLE_DESCRIPTION = """
 Process FHIR Bundle operations for bulk healthcare data transactions and operations.
 
-This tool handles comprehensive FHIR Bundle processing including transaction bundles,
+This tool handlesFHIR Bundle processing including transaction bundles,
 batch operations, search result bundles, and bulk data operations with validation,
 error handling, and healthcare-specific transaction management.
 
@@ -515,12 +529,12 @@ FHIR transaction processing, clinical care coordination, medical record bulk ope
 LOOKUP_FHIR_TERMINOLOGY_DESCRIPTION = """
 Lookup and validate FHIR terminology codes and healthcare code systems.
 
-This tool provides comprehensive terminology lookup capabilities for FHIR code systems
+This tool providesterminology lookup capabilities for FHIR code systems
 including SNOMED CT, LOINC, ICD-10, CPT, and other healthcare terminologies with
 validation, hierarchy exploration, and multi-language support.
 
 Key capabilities:
-- Comprehensive medical terminology lookup across major healthcare code systems
+-medical terminology lookup across major healthcare code systems
 - Clinical concept hierarchy exploration and relationship mapping
 - Multi-language terminology support and clinical translation services
 - Medical code validation and healthcare terminology compliance checking
@@ -533,7 +547,7 @@ healthcare documentation assistance, clinical decision support, medical educatio
 # === HEALTHCARE ANALYTICS TOOL DESCRIPTIONS ===
 
 CALCULATE_QUALITY_MEASURES_DESCRIPTION = """
-Calculate clinical quality measures for comprehensive healthcare performance monitoring.
+Calculate clinical quality measures forhealthcare performance monitoring.
 
 This tool computes clinical quality measures such as HEDIS, CMS, MIPS, and custom
 quality indicators for patient populations with benchmarking, trending, and
@@ -551,14 +565,14 @@ clinical outcomes measurement, regulatory quality reporting, population health m
 """
 
 ANALYZE_POPULATION_HEALTH_DESCRIPTION = """
-Analyze population health patterns, trends, and outcomes for comprehensive healthcare management.
+Analyze population health patterns, trends, and outcomes forhealthcare management.
 
-This tool performs comprehensive population health analysis including demographic
+This tool performspopulation health analysis including demographic
 patterns, clinical outcomes, social determinants of health, and health equity
 assessment for population health management and community health improvement.
 
 Key capabilities:
-- Comprehensive population health analytics and demographic analysis
+-population health analytics and demographic analysis
 - Social determinants of health assessment and community health factors
 - Health equity gap identification and disparity analysis
 - Clinical outcomes analysis and population health trending
@@ -569,7 +583,7 @@ health equity initiatives, public health planning, healthcare resource allocatio
 """
 
 GENERATE_CLINICAL_DASHBOARD_DESCRIPTION = """
-Generate interactive clinical dashboards for comprehensive healthcare performance monitoring.
+Generate interactive clinical dashboards forhealthcare performance monitoring.
 
 This tool creates customized clinical dashboards with key performance indicators,
 quality metrics, patient outcomes, and real-time alerts for healthcare
@@ -589,7 +603,7 @@ quality improvement tracking, clinical workflow optimization, healthcare executi
 PERFORM_RISK_STRATIFICATION_DESCRIPTION = """
 Perform patient risk stratification and predictive analytics for proactive healthcare management.
 
-This tool analyzes comprehensive patient data to identify high-risk individuals,
+This tool analyzespatient data to identify high-risk individuals,
 predict clinical outcomes, and recommend targeted interventions for care management
 and population health improvement with machine learning and clinical intelligence.
 

@@ -82,10 +82,10 @@ class Goal(DomainResource):
     
     Goals describe the intended objectives for patients, groups, or organizations
     that are being tracked and measured as part of care planning and management.
-    Optimized for LLM context engineering with comprehensive FHIR-aligned metadata.
+    Optimized for LLM context engineering withFHIR-aligned metadata.
     
     Key Features:
-        - Comprehensive lifecycle status tracking
+        -lifecycle status tracking
         - Measurable target outcomes with deadlines
         - Category and priority classification
         - Achievement status and progress tracking

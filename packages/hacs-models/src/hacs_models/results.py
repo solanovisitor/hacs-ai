@@ -1,7 +1,7 @@
 """
 HACS Results - Standard result types for healthcare AI operations
 
-This module provides comprehensive result models for all HACS operations,
+This module providesresult models for all HACS operations,
 ensuring consistent response formats across all tools and services.
 All result types follow healthcare-specific patterns and include
 proper audit trails, timestamps, and error handling.
@@ -50,7 +50,7 @@ class ResourceSchemaResult(BaseModel):
     """
     Result for healthcare resource schema operations.
 
-    Provides comprehensive schema information for HACS resources
+    Providesschema information for HACS resources
     including FHIR compliance details and validation rules.
     """
 
@@ -78,7 +78,6 @@ class ResourceDiscoveryResult(BaseModel):
     resources: List[Dict[str, Any]] = Field(description="List of available resources with metadata")
     total_count: int = Field(description="Total number of resources discovered")
     categories: List[str] = Field(description="Clinical categories available (clinical, administrative, workflow)")
-    fhir_resources: List[str] = Field(default_factory=list, description="FHIR-compliant resource types")
     clinical_resources: List[str] = Field(default_factory=list, description="Clinical workflow resource types")
     administrative_resources: List[str] = Field(default_factory=list, description="Administrative resource types")
     message: str = Field(description="Human-readable discovery summary")

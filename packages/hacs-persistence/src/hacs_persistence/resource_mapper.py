@@ -41,20 +41,13 @@ except ImportError:
             MemoryBlock as Memory,
         )
     except ImportError:
-        # TODO: Implement proper model imports or create actual model definitions
-        # The following models need proper implementations:
-        class _PlaceholderModel:
-            """Placeholder model - TODO: implement proper model definitions."""
-            pass
-
-        AgentMessage = _PlaceholderModel
-        ContextSummary = _PlaceholderModel
-        Encounter = _PlaceholderModel
-        KnowledgeItem = _PlaceholderModel
-        Memory = _PlaceholderModel
-        Observation = _PlaceholderModel
-        Patient = _PlaceholderModel
-        ScratchpadEntry = _PlaceholderModel
+        # As a last resort, import only the minimal models required for mapping
+        from hacs_models import AgentMessage, Encounter, Observation, Patient
+        from hacs_models import MemoryBlock as Memory
+        try:
+            from hacs_models import ScratchpadEntry, ContextSummary, KnowledgeItem  # type: ignore
+        except Exception:
+            ScratchpadEntry = ContextSummary = KnowledgeItem = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 

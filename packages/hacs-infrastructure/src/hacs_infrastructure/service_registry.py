@@ -1,7 +1,7 @@
 """
 Service Registry and Discovery for HACS Infrastructure
 
-This module provides comprehensive service registry and discovery capabilities
+This module providesservice registry and discovery capabilities
 with health monitoring, load balancing, and automatic failover.
 """
 
@@ -93,7 +93,7 @@ class ServiceRegistry:
     """
     Service registry with health monitoring and discovery capabilities.
 
-    Provides comprehensive service management including:
+    Providesservice management including:
     - Service registration and deregistration
     - Health monitoring with configurable checks
     - Service discovery with filtering

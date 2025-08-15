@@ -77,7 +77,7 @@ Note: Package‑level docs evolve; use the links below for the most up‑to‑da
 ## Learn more
 
 - [Quick Start](./docs/quick-start.md)
-- [HACS Tools reference](./docs/healthcare-tools.md)
+- [HACS Tools reference](./docs/hacs-tools.md)
 - [Use MCP with LangGraph](./docs/mcp_langgraph.md)
 - [Integrations overview](./docs/integrations.md)
 - [Testing and CI](./docs/testing.md)

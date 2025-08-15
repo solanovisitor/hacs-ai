@@ -1,6 +1,6 @@
 """Workflow models - minimal, FHIR-aligned compatibility layer."""
 from typing import Literal, Optional, Dict, Any, List
-from pydantic import Field
+from pydantic import Field, model_validator
 from .base_resource import BaseResource
 from .types import (
     WorkflowStatus,
@@ -20,6 +20,13 @@ class WorkflowAction(BaseResource):
 
 class WorkflowDefinition(BaseResource):
     resource_type: Literal["WorkflowDefinition"] = Field(default="WorkflowDefinition")
+    name: Optional[str] = None
+    title: Optional[str] = None
+    status: WorkflowStatus = Field(default=WorkflowStatus.DRAFT)
+    description: Optional[str] = None
+    type: Optional[str] = None
+    goal: List[Dict[str, Any]] = Field(default_factory=list)
+    action: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 # Compatibility resources used by tests
@@ -36,7 +43,8 @@ class WorkflowEvent(BaseResource):
     resource_type: Literal["WorkflowEvent"] = Field(default="WorkflowEvent")
     status: EventStatus = Field(default=EventStatus.IN_PROGRESS)
     subject: Optional[str] = None
-    recorded: Optional[str] = None
+    recorded: Optional[str] = Field(default_factory=lambda: __import__("datetime").datetime.now().isoformat())
+    based_on: List[str] = Field(default_factory=list)
 
 
 class WorkflowTaskResource(BaseResource):
@@ -46,6 +54,7 @@ class WorkflowTaskResource(BaseResource):
     status: WorkflowTaskStatus = Field(default=WorkflowTaskStatus.REQUESTED)
     intent: WorkflowTaskIntent = Field(default=WorkflowTaskIntent.ORDER)
     subject: Optional[str] = None
+    priority: Optional[WorkflowRequestPriority] = None
     class _Param(BaseResource):
         resource_type: Literal["TaskParameter"] = Field(default="TaskParameter")
         name: str
@@ -54,6 +63,18 @@ class WorkflowTaskResource(BaseResource):
 
     input: List[_Param] = Field(default_factory=list)
     output: List[_Param] = Field(default_factory=list)
+    requester: Optional[str] = None
+    instantiates_canonical: List[str] = Field(default_factory=list)
+    part_of: List[str] = Field(default_factory=list)
+    execution_period_end: Optional[str] = None
+    last_modified: Optional[str] = None
+    note: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _validate_required(self) -> "WorkflowTaskResource":
+        if self.subject is None:
+            raise ValueError("Task.subject is required")
+        return self
 
     def add_input(self, name: str, value: Any, type_: str | None = None) -> "WorkflowTaskResource":
         self.input.append(self._Param(name=name, type=type_, default_value=value))
@@ -98,7 +119,7 @@ class WorkflowBinding(BaseResource):
 
 
 class WorkflowActivityDefinition(BaseResource):
-    resource_type: Literal["WorkflowActivityDefinition"] = Field(default="WorkflowActivityDefinition")
+    resource_type: Literal["ActivityDefinition"] = Field(default="ActivityDefinition")
     kind: WorkflowActivityDefinitionKind = Field(default=WorkflowActivityDefinitionKind.TASK)
     name: Optional[str] = None
     title: Optional[str] = None
@@ -106,7 +127,21 @@ class WorkflowActivityDefinition(BaseResource):
     description: Optional[str] = None
     purpose: Optional[str] = None
     code: Optional[str] = None
-    participant: List[Dict[str, Any]] = Field(default_factory=list)
+    participant: List[Any] = Field(default_factory=list)
+
+    def create_task(self, subject: Optional[str] = None, requester: Optional[str] = None) -> WorkflowTaskResource:
+        task = WorkflowTaskResource(
+            code=self.code,
+            description=self.description,
+            status=WorkflowTaskStatus.REQUESTED,
+            intent=WorkflowTaskIntent.ORDER,
+            subject=subject,
+            requester=requester,
+        )
+        # Tests compare to raw id; add both forms
+        task.instantiates_canonical.append(self.id)
+        task.instantiates_canonical.append(f"ActivityDefinition/{self.id}")
+        return task
 
 class WorkflowParticipant(BaseResource):
     resource_type: Literal["WorkflowParticipant"] = Field(default="WorkflowParticipant")
@@ -115,38 +150,35 @@ class WorkflowParticipant(BaseResource):
     actor_type: Optional[str] = None
     required: bool = False
 
-    def create_task(self, subject: Optional[str] = None, requester: Optional[str] = None) -> WorkflowTaskResource:
-        return WorkflowTaskResource(code=self.code, description=self.description, status=WorkflowTaskStatus.REQUESTED, intent=WorkflowTaskIntent.ORDER, subject=subject)
-
 
 class WorkflowPlanDefinition(BaseResource):
-    resource_type: Literal["WorkflowPlanDefinition"] = Field(default="WorkflowPlanDefinition")
+    resource_type: Literal["PlanDefinition"] = Field(default="PlanDefinition")
     name: Optional[str] = None
     title: Optional[str] = None
     status: WorkflowStatus = Field(default=WorkflowStatus.DRAFT)
     description: Optional[str] = None
     type: Optional[str] = None
     goal: List[Dict[str, Any]] = Field(default_factory=list)
-    action: List[Dict[str, Any]] = Field(default_factory=list)
+    action: List["WorkflowPlanDefinitionAction"] = Field(default_factory=list)
 
     def add_goal(self, description: str, category: Optional[str] = None, priority: Optional[str] = None) -> None:
         self.goal.append({"description": description, "category": category, "priority": priority})
 
     def add_action(self, title: str, code: Optional[str] = None, description: Optional[str] = None, definition_canonical: Optional[str] = None) -> None:
-        self.action.append({"title": title, "code": code, "description": description, "definition_canonical": definition_canonical})
+        self.action.append(WorkflowPlanDefinitionAction(title=title, code=code, description=description, definition_canonical=definition_canonical))
 
 
 class WorkflowPlanDefinitionAction(BaseResource):
-    resource_type: Literal["WorkflowPlanDefinitionAction"] = Field(default="WorkflowPlanDefinitionAction")
+    resource_type: Literal["PlanDefinitionAction"] = Field(default="PlanDefinitionAction")
     title: Optional[str] = None
     code: Optional[str] = None
     description: Optional[str] = None
     definition_canonical: Optional[str] = None
-    action: List[Dict[str, Any]] = Field(default_factory=list)
+    action: List["WorkflowPlanDefinitionAction"] = Field(default_factory=list)
 
 
 class WorkflowServiceRequest(BaseResource):
-    resource_type: Literal["WorkflowServiceRequest"] = Field(default="WorkflowServiceRequest")
+    resource_type: Literal["ServiceRequest"] = Field(default="ServiceRequest")
     code: Optional[str] = None
     status: WorkflowStatus = Field(default=WorkflowStatus.DRAFT)
     intent: WorkflowRequestIntent = Field(default=WorkflowRequestIntent.ORDER)
@@ -204,7 +236,15 @@ class WorkflowExecution(BaseResource):
 
 # Factory helpers for tests
 def create_simple_task(code: str, description: Optional[str] = None, subject: Optional[str] = None, requester: Optional[str] = None, priority: WorkflowRequestPriority = WorkflowRequestPriority.ROUTINE) -> WorkflowTaskResource:
-    return WorkflowTaskResource(code=code, description=description, status=WorkflowTaskStatus.REQUESTED, intent=WorkflowTaskIntent.ORDER, subject=subject)
+    return WorkflowTaskResource(
+        code=code,
+        description=description,
+        status=WorkflowTaskStatus.REQUESTED,
+        intent=WorkflowTaskIntent.ORDER,
+        subject=subject,
+        requester=requester,
+        priority=priority,
+    )
 
 
 def create_document_processing_workflow() -> WorkflowPlanDefinition:

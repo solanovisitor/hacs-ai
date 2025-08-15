@@ -3,7 +3,7 @@
 This guide covers the essential patterns for working with HACS in healthcare environments. Learn how to use the core HACS packages and the **42+ Hacs Tools** available for clinical workflows.
 
 > **📚 Related Documentation:**
-> - [Hacs Tools Reference](healthcare-tools.md) - Complete tool documentation
+> - [Hacs Tools Reference](hacs-tools.md) - Complete tool documentation
 > - [Integration Guide](integrations.md) - Connect to external systems  
 > - [LangGraph Agent Example](../examples/hacs_developer_agent/README.md) - Working agent implementation
 > - [Testing Guide](testing.md) - Validation and testing procedures
@@ -234,6 +234,21 @@ context_response = requests.post(f'{mcp_url}/', headers=headers, json={
     },
     "id": 6
 })
+
+# Gather memories for agent context
+gathered = requests.post(f'{mcp_url}/', headers=headers, json={
+    "jsonrpc": "2.0",
+    "method": "tools/call",
+    "params": {
+        "name": "check_memory",
+        "arguments": {
+            "actor_id": "actor-123",
+            "memory_types": ["episodic", "procedural"],
+            "min_importance": 0.6
+        }
+    },
+    "id": 7
+})
 ```
 
 ### **Clinical Templates**
@@ -412,7 +427,7 @@ HACS provides **25 Hacs Tools** organized into categories:
 - `discover_hacs_resources` - Explore healthcare resources
 - `analyze_model_fields` - Field analysis and validation
 - `compare_model_schemas` - Schema comparison
-- Template tools: `register_stack_template`, `generate_stack_template_from_markdown`, `instantiate_stack_template`
+- Template tools (deprecated): `register_stack_template`, `generate_stack_template_from_markdown`, `instantiate_stack_template`. Prefer Composition + ResourceBundle with MappingSpec/SourceBinding.
 - `create_model_stack` - Complex data composition
 
 ### 📋 **Resource Management** (8 tools)
@@ -443,7 +458,7 @@ HACS provides **25 Hacs Tools** organized into categories:
 
 ## 🔐 **Security & Authentication**
 
-HACS implements comprehensive security for healthcare environments:
+HACS implementssecurity for healthcare environments:
 
 ### **API Authentication**
 ```bash

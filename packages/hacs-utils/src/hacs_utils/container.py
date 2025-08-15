@@ -237,25 +237,47 @@ class AdapterRegistry:
         # Initialize Pinecone adapter if configured
         if settings.pinecone_enabled:
             try:
-                # from hacs_pinecone.adapter import create_pinecone_adapter
-                # self.register_factory(VectorStore, lambda: create_pinecone_adapter(**settings.get_pinecone_config()))
-                # TODO: Implement Pinecone vector store adapter
-                # from hacs_pinecone.adapter import create_pinecone_adapter
-                # self.register_factory(VectorStore, lambda: create_pinecone_adapter(**settings.get_pinecone_config()))
-                pass
+                # Prefer built-in HACS Pinecone store
+                from hacs_utils.integrations.pinecone.store import create_pinecone_store
+
+                def pinecone_factory():
+                    cfg = {}
+                    try:
+                        cfg = settings.get_pinecone_config()  # type: ignore[attr-defined]
+                    except Exception:
+                        pass
+                    api_key = cfg.get("api_key") if isinstance(cfg, dict) else None
+                    index_name = cfg.get("index_name", "hacs-vectors") if isinstance(cfg, dict) else "hacs-vectors"
+                    dimension = cfg.get("dimension", 1536) if isinstance(cfg, dict) else 1536
+                    return create_pinecone_store(api_key=api_key, index_name=index_name, dimension=dimension)
+
+                self.register_factory(VectorStore, pinecone_factory)
+                logger.info("Pinecone vector store registered")
             except ImportError:
+                logger.warning("hacs_utils.integrations.pinecone not available")
                 pass
 
         # Initialize Qdrant adapter if configured
         if settings.qdrant_enabled:
             try:
-                # from hacs_qdrant.adapter import create_qdrant_adapter
-                # self.register_factory(VectorStore, lambda: create_qdrant_adapter(**settings.get_qdrant_config()))
-                # TODO: Implement Qdrant vector store adapter
-                # from hacs_qdrant.adapter import create_qdrant_adapter
-                # self.register_factory(VectorStore, lambda: create_qdrant_adapter(**settings.get_qdrant_config()))
-                pass
+                from hacs_utils.integrations.qdrant.store import create_qdrant_store
+
+                def qdrant_factory():
+                    cfg = {}
+                    try:
+                        cfg = settings.get_qdrant_config()  # type: ignore[attr-defined]
+                    except Exception:
+                        pass
+                    collection_name = cfg.get("collection_name", "hacs_vectors") if isinstance(cfg, dict) else "hacs_vectors"
+                    dimension = cfg.get("dimension", 1536) if isinstance(cfg, dict) else 1536
+                    url = cfg.get("url") if isinstance(cfg, dict) else None
+                    api_key = cfg.get("api_key") if isinstance(cfg, dict) else None
+                    return create_qdrant_store(collection_name=collection_name, dimension=dimension, url=url, api_key=api_key)
+
+                self.register_factory(VectorStore, qdrant_factory)
+                logger.info("Qdrant vector store registered")
             except ImportError:
+                logger.warning("hacs_utils.integrations.qdrant not available")
                 pass
 
         # Initialize PostgreSQL adapter if configured

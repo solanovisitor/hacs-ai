@@ -219,7 +219,7 @@ def test_langchain_compatibility():
         return False
 
 def generate_report():
-    """Generate a comprehensive validation report."""
+    """Generate avalidation report."""
     print("\n📊 Generating validation report...")
 
     try:

@@ -22,7 +22,7 @@ HACS is purpose-built for healthcare AI:
 ## 🛠️ **Technical Documentation**
 
 ### Core System
-- **[Hacs Tools](healthcare-tools.md)** - Complete guide to 42+ Hacs Tools
+- **[Hacs Tools](hacs-tools.md)** - Complete guide to 42+ Hacs Tools
 - **[Testing Guide](testing.md)** - Testing and validation procedures
 - **[CLI Reference](cli.md)** - Command-line tools and utilities
 
@@ -30,7 +30,7 @@ HACS is purpose-built for healthcare AI:
 - **[Integration Guide](integrations.md)** - Connect to external systems (LangGraph preferred; LangChain adapter deprecated)
 - **[Use MCP](mcp_langgraph.md)** - How to use MCP tools with LangGraph, including stdio and streamable HTTP
 - **[Branch Management](branch-management.md)** - Development workflow
-- **[Phase 3 Testing Summary](phase3-testing-summary.md)** - Comprehensive testing results
+- **[Phase 3 Testing Summary](phase3-testing-summary.md)** -testing results
 
 ### Architecture & Design
 - **[ADR-001: SOLID Principles](architecture/ADR-001-SOLID-principles-compliance.md)** - Design principles
@@ -61,7 +61,7 @@ HACS is structured as **core packages** with **optional service add-ons**:
 - **42+ Hacs Tools**: Specialized tools for clinical workflows
 - **Production Ready**: Sub-100ms response times for healthcare operations
 - **FHIR Compliant**: Standards-based healthcare data models
-- **Secure**: Actor-based permissions with comprehensive audit trails
+- **Secure**: Actor-based permissions withaudit trails
 - **Memory Enabled**: Structured memory for AI clinical reasoning
 
 ## 🎯 **Use Cases**

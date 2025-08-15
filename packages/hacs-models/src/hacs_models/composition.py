@@ -30,6 +30,7 @@ class CompositionSection(DomainResource):
     text: str
     code: Optional[str] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    sections: List["CompositionSection"] = Field(default_factory=list, description="Nested sections")
 
 
 class CompositionEncounter(DomainResource):
@@ -68,5 +69,31 @@ class Composition(DomainResource):
         # Enforce at least one entry to satisfy document constraints, add self as entry.
         bundle.add_entry(self, title=self.title or "Composition")
         return bundle
+
+
+# Backward-compatible Document API overlaying Composition
+class Document(Composition):
+    resource_type: Literal["Document"] = Field(default="Document")
+
+    def get_word_count(self) -> int:
+        # Naive tokenization by whitespace across title/sections
+        text_blocks: List[str] = []
+        if self.title:
+            text_blocks.append(self.title)
+        for s in self.sections:
+            text_blocks.append(s.title)
+            text_blocks.append(s.text)
+        return len(" ".join(text_blocks).split())
+
+    # Simple LC shims (optional)
+    def to_langchain_document(self):  # pragma: no cover
+        return {"page_content": self.text() if hasattr(self, "text") else self.get_full_text(), "metadata": {"title": self.title}}
+
+    @classmethod
+    def from_langchain_document(cls, lc_doc):  # pragma: no cover
+        return cls(document_type=DocumentType.PROGRESS_NOTE, title=lc_doc.get("metadata", {}).get("title"), subject_id=None)
+
+    def to_langchain_documents(self):  # pragma: no cover
+        return [{"page_content": s.text, "metadata": {"title": s.title}} for s in self.sections]
 
 

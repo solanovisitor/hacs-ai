@@ -8,7 +8,7 @@ Key improvements:
 - No MCP server dependency
 - Direct HACS tool integration  
 - Enhanced error handling
-- Comprehensive logging
+-logging
 - Fallback mechanisms
 
 Loads `voa-engines/voa-alpaca` and for each record:
@@ -28,7 +28,7 @@ from datetime import datetime
 # Import workflow visualizer for enhanced output
 from workflow_visualizer import WorkflowVisualizer, console
 
-# Setup comprehensive logging
+# Setuplogging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -410,7 +410,7 @@ async def process_records_batch(dataset: Dataset, batch_size: int = 5) -> List[D
 
 
 async def generate_processing_report(results: List[Dict[str, Any]], dataset_analysis: Dict[str, Any]) -> Dict[str, Any]:
-    """Generate a comprehensive processing report."""
+    """Generate aprocessing report."""
     logger.info("Generating processing report")
     
     total_records = len(results)
@@ -517,7 +517,7 @@ async def main():
                 "detailed_results": results
             }, f, indent=2, default=str)
         
-        # Step 4: Generate comprehensive visual report
+        # Step 4: Generatevisual report
         stage_id = visualizer.log_stage_start("📊 Visual Report Generation")
         
         # Generate enhanced visual report

@@ -1,7 +1,7 @@
 """
 Monitoring and Observability for HACS Infrastructure
 
-This module provides comprehensive monitoring capabilities including
+This module providesmonitoring capabilities including
 health checks, metrics collection, and performance monitoring.
 """
 

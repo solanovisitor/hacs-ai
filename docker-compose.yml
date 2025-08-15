@@ -129,7 +129,7 @@ services:
   # Note: LangGraph agents are now run locally with UV
   # See examples/*/README.md for instructions on running agents locally
 
-  # Test runner service for comprehensive testing
+  # Test runner service fortesting
   test-runner:
     build:
       context: .

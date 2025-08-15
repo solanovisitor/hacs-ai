@@ -1,7 +1,7 @@
 """
 Event System Following SOLID Principles
 
-This module implements a comprehensive event system that follows SOLID principles:
+This module implements aevent system that follows SOLID principles:
 
 S - Single Responsibility: Each event class has one purpose
 O - Open/Closed: Easy to add new event types without modification

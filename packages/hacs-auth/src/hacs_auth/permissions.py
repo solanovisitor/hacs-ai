@@ -1,7 +1,7 @@
 """
 Permission management system for HACS authentication.
 
-This module provides comprehensive permission management with healthcare-specific
+This module providespermission management with healthcare-specific
 roles, resources, and actions. Designed for flexibility and security in
 healthcare AI agent systems.
 """

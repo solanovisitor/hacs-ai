@@ -7,7 +7,7 @@
 Healthcare AI systems require robust security that aligns with healthcare compliance standards (HIPAA, GDPR) while supporting both human users and AI agents. Traditional user-based authentication doesn't adequately address the needs of AI agents that may operate with different permission sets and audit requirements.
 
 ## Decision
-We will implement an **Actor-Based Security Architecture** where both human users and AI agents are represented as "Actors" with role-based permissions, comprehensive audit trails, and healthcare-specific security features.
+We will implement an **Actor-Based Security Architecture** where both human users and AI agents are represented as "Actors" with role-based permissions,audit trails, and healthcare-specific security features.
 
 ## Architecture Overview
 
@@ -73,7 +73,7 @@ AGENT_PERMISSIONS = [
 - Allows customization when needed
 
 ### 3. Session-Based Context
-**Decision**: Implement comprehensive session management with healthcare-specific features.
+**Decision**: Implementsession management with healthcare-specific features.
 
 **Rationale**:
 - Supports audit requirements
@@ -81,7 +81,7 @@ AGENT_PERMISSIONS = [
 - Provides security controls (timeouts, IP tracking)
 - Supports multi-factor authentication
 
-### 4. Comprehensive Audit Trails
+### 4.Audit Trails
 **Decision**: Log all actor activities with structured audit events.
 
 **Rationale**:
@@ -179,7 +179,7 @@ class ConsentManager:
 - Permission expiration
 
 ### 4. Audit and Compliance
-- Comprehensive audit logs
+-audit logs
 - HIPAA audit trail requirements
 - Automated compliance reporting
 - Real-time security monitoring
@@ -241,7 +241,7 @@ class ConsentManager:
 ### Positive
 - **Compliance**: Meets healthcare regulatory requirements
 - **Flexibility**: Supports both human and AI actors
-- **Security**: Comprehensive security controls
+- **Security**:security controls
 - **Auditability**: Complete audit trails for compliance
 - **Scalability**: Designed for enterprise healthcare systems
 

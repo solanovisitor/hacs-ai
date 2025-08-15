@@ -1,7 +1,7 @@
 """
 HACS Log Aggregation and Correlation System
 
-This module provides comprehensive log aggregation, correlation, and analysis
+This module provideslog aggregation, correlation, and analysis
 capabilities for healthcare AI systems with HIPAA-compliant centralized logging.
 
 Features:

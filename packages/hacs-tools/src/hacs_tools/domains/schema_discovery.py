@@ -1,7 +1,7 @@
 """
 HACS Schema Discovery Tools
 
-This module provides comprehensive schema analysis and discovery tools
+This module providesschema analysis and discovery tools
 for healthcare resources. Enables AI agents to understand resource
 structures, field relationships, and FHIR compliance requirements.
 
@@ -44,10 +44,9 @@ from .descriptions import (
 
 @hacs_tool(
     name="discover_hacs_resources",
-    description="Discover all available HACS healthcare resources with comprehensive metadata",
+    description="Discover all available HACS healthcare resources withmetadata",
     category=ToolCategory.SCHEMA_DISCOVERY,
-    healthcare_domains=['resource_management'],
-    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+    healthcare_domains=['resource_management']
 )
 def discover_hacs_resources(
     category_filter: Optional[str] = None,
@@ -55,7 +54,7 @@ def discover_hacs_resources(
     include_fhir_status: bool = True
 ) -> ResourceDiscoveryResult:
     """
-    Discover all available HACS healthcare resources with comprehensive metadata.
+    Discover all available HACS healthcare resources withmetadata.
 
     This tool helps AI agents understand what healthcare resources are available
     for manipulation, their clinical purposes, FHIR compliance status, and
@@ -67,7 +66,7 @@ def discover_hacs_resources(
         include_fhir_status: Whether to include FHIR compliance assessment
 
     Returns:
-        ResourceDiscoveryResult with comprehensive resource catalog and metadata
+        ResourceDiscoveryResult withresource catalog and metadata
 
     Examples:
         discover_hacs_resources() -> Lists all Patient, Observation, Goal, etc. resources
@@ -81,13 +80,12 @@ def discover_hacs_resources(
         # Prefer hacs_models registry if available to include all models beyond hacs_core
         resources: List[Dict[str, Any]] = []
         categories = set()
-        fhir_resources: List[str] = []
         clinical_resources: List[str] = []
         administrative_resources: List[str] = []
 
         # Helper to add a resource class into the discovery list
         def _append_resource(cls: Type[Any], name: str) -> None:
-            nonlocal resources, categories, fhir_resources, clinical_resources, administrative_resources
+            nonlocal resources, categories, clinical_resources, administrative_resources
             # Determine category by heuristic on name
             category = "administrative"
             lname = name.lower()
@@ -120,7 +118,7 @@ def discover_hacs_resources(
                     "optional_fields": max(0, field_count - required_count),
                 })
             if include_fhir_status:
-                is_fhir_compliant = hasattr(cls, 'fhir_resource_type') or name in [
+                is_fhir_compliant = hasattr(cls, 'resource_type') or name in [
                     "Patient", "Observation", "Encounter", "Condition",
                     "MedicationRequest", "Medication", "AllergyIntolerance",
                     "Procedure", "Goal", "ServiceRequest", "Organization",
@@ -129,8 +127,6 @@ def discover_hacs_resources(
                     "CarePlan", "CareTeam", "NutritionOrder", "PlanDefinition",
                 ]
                 resource_info["fhir_compliant"] = is_fhir_compliant
-                if is_fhir_compliant:
-                    fhir_resources.append(name)
 
             if not category_filter or category == category_filter:
                 resources.append(resource_info)
@@ -158,8 +154,7 @@ def discover_hacs_resources(
             success=True,
             resources=resources,
             total_count=len(resources),
-            categories=list(categories),
-            fhir_resources=fhir_resources,
+            categories=list(categories)
             clinical_resources=clinical_resources,
             administrative_resources=administrative_resources,
             message=f"Discovered {len(resources)} healthcare resources" + (f" in category '{category_filter}'" if category_filter else "")
@@ -170,8 +165,7 @@ def discover_hacs_resources(
             success=False,
             resources=[],
             total_count=0,
-            categories=[],
-            fhir_resources=[],
+            categories=[]
             clinical_resources=[],
             administrative_resources=[],
             message=f"Failed to discover healthcare resources: {str(e)}"
@@ -179,10 +173,9 @@ def discover_hacs_resources(
 
 @hacs_tool(
     name="get_hacs_resource_schema",
-    description="Get comprehensive schema information for a healthcare resource type",
+    description="Getschema information for a healthcare resource type",
     category=ToolCategory.SCHEMA_DISCOVERY,
-    healthcare_domains=['resource_management'],
-    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+    healthcare_domains=['resource_management']
 )
 def get_hacs_resource_schema(
     resource_type: str,
@@ -190,7 +183,7 @@ def get_hacs_resource_schema(
     include_validation_rules: bool = True
 ) -> ResourceSchemaResult:
     """
-    Get comprehensive schema information for a healthcare resource type.
+    Getschema information for a healthcare resource type.
 
     Provides detailed JSON schema definition including field types, validation
     rules, clinical context, and FHIR compliance information.
@@ -288,8 +281,7 @@ def get_hacs_resource_schema(
     name="analyze_resource_fields",
     description="Perform detailed analysis of healthcare resource fields for clinical usage",
     category=ToolCategory.SCHEMA_DISCOVERY,
-    healthcare_domains=['resource_management'],
-    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+    healthcare_domains=['resource_management']
 )
 def analyze_resource_fields(
     resource_type: str,
@@ -405,8 +397,7 @@ def analyze_resource_fields(
     name="compare_resource_schemas",
     description="Compare schemas between two healthcare resource types for integration analysis",
     category=ToolCategory.SCHEMA_DISCOVERY,
-    healthcare_domains=['resource_management'],
-    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+    healthcare_domains=['resource_management']
 )
 def compare_resource_schemas(
     resource_type_1: str,

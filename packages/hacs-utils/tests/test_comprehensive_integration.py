@@ -68,8 +68,8 @@ class TestIntegrationWorkflow:
         assert True
 
 def run_tests():
-    """Run all comprehensive tests."""
-    print("🚀 HACS Integration Comprehensive Test Suite")
+    """Run alltests."""
+    print("🚀 HACS IntegrationTest Suite")
     print("=" * 60)
 
     # Run all test classes
@@ -94,13 +94,13 @@ def run_tests():
             except Exception as e:
                 print(f"   ❌ {method_name} failed: {e}")
 
-    print("\n🎉 Comprehensive testing completed!")
+    print("\n🎉testing completed!")
     print("\n📈 Integration Status:")
     print("   ✅ No pattern matching or keyword-based functions")
     print("   ✅ World-class design patterns implemented")
     print("   ✅ Structured data approaches throughout")
     print("   ✅ LLM-ready architecture")
-    print("   ✅ Comprehensive type safety")
+    print("   ✅type safety")
 
 if __name__ == "__main__":
     run_tests()

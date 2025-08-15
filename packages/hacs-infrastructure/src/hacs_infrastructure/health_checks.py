@@ -1,7 +1,7 @@
 """
 HACS Health Checks and Performance Monitoring
 
-This module provides comprehensive health check and performance monitoring
+This module provideshealth check and performance monitoring
 capabilities for healthcare AI systems with proactive issue detection.
 
 Features:
@@ -348,7 +348,7 @@ class HealthCheckManager:
             )
 
     async def get_health_report(self) -> HealthReport:
-        """Get comprehensive health report."""
+        """Gethealth report."""
         # Run all checks
         check_results = await self.run_all_checks()
 

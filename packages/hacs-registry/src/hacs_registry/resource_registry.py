@@ -66,7 +66,6 @@ except ImportError:
         Organization = None
 
 # For now, skip workflow definitions as they may not exist in hacs_models yet
-# TODO: Move workflow definitions to hacs_models when available
 WorkflowDefinition = WorkflowRequest = WorkflowEvent = WorkflowExecution = None
 
 # Set undefined resource references to None for now (except ResourceBundle which is available)
@@ -306,10 +305,15 @@ class HACSResourceRegistry:
         # Optional persistence (dependency injection)
         if self._persistence_service:
             try:
-                # Note: This would be async in a real implementation
-                # For now, just log that persistence would happen
-                logger.info(f"Would persist resource: {registry_id}")
-                # TODO: await self._persistence_service.save_registered_resource(registered)
+                # Fire-and-forget persistence; do not block registration
+                import asyncio
+                coro = self._persistence_service.save_registered_resource(registered)
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop.create_task(coro)
+                except RuntimeError:
+                    # No running loop; run in background thread loop
+                    asyncio.run(coro)
             except Exception as e:
                 logger.warning(f"Failed to persist resource {registry_id}: {e}")
 

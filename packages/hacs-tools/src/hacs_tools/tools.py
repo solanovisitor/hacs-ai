@@ -1,7 +1,7 @@
 """
 HACS Tools - Healthcare Agent Communication Standard Tools Module
 
-This module provides a comprehensive suite of specialized Hacs Tools
+This module provides asuite of specialized Hacs Tools
 designed for AI agents working with clinical data, FHIR resources, and healthcare
 workflows. All tools are compatible with LangChain and the Model Context Protocol (MCP).
 
@@ -77,7 +77,7 @@ def get_available_domains():
         # Fallback: known domains
         return [
             "resource_management", "clinical_workflows", "memory_operations",
-            "vector_search", "schema_discovery", "development_tools",
+            "knowledge_management", "schema_discovery", "development_tools",
             "fhir_integration", "healthcare_analytics", "ai_integrations",
             "admin_operations"
         ]
@@ -90,16 +90,16 @@ def _get_tools_direct_import():
         # Import from domain modules
         from .domains import (
             resource_management, clinical_workflows, memory_operations,
-            vector_search, schema_discovery, development_tools,
-            fhir_integration, healthcare_analytics, ai_integrations,
-            admin_operations
+            schema_discovery,
+            ai_integrations,
+            admin_operations, evidence_tools
         )
 
         modules = [
             resource_management, clinical_workflows, memory_operations,
-            vector_search, schema_discovery, development_tools,
-            fhir_integration, healthcare_analytics, ai_integrations,
-            admin_operations
+            schema_discovery,
+            ai_integrations,
+            admin_operations, evidence_tools
         ]
 
         for module in modules:
@@ -120,9 +120,9 @@ def _get_tool_direct_import(name: str):
         # Try importing from each domain module
         domain_modules = [
             "resource_management", "clinical_workflows", "memory_operations",
-            "vector_search", "schema_discovery", "development_tools",
-            "fhir_integration", "healthcare_analytics", "ai_integrations",
-            "admin_operations"
+            "schema_discovery",
+            "ai_integrations",
+            "admin_operations", "evidence_tools"
         ]
 
         for domain in domain_modules:

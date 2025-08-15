@@ -71,8 +71,7 @@ def _check_persistence_available() -> HACSResult:
     name="run_database_migration",
     description="Run HACS database migration to set up or update database schemas",
     category=ToolCategory.ADMIN_OPERATIONS,
-    healthcare_domains=['general_healthcare'],
-    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+    healthcare_domains=['general_healthcare']
 )
 def run_database_migration(
     database_url: Optional[str] = None,
@@ -150,8 +149,7 @@ def run_database_migration(
     name="check_migration_status",
     description="Check the current status of HACS database migrations",
     category=ToolCategory.ADMIN_OPERATIONS,
-    healthcare_domains=['general_healthcare'],
-    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+    healthcare_domains=['general_healthcare']
 )
 def check_migration_status(
     database_url: Optional[str] = None,
@@ -212,8 +210,7 @@ def check_migration_status(
     name="describe_database_schema",
     description="Get detailed information about HACS database schemas and tables",
     category=ToolCategory.ADMIN_OPERATIONS,
-    healthcare_domains=['general_healthcare'],
-    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+    healthcare_domains=['general_healthcare']
 )
 def describe_database_schema(
     schema_name: str = "hacs_core",
@@ -222,7 +219,7 @@ def describe_database_schema(
     """
     Get detailed information about HACS database schemas and tables.
 
-    This tool provides comprehensive schema information including table
+    This tool providesschema information including table
     structures, indexes, constraints, and relationships.
 
     Args:
@@ -289,8 +286,7 @@ def describe_database_schema(
     name="get_table_structure",
     description="Get detailed table structure for a specific HACS resource type",
     category=ToolCategory.ADMIN_OPERATIONS,
-    healthcare_domains=['general_healthcare'],
-    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+    healthcare_domains=['general_healthcare']
 )
 def get_table_structure(
     resource_type: str,
@@ -368,8 +364,7 @@ def get_table_structure(
     name="test_database_connection",
     description="Test connection to the HACS database and verify accessibility",
     category=ToolCategory.ADMIN_OPERATIONS,
-    healthcare_domains=['general_healthcare'],
-    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+    healthcare_domains=['general_healthcare']
 )
 def test_database_connection(
     database_url: Optional[str] = None,

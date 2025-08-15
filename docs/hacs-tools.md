@@ -1,8 +1,6 @@
 # HACS Tools Reference
 
-**Context Engineering Operations for Medical AI**
-
-Complete reference for 42+ Hacs Tools implementing context engineering strategies (**Write**, **Select**, **Compress**, **Isolate**) for medical AI agents.
+Low-level HACS tools for resource modeling, bundles, schema discovery, memory, and minimal workflow modeling. High-level, business-specific tools have been removed; keep prompts/logic in workflows.
 
 ## Context Engineering Tool Categories
 
@@ -124,7 +122,7 @@ Clinical memory operations implementing context writing and selective memory acc
 **🖊️ WRITE**: Generate clinical memories with structured context metadata
 
 ```python
-# WRITE: Generate clinical context with comprehensive metadata
+# WRITE: Generate clinical context withmetadata
 memory = use_tool("create_memory", {
     "content": "Patient reports 75% reduction in chest pain after metoprolol initiation. Excellent medication tolerance.",
     "memory_type": "episodic",
@@ -184,12 +182,21 @@ patterns = use_tool("analyze_memory_patterns", {
 })
 ```
 
-### 📊 Clinical Workflows (4 tools)
+#### `check_memory`
+Collect a filtered set of memories (episodic/procedural) for agent context
 
-Structured clinical protocols and decision support.
+```python
+context_memories = use_tool("check_memory", {
+    "actor_id": actor.id,
+    "memory_types": ["episodic", "procedural"],
+    "min_importance": 0.6,
+    "limit": 20
+})
+```
 
-#### `execute_clinical_workflow`
-Run predefined clinical workflow protocols
+### 🧩 Workflow Modeling (low-level)
+
+Adapters for creating and using `ActivityDefinition`, `PlanDefinition`, and `Task` instances.
 
 ```python
 workflow = use_tool("execute_clinical_workflow", {
@@ -211,8 +218,8 @@ result = use_tool("register_stack_template", {
 })
 ```
 
-#### `validate_clinical_protocol`
-Ensure clinical protocols meet standards
+#### `create_activity_definition`
+Create an `ActivityDefinition` instance (adapter)
 
 ```python
 validation = use_tool("validate_clinical_protocol", {
@@ -223,8 +230,8 @@ validation = use_tool("validate_clinical_protocol", {
 })
 ```
 
-#### `generate_care_plan`
-Create personalized care plans
+#### `create_plan_definition`
+Create a `PlanDefinition` and add goals/actions
 
 ```python
 care_plan = use_tool("generate_care_plan", {
@@ -234,49 +241,33 @@ care_plan = use_tool("generate_care_plan", {
 })
 ```
 
-### 🔍 Vector Search (3 tools)
+### 📚 Knowledge Management (Evidence)
 
-**🗜️ COMPRESS + 🎯 SELECT Strategies**: Semantic search with compressed clinical context and selective retrieval.
+Context-specific tools for literature evidence. Prefer these over generic vector tools.
 
-Vector operations implementing context compression and selective similarity matching for healthcare AI:
-
-#### `semantic_search_records`
-**🗜️ COMPRESS + 🎯 SELECT**: Semantic search with compressed queries and selective results
+#### `index_evidence`
+Index literature evidence with citation and content; returns structured `Evidence` with embedding reference
 
 ```python
-# COMPRESS: Use compressed clinical query
-# SELECT: Filter by similarity threshold and importance
-results = use_tool("semantic_search_records", {
-    "query": "uncontrolled diabetes HbA1c >8% medication non-adherence",  # COMPRESS clinical concepts
-    "resource_types": ["Patient", "Observation"],
-    "similarity_threshold": 0.85,  # SELECT highly relevant only
-    "importance_filter": {"min": 0.7},  # SELECT clinically significant
-    "output_format": "compressed_summary",  # COMPRESS results for efficiency
-    "limit": 15
+result = use_tool("index_evidence", {
+    "citation": "Smith J. Hypertension Management. NEJM (2024)",
+    "content": "Guideline recommends initial therapy with ...",
+    "evidence_type": "guideline",
+    "tags": ["hypertension", "guideline"],
 })
 ```
 
-#### `find_similar_cases`
-Find clinically similar patient cases
+#### `check_evidence`
+Retrieve semantically relevant evidence for a query
 
 ```python
-similar = use_tool("find_similar_cases", {
-    "reference_patient_id": "patient-123",
-    "similarity_criteria": ["diagnosis", "demographics", "medications"],
+evidence = use_tool("check_evidence", {
+    "query": "ACE inhibitor contraindications",
     "limit": 5
 })
 ```
 
-#### `search_clinical_knowledge`
-Search clinical knowledge base
-
-```python
-knowledge = use_tool("search_clinical_knowledge", {
-    "query": "ACE inhibitor contraindications",
-    "knowledge_types": ["guidelines", "contraindications"],
-    "evidence_level": "high"
-})
-```
+> Note: Generic vector tools are deprecated in favor of context-specific tools.
 
 ### ⚕️ Schema Discovery (5 tools)
 
@@ -457,9 +448,9 @@ stratification = use_tool("risk_stratification", {
 })
 ```
 
-### 🤖 AI Integrations (2 tools)
+### 🤖 AI Integrations
 
-Healthcare AI model deployment and optimization.
+Removed to keep the toolset low-level and business-agnostic. Integrate AI models within workflows using hacs-utils and direct provider SDKs.
 
 #### `deploy_healthcare_model`
 Deploy AI models for healthcare workflows
@@ -523,7 +514,7 @@ def context_engineered_clinical_workflow(patient_id, clinical_query):
             # COMPRESS: Generate clinical summary
             clinical_summary = f"{patient_summary} | Recent: {len(recent_obs)} significant findings"
     
-    # 🖊️ WRITE: Generate clinical context with comprehensive metadata
+    # 🖊️ WRITE: Generate clinical context withmetadata
     clinical_memory = use_tool("create_memory", {
         "content": f"Clinical analysis for {clinical_query}: {clinical_summary}",
         "memory_type": "episodic",

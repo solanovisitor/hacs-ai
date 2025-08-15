@@ -166,7 +166,7 @@ HACS_API_KEY=your_custom_key
 
 ```python
 # The agent automatically uses planning and delegation
-user_input = "Create a comprehensive cardiology consultation template"
+user_input = "Create acardiology consultation template"
 
 # Agent will:
 # 1. Plan the task with write_todos
@@ -195,7 +195,7 @@ user_input = "Set up a new HACS database with all migrations"
 user_input = "Configure complete HACS environment for production"
 
 # Agent will:
-# 1. Create comprehensive integration plan
+# 1. Createintegration plan
 # 2. Delegate to system-integration sub-agent
 # 3. Setup database, MCP server, and vector store
 # 4. Validate all components
@@ -307,7 +307,7 @@ journalctl -u hacs-agent -f
 1. Follow the simplified file structure
 2. Keep core functionality in designated files
 3. Use sub-agent delegation for specialized tasks
-4. Add comprehensive tests for new features
+4. Addtests for new features
 5. Update documentation and examples
 
 ## 📄 License

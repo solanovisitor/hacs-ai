@@ -1,7 +1,7 @@
 """
 HACS Security Module - HIPAA-Compliant Security Controls
 
-This module implements comprehensive security controls required for HIPAA
+This module implementssecurity controls required for HIPAA
 compliance and healthcare data protection, including encryption, audit
 logging, and threat detection.
 

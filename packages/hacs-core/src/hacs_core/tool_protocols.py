@@ -44,15 +44,12 @@ class ToolMetadata:
     author: str = "HACS Team"
     tags: List[str] = None
     healthcare_domains: List[str] = None
-    fhir_resources: List[str] = None
 
     def __post_init__(self):
         if self.tags is None:
             self.tags = []
         if self.healthcare_domains is None:
             self.healthcare_domains = []
-        if self.fhir_resources is None:
-            self.fhir_resources = []
 
 
 @runtime_checkable
@@ -332,7 +329,6 @@ def hacs_tool(
     description: str,
     category: ToolCategory,
     healthcare_domains: List[str] = None,
-    fhir_resources: List[str] = None,
     enable_tracing: bool = True,
     enable_metrics: bool = True,
     **kwargs
@@ -347,7 +343,6 @@ def hacs_tool(
         description: Tool description
         category: Tool category
         healthcare_domains: Relevant healthcare domains
-        fhir_resources: Relevant FHIR resources
         enable_tracing: Enable distributed tracing for this tool
         enable_metrics: Enable metrics collection for this tool
         **kwargs: Additional metadata
@@ -360,8 +355,7 @@ def hacs_tool(
             name=name,
             description=description,
             category=category,
-            healthcare_domains=healthcare_domains or [],
-            fhir_resources=fhir_resources or [],
+            healthcare_domains=healthcare_domains or []
             **kwargs
         )
 

@@ -90,7 +90,7 @@ class AuthManager:
     """
     Manages authentication and authorization for healthcare systems.
 
-    Provides comprehensive JWT token management with healthcare-specific
+    ProvidesJWT token management with healthcare-specific
     claims, OAuth2 integration, and security features required for
     healthcare AI agent systems.
     """

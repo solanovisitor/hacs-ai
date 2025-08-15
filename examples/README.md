@@ -1,6 +1,6 @@
 `# HACS Examples
 
-This directory contains comprehensive examples and implementations demonstrating how to use HACS (Healthcare Agent Communication Standard) for various healthcare AI applications and workflows.
+This directory containsexamples and implementations demonstrating how to use HACS (Healthcare Agent Communication Standard) for various healthcare AI applications and workflows.
 
 ## 🏥 Available Examples
 
@@ -98,7 +98,7 @@ pip install langchain langgraph langchain-anthropic
 # Set up API key
 export ANTHROPIC_API_KEY="your-api-key"
 
-# Run comprehensive examples
+# Runexamples
 python example_usage.py
 ```
 
@@ -148,7 +148,7 @@ To contribute new examples:
 1. **Create Example Directory**: Create a new directory under `examples/`
 2. **Follow Structure**: Use consistent structure with README, main implementation, and usage examples
 3. **Use HACS Resources**: Leverage HACS healthcare resources for state management
-4. **Document Thoroughly**: Provide comprehensive documentation and usage examples
+4. **Document Thoroughly**: Providedocumentation and usage examples
 5. **Include Tests**: Add basic functionality tests where appropriate
 
 ### Example Structure Template
@@ -156,7 +156,7 @@ To contribute new examples:
 ```
 examples/
 ├── your_example/
-│   ├── README.md                 # Comprehensive documentation
+│   ├── README.md                 #documentation
 │   ├── __init__.py              # Package initialization
 │   ├── main_implementation.py   # Core implementation
 │   ├── example_usage.py         # Usage examples and demos
@@ -176,7 +176,7 @@ examples/
 
 ## 🏥 Healthcare Domains Covered
 
-The examples cover comprehensive healthcare domains:
+The examples coverhealthcare domains:
 
 ### Primary Care
 - Patient registration and management
@@ -253,6 +253,6 @@ All examples are licensed under the Apache-2.0 License - allowing both commercia
 
 **🎉 Ready to build healthcare AI?**
 
-These examples provide comprehensive starting points for healthcare AI development with HACS. Each example demonstrates real-world healthcare scenarios with production-ready patterns.
+These examples providestarting points for healthcare AI development with HACS. Each example demonstrates real-world healthcare scenarios with production-ready patterns.
 
 *Built with ❤️ for healthcare AI developers* 

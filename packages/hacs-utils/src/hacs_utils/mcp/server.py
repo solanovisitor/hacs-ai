@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 class HacsMCPServer:
-    """Enhanced HACS MCP Server with security, persistence, and comprehensive tool integration."""
+    """Enhanced HACS MCP Server with security, persistence, andtool integration."""
 
     def __init__(self):
         """Initialize the enhanced HACS MCP server with security and persistence."""
@@ -137,7 +137,7 @@ class HacsMCPServer:
             )
 
     async def _handle_list_tools(self, request: MCPRequest) -> MCPResponse:
-        """Handle tools/list requests with comprehensive HACS tool coverage organized in blocks."""
+        """Handle tools/list requests withHACS tool coverage organized in blocks."""
         try:
             # Import all available tools from hacs-tools
             try:
@@ -150,7 +150,7 @@ class HacsMCPServer:
             model_tools = [
                 {
                     "name": "discover_hacs_resources",
-                    "description": "🔍 **Model Discovery**: Explore all available HACS models with comprehensive metadata, field analysis, and usage patterns for development planning",
+                    "description": "🔍 **Model Discovery**: Explore all available HACS models withmetadata, field analysis, and usage patterns for development planning",
                     "inputSchema": {
                         "type": "object",
                         "properties": {
@@ -223,7 +223,7 @@ class HacsMCPServer:
             registry_tools = [
                 {
                     "name": "create_resource",
-                    "description": "➕ **Resource Creator**: Create new HACS resources with comprehensive validation, auto-ID generation, FHIR compliance, and persistent storage",
+                    "description": "➕ **Resource Creator**: Create new HACS resources withvalidation, auto-ID generation, FHIR compliance, and persistent storage",
                     "inputSchema": {
                         "type": "object",
                         "properties": {

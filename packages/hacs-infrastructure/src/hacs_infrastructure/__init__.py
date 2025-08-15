@@ -13,7 +13,7 @@ Design Philosophy:
     - AI agent-optimized service discovery
 
 Key Features:
-    - Comprehensive dependency injection container
+    -dependency injection container
     - Environment-based configuration with validation
     - Service registry and discovery
     - Health checking and monitoring

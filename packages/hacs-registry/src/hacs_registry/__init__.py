@@ -306,7 +306,7 @@ __all__.extend([
     "create_emergency_agent",
 ])
 
-# Stack template convenience (registry-facing)
+# Stack template convenience (registry-facing, deprecated)
 from typing import Dict, Any
 try:
     from hacs_models import StackTemplate, instantiate_stack_template

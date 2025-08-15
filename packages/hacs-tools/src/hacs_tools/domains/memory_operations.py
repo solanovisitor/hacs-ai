@@ -1,7 +1,7 @@
 """
 HACS Memory Operations Tools
 
-This module provides comprehensive memory management tools for healthcare
+This module providesmemory management tools for healthcare
 AI agents. Supports episodic, procedural, and executive memory types with
 clinical context and semantic search capabilities.
 
@@ -28,6 +28,7 @@ from typing import Any, Dict, List, Optional
 from hacs_models import Actor, MemoryBlock
 from hacs_models import MemoryResult, HACSResult
 from hacs_core.tool_protocols import hacs_tool, ToolCategory
+from hacs_utils.memory_utils import gather_memories, merge_memories, filter_memories
 
 logger = logging.getLogger(__name__)
 
@@ -44,8 +45,7 @@ from .descriptions import (
     name="create_hacs_memory",
     description="Store a new memory for healthcare AI agents with clinical context",
     category=ToolCategory.MEMORY_OPERATIONS,
-    healthcare_domains=['memory_management'],
-    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+    healthcare_domains=['memory_management']
 )
 def create_hacs_memory(
     actor_name: str,
@@ -146,7 +146,7 @@ def create_hacs_memory(
                 hash_value = int(hashlib.md5(memory_content.encode()).hexdigest(), 16)
                 embedding = [(hash_value >> i) % 100 / 100.0 for i in range(384)]
                 
-                # Store vector with comprehensive metadata
+                # Store vector withmetadata
                 vector_metadata = {
                     "resource_type": "MemoryBlock",
                     "resource_id": memory_id,
@@ -222,8 +222,7 @@ def create_hacs_memory(
     name="search_hacs_memories",
     description="Search healthcare AI agent memories using semantic similarity",
     category=ToolCategory.MEMORY_OPERATIONS,
-    healthcare_domains=['data_search'],
-    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+    healthcare_domains=['data_search']
 )
 def search_hacs_memories(
     actor_name: str,
@@ -430,8 +429,7 @@ def search_hacs_memories(
     name="consolidate_memories",
     description="Consolidate related healthcare memories to reduce redundancy and enhance knowledge",
     category=ToolCategory.MEMORY_OPERATIONS,
-    healthcare_domains=['general_healthcare'],
-    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+    healthcare_domains=['general_healthcare']
 )
 def consolidate_memories(
     actor_name: str,
@@ -441,7 +439,7 @@ def consolidate_memories(
     """
     Consolidate related healthcare memories to reduce redundancy and enhance knowledge.
 
-    Combines similar memories to create more comprehensive knowledge
+    Combines similar memories to create moreknowledge
     representations while preserving important clinical nuances.
 
     Args:
@@ -461,30 +459,18 @@ def consolidate_memories(
         # Create actor instance for validation/context
         _ = Actor(name=actor_name, role="physician")
 
-        # TODO: In a real implementation, this would:
-        # 1. Retrieve specified memories
-        # 2. Analyze semantic similarity and relationships
-        # 3. Merge complementary information
-        # 4. Preserve important clinical distinctions
-        # 5. Create consolidated memory representations
-
-        # Mock consolidation process
-        consolidation_summary = {
-            "original_memories": len(memory_ids),
-            "consolidated_memories": max(1, len(memory_ids) // 2),
-            "consolidation_method": consolidation_strategy,
-            "information_preserved": 0.95,
-            "redundancy_reduced": 0.60,
-            "clinical_accuracy_maintained": True
-        }
-
+        # Consolidate is a higher-level operation; delegate to utilities when available
+        consolidated_ids = list(dict.fromkeys(memory_ids))
         return MemoryResult(
             success=True,
-            message=f"Successfully consolidated {len(memory_ids)} healthcare memories",
+            message=f"Consolidation planned for {len(consolidated_ids)} memories using {consolidation_strategy}",
             memory_type="consolidated",
             operation_type="consolidate",
-            memory_count=len(memory_ids),
-            consolidation_summary=consolidation_summary
+            memory_count=len(consolidated_ids),
+            consolidation_summary={
+                "target_ids": consolidated_ids,
+                "strategy": consolidation_strategy,
+            },
         )
 
     except Exception as e:
@@ -500,8 +486,7 @@ def consolidate_memories(
     name="retrieve_context",
     description="Retrieve contextual memories for healthcare decision support",
     category=ToolCategory.MEMORY_OPERATIONS,
-    healthcare_domains=['general_healthcare'],
-    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+    healthcare_domains=['general_healthcare']
 )
 def retrieve_context(
     actor_name: str,
@@ -514,7 +499,7 @@ def retrieve_context(
     Retrieve contextual memories for healthcare decision support.
 
     Gathers relevant memories and context to support clinical decision
-    making, providing comprehensive background for patient care.
+    making, providingbackground for patient care.
 
     Args:
         actor_name: Name of the healthcare actor requesting context
@@ -536,33 +521,15 @@ def retrieve_context(
         # Create actor instance for validation/context
         _ = Actor(name=actor_name, role="physician")
 
-        # TODO: In a real implementation, this would:
-        # 1. Analyze context query for key concepts
-        # 2. Retrieve patient-specific memories if patient_id provided
-        # 3. Gather related procedural and episodic memories
-        # 4. Apply temporal filtering based on scope
-        # 5. Rank by relevance to current context
-
-        # Mock context retrieval
-        contextual_memories = [
-            {
-                "memory_id": "ctx-001",
-                "content": "Patient has history of good compliance with metformin therapy",
-                "memory_type": "episodic",
-                "relevance_to_context": "high",
-                "temporal_relevance": "recent",
-                "patient_specific": patient_id is not None
-            }
-        ]
-
+        # Provide a deterministic, minimal response; actual retrieval is handled by check_memory
         return MemoryResult(
             success=True,
-            message=f"Retrieved contextual memories for healthcare decision support",
+            message="Context retrieval delegated to memory filters",
             memory_type="contextual",
             operation_type="retrieve",
-            memory_count=len(contextual_memories),
+            memory_count=0,
             clinical_context=f"context_for_{context_query[:50]}...",
-            retrieval_matches=contextual_memories
+            retrieval_matches=[],
         )
 
     except Exception as e:
@@ -578,8 +545,7 @@ def retrieve_context(
     name="analyze_memory_patterns",
     description="Analyze patterns in healthcare AI agent memory usage and content",
     category=ToolCategory.MEMORY_OPERATIONS,
-    healthcare_domains=['memory_management'],
-    fhir_resources=['Patient', 'Observation', 'Encounter', 'Condition', 'MedicationRequest', 'Medication', 'Procedure', 'Goal']
+    healthcare_domains=['memory_management']
 )
 def analyze_memory_patterns(
     actor_name: str,
@@ -612,45 +578,17 @@ def analyze_memory_patterns(
         # Create actor instance for validation/context
         _ = Actor(name=actor_name, role="physician")
 
-        # TODO: In a real implementation, this would:
-        # 1. Analyze memory creation and access patterns
-        # 2. Identify knowledge gaps and redundancies
-        # 3. Assess clinical knowledge distribution
-        # 4. Generate recommendations for improvement
-        # 5. Provide usage analytics and insights
-
-        # Mock pattern analysis
-        pattern_analysis = {
-            "total_memories_analyzed": 150,
-            "memory_type_distribution": {
-                "episodic": 60,
-                "procedural": 65,
-                "executive": 25
-            },
-            "clinical_context_distribution": {
-                "cardiology": 45,
-                "pulmonology": 30,
-                "general_medicine": 75
-            },
-            "usage_patterns": {
-                "most_accessed_context": "cardiology",
-                "average_confidence_score": 0.82,
-                "knowledge_gaps_identified": ["pediatric_cardiology", "rare_diseases"]
-            },
-            "recommendations": [
-                "Increase procedural memory collection for pediatric cases",
-                "Consolidate redundant hypertension management memories",
-                "Expand knowledge base for rare cardiovascular conditions"
-            ]
-        }
-
         return MemoryResult(
             success=True,
-            message=f"Memory pattern analysis completed for {time_period}",
+            message=f"Memory pattern analysis scheduled for {time_period}",
             memory_type="analysis",
             operation_type="analyze",
-            memory_count=pattern_analysis["total_memories_analyzed"],
-            consolidation_summary=pattern_analysis
+            memory_count=0,
+            consolidation_summary={
+                "analysis_scope": analysis_scope,
+                "time_period": time_period,
+                "include_clinical_insights": include_clinical_insights,
+            },
         )
 
     except Exception as e:
@@ -669,3 +607,42 @@ __all__ = [
     "retrieve_context",
     "analyze_memory_patterns",
 ]
+
+
+@hacs_tool(
+    name="check_memory",
+    description="Gather and filter memories for agent context (episodic/procedural, filters applied)",
+    category=ToolCategory.MEMORY_OPERATIONS,
+    healthcare_domains=["memory_management"]
+)
+def check_memory(
+    actor_name: str,
+    actor_id: str | None = None,
+    db_adapter: Any | None = None,
+    memory_types: list[str] | None = None,
+    min_importance: float = 0.0,
+    limit: int = 20,
+) -> MemoryResult:
+    try:
+        # Gather from DB if available
+        memories = gather_memories(db_adapter=db_adapter, actor_id=actor_id, limit=limit) if db_adapter else []
+        # Merge (no-op placeholder for future)
+        merged = merge_memories(memories)
+        # Filter
+        filtered = filter_memories(merged, types=memory_types or [], min_importance=min_importance)  # type: ignore[arg-type]
+        return MemoryResult(
+            success=True,
+            message=f"Gathered {len(filtered)} memories for context",
+            memory_type="gathered",
+            operation_type="retrieve",
+            memory_count=len(filtered),
+            retrieval_matches=[m.model_dump() if hasattr(m, 'model_dump') else m for m in filtered],
+        )
+    except Exception as e:
+        return MemoryResult(
+            success=False,
+            message=f"Failed to gather memories: {str(e)}",
+            memory_type="gathered",
+            operation_type="retrieve",
+            memory_count=0,
+        )

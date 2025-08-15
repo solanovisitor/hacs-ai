@@ -15,7 +15,7 @@ Production-ready tools for clinical workflows, resource management, and healthca
 
 ### 📋 **Record Management** (8+ tools)
 - `create_hacs_record` / `get_hacs_record_by_id` / `update_hacs_record` / `delete_hacs_record` - Full CRUD
-- `validate_hacs_record_data` - Comprehensive validation
+- `validate_hacs_record_data` -validation
 - `list_available_hacs_resources` - Resource schema catalog
 - `find_hacs_records` - Advanced semantic search
 - `search_hacs_records` - Filtered record search

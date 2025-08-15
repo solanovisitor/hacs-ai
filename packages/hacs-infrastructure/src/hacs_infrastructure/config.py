@@ -1,7 +1,7 @@
 """
 Configuration Management for HACS Infrastructure
 
-This module provides comprehensive configuration management with environment
+This module providesconfiguration management with environment
 variable support, validation, and healthcare-specific settings.
 """
 
@@ -180,7 +180,7 @@ class SecurityConfig(BaseModel):
 
 class HACSConfig(BaseSettings):
     """
-    Comprehensive HACS configuration with healthcare-specific settings.
+   HACS configuration with healthcare-specific settings.
 
     All settings can be configured via environment variables with the HACS_ prefix.
     """

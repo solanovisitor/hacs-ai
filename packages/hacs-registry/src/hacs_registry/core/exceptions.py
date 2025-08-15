@@ -1,7 +1,7 @@
 """
 Exception Hierarchy Following SOLID Principles
 
-This module defines a comprehensive exception hierarchy that follows SOLID principles:
+This module defines aexception hierarchy that follows SOLID principles:
 
 S - Single Responsibility: Each exception represents one specific error condition
 O - Open/Closed: Easy to add new exception types without modification

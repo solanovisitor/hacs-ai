@@ -153,7 +153,7 @@ class ToolSecurityContext:
         error: Optional[str] = None
     ) -> None:
         """
-        Log tool execution with comprehensive audit information.
+        Log tool execution withaudit information.
         
         Args:
             tool_name: Name of executed tool

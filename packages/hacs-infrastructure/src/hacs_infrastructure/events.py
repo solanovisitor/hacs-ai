@@ -1,7 +1,7 @@
 """
 Event System for HACS Infrastructure
 
-This module provides a comprehensive event system with pub/sub capabilities,
+This module provides aevent system with pub/sub capabilities,
 event filtering, and asynchronous event handling.
 """
 
@@ -168,7 +168,7 @@ class EventError(Exception):
 
 class EventBus:
     """
-    Comprehensive event bus with pub/sub capabilities, filtering,
+   event bus with pub/sub capabilities, filtering,
     and asynchronous event handling.
     """
 

@@ -563,7 +563,7 @@ class HealthcareMonitoringManager:
         self._compliance_callbacks.append(callback)
 
     def get_healthcare_dashboard_data(self) -> Dict[str, Any]:
-        """Get comprehensive healthcare monitoring dashboard data."""
+        """Gethealthcare monitoring dashboard data."""
         return {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "phi_access": self.metrics.get_phi_access_summary(),

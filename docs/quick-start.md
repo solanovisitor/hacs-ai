@@ -72,7 +72,7 @@ Choose only relevant clinical information for AI processing:
 ```python
 from hacs_models import Patient
 
-# Create patient with comprehensive clinical context
+# Create patient withclinical context
 patient = Patient(
     full_name="John Smith",
     birth_date="1980-05-15",
@@ -119,7 +119,7 @@ hba1c_obs = Observation(
 )
 
 # COMPRESS: Generate efficient clinical summaries
-patient_summary = patient.get_text_summary()  # "Patient patient-abc123"
+patient_summary = patient.summary()  # "Patient patient-abc123"
 vitals_summary = f"BP: {bp_obs.get_value_summary()}, HbA1c: {hba1c_obs.get_value_summary()}"
 
 print(f"🗜️ Compressed Context: {patient_summary} | {vitals_summary}")
@@ -253,7 +253,7 @@ def healthcare_context_engineering_demo():
         permissions=["patient:read", "observation:write", "memory:write", "analytics:clinical"]
     )
     
-    # Create patient with comprehensive clinical data
+    # Create patient withclinical data
     patient = Patient(
         full_name="Sarah Martinez",
         birth_date="1975-08-20",
@@ -304,7 +304,7 @@ def healthcare_context_engineering_demo():
     }
     
     # 🗜️ COMPRESS: Generate compressed clinical summaries
-    patient_summary = patient.get_text_summary()
+    patient_summary = patient.summary()
     vitals_summary = " | ".join([obs.get_value_summary() for obs in observations])
     risk_summary = f"Family Hx: {', '.join(selected_context['risk_factors'])}"
     
@@ -339,7 +339,7 @@ def healthcare_context_engineering_demo():
     # Results demonstrating context engineering
     print("🏥 Healthcare Context Engineering Demo Complete")
     print(f"🔒 ISOLATE: {clinical_ai.name} with {len(clinical_ai.permissions)} scoped permissions")
-    print(f"🎯 SELECT: {len(selected_context)} context categories from comprehensive patient data")
+    print(f"🎯 SELECT: {len(selected_context)} context categories frompatient data")
     print(f"🗜️ COMPRESS: {compressed_clinical_context['patient']} | {compressed_clinical_context['vitals']}")
     print(f"🖊️ WRITE: Clinical memory {clinical_assessment.id} with {clinical_assessment.importance_score} significance")
     print(f"⚡ Context Efficiency: {clinical_assessment.context_metadata['context_efficiency_ratio']*100}% of original size")
@@ -406,7 +406,7 @@ def validate_context_engineering_setup():
         print(f"✅ 🎯 SELECT: Extracted {len(selected_data)} essential fields")
         
         # Test 🗜️ COMPRESS: Context compression
-        patient_summary = patient.get_text_summary()
+        patient_summary = patient.summary()
         print(f"✅ 🗜️ COMPRESS: Patient summary generated: {patient_summary}")
         
         # Test 🖊️ WRITE: Memory creation with context
@@ -441,7 +441,7 @@ validate_context_engineering_setup()
 
 ## Next Steps
 
-- **[Hacs Tools](healthcare-tools.md)** - Complete tool reference
+- **[Hacs Tools](hacs-tools.md)** - Complete tool reference
 - **[Basic Usage](basic-usage.md)** - Detailed patterns and examples  
 - **[Integration Guide](integrations.md)** - Framework integrations
 - **[Architecture](architecture/)** - Design and patterns

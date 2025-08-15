@@ -55,7 +55,7 @@ Subject: [SECURITY] Brief description of vulnerability
 ### Access Control
 - **Role-Based Access Control (RBAC)** - Granular permissions system
 - **Actor-Based Security** - All operations require authenticated actors
-- **Audit Logging** - Comprehensive logging of all data access
+- **Audit Logging** -logging of all data access
 - **Session Management** - Secure session handling and timeout
 
 ### Healthcare Compliance
@@ -65,7 +65,7 @@ Subject: [SECURITY] Brief description of vulnerability
 - **Regulatory Audit Trails** - Tamper-evident logging
 
 ### Code Security
-- **Input Validation** - Comprehensive validation of all inputs
+- **Input Validation** -validation of all inputs
 - **SQL Injection Prevention** - Parameterized queries and ORM protection
 - **XSS Prevention** - Output encoding and CSP headers
 - **CSRF Protection** - Token-based CSRF protection

@@ -233,7 +233,7 @@ class ResourceService(IResourceService):
 
 class ResourceValidationService:
     """
-    Service for comprehensive resource validation.
+    Service forresource validation.
 
     SOLID Compliance:
     - S: Single responsibility - handles resource validation logic

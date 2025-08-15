@@ -1,7 +1,7 @@
 """
 HACS Alerting and Notification Framework
 
-This module provides comprehensive alerting and notification capabilities
+This module providesalerting and notification capabilities
 for healthcare AI systems with multi-channel delivery and escalation support.
 
 Features:

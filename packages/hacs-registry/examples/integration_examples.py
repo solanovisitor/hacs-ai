@@ -187,7 +187,7 @@ class HACSIntegrationExamples:
         print("🔧 Example 5: Registry Introspection")
         print("=" * 40)
 
-        # Get comprehensive statistics
+        # Getstatistics
         stats = self.integration_manager.get_integration_stats()
 
         print("📊 Integration Framework Statistics:")

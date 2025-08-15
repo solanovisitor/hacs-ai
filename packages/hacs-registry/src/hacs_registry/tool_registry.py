@@ -1,7 +1,7 @@
 """
 HACS Tool Registry - Centralized tool discovery and management
 
-This module provides comprehensive tool registry functionality for HACS,
+This module providestool registry functionality for HACS,
 supporting automatic discovery, categorization, search, and framework-agnostic
 tool management for AI agents.
 
@@ -72,7 +72,7 @@ class HACSToolRegistry:
     Centralized registry for HACS tools with discovery, categorization, and search capabilities.
 
     This registry provides framework-agnostic tool management, supporting both
-    LangChain and MCP integrations while maintaining comprehensive metadata
+    LangChain and MCP integrations while maintainingmetadata
     about each tool's capabilities and requirements.
     """
 
@@ -87,11 +87,15 @@ class HACSToolRegistry:
         self._category_patterns = {
             "resource_management": [
                 "create_hacs_record", "get_hacs_record", "update_hacs_record",
-                "delete_hacs_record", "search_hacs_records"
+                "delete_hacs_record", "search_hacs_records",
+                "instantiate_hacs_resource", "validate_hacs_resource",
+            ],
+            "bundles": [
+                "create_resource_bundle", "add_bundle_entry", "validate_resource_bundle"
             ],
             "clinical_workflows": [
-                "execute_clinical_workflow", "get_clinical_guidance",
-                "query_with_datarequirement", "validate_clinical_protocol"
+                "create_activity_definition", "create_plan_definition",
+                "create_task_from_activity", "complete_task", "fail_task",
             ],
             "schema_discovery": [
                 "discover_hacs_resources", "get_hacs_resource_schema",
@@ -99,8 +103,6 @@ class HACSToolRegistry:
             ],
             "development_tools": [
                 "create_resource_stack",
-                # Deprecated tools intentionally omitted: create_clinical_template, optimize_resource_for_llm
-                # Keep only active development tools here
                 "register_prompt_template",
                 "register_extraction_schema",
                 "register_stack_template",
@@ -111,31 +113,18 @@ class HACSToolRegistry:
             "memory_operations": [
                 "create_hacs_memory", "search_hacs_memories",
                 "consolidate_memories", "retrieve_context",
-                "analyze_memory_patterns"
+                "analyze_memory_patterns", "check_memory"
             ],
-            "vector_search": [
-                "store_embedding", "vector_similarity_search",
-                "vector_hybrid_search", "get_vector_collection_stats",
-                "optimize_vector_collection"
-            ],
-            "fhir_integration": [
-                "convert_to_fhir", "validate_fhir_compliance",
-                "process_fhir_bundle", "lookup_fhir_terminology"
-            ],
-            "healthcare_analytics": [
-                "calculate_quality_measures", "analyze_population_health",
-                "generate_clinical_dashboard", "perform_risk_stratification"
-            ],
-            "ai_integrations": [
-                "deploy_healthcare_ai_model", "run_clinical_inference",
-                "preprocess_medical_data"
+            "knowledge_management": [
+                "index_evidence", "check_evidence",
             ],
             "admin_operations": [
                 "run_database_migration", "check_migration_status",
                 "describe_database_schema", "get_table_structure",
-                "test_database_connection"
+                "test_database_connection", "persist_hacs_resource",
+                "read_hacs_resource", "set_actor_preference",
+                "list_actor_preferences",
             ],
-            # No explicit knowledge_management tools currently
         }
 
     def _determine_category(self, tool_name: str) -> str:
@@ -170,7 +159,7 @@ class HACSToolRegistry:
         return "unknown"
 
     def _extract_tool_metadata(self, func: Callable, module_path: str, domain: str) -> Dict[str, Any]:
-        """Extract comprehensive metadata from a tool function."""
+        """Extractmetadata from a tool function."""
         # Handle LangChain StructuredTool objects
         if hasattr(func, 'func') and hasattr(func, 'name'):
             # This is a LangChain StructuredTool
@@ -476,7 +465,7 @@ class HACSToolRegistry:
         return results
 
     def get_tool_stats(self) -> Dict[str, Any]:
-        """Get comprehensive statistics about registered tools."""
+        """Getstatistics about registered tools."""
         stats = {
             "total_tools": len(self._tools),
             "categories": {
@@ -505,7 +494,7 @@ class HACSToolRegistry:
         return stats
 
     def export_tool_catalog(self) -> Dict[str, Any]:
-        """Export a comprehensive tool catalog for external use."""
+        """Export atool catalog for external use."""
         catalog = {
             "metadata": {
                 "total_tools": len(self._tools),

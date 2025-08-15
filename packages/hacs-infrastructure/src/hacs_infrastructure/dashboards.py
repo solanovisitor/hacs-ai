@@ -1,7 +1,7 @@
 """
 HACS Monitoring Dashboards - Healthcare Analytics and Visualization
 
-This module provides comprehensive monitoring dashboards for healthcare AI systems
+This module providesmonitoring dashboards for healthcare AI systems
 including real-time metrics, clinical alerts, compliance tracking, and performance monitoring.
 
 Features:

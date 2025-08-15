@@ -1,7 +1,7 @@
 """
 Granular PostgreSQL Adapter for HACS Persistence
 
-This module provides a comprehensive PostgreSQL adapter that creates dedicated
+This module provides aPostgreSQL adapter that creates dedicated
 tables for each HACS resource type with proper relational structure and
 high-performance queries while maintaining full FHIR compliance.
 """
@@ -45,7 +45,7 @@ class GranularPostgreSQLAdapter(BaseAdapter, PersistenceProvider):
     - Dedicated tables for Patient, Observation, Encounter, AgentMessage
     - Extracted key fields as columns for fast queries
     - Full resource preservation in JSONB for complex operations
-    - Comprehensive indexing for high performance
+    -indexing for high performance
     - Advanced search capabilities with relational and JSON queries
     """
 
@@ -537,7 +537,7 @@ class GranularPostgreSQLAdapter(BaseAdapter, PersistenceProvider):
             return False
 
     def get_database_stats(self) -> dict[str, Any]:
-        """Get comprehensive database statistics for all resource tables."""
+        """Getdatabase statistics for all resource tables."""
         try:
             with self._get_connection() as conn:
                 with conn.cursor() as cursor:

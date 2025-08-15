@@ -169,10 +169,20 @@ class PluginRegistry:
             return 0
 
         # Walk through all modules in package
+        # Blocklist certain generic domains slated for removal
+        blocked_substrings = {
+            'hacs_tools.domains.fhir_integration',
+            'hacs_tools.domains.development_tools',
+            'hacs_tools.domains.healthcare_analytics',
+        }
+
         for importer, modname, ispkg in pkgutil.walk_packages(
             package_path,
             package_name + "."
         ):
+            # Skip blocked modules (cleanup of generic domains)
+            if any(b in modname for b in blocked_substrings):
+                continue
             try:
                 module = importlib.import_module(modname)
                 discovered_count += self._scan_module_for_tools(module, modname)
@@ -302,7 +312,8 @@ class PluginRegistry:
             'schema_discovery': 'schema_discovery',
             'memory_operation': 'memory_operations',
             'memory_operations': 'memory_operations',
-            'vector_search': 'vector_search',
+            'evidence_tools': 'knowledge_management',
+            'knowledge_management': 'knowledge_management',
             'development_tool': 'development_tools',
             'development_tools': 'development_tools',
             'fhir_integration': 'fhir_integration',

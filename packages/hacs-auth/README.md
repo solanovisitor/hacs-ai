@@ -1,6 +1,6 @@
 # HACS Authentication
 
-Authentication and authorization components for HACS (Healthcare Agent Communication Standard) providing JWT token management, role-based access control, and comprehensive audit logging.
+Authentication and authorization components for HACS (Healthcare Agent Communication Standard) providing JWT token management, role-based access control, andaudit logging.
 
 ## Features
 

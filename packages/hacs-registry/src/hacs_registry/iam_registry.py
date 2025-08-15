@@ -1,7 +1,7 @@
 """
 HACS IAM Registry - Identity and Access Management
 
-This module provides comprehensive identity and access management for HACS operations,
+This module providesidentity and access management for HACS operations,
 with healthcare-specific compliance rules, role-based access control, and audit trails.
 
 Healthcare IAM Requirements:

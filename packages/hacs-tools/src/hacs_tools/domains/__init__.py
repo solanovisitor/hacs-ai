@@ -29,11 +29,12 @@ from .resource_management import (
     delete_hacs_record,
     search_hacs_records,
 )
-from .clinical_workflows import (
-    execute_clinical_workflow,
-    get_clinical_guidance,
-    query_with_datarequirement,
-    validate_clinical_protocol,
+from .workflow_tools import (
+    create_activity_definition,
+    create_plan_definition,
+    create_task_from_activity,
+    complete_task,
+    fail_task,
 )
 from .memory_operations import (
     create_hacs_memory,
@@ -42,12 +43,9 @@ from .memory_operations import (
     retrieve_context,
     analyze_memory_patterns,
 )
-from .vector_search import (
-    store_embedding,
-    vector_similarity_search,
-    vector_hybrid_search,
-    get_vector_collection_stats,
-    optimize_vector_collection,
+from .evidence_tools import (
+    index_evidence,
+    check_evidence,
 )
 from .schema_discovery import (
     discover_hacs_resources,
@@ -55,31 +53,22 @@ from .schema_discovery import (
     analyze_resource_fields,
     compare_resource_schemas,
 )
-from .development_tools import (
-    create_resource_stack,
-    register_prompt_template_tool,
-    register_extraction_schema_tool,
-    register_stack_template_tool,
-    generate_stack_template_from_markdown_tool,
-    instantiate_stack_from_context_tool,
-    instantiate_stack_template_tool,
+from .modeling_tools import (
+    instantiate_hacs_resource,
+    validate_hacs_resource,
 )
-from .fhir_integration import (
-    convert_to_fhir,
-    validate_fhir_compliance,
-    process_fhir_bundle,
-    lookup_fhir_terminology,
+from .bundle_tools import (
+    create_resource_bundle,
+    add_bundle_entry,
+    validate_resource_bundle,
 )
-from .healthcare_analytics import (
-    calculate_quality_measures,
-    analyze_population_health,
-    generate_clinical_dashboard,
-    perform_risk_stratification,
+from .persistence_tools import (
+    persist_hacs_resource,
+    read_hacs_resource,
 )
-from .ai_integrations import (
-    deploy_healthcare_ai_model,
-    run_clinical_inference,
-    preprocess_medical_data,
+from .preferences_tools import (
+    set_actor_preference,
+    list_actor_preferences,
 )
 from .admin_operations import (
     run_database_migration,
@@ -98,11 +87,17 @@ __all__ = [
     "delete_hacs_record",
     "search_hacs_records",
 
-    # Clinical Workflow Tools
-    "execute_clinical_workflow",
-    "get_clinical_guidance",
-    "query_with_datarequirement",
-    "validate_clinical_protocol",
+    # Clinical Workflow Tools (low-level only)
+    "create_activity_definition",
+    "create_plan_definition",
+    "create_task_from_activity",
+    "complete_task",
+    "fail_task",
+    "create_activity_definition",
+    "create_plan_definition",
+    "create_task_from_activity",
+    "complete_task",
+    "fail_task",
 
     # Memory Operations Tools
     "create_hacs_memory",
@@ -111,12 +106,9 @@ __all__ = [
     "retrieve_context",
     "analyze_memory_patterns",
 
-    # Vector Search Tools
-    "store_embedding",
-    "vector_similarity_search",
-    "vector_hybrid_search",
-    "get_vector_collection_stats",
-    "optimize_vector_collection",
+    # Evidence Tools (context-specific vector usage)
+    "index_evidence",
+    "check_evidence",
 
     # Schema Discovery Tools
     "discover_hacs_resources",
@@ -124,31 +116,27 @@ __all__ = [
     "analyze_resource_fields",
     "compare_resource_schemas",
 
-    # Development Tools
-    "create_resource_stack",
-    "register_prompt_template_tool",
-    "register_extraction_schema_tool",
-    "register_stack_template_tool",
-    "generate_stack_template_from_markdown_tool",
-    "instantiate_stack_from_context_tool",
-    "instantiate_stack_template_tool",
+    # Modeling Tools
+    "instantiate_hacs_resource",
+    "validate_hacs_resource",
 
-    # FHIR Integration Tools
-    "convert_to_fhir",
-    "validate_fhir_compliance",
-    "process_fhir_bundle",
-    "lookup_fhir_terminology",
+    # Development/Template tools removed
 
-    # Healthcare Analytics Tools
-    "calculate_quality_measures",
-    "analyze_population_health",
-    "generate_clinical_dashboard",
-    "perform_risk_stratification",
+    # Bundle Tools
+    "create_resource_bundle",
+    "add_bundle_entry",
+    "validate_resource_bundle",
 
-    # AI/ML Integration Tools
-    "deploy_healthcare_ai_model",
-    "run_clinical_inference",
-    "preprocess_medical_data",
+    # Persistence Tools
+    "persist_hacs_resource",
+    "read_hacs_resource",
+
+    # Preferences Tools
+    "set_actor_preference",
+    "list_actor_preferences",
+
+    # Generic FHIR/Analytics domains removed
+
 
     # Admin Operations Tools
     "run_database_migration",

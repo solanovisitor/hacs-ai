@@ -141,7 +141,7 @@ class CrewAIAdapter:
                 ],
             },
             CrewAIAgentRole.TREATMENT_PLANNER: {
-                "goal": "Develop comprehensive treatment plans based on patient assessments and clinical evidence",
+                "goal": "Developtreatment plans based on patient assessments and clinical evidence",
                 "backstory": "You are a treatment planning specialist who creates personalized, evidence-based treatment strategies. You consider patient preferences, clinical guidelines, and resource constraints.",
                 "capabilities": [
                     "treatment_planning",
@@ -307,7 +307,7 @@ class CrewAIAdapter:
 
         Available Observations: {len(observations)}
 
-        Provide a comprehensive clinical assessment including:
+        Provide aclinical assessment including:
         1. Current clinical status
         2. Risk factors and concerns
         3. Recommended follow-up actions

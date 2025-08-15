@@ -225,7 +225,17 @@ class LifecycleManager(ABC):
         rules = self._rules.get(action, [])
         for rule in rules:
             if rule.can_transition(entity, current_state):
-                # TODO: Check permissions if actor_id provided
+                # Enforce IAM permission check when actor_id provided and IAM available
+                if actor_id:
+                    try:
+                        from ..iam_registry import get_global_iam_registry, AccessLevel
+                        iam = get_global_iam_registry()
+                        resource_id = f"{self.entity_type.lower()}:{entity.id}"
+                        required = AccessLevel.WRITE
+                        if not iam.check_access(actor_id, resource_id, required):
+                            continue
+                    except Exception:
+                        pass
                 return True
 
         return False

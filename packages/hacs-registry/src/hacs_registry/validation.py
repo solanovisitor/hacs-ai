@@ -422,7 +422,7 @@ class ValidationEngine:
 
     def validate(self, target: Any, context: Dict[str, Any] = None,
                 categories: List[ValidationCategory] = None) -> ValidationReport:
-        """Perform comprehensive validation."""
+        """Performvalidation."""
         start_time = datetime.now()
 
         report = ValidationReport()

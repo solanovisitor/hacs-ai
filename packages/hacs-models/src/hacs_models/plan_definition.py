@@ -228,7 +228,7 @@ class PlanDefinition(DomainResource):
     
     Represents pre-defined sets of actions for clinical protocols, decision support rules,
     order sets, and other healthcare workflows. Optimized for LLM context engineering
-    with comprehensive FHIR-aligned metadata and descriptive information.
+    withFHIR-aligned metadata and descriptive information.
     
     Key Features:
         - Rich metadata for LLM context understanding

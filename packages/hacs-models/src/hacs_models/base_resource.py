@@ -3,7 +3,7 @@ Base resource model for all HACS healthcare models.
 
 This module provides the foundational BaseResource and DomainResource classes
 that all HACS models inherit from. Designed for world-class development quality
-with full type safety, comprehensive validation, and AI-optimized features.
+with full type safety,validation, and AI-optimized features.
 
 Key Features:
     - Automatic ID generation with smart defaults
@@ -18,7 +18,7 @@ Design Principles:
     - Pure data models (no business logic)
     - Immutable by design (use copy() for updates)
     - Rich type annotations for perfect IDE support
-    - Comprehensive docstrings for maintainability
+    -docstrings for maintainability
     - Zero external dependencies beyond Pydantic
 """
 
@@ -535,7 +535,7 @@ class DomainResource(BaseResource):
     # Override FHIR version for domain resources
     _fhir_version: ClassVar[str] = "R4"
 
-    def get_text_summary(self) -> str:
+    def summary(self) -> str:
         """
         Get or generate a human-readable text summary.
 

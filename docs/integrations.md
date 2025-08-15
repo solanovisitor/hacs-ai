@@ -3,7 +3,7 @@
 Integrate HACS packages into your healthcare AI applications. HACS provides **core packages** that integrate with AI frameworks, plus **optional service add-ons** for convenience.
 
 > **📚 Related Documentation:**
-> - [Hacs Tools Reference](healthcare-tools.md) - Complete tool documentation
+> - [Hacs Tools Reference](hacs-tools.md) - Complete tool documentation
 > - [Basic Usage Guide](basic-usage.md) - Essential patterns and examples
 > - [Quick Start Guide](quick-start.md) - Get running in 5 minutes
 - LangGraph MCP examples: see `examples/hacs_developer_agent/mcp_graph.py`
@@ -145,7 +145,7 @@ The **Model Context Protocol** is HACS's core integration layer:
 
 Note: The legacy FastMCP wrapper has been removed. Prefer the secure JSON-RPC server.
 
-### **Available Hacs Tools (25 total)**
+### **Available Hacs Tools (catalog)**
 
 ```python
 import requests
@@ -159,13 +159,12 @@ tools_response = requests.post('http://localhost:8000/', json={
 
 print(f"Available tools: {len(tools_response.json()['result']['tools'])}")
 
-# Categories of tools:
-# 🔍 Resource Discovery & Development (5 tools)
-# 📋 Resource Management (8 tools)
-# 🧠 Memory Management (5 tools)
-# ✅ Validation & Schema (3 tools)
-# 🎨 Advanced Tools (3 tools)
-# 📚 Knowledge Management (1 tool)
+# Categories of tools (low-level only):
+# 🔍 Schema Discovery
+# 📋 Resource Management (CRUD, modeling, bundles)
+# 🧠 Memory Management
+# 🧩 Workflow Modeling (ActivityDefinition, PlanDefinition, Task)
+# 🛠 Development/Template Registration
 ```
 
 ### **MCP Client Integration**
@@ -186,9 +185,9 @@ patient_result = await client.call_tool("create_resource", {
 })
 ```
 
-## 🚀 **LangGraph Agent Integration**
+## 🚀 **Agent Integration (LangGraph preferred, LangChain shims)**
 
-HACS includes a pre-built LangGraph agent for healthcare workflows:
+HACS includes pre-built LangGraph tooling and minimal LangChain shims. Prefer LangGraph direct tool calls; LangChain adapter is deprecated.
 
 ### **Setup & Configuration**
 ```bash
@@ -206,12 +205,7 @@ uv run langgraph dev
 
 ### **Healthcare Agent Capabilities**
 ```python
-# The LangGraph agent provides:
-# - Clinical memory management
-# - Evidence-based reasoning
-# - FHIR-compliant data handling
-# - Multi-turn patient conversations
-# - Structured clinical documentation
+# Agents can call tools directly (LangGraph) or via the MCP server. Keep prompts and business logic in workflows, not tools.
 
 # Agent runs on http://localhost:8001
 # Automatically connects to HACS MCP tools
@@ -292,7 +286,7 @@ lab_result = requests.post('http://localhost:8000/', json={
 
 ### **LangSmith Integration**
 ```bash
-# Enable comprehensive AI tracing
+# EnableAI tracing
 export LANGCHAIN_TRACING_V2=true
 export LANGCHAIN_API_KEY="lsv2_..."
 export LANGSMITH_PROJECT="healthcare_ai_system"
@@ -427,7 +421,7 @@ services:
 - **Database**: Use read replicas for high query loads
 - **MCP Server**: Deploy multiple instances behind load balancer
 - **Vector Store**: Consider dedicated vector database for large datasets
-- **Monitoring**: Implement comprehensive health checks and alerting
+- **Monitoring**: Implementhealth checks and alerting
 
 ## 🎯 **Integration Checklist**
 

@@ -1,7 +1,7 @@
 """
 Tool Versioning System for HACS
 
-This module provides comprehensive versioning support for HACS tools including:
+This module providesversioning support for HACS tools including:
 - Semantic versioning validation
 - Version comparison and compatibility checking
 - Deprecation warnings and migration paths
@@ -344,7 +344,7 @@ def register_tool_version(tool_name: str, version: str, status: VersionStatus = 
 
 
 def get_tool_version_info(tool_name: str) -> Dict[str, Any]:
-    """Get comprehensive version information for a tool."""
+    """Getversion information for a tool."""
     active_version = version_manager.get_active_version(tool_name)
     all_versions = version_manager.get_all_versions(tool_name)
 

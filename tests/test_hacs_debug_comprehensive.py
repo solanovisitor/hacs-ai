@@ -26,7 +26,7 @@ def test_comprehensive_model_validation():
             raise error
         return error_msg
     
-    debug_print("Starting comprehensive HACS validation")
+    debug_print("StartingHACS validation")
     
     # Test 1: Model Registry Validation
     debug_print("Testing model registry...")
@@ -171,7 +171,7 @@ def test_comprehensive_model_validation():
         patient_schema = schema_discovery.get_hacs_resource_schema("Patient", include_examples=True)
         assert patient_schema.success, "Could not get Patient schema"
         
-        # Use schema information to create a more comprehensive patient
+        # Use schema information to create a morepatient
         integration_patient_data = {
             "full_name": "Integration Test Patient",
             "gender": "other",
@@ -197,7 +197,7 @@ def test_comprehensive_model_validation():
     except Exception as e:
         handle_error("Component Integration", e)
     
-    debug_print("✅ All comprehensive tests passed!")
+    debug_print("✅ Alltests passed!")
     
     # Test summary
     print("\n" + "="*80)

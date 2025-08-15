@@ -1,16 +1,16 @@
 """
 Patient model for healthcare data representation.
 
-This module provides a comprehensive, FHIR-compliant Patient model optimized
+This module provides a FHIR-compliant Patient model optimized
 for AI agent communication and healthcare workflows. Features automatic data
-parsing, flexible name handling, and comprehensive validation.
+parsing, flexible name handling, and validation.
 
 Key Features:
     - FHIR R4/R5 compliant structure
     - Automatic name parsing from full_name
     - Smart contact information handling
     - Age calculation and validation
-    - Comprehensive identifier management
+    -identifier management
     - AI-optimized field structure
 
 Design Philosophy:
@@ -396,14 +396,14 @@ class Patient(DomainResource):
     """
     Patient demographics and administrative information.
 
-    Comprehensive patient model following FHIR Patient resource structure
+    Patient model following FHIR Patient resource structure
     with AI-optimized features for flexible data input and automatic parsing.
 
     Key Features:
         - Automatic name parsing from full_name string
         - Flexible contact information handling
         - Age calculation and validation
-        - Comprehensive identifier management
+        -identifier management
         - Care team tracking
         - Patient linkage and family relationships
         - Enhanced communication preferences and accessibility

@@ -127,6 +127,7 @@ from .plan_definition import PlanDefinition, PlanDefinitionGoal, PlanDefinitionA
 # Specialized models for AI agents
 from .memory import MemoryBlock, EpisodicMemory, SemanticMemory, WorkingMemory
 from .agent_message import AgentMessage, MessageRole, MessageType
+from .message_definition import MessageDefinition
 from .resource_bundle import ResourceBundle, BundleEntry, BundleType
 from .resource_bundle import WorkflowBindingType, WorkflowBinding, LinkRelation
 from .resource_bundle import ResourceBundle as _RB
@@ -135,6 +136,7 @@ BundleUpdate = _RB.BundleUpdate
 create_resource_stack = _RB.create_resource_stack
 create_search_results_bundle = _RB.create_search_results_bundle
 create_workflow_template_bundle = _RB.create_workflow_template_bundle
+# Deprecated stack template API
 from .stack_template import StackTemplate, LayerSpec, instantiate_stack_template
 from .workflow import WorkflowDefinition, WorkflowStep, WorkflowAction
 from .workflow import (
@@ -181,6 +183,8 @@ from .annotation import (
 )
 from .actor import Actor, ActorRole, PermissionLevel, SessionStatus
 from .evidence import Evidence, EvidenceType
+from .agent_resources import AgentTodo, ScratchpadEntry, AgentTask, ScratchpadTodo, AgentScratchpadEntry
+from .actor_preference import ActorPreference, PreferenceScope
 from .results import (
     HACSResult, ResourceSchemaResult, ResourceDiscoveryResult, FieldAnalysisResult,
     DataQueryResult, WorkflowResult, GuidanceResult, MemoryResult, VersionResult,
@@ -335,6 +339,7 @@ __all__ = [
     "AgentMessage",
     "MessageRole",
     "MessageType",
+    "MessageDefinition",
 
     # Bundle and workflow
     "ResourceBundle",
@@ -417,6 +422,15 @@ __all__ = [
     "ResourceStackResult",
     "ResourceTemplateResult",
     "VectorStoreResult",
+    # Agent resources
+    "AgentTodo",
+    "ScratchpadEntry",
+    "AgentTask",
+    "ActorPreference",
+    "PreferenceScope",
+    # Compatibility agent resource aliases
+    "ScratchpadTodo",
+    "AgentScratchpadEntry",
 ]
 
 # Package metadata for introspection

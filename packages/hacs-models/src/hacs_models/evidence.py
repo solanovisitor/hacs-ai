@@ -1,12 +1,14 @@
 """
-Evidence models for tracking and linking clinical evidence.
+Evidence models optimized for storing literature-based evidence.
 
-This module provides evidence-related models that enable agents to store,
-track, and link clinical evidence with proper provenance and confidence scoring.
+This module provides a FHIR-inspired Evidence resource tailored for
+literature references (papers, guidelines), while preserving backwards
+compatibility with prior fields used by tools.
 """
 
 from enum import Enum
-from typing import Any, Literal
+from typing import Any, List, Literal, Optional
+from datetime import date
 
 from pydantic import Field, computed_field, field_validator
 
@@ -14,126 +16,101 @@ from .base_resource import BaseResource
 
 
 class EvidenceType(str, Enum):
-    """Types of clinical evidence."""
+    """Types of evidence records."""
 
-    CLINICAL_NOTE = "clinical_note"
-    LAB_RESULT = "lab_result"
-    IMAGING = "imaging"
-    MEDICATION = "medication"
-    PROCEDURE = "procedure"
-    DIAGNOSIS = "diagnosis"
     RESEARCH_PAPER = "research_paper"
     GUIDELINE = "guideline"
-    PATIENT_REPORTED = "patient_reported"
+    SYSTEMATIC_REVIEW = "systematic_review"
+    META_ANALYSIS = "meta_analysis"
+    CLINICAL_NOTE = "clinical_note"
     OBSERVATION = "observation"
+    OTHER = "other"
+
+
+class EvidenceLevel(str, Enum):
+    """Simplified evidence levels (e.g., GRADE)."""
+
+    HIGH = "high"
+    MODERATE = "moderate"
+    LOW = "low"
+    VERY_LOW = "very_low"
+
+
+class EvidenceAuthor(BaseResource):
+    resource_type: Literal["EvidenceAuthor"] = Field(default="EvidenceAuthor")
+    full_name: str = Field(description="Author full name")
+    affiliation: Optional[str] = Field(default=None, description="Author affiliation")
+
+
+class PublicationVenue(BaseResource):
+    resource_type: Literal["PublicationVenue"] = Field(default="PublicationVenue")
+    name: str = Field(description="Journal or venue name")
+    issn: Optional[str] = Field(default=None, description="ISSN identifier")
+    publisher: Optional[str] = Field(default=None, description="Publisher name")
 
 
 class Evidence(BaseResource):
     """
-    Represents a piece of clinical evidence with provenance and confidence tracking.
+    Literature-focused Evidence resource with FHIR-inspired fields.
 
-    Evidence can be linked to other resources and includes vector references
-    for future RAG (Retrieval-Augmented Generation) integration.
+    Backwards-compatibility: retains legacy fields `citation`, `content`,
+    `evidence_type`, `confidence_score`, `quality_score`, `vector_id`, `provenance`,
+    `linked_resources`, `tags`, `review_status`.
     """
 
-    resource_type: Literal["Evidence"] = Field(
-        default="Evidence", description="Resource type identifier"
-    )
+    resource_type: Literal["Evidence"] = Field(default="Evidence")
 
-    citation: str = Field(
-        description="Citation or source reference for this evidence",
-        examples=[
-            "Smith, J. et al. (2024). Clinical Trial Results. NEJM, 380(1), 45-52.",
-            "Patient Chart - John Doe - Encounter 2024-01-15",
-            "WHO Clinical Guidelines for Hypertension Management (2023)",
-        ],
-    )
+    # Core bibliographic fields (FHIR Citation inspired)
+    title: Optional[str] = Field(default=None, description="Title of the cited artifact")
+    abstract: Optional[str] = Field(default=None, description="Abstract or summary of the artifact")
+    authors: List[EvidenceAuthor] = Field(default_factory=list, description="List of authors")
+    journal: Optional[PublicationVenue] = Field(default=None, description="Publication venue")
+    publication_year: Optional[int] = Field(default=None, description="Year of publication")
+    publication_date: Optional[date | str] = Field(default=None, description="Date of publication (date or templated string)")
+    doi: Optional[str] = Field(default=None, description="Digital Object Identifier")
+    pmid: Optional[str] = Field(default=None, description="PubMed ID")
+    url: Optional[str] = Field(default=None, description="URL to the artifact")
+    language: Optional[str] = Field(default=None, description="Language (BCP-47, e.g., en, pt-BR)")
+    volume: Optional[str] = Field(default=None, description="Journal volume")
+    issue: Optional[str] = Field(default=None, description="Journal issue")
+    pages: Optional[str] = Field(default=None, description="Page range")
+    keywords: List[str] = Field(default_factory=list, description="Keywords/MeSH terms")
 
-    content: str = Field(
-        description="The actual evidence content or findings",
-        examples=[
-            "Patient exhibits elevated blood pressure readings consistently above 140/90 mmHg",
-            "Lab results show HbA1c of 8.2%, indicating poor glycemic control",
-            "MRI reveals no acute intracranial abnormalities",
-        ],
-    )
+    # Evidence grading and type
+    evidence_level: Optional[EvidenceLevel] = Field(default=None, description="Evidence level (e.g., GRADE)")
+    evidence_type: EvidenceType = Field(default=EvidenceType.RESEARCH_PAPER, description="Type of evidence")
 
-    evidence_type: EvidenceType = Field(
-        description="Type of evidence this represents",
-        examples=["clinical_note", "lab_result", "imaging"],
-    )
+    # Legacy fields (kept for compatibility with tools and tests)
+    citation: Optional[str] = Field(default=None, description="Formatted citation string")
+    content: Optional[str] = Field(default=None, description="Legacy field for content or findings")
 
-    confidence_score: float = Field(
-        default=0.8,
-        ge=0.0,
-        le=1.0,
-        description="Confidence score for this evidence (0.0 to 1.0)",
-        examples=[0.95, 0.7, 0.85],
-    )
+    # Quality and provenance
+    confidence_score: float = Field(default=0.8, ge=0.0, le=1.0, description="Confidence score (0.0-1.0)")
+    quality_score: float = Field(default=0.8, ge=0.0, le=1.0, description="Quality assessment score (0.0-1.0)")
+    vector_id: Optional[str] = Field(default=None, description="Vector embedding reference for RAG")
+    provenance: dict[str, Any] = Field(default_factory=dict, description="Provenance info (source, collected_by, etc.)")
+    linked_resources: list[str] = Field(default_factory=list, description="Linked HACS resources (ids)")
+    tags: list[str] = Field(default_factory=list, description="Categorization tags")
+    review_status: Literal["pending", "reviewed", "approved", "rejected"] = Field(default="pending", description="Review status")
 
-    vector_id: str | None = Field(
-        default=None,
-        description="Reference to vector embedding for RAG integration",
-        examples=["vec_abc123", "emb_456def", None],
-    )
-
-    provenance: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Provenance information including source, collection method, etc.",
-        examples=[
-            {
-                "source_system": "Epic EHR",
-                "collected_by": "Dr. Smith",
-                "collection_date": "2024-01-15T10:30:00Z",
-                "verification_status": "verified",
-            }
-        ],
-    )
-
-    linked_resources: list[str] = Field(
-        default_factory=list,
-        description="IDs of resources this evidence is linked to",
-        examples=[["patient-001", "encounter-123", "observation-456"]],
-    )
-
-    quality_score: float = Field(
-        default=0.8,
-        ge=0.0,
-        le=1.0,
-        description="Quality assessment score for this evidence",
-        examples=[0.9, 0.75, 0.6],
-    )
-
-    tags: list[str] = Field(
-        default_factory=list,
-        description="Tags for categorizing and searching evidence",
-        examples=[["hypertension", "cardiology", "medication_review"]],
-    )
-
-    review_status: Literal["pending", "reviewed", "approved", "rejected"] = Field(
-        default="pending", description="Review status of this evidence"
-    )
+    @field_validator("title")
+    @classmethod
+    def _validate_title(cls, v: Optional[str]) -> Optional[str]:
+        return v.strip() if isinstance(v, str) else v
 
     @field_validator("citation")
     @classmethod
-    def validate_citation(cls, v: str) -> str:
-        """Ensure citation is not empty and properly formatted."""
-        if not v.strip():
-            raise ValueError("Citation cannot be empty")
-        return v.strip()
-
-    @field_validator("content")
-    @classmethod
-    def validate_content(cls, v: str) -> str:
-        """Ensure content is not empty."""
-        if not v.strip():
-            raise ValueError("Evidence content cannot be empty")
-        return v.strip()
+    def _validate_citation(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        s = v.strip()
+        if not s:
+            return None
+        return s
 
     @field_validator("provenance")
     @classmethod
-    def validate_provenance(cls, v: dict[str, Any]) -> dict[str, Any]:
-        """Ensure provenance is a valid dictionary."""
+    def _validate_provenance(cls, v: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(v, dict):
             raise ValueError("Provenance must be a dictionary")
         return v
@@ -141,51 +118,22 @@ class Evidence(BaseResource):
     @computed_field
     @property
     def overall_reliability(self) -> float:
-        """Computed field combining confidence and quality scores."""
         return (self.confidence_score + self.quality_score) / 2
 
     def add_vector_reference(self, vector_id: str) -> None:
-        """
-        Add or update vector embedding reference.
-
-        Args:
-            vector_id: ID of the vector embedding
-        """
         self.vector_id = vector_id
         self.update_timestamp()
 
     def update_provenance(self, key: str, value: Any) -> None:
-        """
-        Update provenance information.
-
-        Args:
-            key: Provenance key
-            value: Provenance value
-        """
         self.provenance[key] = value
         self.update_timestamp()
 
     def link_to_resource(self, resource_id: str) -> None:
-        """
-        Link this evidence to another resource.
-
-        Args:
-            resource_id: ID of the resource to link to
-        """
         if resource_id not in self.linked_resources:
             self.linked_resources.append(resource_id)
             self.update_timestamp()
 
     def unlink_from_resource(self, resource_id: str) -> bool:
-        """
-        Remove link to a resource.
-
-        Args:
-            resource_id: ID of the resource to unlink
-
-        Returns:
-            True if the resource was unlinked, False if it wasn't found
-        """
         if resource_id in self.linked_resources:
             self.linked_resources.remove(resource_id)
             self.update_timestamp()
@@ -193,51 +141,24 @@ class Evidence(BaseResource):
         return False
 
     def set_confidence(self, score: float) -> None:
-        """
-        Set the confidence score.
-
-        Args:
-            score: Confidence score between 0.0 and 1.0
-        """
         if not 0.0 <= score <= 1.0:
             raise ValueError("Confidence score must be between 0.0 and 1.0")
         self.confidence_score = score
         self.update_timestamp()
 
     def set_quality(self, score: float) -> None:
-        """
-        Set the quality score.
-
-        Args:
-            score: Quality score between 0.0 and 1.0
-        """
         if not 0.0 <= score <= 1.0:
             raise ValueError("Quality score must be between 0.0 and 1.0")
         self.quality_score = score
         self.update_timestamp()
 
     def add_tag(self, tag: str) -> None:
-        """
-        Add a tag if not already present.
-
-        Args:
-            tag: Tag to add
-        """
         tag = tag.strip().lower()
         if tag and tag not in self.tags:
             self.tags.append(tag)
             self.update_timestamp()
 
     def remove_tag(self, tag: str) -> bool:
-        """
-        Remove a tag.
-
-        Args:
-            tag: Tag to remove
-
-        Returns:
-            True if the tag was removed, False if it wasn't found
-        """
         tag = tag.strip().lower()
         if tag in self.tags:
             self.tags.remove(tag)
@@ -245,30 +166,36 @@ class Evidence(BaseResource):
             return True
         return False
 
-    def update_review_status(
-        self, status: Literal["pending", "reviewed", "approved", "rejected"]
-    ) -> None:
-        """
-        Update the review status.
-
-        Args:
-            status: New review status
-        """
+    def update_review_status(self, status: Literal["pending", "reviewed", "approved", "rejected"]) -> None:
         self.review_status = status
         self.update_timestamp()
 
     def is_high_quality(self, threshold: float = 0.8) -> bool:
-        """
-        Check if this evidence meets high quality standards.
-
-        Args:
-            threshold: Quality threshold (default 0.8)
-
-        Returns:
-            True if overall reliability is above threshold
-        """
         return self.overall_reliability >= threshold
 
-    def __repr__(self) -> str:
-        """Enhanced representation including evidence type and reliability."""
-        return f"Evidence(id='{self.id}', type='{self.evidence_type}', reliability={self.overall_reliability:.2f})"
+    def to_citation_string(self) -> str:
+        """Generate a simple formatted citation string from fields if `citation` is not provided."""
+        if self.citation:
+            return self.citation
+        parts: List[str] = []
+        if self.authors:
+            parts.append(", ".join(a.full_name for a in self.authors if a.full_name))
+        if self.publication_year:
+            parts.append(f"({self.publication_year})")
+        if self.title:
+            parts.append(self.title)
+        if self.journal and self.journal.name:
+            j = self.journal.name
+            vol = f" {self.volume}" if self.volume else ""
+            iss = f"({self.issue})" if self.issue else ""
+            pgs = f", {self.pages}" if self.pages else ""
+            parts.append(f"{j}{vol}{iss}{pgs}")
+        if self.doi:
+            parts.append(f"doi:{self.doi}")
+        return ". ".join([p for p in parts if p])
+
+    @field_validator("publication_year")
+    @classmethod
+    def _ensure_year(cls, v: Optional[int], info):
+        return v
+

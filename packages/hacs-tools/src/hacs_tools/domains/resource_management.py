@@ -46,8 +46,7 @@ from .descriptions import (
     name="create_hacs_record",
     description="Create a new healthcare resource record with FHIR compliance validation",
     category=ToolCategory.RESOURCE_MANAGEMENT,
-    healthcare_domains=["clinical_data", "resource_management"],
-    fhir_resources=["Patient", "Observation", "Encounter", "Condition", "MedicationRequest", "Medication", "Procedure", "Goal"]
+    healthcare_domains=["clinical_data", "resource_management"]
 )
 def create_hacs_record(
     actor_name: str,
@@ -124,12 +123,18 @@ def create_hacs_record(
             )
 
         # Perform FHIR validation if requested
-        fhir_status = "compliant"
+        fhir_status = "not_validated"
         if validate_fhir:
-            # TODO: Add FHIR validation logic
-            fhir_status = "validation_pending"
+            try:
+                # Prefer hacs_core FHIR validator when available
+                from hacs_core.utils import validate_fhir_compliance as _validate_fhir
+                errors = _validate_fhir(resource)
+                fhir_status = "compliant" if not errors else "errors: " + "; ".join(errors)
+            except Exception:
+                # Graceful degradation
+                fhir_status = "unavailable"
 
-        # Persist to database with comprehensive error handling  
+        # Persist to database witherror handling  
         resource_id = resource.id or resource_data.get('id', 'generated-id')
         persistence_status = "mock"
         
@@ -213,8 +218,7 @@ def create_hacs_record(
     name="get_hacs_record",
     description="Retrieve a healthcare resource record by ID with audit trail support",
     category=ToolCategory.RESOURCE_MANAGEMENT,
-    healthcare_domains=["clinical_data", "resource_retrieval"],
-    fhir_resources=["Patient", "Observation", "Encounter", "Condition", "MedicationRequest", "Medication", "Procedure", "Goal"]
+    healthcare_domains=["clinical_data", "resource_retrieval"]
 )
 def get_hacs_record(
     actor_name: str,
@@ -308,8 +312,7 @@ def get_hacs_record(
     name="update_hacs_record",
     description="Update an existing healthcare resource record with validation",
     category=ToolCategory.RESOURCE_MANAGEMENT,
-    healthcare_domains=["clinical_data", "resource_management"],
-    fhir_resources=["Patient", "Observation", "Encounter", "Condition", "MedicationRequest", "Medication", "Procedure", "Goal"]
+    healthcare_domains=["clinical_data", "resource_management"]
 )
 def update_hacs_record(
     actor_name: str,
@@ -398,8 +401,7 @@ def update_hacs_record(
     name="delete_hacs_record",
     description="Delete a healthcare resource record with audit trail preservation",
     category=ToolCategory.RESOURCE_MANAGEMENT,
-    healthcare_domains=["clinical_data", "resource_management"],
-    fhir_resources=["Patient", "Observation", "Encounter", "Condition", "MedicationRequest", "Medication", "Procedure", "Goal"]
+    healthcare_domains=["clinical_data", "resource_management"]
 )
 def delete_hacs_record(
     actor_name: str,
@@ -481,8 +483,7 @@ def delete_hacs_record(
     name="search_hacs_records",
     description="Search healthcare resource records with advanced filtering capabilities",
     category=ToolCategory.RESOURCE_MANAGEMENT,
-    healthcare_domains=["clinical_data", "resource_search"],
-    fhir_resources=["Patient", "Observation", "Encounter", "Condition", "MedicationRequest", "Medication", "Procedure", "Goal"]
+    healthcare_domains=["clinical_data", "resource_search"]
 )
 def search_hacs_records(
     actor_name: str,

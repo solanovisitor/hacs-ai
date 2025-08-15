@@ -1,7 +1,7 @@
 """
 Dependency Injection Container for HACS Infrastructure
 
-This module provides a comprehensive dependency injection container designed
+This module provides adependency injection container designed
 for healthcare AI systems with type safety, lifecycle management, and
 advanced injection patterns.
 
@@ -136,7 +136,7 @@ class Container:
     """
     Dependency injection container with healthcare-specific optimizations.
 
-    Provides comprehensive dependency injection with support for:
+    Providesdependency injection with support for:
     - Multiple service lifetimes (transient, singleton, scoped)
     - Automatic constructor injection
     - Factory functions
@@ -758,7 +758,7 @@ def validate_hacs_setup() -> Dict[str, Any]:
     Validate complete HACS container and framework setup.
 
     Returns:
-        Comprehensive validation report
+       validation report
     """
     container = get_container()
 

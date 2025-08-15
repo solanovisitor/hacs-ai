@@ -134,15 +134,23 @@ class RegistryPersistenceService:
     @asynccontextmanager
     async def transaction(self):
         """Create a transaction context for multiple operations."""
+        # Provide a best-effort transaction context
         if self.persistence_provider is None:
-            # No-op transaction when no persistence
             yield
             return
-
-        # For now, implement a simple transaction
-        # TODO: Implement proper UnitOfWork when available
         try:
-            yield
+            # Start transaction if provider supports it
+            uow: UnitOfWork | None = None
+            if hasattr(self.persistence_provider, "begin"):
+                uow = await self.persistence_provider.begin()
+            try:
+                yield
+                if uow and hasattr(uow, "commit"):
+                    await uow.commit()
+            except Exception:
+                if uow and hasattr(uow, "rollback"):
+                    await uow.rollback()
+                raise
         except Exception as e:
             self.logger.error(f"Transaction failed: {e}")
             raise
@@ -191,8 +199,18 @@ class RegistryRepositoryWrapper:
             if data is None:
                 return None
 
-            # TODO: Implement proper deserialization based on aggregate type
-            # For now, return None as we need proper aggregate reconstruction
+            # Best-effort reconstruction: return raw dict if model class is unknown
+            aggregate_map = {
+                "RegisteredResource": RegisteredResource,
+                "AgentConfiguration": AgentConfiguration,
+                "ActorIdentity": ActorIdentity,
+                "ToolDefinition": ToolDefinition,
+            }
+            model_cls = aggregate_map.get(self.aggregate_type)
+            if model_cls is None:
+                return None
+            if hasattr(model_cls, "model_validate"):
+                return model_cls.model_validate(data)  # type: ignore
             return None
         except Exception as e:
             self.logger.error(f"Failed to find {self.aggregate_type}: {e}")

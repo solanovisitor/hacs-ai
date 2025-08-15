@@ -13,7 +13,7 @@ Key Features:
     - Full type annotation support
 
 Design Principles:
-    - Comprehensive enum coverage for healthcare domains
+    -enum coverage for healthcare domains
     - Clear, descriptive enum values
     - Type-safe constants and aliases
     - Performance optimized for runtime use
@@ -388,20 +388,20 @@ class DocumentStatus(str, Enum):
 
 
 class ConfidentialityLevel(str, Enum):
-    """Confidentiality level (inspired by FHIR Composition.confidentiality)."""
-    NORMAL = "normal"
-    LOW = "low"
-    MODERATE = "moderate"
-    RESTRICTED = "restricted"
-    VERY_RESTRICTED = "very_restricted"
+    """Confidentiality level (FHIR Composition.confidentiality codes)."""
+    NORMAL = "N"
+    LOW = "L"
+    MODERATE = "M"
+    RESTRICTED = "R"
+    VERY_RESTRICTED = "V"
 
 
 class DocumentType(str, Enum):
     """Common clinical document types (not exhaustive)."""
-    PROGRESS_NOTE = "progress_note"
-    DISCHARGE_SUMMARY = "discharge_summary"
-    CONSULTATION_NOTE = "consultation_note"
-    CLINICAL_SUMMARY = "clinical_summary"
+    PROGRESS_NOTE = "progress-note"
+    DISCHARGE_SUMMARY = "discharge-summary"
+    CONSULTATION_NOTE = "consultation-note"
+    CLINICAL_SUMMARY = "clinical-summary"
 
 
 class BundleStatus(str, Enum):

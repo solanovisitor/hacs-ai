@@ -1,7 +1,7 @@
 """
 Audit logging system for HACS authentication.
 
-This module provides comprehensive audit logging for healthcare systems
+This module providesaudit logging for healthcare systems
 with compliance features for HIPAA, SOX, and other regulatory requirements.
 """
 
@@ -142,7 +142,7 @@ class AuditEvent(BaseModel):
 
 class AuditLogger:
     """
-    Comprehensive audit logger for healthcare systems with compliance features.
+   audit logger for healthcare systems with compliance features.
     """
 
     def __init__(self, organization: Optional[str] = None, department: Optional[str] = None):

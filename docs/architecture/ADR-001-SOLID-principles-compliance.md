@@ -35,7 +35,7 @@ We will strictly adhere to SOLID principles across all HACS packages, with speci
 
 ### Dependency Inversion Principle (DIP)
 - High-level modules depend on abstractions (protocols)
-- Comprehensive dependency injection container
+-dependency injection container
 - Framework-agnostic tool implementations
 - Configuration abstraction throughout
 
@@ -43,7 +43,7 @@ We will strictly adhere to SOLID principles across all HACS packages, with speci
 
 ### Positive
 - **Maintainability**: Clear separation of concerns makes code easier to understand and modify
-- **Testability**: Dependency injection enables comprehensive unit testing
+- **Testability**: Dependency injection enablesunit testing
 - **Extensibility**: Protocol-based design allows easy addition of new providers and tools
 - **Framework Independence**: Tools work across multiple AI frameworks without modification
 - **Healthcare Compliance**: Clean architecture supports audit trails and security requirements

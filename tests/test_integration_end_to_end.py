@@ -33,7 +33,7 @@ class TestActorIntegration:
             organization="Test Hospital"
         )
         
-        # Should have comprehensive permissions
+        # Should havepermissions
         assert len(physician.permissions) > 0
         assert any("patient:read" in perm for perm in physician.permissions)
         assert any("patient:write" in perm for perm in physician.permissions)

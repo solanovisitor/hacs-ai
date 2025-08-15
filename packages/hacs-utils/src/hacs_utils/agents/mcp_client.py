@@ -125,7 +125,7 @@ Use the available HACS tools to:
 - Generate sample resources and model stacks
 - Provide implementation guidance and best practices
 
-When a developer asks a question, use the tools to provide comprehensive guidance."""
+When a developer asks a question, use the tools to provideguidance."""
 
         # Call Anthropic with tools
         response = self.anthropic_client.messages.create(

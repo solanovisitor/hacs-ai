@@ -63,7 +63,7 @@ class Condition(DomainResource):
     
     Records conditions, problems, diagnoses, or other clinical issues that are
     clinically significant and can impact the patient's health. Optimized for
-    LLM context engineering with comprehensive FHIR-aligned metadata.
+    LLM context engineering withFHIR-aligned metadata.
     
     Key Features:
         - Rich clinical status and verification tracking

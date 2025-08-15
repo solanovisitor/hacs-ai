@@ -118,6 +118,19 @@ except ImportError:
     _has_custom_tools = False
     CUSTOM_LANGGRAPH_TOOLS = []
 
+# Preferences node export (optional)
+try:
+    from .preferences_node import preference_injection_node
+    _has_prefs_node = True
+except ImportError:
+    _has_prefs_node = False
+
+try:
+    from .tool_loadout_node import tool_loadout_node
+    _has_tool_loadout = True
+except ImportError:
+    _has_tool_loadout = False
+
 __all__ = [
     "LangGraphWorkflow",
     "HealthcareWorkflowBuilder",
@@ -147,3 +160,8 @@ if _has_custom_tools:
         "discover_available_tools",
         "delegate_to_subagent",
     ])
+
+if _has_prefs_node:
+    __all__.append("preference_injection_node")
+if _has_tool_loadout:
+    __all__.append("tool_loadout_node")

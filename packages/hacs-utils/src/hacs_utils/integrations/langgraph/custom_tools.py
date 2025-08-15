@@ -49,8 +49,7 @@ except ImportError:
     name="create_scratchpad_todo",
     description="Create a healthcare todo using proper HACS ScratchpadTodo type",
     category=ToolCategory.MEMORY_OPERATIONS,
-    healthcare_domains=["agent_memory", "task_management"],
-    fhir_resources=["Task", "ActivityDefinition"]
+    healthcare_domains=["agent_memory", "task_management"]
 )
 async def create_scratchpad_todo(
     content: str,
@@ -89,8 +88,7 @@ async def create_scratchpad_todo(
     name="create_scratchpad_entry",
     description="Create an agent scratchpad entry using HACS AgentScratchpadEntry type",
     category=ToolCategory.MEMORY_OPERATIONS,
-    healthcare_domains=["cognitive_systems", "agent_memory"],
-    fhir_resources=["Basic"]
+    healthcare_domains=["cognitive_systems", "agent_memory"]
 )
 async def create_scratchpad_entry(
     entry_type: str,
@@ -127,8 +125,7 @@ async def create_scratchpad_entry(
     name="create_agent_task",
     description="Create a healthcare agent task using HACS AgentTask type",
     category=ToolCategory.MEMORY_OPERATIONS,
-    healthcare_domains=["task_management", "workflow_coordination"],
-    fhir_resources=["Task", "ActivityDefinition"]
+    healthcare_domains=["task_management", "workflow_coordination"]
 )
 async def create_agent_task(
     task_type: str,
@@ -170,8 +167,7 @@ async def create_agent_task(
     name="create_healthcare_resource",
     description="Create a healthcare resource using HACS models",
     category=ToolCategory.RESOURCE_MANAGEMENT,
-    healthcare_domains=["resource_creation", "fhir_resources"],
-    fhir_resources=["DomainResource"]
+    healthcare_domains=["resource_creation"]
 )
 async def create_healthcare_resource(
     resource_type: str,
@@ -212,8 +208,7 @@ async def create_healthcare_resource(
     name="get_healthcare_resource_schema",
     description="Get the JSON schema for a healthcare resource type",
     category=ToolCategory.SCHEMA_DISCOVERY,
-    healthcare_domains=["schema_analysis", "resource_discovery"],
-    fhir_resources=["StructureDefinition"]
+    healthcare_domains=["schema_analysis", "resource_discovery"]
 )
 async def get_healthcare_resource_schema(
     resource_type: str
@@ -251,8 +246,7 @@ async def get_healthcare_resource_schema(
     name="create_resource_subset",
     description="Create a subset model with selected fields",
     category=ToolCategory.RESOURCE_MANAGEMENT,
-    healthcare_domains=["resource_filtering", "data_projection"],
-    fhir_resources=["DomainResource"]
+    healthcare_domains=["resource_filtering", "data_projection"]
 )
 async def create_resource_subset(
     resource_type: str,
@@ -302,8 +296,7 @@ async def create_resource_subset(
     name="write_file",
     description="Write content to a file. Pass file_path and content.",
     category=ToolCategory.DEVELOPMENT_TOOLS,
-    healthcare_domains=["file_management", "documentation"],
-    fhir_resources=["DocumentReference"]
+    healthcare_domains=["file_management", "documentation"]
 )
 def write_file(
     file_path: str,
@@ -337,8 +330,7 @@ def write_file(
     name="read_file",
     description="Read content from a file. Optional start_line and end_line.",
     category=ToolCategory.DEVELOPMENT_TOOLS,
-    healthcare_domains=["file_management", "documentation"],
-    fhir_resources=["DocumentReference"]
+    healthcare_domains=["file_management", "documentation"]
 )
 def read_file(
     file_path: str,
@@ -385,8 +377,7 @@ def read_file(
     name="edit_file",
     description="Replace a specific line in a file. Pass file_path, line_number, new_content.",
     category=ToolCategory.DEVELOPMENT_TOOLS,
-    healthcare_domains=["file_management", "documentation"],
-    fhir_resources=["DocumentReference"]
+    healthcare_domains=["file_management", "documentation"]
 )
 def edit_file(
     file_path: str,
@@ -444,8 +435,7 @@ def edit_file(
     name="validate_hacs_integration",
     description="Validate HACS component integration and health",
     category=ToolCategory.ADMIN_OPERATIONS,
-    healthcare_domains=["system_validation", "integration_testing"],
-    fhir_resources=["DiagnosticReport"]
+    healthcare_domains=["system_validation", "integration_testing"]
 )
 async def validate_hacs_integration() -> HACSResult:
     """Validate HACS component integration and health."""
@@ -478,8 +468,7 @@ async def validate_hacs_integration() -> HACSResult:
     name="discover_available_tools",
     description="Discover and list all available HACS tools with categorization",
     category=ToolCategory.ADMIN_OPERATIONS,
-    healthcare_domains=["tool_discovery", "system_introspection"],
-    fhir_resources=["Capability"]
+    healthcare_domains=["tool_discovery", "system_introspection"]
 )
 async def discover_available_tools() -> HACSResult:
     """Discover and list all available HACS tools with categorization."""
@@ -524,8 +513,7 @@ async def discover_available_tools() -> HACSResult:
     name="delegate_to_subagent",
     description="Delegate a complex healthcare task to a specialized subagent",
     category=ToolCategory.AI_INTEGRATIONS,
-    healthcare_domains=["task_delegation", "specialized_processing"],
-    fhir_resources=["Task"]
+    healthcare_domains=["task_delegation", "specialized_processing"]
 )
 async def delegate_to_subagent(
     task_description: str,

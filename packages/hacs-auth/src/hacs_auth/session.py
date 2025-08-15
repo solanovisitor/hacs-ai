@@ -1,7 +1,7 @@
 """
 Session management for HACS authentication system.
 
-This module provides comprehensive session management with healthcare-specific
+This module providessession management with healthcare-specific
 security requirements, including session expiration, activity tracking,
 and multi-factor authentication support.
 """

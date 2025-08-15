@@ -1,6 +1,6 @@
 # HACS Testing Guide
 
-This guide covers comprehensive testing for HACS, including the new Phase 2 persistence, security, and vector integration features.
+This guide coverstesting for HACS, including the new Phase 2 persistence, security, and vector integration features.
 
 ## Quick Start
 
@@ -39,7 +39,7 @@ We provide a convenient test runner script:
 Run the complete test suite with Docker:
 
 ```bash
-# Start all services and run comprehensive tests
+# Start all services and runtests
 docker-compose --profile test up --build
 
 # View test results
@@ -90,7 +90,7 @@ python test_hacs_tools_comprehensive.py --mcp
 
 ### Test Data
 
-The test suite uses comprehensive test data including:
+The test suite usestest data including:
 
 - **Patients**: 3 test patients with complete demographics
 - **Observations**: Blood pressure, vital signs, and clinical measurements
@@ -201,7 +201,7 @@ docker-compose --profile with-qdrant up
 # Run database migrations
 docker-compose --profile migration up
 
-# Run comprehensive tests
+# Runtests
 docker-compose --profile test up
 ```
 
@@ -226,7 +226,7 @@ Test results are available in multiple formats:
 ### Example Test Output
 
 ```
-🚀 HACS Tools Comprehensive Test Suite
+🚀 HACS ToolsTest Suite
 =====================================
 
 ✅ MCP Server Health Check
@@ -337,7 +337,7 @@ jobs:
 1. **Add Test Data**: Update `examples/hacs_developer_agent/scripts/init-db.sql` with relevant test data
 2. **Create Test Cases**: Add test methods to appropriate test classes
 3. **Update Documentation**: Document new test scenarios in this guide
-4. **Verify Coverage**: Ensure new tools have comprehensive test coverage
+4. **Verify Coverage**: Ensure new tools havetest coverage
 
 ### Test Development Guidelines
 

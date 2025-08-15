@@ -1,7 +1,7 @@
 """
 HACS Observability Framework - OpenTelemetry-based Monitoring
 
-This module provides comprehensive observability for healthcare AI systems
+This module providesobservability for healthcare AI systems
 including distributed tracing, metrics collection, structured logging,
 and healthcare-specific monitoring capabilities.
 
@@ -77,7 +77,7 @@ class HealthcareSpanAttributes:
     care_team: Optional[str] = None
     workflow_type: Optional[str] = None
     phi_accessed: bool = False
-    fhir_resource_type: Optional[str] = None
+    resource_type: Optional[str] = None
     clinical_domain: Optional[str] = None
     tool_category: Optional[str] = None
     compliance_level: Optional[str] = None
@@ -358,8 +358,8 @@ class HealthcareTracer:
                 span_attributes["healthcare.workflow_type"] = attributes.workflow_type
             if attributes.phi_accessed:
                 span_attributes["healthcare.phi_accessed"] = str(attributes.phi_accessed)
-            if attributes.fhir_resource_type:
-                span_attributes["healthcare.fhir_resource_type"] = attributes.fhir_resource_type
+            if attributes.resource_type:
+                span_attributes["healthcare.resource_type"] = attributes.resource_type
             if attributes.clinical_domain:
                 span_attributes["healthcare.clinical_domain"] = attributes.clinical_domain
             if attributes.tool_category:

@@ -322,7 +322,7 @@ class ClinicalReasoningEngine(ABC):
     Abstract base class for clinical reasoning engines.
 
     Integrates knowledge repository, CDS service, measure processor, and expression engine
-    to provide comprehensive clinical reasoning capabilities.
+    to provideclinical reasoning capabilities.
     """
 
     def __init__(

@@ -1,7 +1,7 @@
 """
 HACS CLI - Healthcare Agent Communication Standard Command Line Interface
 
-This module provides a comprehensive command-line interface for interacting with
+This module provides acommand-line interface for interacting with
 HACS (Healthcare Agent Communication Standard) resources. It offers healthcare
 organizations and developers a powerful tool for managing clinical data, AI agent
 communications, and FHIR-compliant healthcare workflows.
@@ -85,21 +85,30 @@ try:
     from hacs_core.utils import from_fhir, to_fhir, validate_fhir_compliance
     FHIR_AVAILABLE = True
 except ImportError:
-    # Provide placeholder functions for graceful degradation
+    # Provide graceful degradation wrappers that still run
     def validate_fhir_compliance(resource: Any) -> list[str]:
-        """FHIR validation unavailable - install FHIR dependencies."""
-        # TODO: Implement proper FHIR validation or install required dependencies
         return ["FHIR validation not available - install hacs-core with FHIR extras"]
 
     def to_fhir(resource: Any) -> dict[str, Any]:
-        """FHIR conversion unavailable - install FHIR dependencies."""
-        # TODO: Implement proper FHIR conversion or install required dependencies
-        return {"error": "FHIR conversion not available"}
+        # Minimal passthrough conversion with type tagging
+        if hasattr(resource, "model_dump"):
+            data = resource.model_dump()
+        elif hasattr(resource, "dict"):
+            data = resource.dict()
+        else:
+            data = {"content": str(resource)}
+        data["_note"] = "FHIR conversion not available"
+        return data
 
     def from_fhir(data: dict[str, Any]) -> Any:
-        """FHIR conversion unavailable - install FHIR dependencies."""
-        # TODO: Implement proper FHIR conversion or install required dependencies
-        return {"error": "FHIR conversion not available"}
+        # Return data normalized into a simple HACS wrapper when FHIR utils are missing
+        class _HACSWrapper:
+            def __init__(self, payload: dict[str, Any]):
+                self._payload = payload
+                self.resource_type = payload.get("resourceType") or payload.get("resource_type") or "Unknown"
+            def model_dump(self):
+                return {"resource_type": self.resource_type, "payload": self._payload, "_note": "FHIR conversion not available"}
+        return _HACSWrapper(data)
 
     FHIR_AVAILABLE = False
 from hacs_tools import (

@@ -2,7 +2,7 @@
 """
 HF Ingestion Workflow Visualizer
 
-Provides comprehensive visual reporting and analysis for the HF ingestion workflow.
+Providesvisual reporting and analysis for the HF ingestion workflow.
 Generates DAG cards, performance metrics, resource analysis, and interactive reports.
 """
 
@@ -229,7 +229,7 @@ class WorkflowVisualizer:
         return table
     
     def generate_workflow_report(self, results_data: Dict[str, Any]) -> str:
-        """Generate comprehensive workflow report."""
+        """Generateworkflow report."""
         report_path = self.output_dir / f"workflow_report_{int(time.time())}.html"
         
         # Extract data
@@ -237,9 +237,9 @@ class WorkflowVisualizer:
         resource_analysis = results_data.get('report', {}).get('resource_analysis', {})
         error_analysis = results_data.get('report', {}).get('error_analysis', {})
         
-        # Create comprehensive report
+        # Createreport
         console.print("\n" + "="*80)
-        console.print(Panel.fit("🎯 COMPREHENSIVE WORKFLOW REPORT", style="bold blue"))
+        console.print(Panel.fit("🎯WORKFLOW REPORT", style="bold blue"))
         console.print("="*80)
         
         # 1. DAG Visualization

@@ -1,7 +1,7 @@
 """
 HACS Authentication - Secure Authentication and Authorization
 
-This package provides comprehensive authentication and authorization components
+This package providesauthentication and authorization components
 for healthcare AI agent systems, including JWT token management, OAuth2 support,
 role-based access control, and audit logging.
 
@@ -9,7 +9,7 @@ Design Philosophy:
     - Zero-trust security model
     - Healthcare-compliant authentication
     - AI agent-optimized authorization
-    - Comprehensive audit trails
+    -audit trails
     - Production-ready security
 
 Key Features:
@@ -17,7 +17,7 @@ Key Features:
     - OAuth2 integration for enterprise systems
     - Role-based permission system
     - Session management with expiration
-    - Comprehensive audit logging
+    -audit logging
     - Healthcare-specific security levels
 
 Author: HACS Development Team
@@ -197,7 +197,7 @@ def get_security_info() -> dict[str, str]:
         "jwt_support": "✅ JWT token management with healthcare claims",
         "oauth2_support": "✅ OAuth2 integration" if _HAS_OAUTH2 else "❌ OAuth2 not available",
         "role_based_access": "✅ Healthcare role-based permissions",
-        "audit_logging": "✅ Comprehensive audit trails",
+        "audit_logging": "✅audit trails",
         "session_management": "✅ Secure session handling with expiration",
         "healthcare_compliance": "✅ HIPAA-compatible security patterns",
         "ai_agent_optimized": "✅ AI agent authentication patterns",

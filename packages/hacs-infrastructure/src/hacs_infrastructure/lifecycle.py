@@ -1,7 +1,7 @@
 """
 Service Lifecycle Management for HACS Infrastructure
 
-This module provides comprehensive lifecycle management for services
+This module provideslifecycle management for services
 with graceful startup, shutdown, and dependency orchestration.
 """
 

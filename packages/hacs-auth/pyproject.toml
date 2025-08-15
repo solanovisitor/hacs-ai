@@ -90,7 +90,7 @@ extend-exclude = [
 ]
 
 [tool.ruff.lint]
-# Enable comprehensive linting ruleset
+# Enablelinting ruleset
 select = [
     "E",      # pycodestyle errors
     "W",      # pycodestyle warnings  
