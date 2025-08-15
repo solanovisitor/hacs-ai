@@ -71,8 +71,7 @@ from hacs_registry import (
     register_annotation_workflow,
 )
 # Optional: tool loader (used by _get_hacs_tool_by_name fallback)
-from hacs_utils.integrations.common.tool_loader import get_all_hacs_tools_sync
-# Remove generic tool loader dependency; we use explicit imports above
+# removed: tool loader helpers (unused)
 
 logger = logging.getLogger(__name__)
 
@@ -253,62 +252,7 @@ def _resource_type_hints_markdown(available_types: list[str]) -> str:
     return "\n".join(lines)
 
 
-def _generate_resource_previews(type_hints: dict) -> str:
-    """Generate previews of all available resources with their required fields."""
-    
-    if not type_hints:
-        return "=== RESOURCE PREVIEWS ===\nNo resource information available.\n\n"
-    
-    previews_text = "=== AVAILABLE HACS RESOURCES WITH REQUIRED FIELDS ===\n"
-    previews_text += "Use this reference to understand what fields are required for each resource type.\n\n"
-    
-    # Group resources by category
-    resource_categories = {
-        "Core Clinical": ["Patient", "Encounter", "Observation", "Condition", "Procedure"],
-        "Medication": ["MedicationRequest", "Medication", "MedicationStatement"],
-        "Diagnostics": ["DiagnosticReport", "ServiceRequest"],
-        "Documentation": ["DocumentReference", "ResourceBundle"],
-        "Care Planning": ["Goal", "CarePlan", "CareTeam", "PlanDefinition"],
-        "Administrative": ["Organization", "Practitioner", "Appointment"],
-        "Specialty": ["AllergyIntolerance", "Immunization", "FamilyMemberHistory", "NutritionOrder"]
-    }
-    
-    for category, resources in resource_categories.items():
-        category_resources = [r for r in resources if r in type_hints]
-        if not category_resources:
-            continue
-            
-        previews_text += f"--- {category.upper()} RESOURCES ---\n"
-        
-        for resource_type in category_resources:
-            resource_info = type_hints[resource_type]
-            required_fields = resource_info.get("required", [])
-            view_fields = resource_info.get("view_fields", [])
-            
-            previews_text += f"\n{resource_type}:\n"
-            previews_text += f"  Required Fields: {', '.join(required_fields) if required_fields else 'None'}\n"
-            previews_text += f"  Key Fields: {', '.join(view_fields[:8]) if view_fields else 'None'}\n"  # Show first 8 fields
-            
-            # Add field descriptions from schema
-            view_schema = resource_info.get("view_schema", {})
-            if view_schema and required_fields:
-                previews_text += f"  Field Details:\n"
-                for field in required_fields[:3]:  # Show details for first 3 required fields
-                    field_info = view_schema.get(field, {})
-                    field_type = field_info.get("type", "unknown")
-                    field_desc = field_info.get("description", "No description")
-                    previews_text += f"    - {field} ({field_type}): {field_desc}\n"
-        
-        previews_text += "\n"
-    
-    # Add binding guidance
-    previews_text += "=== BINDING GUIDANCE ===\n"
-    previews_text += "- Use {{ variable_name }} syntax for variable bindings\n"
-    previews_text += "- Provide constant_fields for required fields not bound to variables\n"
-    previews_text += "- Use layer references like 'patient' or 'encounter' for resource linking\n"
-    previews_text += "- Ensure all variables defined are used in at least one binding\n\n"
-    
-    return previews_text
+# removed: _generate_resource_previews (no longer needed)
 
 
 def _get_template_extraction_context(template_name: str, template_vars: dict, remaining_vars: set) -> str:
@@ -429,34 +373,8 @@ def _as_dict(result: Any) -> Dict[str, Any]:
 
 # ===== HACS Tools via Integration =====
 
-_TOOL_CACHE: list[Any] | None = None
+# removed: tool loader helpers (unused)
 
-def _get_hacs_tool_by_name(name: str):
-    global _TOOL_CACHE
-    if _TOOL_CACHE is None:
-        try:
-            _TOOL_CACHE = get_all_hacs_tools_sync(framework="langgraph")
-        except Exception:
-            _TOOL_CACHE = []
-    for t in _TOOL_CACHE or []:
-        tname = getattr(t, "name", None) or getattr(t, "__name__", None)
-        if tname == name:
-            return t
-    return None
-
-def _call_hacs_tool(name: str, **kwargs) -> Dict[str, Any]:
-    tool = _get_hacs_tool_by_name(name)
-    if tool is None:
-        return {"success": False, "message": f"Tool '{name}' not found"}
-    try:
-        if hasattr(tool, "invoke"):
-            return tool.invoke(kwargs)  # LangChain style
-        if hasattr(tool, "run"):
-            return tool.run(kwargs)
-        func = getattr(tool, "function", None) or getattr(tool, "__call__", None) or tool
-        return func(**kwargs)
-    except Exception as e:
-        return {"success": False, "message": str(e)}
 
 # ===== Direct HACS Tool Tasks =====
 
@@ -1168,35 +1086,23 @@ async def instantiate_and_persist_stack(inputs: Dict[str, Any]) -> Dict[str, Any
 # ===== Utility Functions =====
 
 def validate_hacs_tools_availability() -> Dict[str, bool]:
-    """Validate that all required HACS tools are available."""
-    tools_status = {}
-    
+    # Keep a minimal availability check used by README/invocations
+    status: Dict[str, bool] = {"discover_resources": False, "get_schema": False, "modeling_bundling": False}
     try:
-        # Test resource discovery directly
-        result = discover_hacs_resources(category_filter="clinical")
-        tools_status["discover_resources"] = getattr(result, "success", False)
-    except Exception as e:
-        logger.error(f"discover_resources test failed: {e}")
-        tools_status["discover_resources"] = False
-    
+        status["discover_resources"] = bool(getattr(discover_hacs_resources(category_filter="clinical"), "success", False))
+    except Exception:
+        pass
     try:
-        # Test schema retrieval directly
-        result = get_hacs_resource_schema("Patient")
-        tools_status["get_schema"] = getattr(result, "success", False)
-    except Exception as e:
-        logger.error(f"get_schema test failed: {e}")
-        tools_status["get_schema"] = False
-    
+        status["get_schema"] = bool(getattr(get_hacs_resource_schema("Patient"), "success", False))
+    except Exception:
+        pass
     try:
-        # Validate modeling + bundling minimal path
         _ = validate_hacs_resource(actor_name="validator", model_name="Patient", data={"full_name": "Test"})
         bundle = create_resource_bundle(actor_name="validator", bundle_type="document", title="validation")
-        tools_status["modeling_bundling"] = bool(getattr(bundle, "success", False))
-    except Exception as e:
-        logger.error(f"modeling/bundling test failed: {e}")
-        tools_status["modeling_bundling"] = False
-    
-    return tools_status
+        status["modeling_bundling"] = bool(getattr(bundle, "success", False))
+    except Exception:
+        pass
+    return status
 
 
 # Export main entrypoints
