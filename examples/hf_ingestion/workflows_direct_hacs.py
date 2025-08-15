@@ -231,25 +231,7 @@ def _instantiate_from_mapping(mapping: MappingSpec, variables: dict[str, Any]) -
     return resources
 
 
-def _resource_type_hints_markdown(available_types: list[str]) -> str:
-    """Produce a compact markdown of resource types with clinical context from registry-backed schemas."""
-    if not available_types:
-        return "No HACS resources available."
-    lines = ["=== HACS RESOURCES (from registry) ===\n"]
-    # Try to fetch clinical_context via schema discovery
-    for t in available_types[:20]:
-        try:
-            sch = asyncio.run(hacs_get_schema.ainvoke({"resource_type": t})) if hasattr(hacs_get_schema, "ainvoke") else None
-        except Exception:
-            sch = None
-        ctx = ""
-        req = []
-        if isinstance(sch, dict) and sch.get("success"):
-            ctx = sch.get("clinical_context", "")
-            req = sch.get("required_fields", [])
-        req_str = f" (required: {', '.join(req)})" if req else ""
-        lines.append(f"- {t}: {ctx}{req_str}")
-    return "\n".join(lines)
+# removed: _resource_type_hints_markdown (avoid coded catalogs; use model introspection)
 
 
 # removed: _generate_resource_previews (no longer needed)
@@ -801,7 +783,12 @@ def _llm_rank_resources(instruction_md: str, candidates: list[str], top_k: int =
 
     # Generate detailed resource information for better LLM decision making
     # Build concise registry-backed descriptions
-    candidate_details = _resource_type_hints_markdown(candidates)
+    # Build concise details from model registry instead of a coded catalog
+    try:
+        reg = get_model_registry()
+        candidate_details = ", ".join([f"{c} (fields: {len(getattr(reg.get(c), 'model_fields', {}))})" for c in candidates])
+    except Exception:
+        candidate_details = ", ".join(candidates)
     
     system = (
         "You are a clinical informatics assistant specializing in FHIR/HACS resource modeling. "
