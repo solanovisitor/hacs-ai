@@ -70,6 +70,15 @@ from hacs_registry import (
     register_extraction_schema,
     register_annotation_workflow,
 )
+import json as _json3
+import pathlib as _pathlib
+import sys as _sys
+# Make developer agent utilities importable
+_sys.path.append(str((_pathlib.Path(__file__).resolve().parent.parent / "hacs_developer_agent").absolute()))
+try:
+    from hacs_agent import create_hacs_agent
+except Exception:
+    create_hacs_agent = None
 # Optional: tool loader (used by _get_hacs_tool_by_name fallback)
 # removed: tool loader helpers (unused)
 
@@ -945,6 +954,36 @@ async def register_template_from_instruction(inputs: Dict[str, Any]) -> Dict[str
         types_to_fetch = [r for r in ranked if r in types_to_fetch] + [r for r in types_to_fetch if r not in ranked]
 
     # Step 2: Generate template from markdown (drive LLM to include any discovered resource via free-text anchors)
+    # If developer agent is available, use subagents to synthesize mapping and register workflow
+    if create_hacs_agent is not None and bool(inputs.get("use_agent", True)):
+        try:
+            agent = create_hacs_agent(
+                instructions=(
+                    "You are a HACS agent focused on building HACS ResourceBundles via MappingSpec. "
+                    "Given clinical instructions/markdown, discover relevant HACS resources, define variables, and propose a MappingSpec "
+                    "(Document + clinical resources) to instantiate resources."
+                )
+            )
+            user_task = (
+                "Create a MappingSpec to populate a Document (title, subject_name) and suitable clinical resources "
+                "from the instruction markdown. Return JSON: {mapping_spec}.\n\nINSTRUCTION:\n" + instruction_md
+            )
+            result = agent.invoke({"messages": [{"role": "user", "content": user_task}]})
+            content = ""
+            if isinstance(result, dict) and result.get("messages"):
+                last = result["messages"][-1]
+                content = getattr(last, "content", last.get("content", "")) if isinstance(last, (dict,)) else getattr(last, "content", "")
+            mapping_spec = _json3.loads(content).get("mapping_spec") if content else None
+            if mapping_spec:
+                try:
+                    ms = MappingSpec(**mapping_spec)
+                    reg_out = _register_annotation_workflow(template_name or "agent_workflow", ms, instruction_md)
+                    return reg_out
+                except Exception:
+                    pass
+        except Exception:
+            pass
+    # Fallback to local LLM path
     gen_res = await _build_and_register_template_via_llm(instruction_md, template_name)
     
     # Step 3: Fetch schemas for requested resource types (use discovered names to widen coverage)
