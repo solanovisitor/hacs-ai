@@ -1,147 +1,132 @@
 """
-HACS Tools Domains - Domain-specific tool organization
+HACS Tools Domains - 4-Domain Tool Organization
 
-This package organizes HACS tools into logical domains for better
-architecture and maintainability. Each domain focuses on a specific
-aspect of healthcare AI agent operations.
+This package organizes HACS tools into 4 core domains for healthcare AI agents:
 
 Domain Organization:
-    🏥 resource_management - CRUD operations for healthcare resources
-    🧠 clinical_workflows - Clinical protocols and decision support
-    💭 memory_operations - AI agent memory management
-    🔍 vector_search - Semantic search and embedding operations
-    📊 schema_discovery - Resource schema analysis and discovery
-    🛠️ development_tools - Advanced resource composition and templates
+    🔧 modeling - Resource instantiation, validation, composition, diffing
+    🔍 extraction - Structured extraction, mapping specs, context summarization  
+    💾 database - Typed/generic CRUD, registry ops, vector search, migrations
+    🤖 agents - Scratchpad, todos, memory, preferences, tool loadout, state management
+    🧬 terminology (optional) - UMLS-based code search/match helpers (kept separate from modeling)
 
-All domains use standardized result types from hacs_core.results
+All domains use standardized result types from hacs_core.HACSResult
 and follow healthcare compliance standards.
 
 Author: HACS Development Team
 License: MIT
-Version: 0.3.0
+Version: 0.4.0
 """
 
-# Import from all domain modules to make tools available
-from .resource_management import (
-    create_hacs_record,
-    get_hacs_record,
-    update_hacs_record,
-    delete_hacs_record,
-    search_hacs_records,
-)
-from .workflow_tools import (
-    create_activity_definition,
-    create_plan_definition,
-    create_task_from_activity,
-    complete_task,
-    fail_task,
-)
-from .memory_operations import (
-    create_hacs_memory,
-    search_hacs_memories,
-    consolidate_memories,
-    retrieve_context,
-    analyze_memory_patterns,
-)
-from .evidence_tools import (
-    index_evidence,
-    check_evidence,
-)
-from .schema_discovery import (
-    discover_hacs_resources,
-    get_hacs_resource_schema,
-    analyze_resource_fields,
-    compare_resource_schemas,
-)
-from .modeling_tools import (
-    instantiate_hacs_resource,
-    validate_hacs_resource,
-)
-from .bundle_tools import (
-    create_resource_bundle,
-    add_bundle_entry,
-    validate_resource_bundle,
-)
-from .persistence_tools import (
-    persist_hacs_resource,
-    read_hacs_resource,
-)
-from .preferences_tools import (
-    set_actor_preference,
-    list_actor_preferences,
-)
-from .admin_operations import (
-    run_database_migration,
-    check_migration_status,
-    describe_database_schema,
-    get_table_structure,
-    test_database_connection,
+# Import from new 4-domain structure
+from .modeling import (
+    pin_resource,
+    compose_bundle,
+    validate_resource,
+    diff_resources,
+    validate_bundle,
 )
 
-# Export all tools for external access
+# Optional: Terminology domain (kept separate from modeling)
+try:
+    from .terminology import (
+        normalize_code,
+        search_umls,
+        suggest_resource_codings,
+        summarize_codable_concepts,
+        map_terminology,
+    )
+except Exception:
+    # Terminology tools are optional, import failures are ignored
+    normalize_code = None
+    search_umls = None
+    suggest_resource_codings = None
+    summarize_codable_concepts = None
+    map_terminology = None
+
+from .extraction import (
+    synthesize_mapping_spec,
+    extract_variables,
+    apply_mapping_spec,
+    summarize_context,
+)
+
+from .database import (
+    save_resource,
+    read_resource,
+    update_resource,
+    delete_resource,
+    register_model_version,
+    search_knowledge_items,
+    search_memories,
+    run_migrations,
+    get_db_status,
+)
+
+from .agents import (
+    write_scratchpad,
+    read_scratchpad,
+    create_todo,
+    list_todos,
+    complete_todo,
+    store_memory,
+    retrieve_memories,
+    inject_preferences,
+    select_tools_for_task,
+    summarize_state,
+    prune_state,
+)
+
+# Legacy imports removed - all functionality consolidated into 4 core domains
+# For backward compatibility, legacy tool names are mapped in the __all__ export below
+
+# Export all tools for external access - new 4-domain structure
 __all__ = [
-    # Resource Management Tools
-    "create_hacs_record",
-    "get_hacs_record",
-    "update_hacs_record",
-    "delete_hacs_record",
-    "search_hacs_records",
+    # Modeling Domain - Resource definition, composition, validation
+    "pin_resource",
+    "compose_bundle", 
+    "validate_resource",
+    "diff_resources",
+    "validate_bundle",
+    
+    # Extraction Domain - Structured data extraction and mapping
+    "synthesize_mapping_spec",
+    "extract_variables",
+    "apply_mapping_spec",
+    "summarize_context",
+    
+    # Database Domain - CRUD operations, registry, vector search
+    "save_resource",
+    "read_resource",
+    "update_resource", 
+    "delete_resource",
+    "register_model_version",
+    "search_knowledge_items",
+    "search_memories",
+    "run_migrations",
+    "get_db_status",
+    
+    # Agents Domain - Context engineering for AI agents
+    "write_scratchpad",
+    "read_scratchpad",
+    "create_todo",
+    "list_todos",
+    "complete_todo",
+    "store_memory",
+    "retrieve_memories",
+    "inject_preferences",
+    "select_tools_for_task",
+    "summarize_state",
+    "prune_state",
 
-    # Clinical Workflow Tools (low-level only)
-    "create_activity_definition",
-    "create_plan_definition",
-    "create_task_from_activity",
-    "complete_task",
-    "fail_task",
-    "create_activity_definition",
-    "create_plan_definition",
-    "create_task_from_activity",
-    "complete_task",
-    "fail_task",
-
-    # Memory Operations Tools
-    "create_hacs_memory",
-    "search_hacs_memories",
-    "consolidate_memories",
-    "retrieve_context",
-    "analyze_memory_patterns",
-
-    # Evidence Tools (context-specific vector usage)
-    "index_evidence",
-    "check_evidence",
-
-    # Schema Discovery Tools
-    "discover_hacs_resources",
-    "get_hacs_resource_schema",
-    "analyze_resource_fields",
-    "compare_resource_schemas",
-
-    # Modeling Tools
-    "instantiate_hacs_resource",
-    "validate_hacs_resource",
-
-    # Development/Template tools removed
-
-    # Bundle Tools
-    "create_resource_bundle",
-    "add_bundle_entry",
-    "validate_resource_bundle",
-
-    # Persistence Tools
-    "persist_hacs_resource",
-    "read_hacs_resource",
-
-    # Preferences Tools
-    "set_actor_preference",
-    "list_actor_preferences",
-
-    # Generic FHIR/Analytics domains removed
-
-
-    # Admin Operations Tools
-    "run_database_migration",
-    "check_migration_status",
-    "describe_database_schema",
-    "get_table_structure",
-    "test_database_connection",
+    # Terminology (optional)
+    "normalize_code",
+    "search_umls",
+    "suggest_resource_codings",
+    "summarize_codable_concepts",
+    "map_terminology",
+    
+    
+    # Note: Legacy tool names have been consolidated into the 4 core domains above.
+    # Users should migrate to the new domain-specific tool names for better clarity.
 ]

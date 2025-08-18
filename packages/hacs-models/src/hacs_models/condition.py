@@ -9,6 +9,7 @@ engineering with rich descriptive metadata and clinical workflow support.
 from datetime import datetime, date
 from typing import Any, Literal
 from pydantic import Field
+from pydantic import ConfigDict
 
 from .base_resource import DomainResource
 from .types import ConditionClinicalStatus, ConditionVerificationStatus
@@ -16,11 +17,14 @@ from .types import ConditionClinicalStatus, ConditionVerificationStatus
 
 class ConditionStage(DomainResource):
     """Stage or grade of a condition."""
+    model_config = ConfigDict(populate_by_name=True)
     
     resource_type: Literal["ConditionStage"] = Field(default="ConditionStage")
     
-    summary: dict[str, Any] | None = Field(
+    # Avoid shadowing DomainResource.summary() by renaming with alias
+    stage_summary: dict[str, Any] | None = Field(
         default=None,
+        alias="summary",
         description="Simple summary of the stage, such as Stage IIIA",
         examples=[{"coding": [{"system": "http://snomed.info/sct", "code": "258219007", "display": "Stage IIIA"}]}]
     )
@@ -241,7 +245,7 @@ class Condition(DomainResource):
     def add_stage(self, summary: dict[str, Any], assessment_refs: list[str] | None = None) -> ConditionStage:
         """Add staging information for this condition."""
         stage = ConditionStage(
-            summary=summary,
+            stage_summary=summary,
             assessment=assessment_refs or []
         )
         self.stage.append(stage)

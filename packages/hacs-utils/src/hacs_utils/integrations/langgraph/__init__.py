@@ -88,7 +88,6 @@ def create_healthcare_workflow() -> HealthcareWorkflowBuilder:
 # Import HACS agent tools integration
 try:
     from .hacs_agent_tools import (
-        get_hacs_agent_tools,
         HACSActor,
         get_hacs_actor,
         permission_required,
@@ -96,7 +95,6 @@ try:
     _has_agent_tools = True
 except ImportError:
     _has_agent_tools = False
-    get_hacs_agent_tools = None
     HACSActor = None
     get_hacs_actor = None
     permission_required = None
@@ -142,7 +140,6 @@ __all__ = [
 # Add agent tools exports if available
 if _has_agent_tools:
     __all__.extend([
-        "get_hacs_agent_tools",
         "HACSActor",
         "get_hacs_actor",
         "permission_required",
@@ -165,3 +162,10 @@ if _has_prefs_node:
     __all__.append("preference_injection_node")
 if _has_tool_loadout:
     __all__.append("tool_loadout_node")
+
+# Export shared subagent builder
+try:
+    from .hacs_sub_agent import HACSSubAgent, _create_task_tool as delegate_task
+    __all__.extend(["HACSSubAgent", "delegate_task"])
+except Exception:
+    pass

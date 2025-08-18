@@ -29,9 +29,8 @@ The core HACS MCP server provides **42+ Hacs Tools** via JSON‑RPC / streamable
 - **Migration Support** - Automated schema management
 
 ### **LLM Providers**
-- **Anthropic Claude** - Healthcare-optimized AI (recommended)
-- **OpenAI GPT** - General purpose AI models
-- **Environment-based** - Auto-configuration from API keys
+- **Provider-agnostic** via LangChain: OpenAI, Anthropic, Google (Gemini), Azure OpenAI, AWS Bedrock, others
+- **Environment-based**: Auto-configuration from API keys you set (choose what you use)
 
 ### **Agent Frameworks**
 - **LangGraph** - AI agent workflows with memory
@@ -81,7 +80,7 @@ tools = use_tool("tools/list", {})
 print(f"Available tools: {len(tools['result']['tools'])}")
 
 # Create patient record
-patient = use_tool("create_hacs_record", {
+patient = use_tool("create_record", {
     "resource_type": "Patient",
     "resource_data": {
         "full_name": "Sarah Johnson",
@@ -141,10 +140,10 @@ HEALTHCARE_SYSTEM_NAME=Your Health System
 ```
 
 ### **MCP Server Configuration**
-```python
-# MCP server automatically starts with HACS setup
-# Provides Hacs Tools via JSON-RPC
-# No additional configuration needed
+The MCP server is a standard JSON‑RPC service. Run it explicitly and point clients to it:
+```bash
+python -m hacs_utils.mcp.cli
+export HACS_MCP_SERVER_URL=http://127.0.0.1:8000
 ```
 
 ## 🧠 **LangGraph Integration**

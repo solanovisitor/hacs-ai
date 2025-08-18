@@ -20,16 +20,25 @@ from hacs_core import (
     PersistenceProvider,
     get_settings,
 )
-from hacs_models import (
-    AgentMessage,
-    ContextSummary,
-    Encounter,
-    KnowledgeItem,
-    Memory,
-    Observation,
-    Patient,
-    ScratchpadEntry,
-)
+# Import models with compatibility fallbacks
+from hacs_models import AgentMessage, Encounter, Observation, Patient, ScratchpadEntry
+try:
+    # Newer model name
+    from hacs_models import MemoryBlock as Memory
+except Exception:
+    # Legacy name
+    from hacs_models import Memory  # type: ignore
+
+# Optional models (may not exist in current release)
+try:  # Context summaries may not be present in all builds
+    from hacs_models import ContextSummary  # type: ignore
+except Exception:
+    ContextSummary = None  # type: ignore
+
+try:  # KnowledgeItem may be absent; treat as optional
+    from hacs_models import KnowledgeItem  # type: ignore
+except Exception:
+    KnowledgeItem = None  # type: ignore
 
 from .resource_mapper import ResourceMapper
 from .schema import HACSSchemaManager
@@ -111,10 +120,12 @@ class GranularPostgreSQLAdapter(BaseAdapter, PersistenceProvider):
             "Observation": "observations",
             "Encounter": "encounters",
             "AgentMessage": "agent_messages",
+            "MemoryBlock": "memories",
             "Memory": "memories",
-            "KnowledgeItem": "knowledge_items",
+            # Optional tables only if models exist
+            **({"KnowledgeItem": "knowledge_items"} if KnowledgeItem is not None else {}),
             "ScratchpadEntry": "scratchpad_entries",
-            "ContextSummary": "context_summaries",
+            **({"ContextSummary": "context_summaries"} if ContextSummary is not None else {}),
         }
         return table_mapping.get(resource_type, "hacs_resources")
 
@@ -137,7 +148,7 @@ class GranularPostgreSQLAdapter(BaseAdapter, PersistenceProvider):
             )
         elif isinstance(resource, Memory):
             column_data = self.resource_mapper.map_memory_to_columns(resource, actor)
-        elif isinstance(resource, KnowledgeItem):
+        elif (KnowledgeItem is not None) and isinstance(resource, KnowledgeItem):
             column_data = self.resource_mapper.map_knowledge_item_to_columns(
                 resource, actor
             )
@@ -145,7 +156,7 @@ class GranularPostgreSQLAdapter(BaseAdapter, PersistenceProvider):
             column_data = self.resource_mapper.map_scratchpad_entry_to_columns(
                 resource, actor
             )
-        elif isinstance(resource, ContextSummary):
+        elif (ContextSummary is not None) and isinstance(resource, ContextSummary):
             column_data = self.resource_mapper.map_context_summary_to_columns(
                 resource, actor
             )

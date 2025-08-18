@@ -57,16 +57,16 @@ def test_comprehensive_model_validation():
         ]
         
         schema_results = {}
-        for model_name in test_models:
-            debug_print(f"Testing schema for {model_name}")
+        for resource_name in test_models:
+            debug_print(f"Testing schema for {resource_name}")
             
             result = schema_discovery.get_hacs_resource_schema(
-                model_name, 
+                resource_name, 
                 include_examples=True, 
                 include_validation_rules=True
             )
             
-            schema_results[model_name] = {
+            schema_results[resource_name] = {
                 "success": result.success,
                 "field_count": result.field_count,
                 "has_schema": bool(result.schema),
@@ -74,12 +74,12 @@ def test_comprehensive_model_validation():
             }
             
             if not result.success:
-                debug_print(f"Schema discovery failed for {model_name}: {result.message}")
+                debug_print(f"Schema discovery failed for {resource_name}: {result.message}")
                 # Uncomment to debug specific failures
                 # pdb.set_trace()
             
-            assert result.success, f"Schema discovery failed for {model_name}: {result.message}"
-            assert result.field_count > 0, f"No fields found for {model_name}"
+            assert result.success, f"Schema discovery failed for {resource_name}: {result.message}"
+            assert result.field_count > 0, f"No fields found for {resource_name}"
         
         debug_print("Schema discovery results", schema_results)
         
@@ -135,7 +135,7 @@ def test_comprehensive_model_validation():
             
             try:
                 # Create resource
-                create_result = resource_management.create_hacs_record(
+                create_result = resource_management.create_record(
                     actor_name="DebugTester",
                     resource_type=test_case["resource_type"],
                     resource_data=test_case["data"]
@@ -185,7 +185,7 @@ def test_comprehensive_model_validation():
             }
         }
         
-        integration_result = resource_management.create_hacs_record(
+        integration_result = resource_management.create_record(
             actor_name="IntegrationTester",
             resource_type="Patient", 
             resource_data=integration_patient_data
@@ -222,7 +222,7 @@ def test_debug_specific_model_issues():
         ("hacs_models", "MedicationRequest"),
         ("hacs_models", "Procedure"), 
         ("hacs_models", "Medication"),
-        ("hacs_tools.domains.resource_management", "create_hacs_record"),
+        ("hacs_tools.domains.resource_management", "create_record"),
         ("hacs_tools.domains.schema_discovery", "get_hacs_resource_schema")
     ]
     

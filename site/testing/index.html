@@ -1,0 +1,1471 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../gallery/">
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.17">
+    
+    
+      
+        <title>Testing - HACS</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.7e37652d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#hacs-testing-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="HACS" class="md-header__button md-logo" aria-label="HACS" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            HACS
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Testing
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="HACS" class="md-nav__button md-logo" aria-label="HACS" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    HACS
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick-start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quick Start
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Reference
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hacs-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    HACS Tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Tutorials
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/complete_context_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Complete Context Engineering
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/medication_extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Medication Extraction
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gallery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Gallery
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Testing
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Testing
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quick Start
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quick Start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#running-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running Tests
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-using-the-test-runner-script-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Using the Test Runner Script (Recommended)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-direct-docker-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Direct Docker Testing
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-local-testing-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Local Testing (Development)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-manual-mcp-integration-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Manual MCP Integration Test
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Architecture
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Test Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#test-categories" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Categories
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Data
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tool-coverage-4-domains" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tool Coverage (4 domains)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      Environment Variables
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Profiles
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Results
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Test Results">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#output-formats" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output Formats
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#result-interpretation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Result Interpretation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-test-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example Test Output
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#common-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Issues
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mcp-server-not-accessible" class="md-nav__link">
+    <span class="md-ellipsis">
+      MCP Server Not Accessible
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#database-connection-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Database Connection Issues
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tool-import-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tool Import Errors
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-optimization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance Optimization
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#continuous-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Continuous Integration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Continuous Integration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#github-actions-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      GitHub Actions Integration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-coverage-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Coverage Requirements
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contributing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contributing
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Contributing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adding-new-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding New Tests
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-development-guidelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Development Guidelines
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#support" class="md-nav__link">
+    <span class="md-ellipsis">
+      Support
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quick Start
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quick Start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#running-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running Tests
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running Tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-using-the-test-runner-script-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Using the Test Runner Script (Recommended)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-direct-docker-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Direct Docker Testing
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-local-testing-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Local Testing (Development)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-manual-mcp-integration-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Manual MCP Integration Test
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Architecture
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Test Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#test-categories" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Categories
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Data
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tool-coverage-4-domains" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tool Coverage (4 domains)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      Environment Variables
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Profiles
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Results
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Test Results">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#output-formats" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output Formats
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#result-interpretation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Result Interpretation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-test-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example Test Output
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#common-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Issues
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Issues">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mcp-server-not-accessible" class="md-nav__link">
+    <span class="md-ellipsis">
+      MCP Server Not Accessible
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#database-connection-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Database Connection Issues
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tool-import-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tool Import Errors
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-optimization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance Optimization
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#continuous-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Continuous Integration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Continuous Integration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#github-actions-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      GitHub Actions Integration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-coverage-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Coverage Requirements
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contributing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contributing
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Contributing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adding-new-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding New Tests
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-development-guidelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      Test Development Guidelines
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#support" class="md-nav__link">
+    <span class="md-ellipsis">
+      Support
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="hacs-testing-guide">HACS Testing Guide<a class="headerlink" href="#hacs-testing-guide" title="Permanent link">&para;</a></h1>
+<p>This guide covers testing for HACS, including the new Phase 2 persistence, security, and vector integration features.</p>
+<p>For environment setup basics, see the <a href="../quick-start/">Quick Start</a>.</p>
+<h2 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
+<h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Docker and Docker Compose installed</li>
+<li>Python 3.11+ (for local testing)</li>
+<li><strong>UV package manager</strong> (required): <code>curl -LsSf https://astral.sh/uv/install.sh | sh</code></li>
+<li>Environment variables configured in <code>.env</code> file (see root directory)</li>
+</ul>
+<h3 id="running-tests">Running Tests<a class="headerlink" href="#running-tests" title="Permanent link">&para;</a></h3>
+<h4 id="1-using-the-test-runner-script-recommended">1. Using the Test Runner Script (Recommended)<a class="headerlink" href="#1-using-the-test-runner-script-recommended" title="Permanent link">&para;</a></h4>
+<p>We provide a convenient test runner script:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Validate environment setup</span>
+./run_tests.sh<span class="w"> </span>validate
+
+<span class="c1"># Run local unit tests</span>
+./run_tests.sh<span class="w"> </span><span class="nb">local</span><span class="w"> </span>unit
+
+<span class="c1"># Run Phase 2 integration tests (persistence, security, vector)</span>
+./run_tests.sh<span class="w"> </span><span class="nb">local</span><span class="w"> </span>phase2
+
+<span class="c1"># Run all local tests</span>
+./run_tests.sh<span class="w"> </span><span class="nb">local</span><span class="w"> </span>all
+
+<span class="c1"># Run full Docker test suite</span>
+./run_tests.sh<span class="w"> </span>docker
+</code></pre></div>
+<h4 id="2-direct-docker-testing">2. Direct Docker Testing<a class="headerlink" href="#2-direct-docker-testing" title="Permanent link">&para;</a></h4>
+<p>Run the complete test suite with Docker:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Start all services and run tests</span>
+docker-compose<span class="w"> </span>--profile<span class="w"> </span><span class="nb">test</span><span class="w"> </span>up<span class="w"> </span>--build
+
+<span class="c1"># View test results</span>
+docker<span class="w"> </span>logs<span class="w"> </span>hacs-test-runner
+</code></pre></div>
+<h4 id="3-local-testing-development">3. Local Testing (Development)<a class="headerlink" href="#3-local-testing-development" title="Permanent link">&para;</a></h4>
+<p>For local development and debugging:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Set up Python path</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$PWD</span><span class="s2">/packages/hacs-models/src:</span><span class="nv">$PWD</span><span class="s2">/packages/hacs-core/src:</span><span class="nv">$PWD</span><span class="s2">/packages/hacs-tools/src:</span><span class="nv">$PWD</span><span class="s2">/packages/hacs-auth/src:</span><span class="nv">$PWD</span><span class="s2">/packages/hacs-persistence/src:</span><span class="nv">$PWD</span><span class="s2">/packages/hacs-registry/src:</span><span class="nv">$PWD</span><span class="s2">/packages/hacs-utils/src:</span><span class="nv">$PYTHONPATH</span><span class="s2">&quot;</span>
+
+<span class="c1"># Install test dependencies with UV</span>
+uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pytest<span class="w"> </span>pytest-asyncio
+
+<span class="c1"># Run specific test categories</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/test_ci_essential.py<span class="w"> </span>-v<span class="w">                </span><span class="c1"># Essential CI tests</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/test_phase2_integration.py<span class="w"> </span>-v<span class="w">         </span><span class="c1"># Phase 2 integration tests</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/test_integration_end_to_end.py<span class="w"> </span>-v<span class="w">     </span><span class="c1"># End-to-end tests</span>
+
+<span class="c1"># Run specific domain tests</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/test_hacs_tools_schema.py::TestModeling<span class="w"> </span>-v
+</code></pre></div>
+<h4 id="3-manual-mcp-integration-test">3. Manual MCP Integration Test<a class="headerlink" href="#3-manual-mcp-integration-test" title="Permanent link">&para;</a></h4>
+<p>For debugging MCP server integration:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Start MCP server</span>
+docker-compose<span class="w"> </span>up<span class="w"> </span>postgres<span class="w"> </span>qdrant<span class="w"> </span>hacs-mcp-server
+
+<span class="c1"># Run manual integration test</span>
+<span class="nb">cd</span><span class="w"> </span>tests
+python<span class="w"> </span>test_hacs_tools_comprehensive.py<span class="w"> </span>--mcp
+</code></pre></div>
+<h2 id="test-architecture">Test Architecture<a class="headerlink" href="#test-architecture" title="Permanent link">&para;</a></h2>
+<h3 id="test-categories">Test Categories<a class="headerlink" href="#test-categories" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Unit Tests</strong>: Test tool definitions and basic functionality</li>
+<li><strong>MCP Integration Tests</strong>: Test tools via MCP server protocol</li>
+<li><strong>End-to-End Tests</strong>: Test complete workflows across multiple tools</li>
+<li><strong>Performance Tests</strong>: Test tool execution timing and resource usage</li>
+</ol>
+<h3 id="test-data">Test Data<a class="headerlink" href="#test-data" title="Permanent link">&para;</a></h3>
+<p>The test suite uses test data including:</p>
+<ul>
+<li><strong>Patients</strong>: 3 test patients with complete demographics</li>
+<li><strong>Observations</strong>: Blood pressure, vital signs, and clinical measurements</li>
+<li><strong>Encounters</strong>: Ambulatory and emergency department visits</li>
+<li><strong>Conditions</strong>: Hypertension, diabetes, and other chronic conditions</li>
+<li><strong>Memory Blocks</strong>: Episodic, procedural, and executive memories</li>
+<li><strong>Vector Data</strong>: Embeddings for semantic search testing</li>
+<li><strong>Organizations</strong>: Healthcare systems and provider organizations</li>
+</ul>
+<h3 id="tool-coverage-4-domains">Tool Coverage (4 domains)<a class="headerlink" href="#tool-coverage-4-domains" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Modeling: <code>describe_models</code>, <code>list_model_fields</code>, <code>plan_bundle_schema</code>, <code>validate_resource</code>, <code>add_bundle_entries</code></li>
+<li>Extraction: <code>suggest_mapping</code>, <code>extract_values</code>, <code>apply_mapping</code>, <code>summarize_context</code></li>
+<li>Database (records): <code>save_record</code>, <code>read_record</code>, <code>update_record</code>, <code>delete_record</code>, <code>search_records</code></li>
+<li>Agents: <code>write_scratchpad</code>, <code>inject_preferences</code>, <code>store_memory</code>, <code>retrieve_memories</code>, <code>select_tools_for_task</code></li>
+</ul>
+<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
+<h3 id="environment-variables">Environment Variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h3>
+<p>Set these environment variables for testing:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Database Configuration</span>
+<span class="nv">DATABASE_URL</span><span class="o">=</span>postgresql://hacs:hacs_dev@localhost:5432/hacs
+
+<span class="c1"># Vector Store Configuration  </span>
+<span class="nv">QDRANT_URL</span><span class="o">=</span>http://localhost:6333
+<span class="nv">QDRANT_API_KEY</span><span class="o">=</span><span class="s2">&quot;&quot;</span>
+
+<span class="c1"># API Keys (optional for basic tests)</span>
+<span class="nv">OPENAI_API_KEY</span><span class="o">=</span>your_openai_key
+<span class="nv">ANTHROPIC_API_KEY</span><span class="o">=</span>your_anthropic_key
+
+<span class="c1"># MCP Server Configuration</span>
+<span class="nv">MCP_SERVER_URL</span><span class="o">=</span>http://localhost:8000
+</code></pre></div>
+<h3 id="test-profiles">Test Profiles<a class="headerlink" href="#test-profiles" title="Permanent link">&para;</a></h3>
+<p>Use Docker Compose profiles to run different test scenarios:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Basic services only</span>
+docker-compose<span class="w"> </span>up
+
+<span class="c1"># Include Qdrant vector store</span>
+docker-compose<span class="w"> </span>--profile<span class="w"> </span>with-qdrant<span class="w"> </span>up
+
+<span class="c1"># Run database migrations</span>
+docker-compose<span class="w"> </span>--profile<span class="w"> </span>migration<span class="w"> </span>up
+
+<span class="c1"># Run tests</span>
+docker-compose<span class="w"> </span>--profile<span class="w"> </span><span class="nb">test</span><span class="w"> </span>up
+</code></pre></div>
+<h2 id="test-results">Test Results<a class="headerlink" href="#test-results" title="Permanent link">&para;</a></h2>
+<h3 id="output-formats">Output Formats<a class="headerlink" href="#output-formats" title="Permanent link">&para;</a></h3>
+<p>Test results are available in multiple formats:</p>
+<ol>
+<li><strong>Console Output</strong>: Real-time test execution logs</li>
+<li><strong>JSON Reports</strong>: Detailed test results in <code>test_results/</code> directory</li>
+<li><strong>Coverage Reports</strong>: Code coverage analysis</li>
+<li><strong>Performance Metrics</strong>: Tool execution timing and resource usage</li>
+</ol>
+<h3 id="result-interpretation">Result Interpretation<a class="headerlink" href="#result-interpretation" title="Permanent link">&para;</a></h3>
+<ul>
+<li>✅ <strong>Pass</strong>: Tool executed successfully with expected results</li>
+<li>❌ <strong>Fail</strong>: Tool execution failed or returned unexpected results</li>
+<li>⏭️ <strong>Skip</strong>: Test skipped (e.g., MCP integration disabled)</li>
+<li>⚠️ <strong>Warning</strong>: Tool executed but with warnings or performance issues</li>
+</ul>
+<h3 id="example-test-output">Example Test Output<a class="headerlink" href="#example-test-output" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>🚀 HACS Tools Test Suite
+=====================================
+
+✅ MCP Server Health Check
+   Server Status: ✅ Online
+   MCP Endpoint: ✅ Ready
+   Available Tools: 20
+
+📊 Test Results Summary:
+   Total Tools: 20
+   Successful: 38
+   Failed: 2
+   Skipped: 2
+   Success Rate: 90.5%
+   Duration: 45.2 seconds
+
+📁 Detailed results saved to: test_results/hacs_tools_test_results_20241215_143022.json
+</code></pre></div>
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<h3 id="common-issues">Common Issues<a class="headerlink" href="#common-issues" title="Permanent link">&para;</a></h3>
+<h4 id="mcp-server-not-accessible">MCP Server Not Accessible<a class="headerlink" href="#mcp-server-not-accessible" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="c1"># Check if services are running</span>
+docker-compose<span class="w"> </span>ps
+
+<span class="c1"># View MCP server logs</span>
+docker<span class="w"> </span>logs<span class="w"> </span>hacs-mcp-server
+
+<span class="c1"># Test MCP server health</span>
+curl<span class="w"> </span>http://localhost:8000/health
+</code></pre></div>
+<h4 id="database-connection-issues">Database Connection Issues<a class="headerlink" href="#database-connection-issues" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="c1"># Check database logs</span>
+docker<span class="w"> </span>logs<span class="w"> </span>hacs-postgres
+
+<span class="c1"># Test database connection</span>
+docker-compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>postgres<span class="w"> </span>pg_isready<span class="w"> </span>-U<span class="w"> </span>hacs<span class="w"> </span>-d<span class="w"> </span>hacs
+
+<span class="c1"># Run migration manually</span>
+docker-compose<span class="w"> </span>--profile<span class="w"> </span>migration<span class="w"> </span>up
+</code></pre></div>
+<h4 id="tool-import-errors">Tool Import Errors<a class="headerlink" href="#tool-import-errors" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="c1"># Check Python path configuration</span>
+docker-compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>hacs-mcp-server<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import sys; print(sys.path)&quot;</span>
+
+<span class="c1"># Test tool imports</span>
+docker-compose<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>hacs-mcp-server<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;from hacs_tools.tools import ALL_HACS_TOOLS; print(len(ALL_HACS_TOOLS))&quot;</span>
+</code></pre></div>
+<h3 id="performance-optimization">Performance Optimization<a class="headerlink" href="#performance-optimization" title="Permanent link">&para;</a></h3>
+<p>For better test performance:</p>
+<ol>
+<li><strong>Use Local Database</strong>: Set up PostgreSQL locally instead of Docker</li>
+<li><strong>Parallel Testing</strong>: Use pytest-xdist for parallel execution</li>
+<li><strong>Test Caching</strong>: Cache test data between runs</li>
+<li><strong>Selective Testing</strong>: Run only changed domains during development</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="c1"># Parallel execution</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/test_hacs_tools_comprehensive.py<span class="w"> </span>-n<span class="w"> </span>auto
+
+<span class="c1"># Selective testing</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/test_hacs_tools_comprehensive.py<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;ResourceManagement or AdminOperations&quot;</span>
+
+<span class="c1"># Fast feedback loop</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/test_hacs_tools_comprehensive.py<span class="w"> </span>--ff<span class="w"> </span>--tb<span class="o">=</span>short
+</code></pre></div>
+<h2 id="continuous-integration">Continuous Integration<a class="headerlink" href="#continuous-integration" title="Permanent link">&para;</a></h2>
+<h3 id="github-actions-integration">GitHub Actions Integration<a class="headerlink" href="#github-actions-integration" title="Permanent link">&para;</a></h3>
+<p>The test suite integrates with GitHub Actions for CI/CD:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># .github/workflows/test-hacs-tools.yml</span>
+<span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HACS Tools Test Suite</span>
+
+<span class="nt">on</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">push</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">pull_request</span><span class="p p-Indicator">]</span>
+
+<span class="nt">jobs</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">test</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">runs-on</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu-latest</span>
+<span class="w">    </span><span class="nt">steps</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v4</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Run HACS Tools Tests</span>
+<span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">          </span><span class="no">docker-compose --profile test up --build --abort-on-container-exit</span>
+</code></pre></div>
+<h3 id="test-coverage-requirements">Test Coverage Requirements<a class="headerlink" href="#test-coverage-requirements" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Minimum Coverage</strong>: 85% for all tool domains</li>
+<li><strong>Critical Tools</strong>: 95% coverage for resource management and clinical workflows</li>
+<li><strong>Integration Tests</strong>: All tools must have at least one integration test</li>
+</ul>
+<h2 id="contributing">Contributing<a class="headerlink" href="#contributing" title="Permanent link">&para;</a></h2>
+<h3 id="adding-new-tests">Adding New Tests<a class="headerlink" href="#adding-new-tests" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Add Test Data</strong>: Update <code>examples/hacs_developer_agent/scripts/init-db.sql</code> with relevant test data</li>
+<li><strong>Create Test Cases</strong>: Add test methods to appropriate test classes</li>
+<li><strong>Update Documentation</strong>: Document new test scenarios in this guide</li>
+<li><strong>Verify Coverage</strong>: Ensure new tools havetest coverage</li>
+</ol>
+<h3 id="test-development-guidelines">Test Development Guidelines<a class="headerlink" href="#test-development-guidelines" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Use Descriptive Names</strong>: Test method names should clearly indicate what is being tested</li>
+<li><strong>Include Error Cases</strong>: Test both success and failure scenarios</li>
+<li><strong>Validate Results</strong>: Assert on specific result values, not just success/failure</li>
+<li><strong>Performance Aware</strong>: Include timing assertions for performance-critical tools</li>
+</ul>
+<h2 id="support">Support<a class="headerlink" href="#support" title="Permanent link">&para;</a></h2>
+<p>For testing support:</p>
+<ol>
+<li><strong>Documentation</strong>: Refer to tool-specific documentation in <code>packages/hacs-tools/</code></li>
+<li><strong>Issues</strong>: Report test failures as GitHub issues with full logs</li>
+<li><strong>Discussions</strong>: Use GitHub Discussions for test strategy questions</li>
+<li><strong>Development</strong>: Join the HACS development community for real-time support</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.92b07e13.min.js"></script>
+      
+    
+  </body>
+</html>

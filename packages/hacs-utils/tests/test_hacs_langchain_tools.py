@@ -6,7 +6,7 @@ Validates that minimal LangChain compatibility functions are available and that
 tool discovery works. Full LangChain adapters are deprecated.
 
 Usage:
-    python test_hacs_langchain_tools.py
+    python test_langchain_tools.py
 
 Author: HACS Development Team
 License: MIT
@@ -101,9 +101,9 @@ def test_individual_tools():
             print("❌ discover_hacs_resources tool not found")
 
         # Test create record tool
-        create_tool = get_hacs_tool("create_hacs_record")
+        create_tool = get_hacs_tool("create_record")
         if create_tool:
-            print("✅ Found create_hacs_record tool")
+            print("✅ Found create_record tool")
 
             # Test input validation
             valid_inputs = {
@@ -118,12 +118,12 @@ def test_individual_tools():
                 "validate_fhir": True
             }
 
-            if validate_tool_inputs("create_hacs_record", valid_inputs):
+            if validate_tool_inputs("create_record", valid_inputs):
                 print("✅ Tool input validation successful")
             else:
                 print("❌ Tool input validation failed")
         else:
-            print("❌ create_hacs_record tool not found")
+            print("❌ create_record tool not found")
 
         # Test template registration tools exist instead of deprecated clinical template
         for tool_name in [
@@ -257,10 +257,10 @@ def generate_report():
             report["tool_details"].append(tool_info)
 
         # Save report
-        with open("hacs_langchain_tools_report.json", "w") as f:
+        with open("langchain_tools_report.json", "w") as f:
             json.dump(report, f, indent=2)
 
-        print(f"✅ Report saved to hacs_langchain_tools_report.json")
+        print(f"✅ Report saved to langchain_tools_report.json")
         print(f"📊 Total tools: {report['total_tools']}")
         print("📊 Tools by category:")
         for category, count in report["tools_by_category"].items():

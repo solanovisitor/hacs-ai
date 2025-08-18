@@ -83,48 +83,38 @@ class HACSToolRegistry:
         self._tags: Dict[str, Set[str]] = {}
         self._initialized = False
 
-        # Pre-defined category mappings for tool discovery
+        # Pre-defined category mappings for new 4-domain structure
         self._category_patterns = {
-            "resource_management": [
-                "create_hacs_record", "get_hacs_record", "update_hacs_record",
-                "delete_hacs_record", "search_hacs_records",
+            "modeling": [
+                "pin_resource", "compose_bundle", "validate_resource",
+                "diff_resources", "validate_bundle",
+                # Legacy mappings for backward compatibility
                 "instantiate_hacs_resource", "validate_hacs_resource",
-            ],
-            "bundles": [
                 "create_resource_bundle", "add_bundle_entry", "validate_resource_bundle"
             ],
-            "clinical_workflows": [
-                "create_activity_definition", "create_plan_definition",
-                "create_task_from_activity", "complete_task", "fail_task",
+            "extraction": [
+                "synthesize_mapping_spec", "extract_variables", "apply_mapping_spec",
+                "summarize_context",
+                # Legacy mappings for backward compatibility
+                "register_prompt_template", "register_extraction_schema",
+                "generate_stack_template_from_markdown", "instantiate_stack_template"
             ],
-            "schema_discovery": [
-                "discover_hacs_resources", "get_hacs_resource_schema",
-                "analyze_resource_fields", "compare_resource_schemas"
-            ],
-            "development_tools": [
-                "create_resource_stack",
-                "register_prompt_template",
-                "register_extraction_schema",
-                "register_stack_template",
-                "generate_stack_template_from_markdown",
-                "instantiate_stack_from_context",
-                "instantiate_stack_template",
-            ],
-            "memory_operations": [
-                "create_hacs_memory", "search_hacs_memories",
-                "consolidate_memories", "retrieve_context",
-                "analyze_memory_patterns", "check_memory"
-            ],
-            "knowledge_management": [
-                "index_evidence", "check_evidence",
-            ],
-            "admin_operations": [
+            "database": [
+                "save_resource", "read_resource", "update_resource", "delete_resource",
+                "register_model_version", "search_knowledge_items", "search_memories",
+                "run_migrations", "get_db_status",
+                # Legacy mappings for backward compatibility
+                "persist_hacs_resource", "read_hacs_resource",
                 "run_database_migration", "check_migration_status",
-                "describe_database_schema", "get_table_structure",
-                "test_database_connection", "persist_hacs_resource",
-                "read_hacs_resource", "set_actor_preference",
-                "list_actor_preferences",
+                "test_database_connection", "index_evidence", "check_evidence"
             ],
+            "agents": [
+                "write_scratchpad", "read_scratchpad", "create_todo", "list_todos",
+                "complete_todo", "store_memory", "retrieve_memories", "inject_preferences",
+                "select_tools_for_task", "summarize_state", "prune_state",
+                # Legacy mappings for backward compatibility
+                "check_memory", "set_actor_preference", "list_actor_preferences"
+            ]
         }
 
     def _determine_category(self, tool_name: str) -> str:
@@ -133,30 +123,32 @@ class HACSToolRegistry:
             if tool_name in tool_names:
                 return category
 
-        # Fallback pattern matching
+        # Fallback pattern matching for new 4-domain structure
         name_lower = tool_name.lower()
-        if any(term in name_lower for term in ["create", "get", "update", "delete", "resource"]):
-            return "resource_management"
+        if any(term in name_lower for term in ["instantiate", "compose", "validate", "diff", "bundle"]):
+            return "modeling"
+        elif any(term in name_lower for term in ["extract", "synthesize", "mapping", "summarize", "apply"]):
+            return "extraction"
+        elif any(term in name_lower for term in ["save", "read", "update", "delete", "search", "migration", "database", "db"]):
+            return "database"
+        elif any(term in name_lower for term in ["scratchpad", "todo", "memory", "preference", "tool", "state", "agent"]):
+            return "agents"
+        elif any(term in name_lower for term in [
+            "umls", "cui", "crosswalk", "concept", "code", "valueset", "value_set", "conceptmap", "concept_map", "normalize"
+        ]):
+            return "terminology"
+        
+        # Legacy fallbacks for backward compatibility
+        elif any(term in name_lower for term in ["create", "get", "resource"]):
+            return "modeling"  # Map legacy resource management to modeling
         elif any(term in name_lower for term in ["workflow", "clinical", "guidance"]):
-            return "clinical_workflows"
-        elif any(term in name_lower for term in ["memory", "consolidate", "retrieve"]):
-            return "memory_operations"
-        elif any(term in name_lower for term in ["vector", "embedding", "search"]):
-            return "vector_search"
-        elif any(term in name_lower for term in ["schema", "discover", "analyze"]):
-            return "schema_discovery"
+            return "modeling"  # Map workflows to modeling
         elif any(term in name_lower for term in ["template", "stack", "optimize"]):
-            return "development_tools"
-        elif any(term in name_lower for term in ["fhir", "convert", "validate"]):
-            return "fhir_integration"
-        elif any(term in name_lower for term in ["analytics", "quality", "population"]):
-            return "healthcare_analytics"
-        elif any(term in name_lower for term in ["ai", "model", "inference"]):
-            return "ai_integrations"
-        elif any(term in name_lower for term in ["admin", "database", "migration"]):
-            return "admin_operations"
+            return "extraction"  # Map legacy templates to extraction
+        elif any(term in name_lower for term in ["admin", "persist"]):
+            return "database"  # Map admin operations to database
 
-        return "unknown"
+        return "modeling"  # Default to modeling domain
 
     def _extract_tool_metadata(self, func: Callable, module_path: str, domain: str) -> Dict[str, Any]:
         """Extractmetadata from a tool function."""
@@ -206,6 +198,10 @@ class HACSToolRegistry:
             tags.append("fhir")
         if "workflow" in tool_description.lower():
             tags.append("workflow")
+
+        # Ensure domain tags present for better loadout grouping
+        if domain in ("modeling", "database", "extraction", "agents"):
+            tags.append(f"domain:{domain}")
 
         return {
             "requires_actor": requires_actor,

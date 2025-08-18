@@ -62,7 +62,7 @@ VALIDATION
 SUCCESS
 - Records are persisted, linkable, and readable via HACS tools
 """,
-            "tools": ["create_hacs_record", "manage_admin_tasks", "update_system_status"]
+            "tools": ["create_record", "manage_admin_tasks", "update_system_status"]
         },
         
         {
@@ -86,59 +86,207 @@ Focus on:
         # New: Resource Template Creation Specialist
         {
             "name": "resource_template_creator",
-            "description": "Creates high-quality HACS StackTemplates from instructions/markdown by discovering suitable HACS resources and registering templates",
-            "prompt": """You are a HACS Resource Template Creator. Manage HACS resources only (not FHIR). Produce reusable StackTemplates.
+            "description": "Creates high-quality HACS AnnotationWorkflowResource templates (MappingSpec/SourceBinding) from instructions/markdown by discovering suitable HACS resources and registering the workflow",
+            "prompt": """You are a HACS Resource Template Creator. Manage HACS resources only (not FHIR). Produce reusable AnnotationWorkflowResource templates using MappingSpec/SourceBinding.
 
 PRP-STYLE PLAN
-- Goal: Convert instructions/markdown into a HACS StackTemplate
-- Deliverable: A registered StackTemplate with layers, variables, and constant_fields
-- Success: Template validates against HACS models and is ready for instantiation
+- Goal: Convert instructions/markdown into a HACS AnnotationWorkflowResource
+- Deliverable: A registered AnnotationWorkflowResource with mapping_spec variables and bindings
+- Success: Workflow validates against HACS models and is ready for instantiation
 
 IMPLEMENTATION STEPS
 1) Discover candidate HACS resources and summarize required/important fields
-2) Select a suitable parent (often Encounter) and supporting layers (Observation, Condition, MedicationRequest, Procedure, DiagnosticReport, etc.)
-3) Define variables (names, descriptions) and explicit bindings to target fields; use `constant_fields` for required values
-4) Register the template with a clear, unique name
+2) Select a conservative mapping that always includes Document and Patient
+3) Define variables (names, descriptions) and explicit bindings to target fields via MappingSpec/SourceBinding
+4) Register the workflow with a clear, unique name
 
 VALIDATION LOOP
 - Ensure variables map to existing fields; unknown fields go under `agent_context`
-- Confirm registration result and echo a concise template preview
+- Confirm registration result and echo a concise workflow preview
 
 RULES
 - Do not hardcode business logic into tools; the template should be declarative
 - Keep strictly HACS-focused terminology and structures
 """,
             "tools": [
-                "discover_hacs_resources",
-                "get_hacs_resource_schema",
-                "register_stack_template",
-                "generate_stack_template_from_markdown"
+                "list_models",
+                "describe_model",
+                "list_model_fields",
+                "pick_resource_fields",
+                "plan_bundle_schema",
+                "suggest_bundle_schema",
+                "register_resource_definition"
             ]
         },
 
-        # New: Template Filling/Instantiation Specialist
+
+        # New: Resource Bundle Builder Specialist
         {
-            "name": "template_filling_specialist",
-            "description": "Fills registered HACS templates from context and instantiates stacks for downstream persistence",
-            "prompt": """You are a HACS Template Filling Specialist. Given a registered StackTemplate and input context, instantiate a complete HACS stack.
+            "name": "resource_bundle_builder",
+            "description": "Iteratively builds a ResourceBundle (document) from provided resources by calling bundle CRUD tools, validates it, and persists the finalized bundle.",
+            "prompt": """You are a HACS Resource Bundle Builder. Your task is to construct a clinically meaningful ResourceBundle (bundle_type: document) from a list of provided resources.
 
-OBJECTIVE
-- Extract variables strictly as defined by the template and instantiate the stack
+OPERATING PROCEDURE
+- Always begin by creating a new ResourceBundle with a suitable title (e.g., \"Generated Bundle\") and status active
+- Iterate the provided resources, and for each one call add_bundle_entry using the latest bundle state
+- After all entries are added, call validate_resource_bundle
+- If valid, call persist_hacs_resource to save the bundle; otherwise, adjust (e.g., remove malformed entries) and re-validate
 
-PROCESS (Specification-style)
-1) Read template definition and list required variables
-2) Extract values from the provided context; if absent, leave minimal/None
-3) Call the appropriate instantiation tool
-4) Verify references (subject, encounter, links) are consistent
+INPUT FORMAT EXPECTATION
+- The user will provide a JSON object with a \"resources\" array of items containing {layer, resource_type, resource_data}
 
-VALIDATION
-- Use exact variable names; never invent new variables
-- Return a concise summary of instantiated resources and non-empty fields
-- Prefer structured fields; if a field doesn't exist, store auxiliary text in `agent_context`
+SUCCESS CRITERIA
+- Bundle validates successfully and is persisted
+- Return a final concise JSON summary: {\n  \"persisted\": true|false,\n  \"bundle_id\": string|null,\n  \"entries\": number,\n  \"message\": string\n}
 """,
             "tools": [
-                "instantiate_stack_from_context",
-                "instantiate_stack_template"
+                "compose_bundle",
+                "add_bundle_entries",
+                "validate_bundle",
+                "save_record"
+            ]
+        }
+        ,
+        # New: Modeling Planner Specialist
+        {
+            "name": "modeling_planner",
+            "description": "Plans resource schemas and bundles; selects fields and relationships for modeling tasks.",
+            "prompt": """You are a HACS Modeling Planner. Use modeling tools to explore models, select fields, plan bundles, and set references. Prefer minimal, valid subsets and explicit references.
+
+Steps:
+- List/describe models and fields
+- Compute required fields and build subset schemas
+- Plan bundle schema and add bundle entries
+- Set and follow references when needed
+""",
+            "tools": [
+                "list_models",
+                "describe_model",
+                "describe_models",
+                "list_model_fields",
+                "pick_resource_fields",
+                "list_nested_fields",
+                "inspect_field",
+                "compute_required_fields",
+                "build_subset_schemas",
+                "plan_bundle_schema",
+                "suggest_bundle_schema",
+                "compose_bundle",
+                "add_bundle_entries",
+                "validate_bundle",
+                "make_reference",
+                "set_reference",
+                "list_relations",
+                "follow_graph"
+            ]
+        },
+        # New: Extraction Specialist
+        {
+            "name": "extraction_specialist",
+            "description": "Synthesizes mapping specs, extracts variables from context, and applies mappings to produce resources.",
+            "prompt": """You are a HACS Extraction Specialist. Use concise, declarative mapping specs and robust structured extraction.
+
+Guidelines:
+- Prefer synthesize/suggest mapping then extract_values
+- Apply mapping to produce resource variables or target JSON
+- Summarize context when helpful
+""",
+            "tools": [
+                "synthesize_mapping_spec",
+                "suggest_mapping",
+                "extract_values",
+                "extract_variables",
+                "apply_mapping",
+                "apply_mapping_spec",
+                "summarize_context"
+            ]
+        },
+        # New: Memory Context Specialist
+        {
+            "name": "memory_context_specialist",
+            "description": "Manages clinical memories and builds task context with summaries and pruning.",
+            "prompt": """You are a HACS Memory Context Specialist. Store important memories, retrieve by filters, and keep state concise using summaries and pruning.
+""",
+            "tools": [
+                "store_memory",
+                "retrieve_memories",
+                "search_memories",
+                "summarize_state",
+                "prune_state"
+            ]
+        },
+        # New: Preferences Context Specialist
+        {
+            "name": "preferences_context_specialist",
+            "description": "Manages actor preferences and injects them into agent state or prompts.",
+            "prompt": """You are a HACS Preferences Specialist. Read/list/save preferences and inject them for downstream tools to consume.
+""",
+            "tools": [
+                "save_preference",
+                "read_preferences",
+                "list_preferences",
+                "inject_preferences"
+            ]
+        },
+        # New: Evidence Researcher
+        {
+            "name": "evidence_researcher",
+            "description": "Finds relevant clinical evidence using semantic search and summarizes findings.",
+            "prompt": """You are a HACS Evidence Researcher. Use semantic evidence search and produce concise, source-linked summaries.
+""",
+            "tools": [
+                "search_evidence",
+                "summarize_context"
+            ]
+        },
+        # New: Event Manager
+        {
+            "name": "event_manager",
+            "description": "Creates and manages HACS Events, schedules, and performers.",
+            "prompt": """You are a HACS Event Manager. Create events, update status and reasons, add performers, and schedule timing.
+""",
+            "tools": [
+                "create_event_tool",
+                "update_event_status_tool",
+                "add_event_performer_tool",
+                "schedule_event_tool",
+                "summarize_event_tool"
+            ]
+        },
+        # New: Appointment Scheduler
+        {
+            "name": "appointment_scheduler",
+            "description": "Schedules, reschedules, cancels appointments; checks conflicts and sends reminders.",
+            "prompt": """You are a HACS Appointment Scheduler. Use safe defaults and check conflicts before finalizing.
+""",
+            "tools": [
+                "schedule_appointment",
+                "reschedule_appointment",
+                "cancel_appointment",
+                "check_appointment_conflicts",
+                "send_appointment_reminders"
+            ]
+        },
+        # New: Care Coordinator
+        {
+            "name": "care_coordinator",
+            "description": "Coordinates care plans and care teams, tracks goals and responsibilities.",
+            "prompt": """You are a HACS Care Coordinator. Build care plans/teams, assign roles, and track goals/responsibilities.
+""",
+            "tools": [
+                "create_care_plan",
+                "update_care_plan_progress",
+                "coordinate_care_activities",
+                "track_care_plan_goals",
+                "assemble_care_team",
+                "assign_team_roles",
+                "coordinate_team_communication",
+                "track_team_responsibilities",
+                "update_team_membership",
+                "track_goal_progress",
+                "update_goal_status",
+                "measure_goal_achievement",
+                "link_goal_to_careplan"
             ]
         }
     ]

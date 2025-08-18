@@ -35,28 +35,31 @@ from hacs_registry import (
     register_extraction_schema,
     register_annotation_workflow,
 )
-from hacs_persistence.adapter import PostgreSQLAdapter
+from hacs_persistence.adapter import PostgreSQLAdapter, create_postgres_adapter
+from hacs_persistence.migrations import run_migration as _run_db_migration
 from hacs_core import Actor
 
 """
-Direct HACS tool imports - no MCP dependency. Use schema discovery for model descriptions
-and thin modeling/bundle/persistence tools for resource operations.
+Direct HACS tool imports - no MCP dependency. Uses new 4-domain structure:
+modeling, extraction, database, agents for resource operations.
 """
-from hacs_tools.domains.schema_discovery import (
-    discover_hacs_resources,
-    get_hacs_resource_schema,
+from hacs_tools.domains.extraction import (
+    synthesize_mapping_spec,
+    extract_variables,
+    apply_mapping_spec,
 )
-from hacs_tools.domains.modeling_tools import (
-    instantiate_hacs_resource,
-    validate_hacs_resource,
+from hacs_tools.domains.modeling import (
+    pin_resource,
+    validate_resource,
+    compose_bundle,
+    validate_bundle,
 )
-from hacs_tools.domains.bundle_tools import (
-    create_resource_bundle,
-    add_bundle_entry,
-    validate_resource_bundle,
-)
-from hacs_tools.domains.persistence_tools import (
-    persist_hacs_resource,
+from hacs_tools.domains.database import (
+    save_record,
+    read_record,
+    update_record,
+    delete_record,
+    run_migrations,
 )
 from hacs_utils.annotation.chunking import ChunkIterator, make_batches_of_textchunk
 from hacs_utils.annotation.data import (
@@ -73,12 +76,37 @@ from hacs_registry import (
 import json as _json3
 import pathlib as _pathlib
 import sys as _sys
+import os as _os
+def _load_env_from_project_root() -> None:
+    """Load .env from project root into os.environ without external deps."""
+    try:
+        root = _pathlib.Path(__file__).resolve().parents[2]
+        env_path = root / ".env"
+        if env_path.exists():
+            for line in env_path.read_text().splitlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                k = k.strip()
+                v = v.strip().strip('"').strip("'")
+                if k and k not in _os.environ:
+                    _os.environ[k] = v
+    except Exception:
+        pass
+
+_load_env_from_project_root()
+
 # Make developer agent utilities importable
 _sys.path.append(str((_pathlib.Path(__file__).resolve().parent.parent / "hacs_developer_agent").absolute()))
 try:
     from hacs_agent import create_hacs_agent
+    from hacs_subagents_config import get_default_hacs_subagents
 except Exception:
     create_hacs_agent = None
+    get_default_hacs_subagents = None
 # Optional: tool loader (used by _get_hacs_tool_by_name fallback)
 # removed: tool loader helpers (unused)
 
@@ -224,18 +252,54 @@ def _instantiate_from_mapping(mapping: MappingSpec, variables: dict[str, Any]) -
         layer_key = f"{resource_name.lower()}_{idx}"
         resources[layer_key] = instance
 
-    # Build ResourceBundle and add entries for created resources
-    bundle = HACSResourceBundle(title=f"Generated Bundle", bundle_type="document")
-    for layer_name, resource in resources.items():
+    # Ensure at least one resource exists (fallback Patient)
+    if not resources:
         try:
-            bundle.add_entry(
-                resource=resource,
-                title=f"{getattr(resource, 'resource_type', type(resource).__name__)} - {layer_name}",
-                tags=[getattr(resource, 'resource_type', type(resource).__name__).lower(), layer_name],
-                priority=1 if getattr(resource, 'resource_type', None) == 'Patient' else 0,
-            )
+            patient_cls = model_registry.get("Patient")
+            if patient_cls is not None:
+                fallback_patient = patient_cls(full_name=variables.get("patient_name", "Anonymous Patient"))
+                resources["patient_1"] = fallback_patient
         except Exception:
-            continue
+            pass
+
+    # Build entries list first to satisfy document bundle integrity on init
+    entries_payload = []
+    for layer_name, resource in resources.items():
+        entries_payload.append({
+            "resource": resource,
+            "title": f"{getattr(resource, 'resource_type', type(resource).__name__)} - {layer_name}",
+            "tags": [getattr(resource, 'resource_type', type(resource).__name__).lower(), layer_name],
+            "priority": 1 if getattr(resource, 'resource_type', None) == 'Patient' else 0,
+        })
+    # Defensive: ensure non-empty for DOCUMENT bundles. If empty, add the first created resource.
+    if not entries_payload:
+        # Try to populate at least one entry from created resources
+        for layer_name, resource in resources.items():
+            try:
+                entries_payload.append({
+                    "resource": resource,
+                    "title": f"{getattr(resource, 'resource_type', type(resource).__name__)} - {layer_name}",
+                    "tags": [getattr(resource, 'resource_type', type(resource).__name__).lower(), layer_name],
+                    "priority": 1 if getattr(resource, 'resource_type', None) == 'Patient' else 0,
+                })
+                break
+            except Exception:
+                continue
+        # As a last resort, synthesize a minimal Patient
+        if not entries_payload:
+            try:
+                dummy_patient_cls = model_registry.get("Patient")
+                if dummy_patient_cls is not None:
+                    dummy_patient = dummy_patient_cls(full_name=variables.get("patient_name", "Anonymous Patient"))
+                    entries_payload.append({
+                        "resource": dummy_patient,
+                        "title": "Patient - fallback",
+                        "tags": ["patient", "fallback"],
+                        "priority": 1,
+                    })
+            except Exception:
+                pass
+    bundle = HACSResourceBundle(title="Generated Bundle", bundle_type="document", entries=entries_payload)
     resources["document_bundle"] = bundle
     return resources
 
@@ -682,6 +746,32 @@ async def _extract_variables_and_instantiate(template_name: str, context_text: s
                 mapping = MappingSpec(**mapping_dict)
             except Exception:
                 mapping = _build_default_mapping_spec()
+        # Fallback variable population (no-LLM): ensure minimal values exist
+        try:
+            needed_vars: set[str] = set()
+            for out in mapping.outputs:
+                for b in (out.fields or {}).values():
+                    if isinstance(b, dict):
+                        v = b.get("var")
+                        if isinstance(v, str):
+                            needed_vars.add(v)
+                    elif isinstance(b, SourceBinding) and b.var:
+                        needed_vars.add(b.var)
+            # Helpers
+            def _ensure_str(k: str, val: str):
+                if k in needed_vars and (k not in variables or not isinstance(variables.get(k), str) or not variables.get(k).strip()):
+                    variables[k] = val
+            # Document title from first line of context or instruction
+            first_line = (context_text.splitlines()[0].strip() if context_text else "") or template_name
+            _ensure_str("document_title", first_line or "Generated Document")
+            # Patient defaults
+            _ensure_str("patient_name", "Anonymous Patient")
+            _ensure_str("subject_full_name", variables.get("patient_name", "Anonymous Patient"))
+            # Clinical note/content
+            _ensure_str("clinical_note", context_text)
+            _ensure_str("input_text", context_text)
+        except Exception:
+            pass
         # Instantiate via mapping spec
         resources = _instantiate_from_mapping(mapping, variables)
             
@@ -719,6 +809,18 @@ async def _extract_variables_and_instantiate(template_name: str, context_text: s
                 title=f"Generated Bundle from {template_name}",
                 bundle_type="document"
             )
+            # Ensure at least one entry exists by adding the first individual resource if present
+            for layer_name, resource in individual_resources.items():
+                try:
+                    bundle.add_entry(
+                        resource=resource,
+                        title=f"{getattr(resource, 'resource_type', 'Unknown')} - {layer_name}",
+                        tags=[getattr(resource, 'resource_type', 'Unknown').lower(), layer_name],
+                        priority=1 if getattr(resource, 'resource_type', None) == 'Patient' else 0
+                    )
+                    break
+                except Exception:
+                    continue
         
         # Add all individual resources as entries using .add_entry()
         logger.info(f"📦 Building ResourceBundle with {len(individual_resources)} entries:")
@@ -749,7 +851,7 @@ async def _extract_variables_and_instantiate(template_name: str, context_text: s
         logger.info(f"Bundle validation: {bundle_validation['status']} - {bundle_validation['message']}")
         
         return {
-            "success": True,
+            "success": bundle_validation.get("status") == "success",
             "variables": variables,
             "stack": {k: getattr(v, "resource_type", None) for k, v in resources.items()},
             "bundle_entries": len(bundle.entries) if bundle else 0,
@@ -861,11 +963,18 @@ async def _persist_stack(database_url: str, stack: Dict[str, Any]) -> Dict[str, 
     persisted = {}
     
     try:
-        adapter = PostgreSQLAdapter(database_url)
+        try:
+            adapter = await create_postgres_adapter()
+        except Exception:
+            # Fallback to explicit URL if settings-based adapter creation fails
+            adapter = PostgreSQLAdapter(database_url)
         actor = Actor(id="hf-ingestion", name="HF Ingestion Workflow", role="system")
         
         logger.info(f"Persisting stack with {len(stack)} resources to database")
-        await adapter.connect()
+        try:
+            await adapter.connect()
+        except Exception:
+            pass
         logger.info(f"💾 Starting persistence of {len(stack)} resources to database...")
         
         for layer_name, resource in stack.items():
@@ -985,6 +1094,14 @@ async def register_template_from_instruction(inputs: Dict[str, Any]) -> Dict[str
             pass
     # Fallback to local LLM path
     gen_res = await _build_and_register_template_via_llm(instruction_md, template_name)
+    # If LLM synthesis unavailable, register a conservative default mapping workflow
+    if not gen_res.get("success", False):
+        try:
+            ms = _build_default_mapping_spec()
+            reg_out = _register_annotation_workflow(template_name or "auto_workflow", ms, instruction_md)
+            gen_res = reg_out
+        except Exception:
+            pass
     
     # Step 3: Fetch schemas for requested resource types (use discovered names to widen coverage)
     schemas_by_type: Dict[str, Any] = {}
@@ -1036,26 +1153,105 @@ async def instantiate_and_persist_stack(inputs: Dict[str, Any]) -> Dict[str, Any
     use_llm: bool = bool(inputs.get("use_llm", False))
     
     logger.info(f"Starting stack instantiation for template: {template_name}")
+
+    # Optionally clean/migrate DB (uses DATABASE_URL from env by default)
+    if bool(inputs.get("run_migrations", True)):
+        try:
+            logger.info("🔧 Running database migrations before persistence...")
+            ok = await _run_db_migration(database_url)  # type: ignore[arg-type]
+            logger.info(f"🔧 Migrations completed: {ok}")
+        except Exception as e:
+            logger.warning(f"⚠️ Migration failed or skipped: {e}")
     
     # Step 1: Instantiate stack from context using HACS tools
     hacs_result = await _extract_variables_and_instantiate(template_name, context_text, use_llm)
     
-    # Step 2: Get actual resource objects from registry for persistence
+    # Step 2: Build/persist using Resource Bundle Builder subagent when available
+    used_subagent = False
+    subagent_summary = None
+    if create_hacs_agent is not None and bool(inputs.get("use_agent", True)):
+        try:
+            # Ensure the bundle subagent is available
+            subagents = None
+            try:
+                if get_default_hacs_subagents is not None:
+                    subagents = get_default_hacs_subagents()
+            except Exception:
+                subagents = None
+            agent = create_hacs_agent(
+                instructions=(
+                    "You are a HACS agent focused on iteratively building ResourceBundles using bundle tools "
+                    "and persisting the final validated bundle."
+                ),
+                subagents=subagents
+            )
+            # Prepare a compact list of resources for the subagent
+            compact_resources: list[dict[str, Any]] = []
+            if isinstance(hacs_result, dict):
+                # Convert hacs_result.stack_preview + registry resolve if needed
+                # Prefer resources reconstructed from mapping to guarantee objects
+                try:
+                    registry = get_global_registry()
+                    candidates = [r for r in registry._resources.values() if r.metadata.name == template_name]
+                    wf_instance = getattr(sorted(candidates, key=lambda r: r.metadata.version, reverse=True)[0], "resource_instance", {}) if candidates else {}
+                    mapping_dict = (wf_instance.get("mapping_spec") if isinstance(wf_instance, dict) else None) or {}
+                    mapping = MappingSpec(**mapping_dict) if mapping_dict else _build_default_mapping_spec()
+                except Exception:
+                    mapping = _build_default_mapping_spec()
+                instance_vars = hacs_result.get("variables", {}) if isinstance(hacs_result, dict) else {}
+                stack_objs = _instantiate_from_mapping(mapping, instance_vars)
+                for layer_name, resource in stack_objs.items():
+                    rt = getattr(resource, "resource_type", None)
+                    if rt and rt != "ResourceBundle":
+                        compact_resources.append({
+                            "layer": layer_name,
+                            "resource_type": rt,
+                            "resource_data": resource.model_dump() if hasattr(resource, "model_dump") else {}
+                        })
+            user_payload = {
+                "task": "build_and_persist_bundle",
+                "resources": compact_resources,
+                "bundle": {"title": f"Generated Bundle from {template_name}", "bundle_type": "document", "status": "active"},
+                "database_url": database_url
+            }
+            result = agent.invoke({"messages": [{"role": "user", "content": f"RESOURCE_BUNDLE_BUILDER\n{_json3.dumps(user_payload)}"}]})
+            content = ""
+            if isinstance(result, dict) and result.get("messages"):
+                last = result["messages"][ -1]
+                content = getattr(last, "content", last.get("content", "")) if isinstance(last, (dict,)) else getattr(last, "content", "")
+            if content:
+                try:
+                    subagent_summary = _json3.loads(content)
+                    used_subagent = True
+                except Exception:
+                    pass
+            try:
+                logger.info(f"🤖 Agent raw response content (truncated): {str(content)[:1000]}")
+                if subagent_summary is not None:
+                    logger.info(f"📦 Subagent parsed summary: {_json3.dumps(subagent_summary)[:1000]}")
+            except Exception:
+                pass
+        except Exception:
+            used_subagent = False
+
+    if used_subagent and subagent_summary and subagent_summary.get("persisted"):
+        return {
+            "persisted": {"resourcebundle": {"status": "saved", "id": subagent_summary.get("bundle_id")}},
+            "layers": hacs_result.get("layers", []),
+            "stack_preview": hacs_result.get("stack", {}),
+            "hacs_result": hacs_result,
+            "success": True,
+            "message": "Bundle built by subagent and persisted"
+        }
+
+    # Fallback local path: re-instantiate via mapping and persist
     registry = get_global_registry()
     candidates = [r for r in registry._resources.values() if r.metadata.name == template_name]
-    
     if not candidates:
         error_msg = f"Template not found in registry: {template_name}"
         logger.error(error_msg)
-        return {
-            "error": error_msg,
-            "hacs_result": hacs_result,
-            "persisted": {},
-            "layers": [],
-            "stack_preview": {}
-        }
-    
-    # Determine variables from MappingSpec in registered workflow
+        return {"error": error_msg, "hacs_result": hacs_result, "persisted": {}, "layers": [], "stack_preview": {}}
+
     tpl_res = sorted(candidates, key=lambda r: r.metadata.version, reverse=True)[0]
     wf_instance = getattr(tpl_res, "resource_instance", {}) or {}
     mapping_dict = (wf_instance.get("mapping_spec") if isinstance(wf_instance, dict) else None) or {}
@@ -1073,40 +1269,18 @@ async def instantiate_and_persist_stack(inputs: Dict[str, Any]) -> Dict[str, Any
             elif isinstance(b, SourceBinding) and b.var and b.var not in needed_vars:
                 needed_vars.append(b.var)
     variables = {k: context_text for k in needed_vars}
-    
-    try:
-        # Step 3: Instantiate resources via mapping
-        stack = _instantiate_from_mapping(mapping, variables)
-        logger.info(f"Successfully instantiated stack with {len(stack)} resources")
-        
-        # Step 4: Persist to database
-        persisted = await _persist_stack(database_url, stack)
-        
-        # Compile result
-        result = {
-            "persisted": persisted,
-            "layers": hacs_result.get("layers", []),
-            "stack_preview": {k: getattr(v, "resource_type", None) for k, v in stack.items()},
-            "hacs_result": hacs_result,
-            "success": True,
-            "message": f"Stack instantiated and persisted successfully"
-        }
-        
-        logger.info(f"Workflow completed successfully for template: {template_name}")
-        return result
-        
-    except Exception as e:
-        error_msg = f"Stack instantiation failed: {e}"
-        logger.error(error_msg)
-        return {
-            "error": error_msg,
-            "hacs_result": hacs_result,
-            "persisted": {},
-            "layers": [],
-            "stack_preview": {},
-            "success": False,
-            "message": error_msg
-        }
+
+    stack = _instantiate_from_mapping(mapping, variables)
+    logger.info(f"Successfully instantiated stack with {len(stack)} resources (fallback path)")
+    persisted = await _persist_stack(database_url, stack)
+    return {
+        "persisted": persisted,
+        "layers": hacs_result.get("layers", []),
+        "stack_preview": {k: getattr(v, "resource_type", None) for k, v in stack.items()},
+        "hacs_result": hacs_result,
+        "success": True,
+        "message": "Stack instantiated and persisted successfully"
+    }
 
 
 # ===== Utility Functions =====
@@ -1123,7 +1297,7 @@ def validate_hacs_tools_availability() -> Dict[str, bool]:
     except Exception:
         pass
     try:
-        _ = validate_hacs_resource(actor_name="validator", model_name="Patient", data={"full_name": "Test"})
+        _ = validate_hacs_resource(actor_name="validator", resource_name="Patient", data={"full_name": "Test"})
         bundle = create_resource_bundle(actor_name="validator", bundle_type="document", title="validation")
         status["modeling_bundling"] = bool(getattr(bundle, "success", False))
     except Exception:

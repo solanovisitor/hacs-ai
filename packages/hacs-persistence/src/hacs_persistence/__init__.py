@@ -14,7 +14,7 @@ from .connection_factory import (
 # Optional granular adapter – depends on hacs_models package
 try:
     from .granular_adapter import GranularPostgreSQLAdapter  # noqa: F401
-except ModuleNotFoundError:
+except Exception:
     GranularPostgreSQLAdapter = None  # type: ignore
 from .resource_mapper import ResourceMapper
 from .schema import HACSSchemaManager

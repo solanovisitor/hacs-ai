@@ -339,9 +339,9 @@ class TestModelRegistry:
             "EpisodicMemory", "SemanticMemory", "WorkingMemory"
         ]
 
-        for model_name in expected_models:
-            assert model_name in registry
-            assert issubclass(registry[model_name], BaseResource)
+        for resource_name in expected_models:
+            assert resource_name in registry
+            assert issubclass(registry[resource_name], BaseResource)
 
     def test_model_compatibility_validation(self):
         """Test model compatibility validation."""

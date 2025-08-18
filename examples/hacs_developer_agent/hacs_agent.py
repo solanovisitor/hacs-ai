@@ -11,7 +11,7 @@ from langgraph.prebuilt import create_react_agent
 
 from hacs_sub_agent import _create_task_tool, HACSSubAgent
 from hacs_model import get_default_model
-from hacs_utils.integrations.langgraph import get_hacs_agent_tools
+from hacs_utils.integrations.langchain.tools import langchain_tools
 from hacs_state import HACSAgentState
 from hacs_prompts import DEEP_BASE_PROMPT
 from hacs_tools_integration import (
@@ -19,7 +19,7 @@ from hacs_tools_integration import (
     update_system_status,
     run_database_migration,
     check_database_status,
-    create_hacs_record,
+    create_record,
 )
 
 StateSchema = TypeVar("StateSchema", bound=HACSAgentState)
@@ -48,7 +48,13 @@ def create_hacs_agent(
     Returns:
         Configured HACS agent ready for healthcare operations.
     """
-    prompt = instructions + DEEP_BASE_PROMPT
+    # Add a brief self-correction instruction so the agent retries with corrected args
+    SELF_CORRECTION = (
+        "\nIf a tool returns a validation error, extract the expected field names/types from"
+        " the error and immediately retry once using only the required fields with correct types."
+        " Prefer canonical field names shown in the error (e.g., content, status, priority as string).\n"
+    )
+    prompt = instructions + DEEP_BASE_PROMPT + SELF_CORRECTION
     
     # Get HACS agent tools via proper integration
     # DeepAgents-style built-ins: write_todos + ls
@@ -81,9 +87,10 @@ def create_hacs_agent(
         update_system_status,
         run_database_migration,
         check_database_status,
-        create_hacs_record,
+        create_record,
     ]
-    hacs_tools = get_hacs_agent_tools()
+    # Unified tool provisioning from LangChain; usable within LangGraph
+    hacs_tools = langchain_tools()
     
     # Set up model
     if model is None:

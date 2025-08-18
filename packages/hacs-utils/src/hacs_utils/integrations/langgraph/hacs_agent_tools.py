@@ -12,28 +12,16 @@ Features:
 - 10 healthcare domain categories with 32+ specialized tools
 - Centralized tool loading via common utilities
 
-Tool Categories:
-🏥 Resource Management - CRUD operations for healthcare resources
-🧠 Clinical Workflows - Clinical protocols and decision support
-💭 Memory Operations - AI agent memory management
-🔍 Vector Search - Semantic search and embedding operations
-📊 Schema Discovery - Resource schema analysis and discovery
-🛠️ Development Tools - Advanced resource composition and templates
-🏥 FHIR Integration - Healthcare standards compliance
-📈 Healthcare Analytics - Quality measures and population health
-🤖 AI/ML Integration - Healthcare AI model deployment
-⚙️ Admin Operations - Database and system management
+Tool Domains (4):
+modeling, extraction, database, agents
 """
 
 import logging
 from typing import List, Any, Optional
 from functools import wraps
 
-# Import centralized tool loading
-from ..common.tool_loader import get_all_hacs_tools_sync, get_availability
-
-# Import LangGraph-specific custom tools
-from .custom_tools import CUSTOM_LANGGRAPH_TOOLS
+# Import centralized tool loading (single source of truth for both LangChain and LangGraph)
+from ..common.tool_loader import get_availability
 
 # LangGraph framework imports
 try:
@@ -134,28 +122,9 @@ def permission_required(resource: str, access_level: str = "read"):
         return wrapper
     return decorator
 
-# === HACS AGENT TOOLS INTEGRATION ===
-
-def get_hacs_agent_tools() -> List[Any]:
-    """
-    Main function to get all HACS tools for LangGraph agents with permission control.
-
-    Combines centralized HACS tools with LangGraph-specific custom tools.
-
-    Returns:
-        List of HACS tools organized by healthcare domains,
-        with proper permission control and audit trails,
-        plus LangGraph-specific custom tools for agent operations.
-    """
-    # Get centralized HACS tools
-    hacs_tools = get_all_hacs_tools_sync(framework="langgraph")
-
-    # Add LangGraph-specific custom tools
-    all_tools = hacs_tools + CUSTOM_LANGGRAPH_TOOLS
-
-    logger.info(f"✅ Loaded {len(hacs_tools)} HACS tools + {len(CUSTOM_LANGGRAPH_TOOLS)} custom LangGraph tools")
-
-    return all_tools
+# NOTE: Tool provisioning is unified via LangChain. Use
+# hacs_utils.integrations.langchain.tools.langchain_tools()
+# within LangGraph agents and optionally add CUSTOM_LANGGRAPH_TOOLS locally.
 
 # Export the main function and classes
-__all__ = ["get_hacs_agent_tools", "HACSActor", "get_hacs_actor", "permission_required"]
+__all__ = ["HACSActor", "get_hacs_actor", "permission_required"]

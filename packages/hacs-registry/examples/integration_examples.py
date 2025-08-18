@@ -164,7 +164,7 @@ class HACSIntegrationExamples:
 
         # Execute tool with rich context
         result = await self.integration_manager.execute_tool(
-            tool_name="search_hacs_records",
+            tool_name="search_records",
             params={
                 "resource_type": "Patient",
                 "search_criteria": {"department": "cardiology"},

@@ -183,9 +183,9 @@ async def create_healthcare_resource(
 
     try:
         model_registry = get_model_registry()
-        model_class = model_registry[resource_type]
+        resource_class = model_registry[resource_type]
 
-        healthcare_resource = model_class(**resource_data)
+        healthcare_resource = resource_class(**resource_data)
 
         return HACSResult(
             success=True,
@@ -223,8 +223,8 @@ async def get_healthcare_resource_schema(
 
     try:
         model_registry = get_model_registry()
-        model_class = model_registry[resource_type]
-        schema = model_class.model_json_schema()
+        resource_class = model_registry[resource_type]
+        schema = resource_class.model_json_schema()
 
         return HACSResult(
             success=True,
@@ -262,16 +262,16 @@ async def create_resource_subset(
 
     try:
         model_registry = get_model_registry()
-        model_class = model_registry[resource_type]
+        resource_class = model_registry[resource_type]
 
-        if not hasattr(model_class, 'pick'):
+        if not hasattr(resource_class, 'pick'):
             return HACSResult(
                 success=False,
                 message=f"{resource_type} does not support field picking",
                 data={"resource_type": resource_type}
             )
 
-        subset_model = model_class.pick(*fields)
+        subset_model = resource_class.pick(*fields)
 
         return HACSResult(
             success=True,

@@ -17,37 +17,40 @@ from hacs_models import Actor, BaseResource
 try:
     from hacs_models import (
         AgentMessage,
-        ContextSummary,
         Encounter,
-        KnowledgeItem,
-        Memory,
         Observation,
         Patient,
         ScratchpadEntry,
     )
-except ImportError:
-    # Fallback to hacs_core.models if hacs_models is not available
     try:
-        from hacs_models import (
-            AgentMessage,
-            ContextSummary,
-            Encounter,
-            KnowledgeItem,
-            Observation,
-            Patient,
-            ScratchpadEntry,
-        )
-        from hacs_models import (
-            MemoryBlock as Memory,
-        )
-    except ImportError:
-        # As a last resort, import only the minimal models required for mapping
-        from hacs_models import AgentMessage, Encounter, Observation, Patient
         from hacs_models import MemoryBlock as Memory
-        try:
-            from hacs_models import ScratchpadEntry, ContextSummary, KnowledgeItem  # type: ignore
-        except Exception:
-            ScratchpadEntry = ContextSummary = KnowledgeItem = None  # type: ignore
+    except Exception:
+        from hacs_models import Memory  # type: ignore
+    # Optional
+    try:
+        from hacs_models import ContextSummary  # type: ignore
+    except Exception:
+        ContextSummary = None  # type: ignore
+    try:
+        from hacs_models import KnowledgeItem  # type: ignore
+    except Exception:
+        KnowledgeItem = None  # type: ignore
+except ImportError:
+    # Fallback minimal imports
+    from hacs_models import AgentMessage, Encounter, Observation, Patient
+    from hacs_models import MemoryBlock as Memory
+    try:
+        from hacs_models import ScratchpadEntry  # type: ignore
+    except Exception:
+        ScratchpadEntry = None  # type: ignore
+    try:
+        from hacs_models import ContextSummary  # type: ignore
+    except Exception:
+        ContextSummary = None  # type: ignore
+    try:
+        from hacs_models import KnowledgeItem  # type: ignore
+    except Exception:
+        KnowledgeItem = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 

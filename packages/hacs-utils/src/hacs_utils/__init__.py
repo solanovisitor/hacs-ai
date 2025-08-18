@@ -91,11 +91,10 @@ _has_crewai = None  # Lazy check
 
 # Structured Output (always available)
 try:
-    from .structured import generate_structured_output, generate_structured_list
+    from .structured import extract
     _has_structured = True
 except ImportError:
-    generate_structured_output = None
-    generate_structured_list = None
+    extract = None
     _has_structured = False
 
 
@@ -118,6 +117,68 @@ from .vector_ops import (
     get_vector_collection_stats as utils_get_vector_collection_stats,
     optimize_vector_collection as utils_optimize_vector_collection,
 )
+from .resource_utils import (
+    calculate_patient_age,
+    add_patient_identifier, 
+    get_patient_identifier_by_type,
+    add_patient_care_provider,
+    deactivate_patient,
+    get_observation_value_summary,
+    get_document_full_text,
+    add_condition_stage,
+    # New resource utilities
+    validate_document_metadata,
+    resolve_document_location,
+    register_external_document,
+    link_document_to_record,
+    verify_practitioner_credential,
+    link_practitioner_to_organization,
+    update_practitioner_affiliation,
+    register_organization,
+    link_organization_affiliation,
+    manage_service_locations,
+    validate_service_request,
+    route_service_request,
+    summarize_diagnostic_report,
+    link_report_observations,
+    attach_report_media,
+    validate_report_completeness,
+    validate_prescription,
+    route_prescription,
+    check_allergy_contraindications,
+    check_drug_interactions,
+    create_event,
+    update_event_status_util,
+    add_event_performer_util,
+    schedule_event_util,
+    summarize_event_util,
+)
+
+# Visualization utilities
+try:
+    from .visualization import (
+        visualize_resource,
+        visualize_annotations,
+        resource_to_markdown,
+        annotations_to_markdown,
+        resource_docs_to_markdown,
+        resource_to_html_widget,
+        resource_to_json_str,
+        resource_to_yaml_str,
+        resource_to_schema_json_str,
+        resource_to_schema_markdown,
+    )
+except Exception:
+    visualize_resource = None  # type: ignore
+    visualize_annotations = None  # type: ignore
+    resource_to_markdown = None  # type: ignore
+    annotations_to_markdown = None  # type: ignore
+    resource_docs_to_markdown = None  # type: ignore
+    resource_to_html_widget = None  # type: ignore
+    resource_to_json_str = None  # type: ignore
+    resource_to_yaml_str = None  # type: ignore
+    resource_to_schema_json_str = None  # type: ignore
+    resource_to_schema_markdown = None  # type: ignore
 
 
 def list_available_integrations() -> list[str]:
@@ -268,8 +329,18 @@ __all__ = [
     "LangGraphWorkflow",
     "create_langgraph_workflow",
     # Structured Output
-    "generate_structured_output",
-    "generate_structured_list",
+    "extract",
+    # Visualization
+    "visualize_resource",
+    "visualize_annotations",
+    "resource_to_markdown",
+    "annotations_to_markdown",
+    "resource_docs_to_markdown",
+    "resource_to_html_widget",
+    "resource_to_json_str",
+    "resource_to_yaml_str",
+    "resource_to_schema_json_str",
+    "resource_to_schema_markdown",
     # Core
     "AbstractAdapter",
     "AdapterConfig",
@@ -294,6 +365,41 @@ __all__ = [
     "utils_vector_hybrid_search",
     "utils_get_vector_collection_stats",
     "utils_optimize_vector_collection",
+    # Resource-specific utilities
+    "calculate_patient_age",
+    "add_patient_identifier", 
+    "get_patient_identifier_by_type",
+    "add_patient_care_provider",
+    "deactivate_patient",
+    "get_observation_value_summary",
+    "get_document_full_text",
+    "add_condition_stage",
+    # New resource utilities
+    "validate_document_metadata",
+    "resolve_document_location",
+    "register_external_document",
+    "link_document_to_record",
+    "verify_practitioner_credential",
+    "link_practitioner_to_organization",
+    "update_practitioner_affiliation",
+    "register_organization",
+    "link_organization_affiliation",
+    "manage_service_locations",
+    "validate_service_request",
+    "route_service_request",
+    "summarize_diagnostic_report",
+    "link_report_observations",
+    "attach_report_media",
+    "validate_report_completeness",
+    "validate_prescription",
+    "route_prescription",
+    "check_allergy_contraindications",
+    "check_drug_interactions",
+    "create_event",
+    "update_event_status_util",
+    "add_event_performer_util",
+    "schedule_event_util",
+    "summarize_event_util",
     # Utilities
     "list_available_integrations",
     "get_integration_info",

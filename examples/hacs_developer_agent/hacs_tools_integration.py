@@ -188,31 +188,49 @@ Database is ready for HACS operations.
         )
 
 
-@tool(description="Create a new HACS healthcare record (Patient, Observation, etc.).")
-def create_hacs_record(
+@tool(description="Create and persist a HACS healthcare record (Patient, Observation, etc.) using modeling + database tools.")
+def create_record(
     resource_type: str,
     data: Dict[str, Any],
     actor_name: str = "HACS Admin Agent",
     state: Annotated[HACSAgentState, InjectedState] = None,
     tool_call_id: Annotated[str, InjectedToolCallId] = None,
 ) -> Command:
-    """Create a new HACS healthcare record."""
-    
+    """Create and persist a new HACS healthcare record."""
     try:
-        # Simulate record creation
-        record_id = f"{resource_type.lower()}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        
-        result = f"""
-✅ HACS {resource_type} Record Created Successfully
+        import asyncio
+        from hacs_tools.domains.modeling import pin_resource, validate_resource
+        from hacs_tools.domains.database import save_record
 
-📋 Record ID: {record_id}
-👤 Created by: {actor_name}
-🕐 Created at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-📊 Data fields: {len(data)} fields provided
+        # Ensure resource_type is present in payload
+        payload = {"resource_type": resource_type, **(data or {})}
 
-The {resource_type} record has been stored in the HACS system.
-        """.strip()
-        
+        # Instantiate and validate
+        inst = pin_resource(resource_type, payload)
+        if not inst.success:
+            raise ValueError(inst.message)
+        resource_dict = inst.data.get("resource", payload)
+
+        valid = validate_resource(resource_dict)
+        if not valid.success or not valid.data.get("valid", False):
+            issues = ", ".join(valid.data.get("issues", [])) if valid.data else "unknown"
+            raise ValueError(f"Validation failed: {issues}")
+
+        # Persist synchronously via asyncio
+        save_res = asyncio.run(save_record(resource_dict))
+        if not save_res.success:
+            raise ValueError(save_res.error or save_res.message)
+
+        record_id = save_res.data.get("id") if save_res.data else None
+
+        result = (
+            f"✅ HACS {resource_type} record saved\n\n"
+            f"📋 Record ID: {record_id}\n"
+            f"👤 Created by: {actor_name}\n"
+            f"🕐 Created at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"📊 Data fields: {len(data or {})} fields provided"
+        )
+
         # Update audit trail
         audit_entry = {
             "action": "create_record",
@@ -221,28 +239,17 @@ The {resource_type} record has been stored in the HACS system.
             "actor": actor_name,
             "timestamp": datetime.now().isoformat()
         }
-        
         audit_trail = state.get("audit_trail", []) + [audit_entry]
-        
+
         return Command(
             update={
                 "audit_trail": audit_trail,
-                "messages": [
-                    ToolMessage(result, tool_call_id=tool_call_id)
-                ],
+                "messages": [ToolMessage(result, tool_call_id=tool_call_id)],
             }
         )
-        
     except Exception as e:
         error_result = f"❌ Failed to create {resource_type} record: {str(e)}"
-        
-        return Command(
-            update={
-                "messages": [
-                    ToolMessage(error_result, tool_call_id=tool_call_id)
-                ],
-            }
-        )
+        return Command(update={"messages": [ToolMessage(error_result, tool_call_id=tool_call_id)]})
 
 
 def get_hacs_admin_tools():
@@ -252,5 +259,5 @@ def get_hacs_admin_tools():
         update_system_status,
         run_database_migration,
         check_database_status,
-        create_hacs_record
+        create_record
     ]

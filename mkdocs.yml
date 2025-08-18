@@ -1,0 +1,42 @@
+site_name: HACS
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand  # Re-enable to show resources under categories
+plugins:
+  - search
+  - mermaid2
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: false
+            docstring_style: google
+            inherited_members: false
+            show_if_no_docstring: false
+            filters:
+              - '!^_'
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+      toc_depth: 3  # Show h1, h2, and h3 headings (categories and resources)
+  - pymdownx.superfences
+  - attr_list
+  - pymdownx.tabbed:
+      alternate_style: true
+nav:
+  - Overview: index.md
+  - Quick Start: quick-start.md
+  - API Reference: api-reference.md
+  - HACS Tools: hacs-tools.md
+  - Resources: resources.md
+  - Tutorials:
+      - Complete Context Engineering: tutorials/complete_context_engineering.md
+      - Medication Extraction: tutorials/medication_extraction.md
+  - Gallery: gallery.md
+  - Testing: testing.md
+

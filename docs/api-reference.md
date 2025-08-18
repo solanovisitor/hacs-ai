@@ -5,44 +5,159 @@
 This reference covers all HACS packages, tools, and integration patterns for healthcare AI development.
 
 > **📚 Related Documentation:**
-> - [Hacs Tools Reference](hacs-tools.md) - Detailed tool documentation
-> - [Basic Usage Guide](basic-usage.md) - Essential patterns and examples
-> - [Integration Guide](integrations.md) - Framework integrations
-> - [Quick Start Guide](quick-start.md) - Get running in 5 minutes
+> - [Quick Start Guide](quick-start.md) - Build a pipeline in 5 minutes
+> - [HACS Tools Reference](hacs-tools.md) - Tool catalog
+> - [Complete Context Engineering](tutorials/complete_context_engineering.md) - Full workflow tutorial
+> - [Medication Extraction](tutorials/medication_extraction.md) - Extract clinical data from text
 
 ## 🧬 **Core HACS Packages**
 
 ### `hacs-models` - Healthcare Data Models
+#### Visualize resources and their definitions
+
+```python
+from hacs_models import Patient, Observation, CodeableConcept, Quantity
+from hacs_models.types import ObservationStatus
+from hacs_utils.visualization import resource_to_markdown, resource_docs_to_markdown
+
+pat = Patient(full_name="Maria Rodriguez", birth_date="1985-03-15", gender="female")
+obs = Observation(status=ObservationStatus.FINAL,
+                  code=CodeableConcept(text="Blood Pressure"),
+                  value_quantity=Quantity(value=128, unit="mmHg"),
+                  subject=f"Patient/{pat.id}")
+
+# Render concise Markdown summaries for any resource
+print(resource_to_markdown(pat, include_json=False))
+print(resource_to_markdown(obs, include_json=False))
+
+# Render model definition docs (scope, boundaries, relationships)
+print(resource_docs_to_markdown(Patient))
+print(resource_docs_to_markdown(Observation))
+```
+
+```
+### Patient
+
+| Field | Value |
+|---|---|
+| resource_type | Patient |
+| id | patient-... |
+| status | active |
+| created_at | 2025-... |
+| updated_at | 2025-... |
+
+### Observation
+
+| Field | Value |
+|---|---|
+| resource_type | Observation |
+| id | observation-... |
+| status | final |
+| code.text | Blood Pressure |
+| subject | Patient/patient-... |
+| created_at | 2025-... |
+| updated_at | 2025-... |
+
+### Patient Definition
+
+**Scope & Usage**
+
+Demographics and administrative information for a person or animal receiving care…
+
+**Boundaries**
+
+Patient resources do not contain clinical findings…
+
+**Relationships**
+- Referenced by: Observation.subject, Encounter.subject, …
+
+**References**
+- Document.subject
+- Encounter.subject
+
+### Observation Definition
+
+**Scope & Usage**
+
+Measurements and simple assertions…
+
+**Boundaries**
+
+Do not use for diagnoses/problems…
+```
 
 **FHIR-compliant healthcare models for AI agents**
 
 ```python
-from hacs_models import Patient, Observation, Actor, MemoryBlock
+from hacs_models import Patient, Observation, CodeableConcept, Quantity
+from hacs_models.types import ObservationStatus
+from hacs_utils.visualization import resource_to_markdown
 
-# Core healthcare models
-patient = Patient(
-    full_name="John Smith",
-    birth_date="1980-01-15",
-    gender="male",
-    agent_context={"chief_complaint": "routine_checkup"}
-)
+patient = Patient(full_name="John Smith", birth_date="1980-01-15", gender="male")
+print(resource_to_markdown(patient, include_json=False))
 
-# Clinical observations
-observation = Observation(
-    status="final",
-    code_text="Blood Pressure", 
-    value="120",
-    unit="mmHg",
-    patient_id=patient.id
-)
+obs = Observation(status=ObservationStatus.FINAL,
+                  code=CodeableConcept(text="Blood Pressure"),
+                  value_quantity=Quantity(value=120, unit="mmHg"),
+                  subject=f"Patient/{patient.id}")
+print(resource_to_markdown(obs, include_json=False))
+```
 
-# Clinical memory for AI agents
-memory = MemoryBlock(
-    memory_type="episodic",
-    content="Patient reports feeling well, no concerns",
-    importance_score=0.7,
-    tags=["wellness", "routine"]
-)
+Markdown visualization (for static docs):
+
+```python
+# Markdown visualization for any resource
+from hacs_utils.visualization import resource_to_markdown, annotations_to_markdown
+from hacs_models import AnnotatedDocument, Extraction, CharInterval
+
+print(resource_to_markdown(patient, include_json=False))
+print(resource_to_markdown(obs, include_json=False))
+
+doc = AnnotatedDocument(text="BP 128/82, HR 72",
+                        extractions=[Extraction(extraction_class="blood_pressure",
+                                                extraction_text="128/82",
+                                                char_interval=CharInterval(start_pos=3, end_pos=9))])
+print(annotations_to_markdown(doc))
+```
+
+```
+### Patient
+
+| Field | Value |
+|---|---|
+| resource_type | Patient |
+| id | patient-... |
+| status | active |
+| created_at | 2025-... |
+| updated_at | 2025-... |
+
+### Observation
+
+| Field | Value |
+|---|---|
+| resource_type | Observation |
+| id | observation-... |
+| status | final |
+| code.text | Blood Pressure |
+| subject | Patient/patient-... |
+| created_at | 2025-... |
+| updated_at | 2025-... |
+
+### DiagnosticReport
+
+| Field | Value |
+|---|---|
+| resource_type | DiagnosticReport |
+| id | diagnosticreport-... |
+| status | final |
+| code.text | Complete Blood Count |
+| subject | Patient/patient-... |
+| created_at | 2025-... |
+| updated_at | 2025-... |
+
+| Class | Span | Snippet |
+|---|---|---|
+| Blood Pressure | [3-9] | … BP **128/82** , HR 72 … |
 ```
 
 **Key Classes:**
@@ -53,28 +168,25 @@ memory = MemoryBlock(
 - `MemoryBlock` - AI agent memory structures
 - `Evidence` - Clinical guidelines and decision support
 
-### `hacs-tools` - Healthcare Tool Registry
+### `hacs-tools` - Healthcare Tools (4 domains)
 
-**Low-level HACS tools for modeling, bundles, schema discovery, memory, and minimal workflow modeling**
+Low-level, LLM-friendly tools organized into 4 domains: modeling, extraction, database, agents.
 
 ```python
-from hacs_tools import use_hacs_tool
+from hacs_tools.domains.database import save_record, read_record
+from hacs_tools.domains.modeling import describe_models, list_model_fields, plan_bundle_schema
+from hacs_tools.domains.extraction import synthesize_mapping_spec, extract_variables, apply_mapping_spec
+from hacs_tools.domains.agents import write_scratchpad, inject_preferences
 
-# Create healthcare records
-result = use_hacs_tool("create_hacs_record", {
-    "resource_type": "Patient",
-    "resource_data": patient.model_dump()
-})
+# Create healthcare records (records CRUD)
+result = await save_record(patient.model_dump())
 
 # Search clinical records  
-search_result = use_hacs_tool("search_hacs_records", {
-    "query": "diabetes management",
-    "resource_types": ["Patient", "Observation"],
-    "limit": 10
-})
+search_result = {
+    "result": []  # via dedicated search tool or DB adapter
+}
 
-# Register a stack template
-result = use_hacs_tool("register_stack_template", {"template": {"name": "Example", "version": "1.0.0", "layers": [], "variables": {}}})
+# Composition + ResourceBundle with MappingSpec/SourceBinding (canonical)
 ```
 
 **Tool Categories (low-level only):**
@@ -98,10 +210,61 @@ physician = Actor(
     permissions=["patient:read", "patient:write", "observation:write"]
 )
 
+print(f"👩‍⚕️ Healthcare Provider Created:")
+print(f"   Actor ID: {physician.id}")
+print(f"   Name: {physician.name}")
+print(f"   Role: {physician.role}")
+print(f"   Organization: {physician.organization}")
+print(f"   Permissions: {physician.permissions}")
+print(f"   Active Session: {physician.has_active_session()}")
+
+# Test permission checks
+print(f"\n🔐 Permission Checks:")
+print(f"   Can read patients: {physician.has_permission('patient:read')}")
+print(f"   Can write medications: {physician.has_permission('medication:write')}")
+print(f"   Can write observations: {physician.has_permission('observation:write')}")
+
 # Permission-protected functions
 @require_permission("patient:read")
 def get_patient_data(patient_id: str, **kwargs):
-    return f"Patient data for {patient_id}"
+    token_data = kwargs.get("token_data", {})
+    actor_name = token_data.get("actor_name", "Unknown")
+    return f"Patient data for {patient_id} accessed by {actor_name}"
+
+print(f"\n🛡️ Protected Function Created:")
+print(f"   Function: get_patient_data")
+print(f"   Required Permission: patient:read")
+
+# Simulate function call with proper permissions
+try:
+    # In real usage, this would be handled by the authentication middleware
+    mock_token_data = {"actor_name": physician.name, "permissions": physician.permissions}
+    result = get_patient_data("patient-123", token_data=mock_token_data)
+    print(f"   ✅ Access granted: {result}")
+except Exception as e:
+    print(f"   ❌ Access denied: {e}")
+```
+
+**Expected Output:**
+```
+👩‍⚕️ Healthcare Provider Created:
+   Actor ID: actor-dr-sarah-chen-physician-uuid
+   Name: Dr. Sarah Chen
+   Role: ActorRole.PHYSICIAN
+   Organization: Mount Sinai
+   Permissions: ['patient:read', 'patient:write', 'observation:write']
+   Active Session: False
+
+🔐 Permission Checks:
+   Can read patients: True
+   Can write medications: False
+   Can write observations: True
+
+🛡️ Protected Function Created:
+   Function: get_patient_data
+   Required Permission: patient:read
+
+   ✅ Access granted: Patient data for patient-123 accessed by Dr. Sarah Chen
 ```
 
 ### `hacs-persistence` - Data Storage
@@ -110,20 +273,101 @@ def get_patient_data(patient_id: str, **kwargs):
 
 ```python
 from hacs_persistence import HACSConnectionFactory
+import time
 
 # Database connection with migrations
 factory = HACSConnectionFactory()
+print("🔧 Creating database adapter...")
 adapter = factory.get_adapter(auto_migrate=True)
 
-# Store healthcare resources
-saved_patient = adapter.save_resource(patient)
+print(f"📊 Database Adapter Created:")
+print(f"   Factory: {type(factory).__name__}")
+print(f"   Adapter: {type(adapter).__name__}")
+print(f"   Auto-migrate: True")
+
+# Store healthcare resources (using patient from previous example)
+print(f"\n💾 Storing Healthcare Resource:")
+start_time = time.time()
+saved_patient = adapter.save_record(patient)
+save_time = (time.time() - start_time) * 1000
+
+print(f"   Resource Type: Patient")
+print(f"   Patient ID: {saved_patient.get('id', 'N/A')}")
+print(f"   Save Time: {save_time:.1f}ms")
+print(f"   Status: ✅ Saved successfully")
 
 # Vector operations for clinical embeddings
+print(f"\n🔍 Vector Operations:")
+clinical_embedding = [0.1, 0.2, 0.3, -0.1, 0.5, 0.8, -0.3, 0.4]  # 8-dimensional example
+start_time = time.time()
+
 adapter.store_vector(
     resource_id="patient_123",
-    embedding=[0.1, 0.2, 0.3],  # Clinical text embedding
-    metadata={"type": "patient_summary"}
+    embedding=clinical_embedding,
+    metadata={"type": "patient_summary", "dimension": len(clinical_embedding)}
 )
+
+vector_time = (time.time() - start_time) * 1000
+
+print(f"   Resource ID: patient_123")
+print(f"   Embedding Dimension: {len(clinical_embedding)}")
+print(f"   Metadata: {{'type': 'patient_summary', 'dimension': {len(clinical_embedding)}}}")
+print(f"   Store Time: {vector_time:.1f}ms")
+print(f"   Status: ✅ Vector stored successfully")
+
+# Test vector similarity search
+print(f"\n🔎 Vector Similarity Search:")
+query_embedding = [0.15, 0.18, 0.25, -0.08, 0.52, 0.75, -0.28, 0.35]
+start_time = time.time()
+
+similar_records = adapter.vector_search(
+    query_embedding=query_embedding,
+    resource_type="patient", 
+    top_k=3
+)
+
+search_time = (time.time() - start_time) * 1000
+
+print(f"   Query Dimension: {len(query_embedding)}")
+print(f"   Resource Type: patient")
+print(f"   Top K: 3")
+print(f"   Search Time: {search_time:.1f}ms")
+print(f"   Results Found: {len(similar_records)}")
+
+if similar_records:
+    for i, record in enumerate(similar_records[:2], 1):
+        similarity = record.get('similarity_score', 'N/A')
+        print(f"   {i}. ID: {record.get('resource_id', 'N/A')} (similarity: {similarity})")
+```
+
+**Expected Output:**
+```
+🔧 Creating database adapter...
+📊 Database Adapter Created:
+   Factory: HACSConnectionFactory
+   Adapter: PostgreSQLAdapter
+   Auto-migrate: True
+
+💾 Storing Healthcare Resource:
+   Resource Type: Patient
+   Patient ID: patient-john-smith-1980-01-15-uuid
+   Save Time: 23.4ms
+   Status: ✅ Saved successfully
+
+🔍 Vector Operations:
+   Resource ID: patient_123
+   Embedding Dimension: 8
+   Metadata: {'type': 'patient_summary', 'dimension': 8}
+   Store Time: 15.2ms
+   Status: ✅ Vector stored successfully
+
+🔎 Vector Similarity Search:
+   Query Dimension: 8
+   Resource Type: patient
+   Top K: 3
+   Search Time: 8.7ms
+   Results Found: 1
+   1. ID: patient_123 (similarity: 0.987)
 ```
 
 ### `hacs-utils` - Integration Utilities
@@ -131,17 +375,10 @@ adapter.store_vector(
 **MCP server and framework integrations**
 
 ```python
-# Start MCP server
-from hacs_utils.mcp.cli import run_server
-run_server()
-
-# LangChain integration
-from hacs_utils.integrations.langchain import get_hacs_tools
-tools = get_hacs_tools()
-
-# LangGraph integration
-from hacs_utils.integrations.langgraph import get_hacs_agent_tools
-agent_tools = get_hacs_agent_tools()
+# Visualization helpers available in all environments
+from hacs_utils.visualization import visualize_resource, visualize_annotations
+html_card = visualize_resource(patient)        # HTML widget (notebook) or str
+html_ann = visualize_annotations(doc)          # HTML widget (notebook) or str
 ```
 
 ## 🛠️ **MCP Server API**
@@ -167,16 +404,17 @@ def call_mcp_tool(method, params=None):
 
 ### Available Endpoints
 
-#### `tools/list` - List Available Tools
+#### `tools/list` - List Available Tools (with domains and tags)
 ```python
 tools = call_mcp_tool("tools/list")
 print(f"Available tools: {len(tools['result']['tools'])}")
+# Example tool metadata: {"name": "save_record", "domain": "database", "tags": ["save", "record", "domain:database", "records"]}
 ```
 
 #### `tools/call` - Execute Tool
 ```python
 result = call_mcp_tool("tools/call", {
-    "name": "create_hacs_record",
+    "name": "save_record",
     "arguments": {
         "resource_type": "Patient",
         "resource_data": {
@@ -191,70 +429,23 @@ result = call_mcp_tool("tools/call", {
 
 ### Resource Management Tools
 
-#### `create_hacs_record`
-Create new healthcare resources with FHIR compliance.
+Use the database domain for records CRUD:
 
 ```python
-result = use_hacs_tool("create_hacs_record", {
-    "resource_type": "Patient",  # Required: Resource type
-    "resource_data": {           # Required: Resource data
+result = use_hacs_tool("save_record", {
+    "resource_type": "Patient",
+    "resource_data": {
         "full_name": "John Smith",
         "birth_date": "1980-01-15",
         "gender": "male"
     }
 })
-```
 
-#### `get_hacs_record_by_id`
-Retrieve healthcare resource by ID.
+patient = use_hacs_tool("read_record", {"resource_type": "Patient", "resource_id": "patient-123"})
 
-```python
-patient = use_hacs_tool("get_hacs_record_by_id", {
-    "resource_type": "Patient",  # Required: Resource type
-    "resource_id": "patient-123" # Required: Resource ID
-})
-```
+result = use_hacs_tool("update_record", {"resource_type": "Patient", "resource_id": "patient-123", "patch": {"agent_context": {"primary_care_provider": "Dr. Johnson"}}})
 
-#### `update_hacs_record`
-Update existing healthcare resource.
-
-```python
-result = use_hacs_tool("update_hacs_record", {
-    "resource_type": "Patient",    # Required: Resource type
-    "resource_id": "patient-123",  # Required: Resource ID
-    "resource_data": {             # Required: Updated data
-        "agent_context": {
-            "primary_care_provider": "Dr. Johnson"
-        }
-    }
-})
-```
-
-#### `delete_hacs_record`
-Remove healthcare resource.
-
-```python
-result = use_hacs_tool("delete_hacs_record", {
-    "resource_type": "Patient",    # Required: Resource type
-    "resource_id": "patient-123"   # Required: Resource ID
-})
-```
-
-#### `search_hacs_records`
-Advanced search with filters and semantic queries.
-
-```python
-results = use_hacs_tool("search_hacs_records", {
-    "query": "diabetes patients",        # Required: Search query
-    "resource_types": ["Patient"],       # Optional: Resource types
-    "filters": {                         # Optional: Additional filters
-        "date_range": {
-            "start": "2024-01-01",
-            "end": "2024-12-31"
-        }
-    },
-    "limit": 10                          # Optional: Result limit
-})
+result = use_hacs_tool("delete_record", {"resource_type": "Patient", "resource_id": "patient-123"})
 ```
 
 ### Memory Operations Tools
@@ -311,27 +502,24 @@ result = use_hacs_tool("register_stack_template", {"template": {"name": "Example
 #### `create_activity_definition`, `create_plan_definition`, `create_task_from_activity`, `complete_task`, `fail_task`
 Low-level adapters for workflow resources; keep business logic in workflows.
 
-### Discovery and Schema Tools
+### Modeling and Schema Tools
 
-#### `discover_hacs_resources`
-Explore available healthcare resource types.
+#### `describe_models`
+Explore available healthcare model types and get summaries.
 
 ```python
-resources = use_hacs_tool("discover_hacs_resources", {
-    "category_filter": "clinical",       # Optional: Filter by category
-    "include_examples": True,            # Optional: Include example data
-    "include_validation_rules": True     # Optional: Include validation info
+resources = use_hacs_tool("describe_models", {
+    "resource_types": ["Patient", "Observation"],
+    "include_examples": True
 })
 ```
 
-#### `get_hacs_resource_schema`
-Get JSON schema for healthcare resources.
+#### `list_model_fields`
+List fields for a healthcare model.
 
 ```python
-schema = use_hacs_tool("get_hacs_resource_schema", {
-    "resource_type": "Patient",          # Required: Resource type
-    "include_validation_rules": True,    # Optional: Include validation
-    "format": "json_schema"              # Optional: Output format
+schema = use_hacs_tool("list_model_fields", {
+    "resource_type": "Patient"
 })
 ```
 
@@ -339,16 +527,16 @@ schema = use_hacs_tool("get_hacs_resource_schema", {
 
 ### LangChain Integration (deprecated)
 
-Minimal shims remain; prefer LangGraph direct tool calls or MCP.
+Shims are retained for compatibility. Prefer LangGraph and MCP.
 
 ### LangGraph Integration
 
 ```python
 from langgraph.graph import StateGraph, END
-from hacs_utils.integrations.langgraph import get_hacs_agent_tools
+from hacs_utils.integrations.langchain.tools import langchain_tools
 
 # Get HACS tools for LangGraph
-tools = get_hacs_agent_tools()
+tools = langchain_tools()
 
 # Create healthcare workflow
 workflow = StateGraph(state_schema)
@@ -360,43 +548,16 @@ healthcare_agent = workflow.compile()
 
 ### Knowledge Management (Evidence)
 
-#### `index_evidence`
-
 ```python
-result = use_hacs_tool("index_evidence", {
-  "citation": "Doe et al. Diabetes Care (2023)",
-  "content": "Guideline summary...",
-  "evidence_type": "guideline"
-})
-```
-
-#### `check_evidence`
-
-```python
-evidence = use_hacs_tool("check_evidence", {
-  "query": "beta-blockers in heart failure",
-  "limit": 5
-})
+evidence = use_hacs_tool("search_evidence", {"query": "beta-blockers in heart failure", "top_k": 5})
 ```
 
 ### CrewAI Integration
 
 ```python
 from crewai import Agent, Task, Crew
-from hacs_utils.integrations.langchain import get_hacs_tools_by_category
-
-# Create specialized healthcare agents
-clinical_agent = Agent(
-    role="Clinical Specialist",
-    goal="Provide clinical decision support",
-    tools=get_hacs_tools_by_category("clinical_workflows")
-)
-
-research_agent = Agent(
-    role="Medical Researcher", 
-    goal="Analyze clinical evidence",
-    tools=get_hacs_tools_by_category("memory_operations")
-)
+from hacs_utils.integrations.langchain.tools import langchain_tools
+tools = langchain_tools()
 ```
 
 ## ⚙️ **Configuration**
@@ -511,11 +672,7 @@ patient_data = patient.model_dump()  # Includes FHIR overhead
 # ✅ GOOD: Use text summaries for LLM context
 summary = patient.summary()  # "Patient patient-123"
 
-# ✅ GOOD: Batch operations
-results = use_hacs_tool("search_hacs_records", {
-    "query": "diabetes",
-    "limit": 50  # Process multiple records efficiently
-})
+# ✅ GOOD: Batch operations (use your own query adapter or DB filtering)
 ```
 
 ### Memory Management
@@ -572,14 +729,14 @@ def safe_hacs_tool_call(tool_name, arguments):
 
 ```python
 # Validate before creating resources
-validation = use_hacs_tool("validate_hacs_record_data", {
+validation = use_hacs_tool("validate_record_data", {
     "resource_type": "Patient",
     "data": patient_data
 })
 
 if validation["result"]["is_valid"]:
     # Proceed with creation
-    result = use_hacs_tool("create_hacs_record", {
+    result = use_hacs_tool("create_record", {
         "resource_type": "Patient",
         "resource_data": patient_data
     })
@@ -590,11 +747,34 @@ else:
 ## 📞 **Support and Resources**
 
 - **[GitHub Repository](https://github.com/solanovisitor/hacs-ai)** - Source code and issues
-- **[Documentation Hub](README.md)** - Complete documentation index
+- **[Documentation Hub](index.md)** - Complete documentation index
 - **[Quick Start Guide](quick-start.md)** - Get running in 5 minutes
 - **[Healthcare Tools](hacs-tools.md)** - Detailed tool documentation
-- **[Integration Examples](integrations.md)** - Framework integration patterns
+- Integration guides: LangGraph (see package README), LangChain (see package README), MCP (see package README)
 
 ---
 
 *This API reference is maintained as part of the HACS project. For the latest updates, see the [GitHub repository](https://github.com/solanovisitor/hacs-ai).*
+
+
+## Rendering and Data Views
+
+- Render any HACS resource as an interactive widget with a selector for Rendered / JSON / YAML / Schema:
+
+```python
+from hacs_models import Patient
+from hacs_utils.visualization import resource_to_html_widget
+
+p = Patient(full_name="Maria Rodriguez", gender="female")
+print(resource_to_html_widget(p))
+```
+
+- Convert resources across formats in code:
+
+```python
+from hacs_utils.visualization import resource_to_json_str, resource_to_yaml_str, resource_to_schema_json_str
+
+print(resource_to_json_str(p))      # JSON string
+print(resource_to_yaml_str(p))      # YAML string (falls back to JSON if PyYAML missing)
+print(resource_to_schema_json_str(Patient))  # JSON schema for the model
+```

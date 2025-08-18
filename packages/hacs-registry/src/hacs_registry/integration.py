@@ -319,9 +319,14 @@ class MCPAdapter(BaseToolAdapter):
         import inspect
         sig = inspect.signature(tool_def.function)
         properties = {}
+        # Reserved parameters are injected by HACS at runtime and must be hidden from schemas
+        reserved_params = {
+            "actor_name", "db_adapter", "vector_store", "session_id",
+            "config", "state", "store"
+        }
 
         for param_name, param in sig.parameters.items():
-            if param_name not in ['self', 'args', 'kwargs']:
+            if param_name not in ['self', 'args', 'kwargs'] and param_name not in reserved_params:
                 param_type = "string"  # Default type
                 if param.annotation != inspect.Parameter.empty:
                     if param.annotation == int:
@@ -351,9 +356,13 @@ class MCPAdapter(BaseToolAdapter):
         import inspect
         sig = inspect.signature(tool_def.function)
         required = []
+        reserved_params = {
+            "actor_name", "db_adapter", "vector_store", "session_id",
+            "config", "state", "store"
+        }
 
         for param_name, param in sig.parameters.items():
-            if (param_name not in ['self', 'args', 'kwargs'] and
+            if (param_name not in ['self', 'args', 'kwargs'] and param_name not in reserved_params and
                 param.default == inspect.Parameter.empty):
                 required.append(param_name)
 

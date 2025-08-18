@@ -7,7 +7,7 @@ using psycopg (v3) for high-performance, non-blocking database operations.
 
 import json
 import logging
-from typing import Any
+from typing import Any, Optional
 
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
@@ -45,7 +45,7 @@ class PostgreSQLAdapter(BaseAdapter, PersistenceProvider):
     ):
         super().__init__(name="PostgreSQL (Async)", version="2.0.0")
 
-        self.database_url = database_url
+        self.database_url = self._normalize_db_url(database_url)
         self.schema_name = schema_name
         self.pool_size = pool_size
         self.pool: AsyncConnectionPool = None
@@ -360,22 +360,43 @@ class PostgreSQLAdapter(BaseAdapter, PersistenceProvider):
             return {"error": str(e), "connection_status": "unhealthy"}
 
 
-async def create_postgres_adapter() -> PostgreSQLAdapter:
-    """Factory function to create and connect a PostgreSQLAdapter."""
-    settings = get_settings()
-    if not settings.postgres_enabled:
-        raise AdapterNotFoundError(
-            "PostgreSQL is not configured. Please set DATABASE_URL."
-        )
+    @staticmethod
+    def _normalize_db_url(url: str) -> str:
+        """Ensure required parameters (e.g., sslmode) are present for managed providers.
 
-    config = settings.get_postgres_config()
-    database_url = config.get("database_url") or config.get("url")
-    if not database_url:
-        raise AdapterNotFoundError("No database URL found. Please set DATABASE_URL.")
+        - Supabase Postgres typically requires sslmode=require
+        """
+        try:
+            if not url:
+                return url
+            lower = url.lower()
+            if ("supabase.co" in lower or "supabase.net" in lower or "supabase.com" in lower) and "sslmode=" not in lower:
+                sep = "&" if "?" in url else "?"
+                return f"{url}{sep}sslmode=require"
+            return url
+        except Exception:
+            return url
+
+async def create_postgres_adapter(database_url: Optional[str] = None, schema_name: Optional[str] = None) -> PostgreSQLAdapter:
+    """Factory function to create and connect a PostgreSQLAdapter.
+
+    If parameters are not provided, read from global settings.
+    """
+    if database_url is None or schema_name is None:
+        settings = get_settings()
+        if not settings.postgres_enabled and database_url is None:
+            raise AdapterNotFoundError(
+                "PostgreSQL is not configured. Please set DATABASE_URL."
+            )
+        config = settings.get_postgres_config()
+        database_url = database_url or config.get("database_url") or config.get("url")
+        if not database_url:
+            raise AdapterNotFoundError("No database URL found. Please set DATABASE_URL.")
+        schema_name = schema_name or config.get("schema_name", "public")
 
     adapter = PostgreSQLAdapter(
         database_url=database_url,
-        schema_name=config["schema_name"],
+        schema_name=schema_name or "public",
     )
     await adapter.connect()
     return adapter

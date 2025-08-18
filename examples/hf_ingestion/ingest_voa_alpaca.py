@@ -22,8 +22,7 @@ HF_SHARD_INDEX = int(os.getenv("HF_SHARD_INDEX", "0"))
 HF_NUM_PROC = int(os.getenv("HF_NUM_PROC", "4"))
 USE_LLM_EXTRACTIONS = os.getenv("HACS_USE_LLM_EXTRACTIONS", "0").lower() not in ("0", "false", "no", "")
 
-if not HF_TOKEN:
-    raise RuntimeError("HF_TOKEN not set in environment")
+# If no HF token, we'll proceed with a synthetic local dataset fallback later
 
 def _extract_tag_sections(text: str, tags: list[str]) -> dict[str, list[str]]:
     # Minimal helper retained for dataset analysis logging only

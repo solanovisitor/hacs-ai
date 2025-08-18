@@ -16,7 +16,7 @@ def test_debug_validation_edge_cases():
     # Test 1: Invalid resource type
     print("\n🔍 Test 1: Invalid resource type")
     try:
-        result = resource_management.create_hacs_record(
+        result = resource_management.create_record(
             actor_name="Tester",
             resource_type="NonExistentResource",
             resource_data={"some": "data"}
@@ -31,7 +31,7 @@ def test_debug_validation_edge_cases():
     # Test 2: Missing required fields
     print("\n🔍 Test 2: Missing required fields for MedicationRequest")
     try:
-        result = resource_management.create_hacs_record(
+        result = resource_management.create_record(
             actor_name="Tester",
             resource_type="MedicationRequest",
             resource_data={"medication_codeable_concept": {"text": "Aspirin"}}  # Missing status, intent, subject
@@ -47,7 +47,7 @@ def test_debug_validation_edge_cases():
     # Test 3: Invalid field values
     print("\n🔍 Test 3: Invalid field values")
     try:
-        result = resource_management.create_hacs_record(
+        result = resource_management.create_record(
             actor_name="Tester", 
             resource_type="Observation",
             resource_data={
@@ -75,7 +75,7 @@ def test_debug_validation_edge_cases():
     # Test 5: Empty data creation (should work with defaults)
     print("\n🔍 Test 5: Empty data creation")
     try:
-        result = resource_management.create_hacs_record(
+        result = resource_management.create_record(
             actor_name="Tester",
             resource_type="Patient", 
             resource_data={}  # Empty data, should use defaults
@@ -162,7 +162,7 @@ def test_debug_complex_data_structures():
     
     print("🔍 Creating complex observation with full nested structure...")
     try:
-        result = resource_management.create_hacs_record(
+        result = resource_management.create_record(
             actor_name="ComplexTester",
             resource_type="Observation",
             resource_data=complex_observation
@@ -258,7 +258,7 @@ def test_debug_complex_data_structures():
     
     print("\n🔍 Creating complex medication request...")
     try:
-        result = resource_management.create_hacs_record(
+        result = resource_management.create_record(
             actor_name="ComplexTester",
             resource_type="MedicationRequest",
             resource_data=complex_medication_request

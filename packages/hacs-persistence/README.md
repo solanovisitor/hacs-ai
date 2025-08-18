@@ -68,7 +68,7 @@ patient = Patient(
 )
 
 # Save with automatic validation
-saved_patient = adapter.save_resource(patient)
+saved_patient = adapter.save_record(patient)
 print(f"Saved patient: {saved_patient.id}")
 ```
 

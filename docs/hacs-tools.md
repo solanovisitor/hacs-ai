@@ -2,6 +2,36 @@
 
 Low-level HACS tools for resource modeling, bundles, schema discovery, memory, and minimal workflow modeling. High-level, business-specific tools have been removed; keep prompts/logic in workflows.
 
+New to HACS? Start with the [Quick Start](quick-start.md).
+
+## How to call tools (two modes)
+
+- Python API (in-process): import functions from `hacs_tools.domains.*` and call them directly (sync/async as defined). Best for Python apps/tests.
+- MCP API (out-of-process): call `tools/call` over JSON-RPC with the tool `name` and `arguments`. Best for agents, non-Python clients, or sandboxed contexts.
+
+Notes:
+- Function names are identical in both modes. Some tools are async in Python (e.g., database); await them when used directly.
+- `tools/list` returns a curated set for quick starts. Any registry tool can still be called via `tools/call` by name.
+
+Examples
+
+Python API (Terminology):
+```python
+from hacs_tools.domains.terminology import get_possible_codes
+report = get_possible_codes(composition_doc, query="hypertension")
+```
+
+MCP API (CRUD):
+```python
+import requests
+requests.post("http://localhost:8000/", json={
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {"name": "save_record", "arguments": {"resource_type": "Patient", "resource_data": {"full_name": "Jane Doe"}}},
+  "id": 1
+})
+```
+
 ## Context Engineering Tool Categories
 
 Each tool category implements specific context engineering strategies optimized for healthcare AI:
@@ -12,7 +42,7 @@ Each tool category implements specific context engineering strategies optimized 
 
 Core CRUD operations implementing context selection and isolation for healthcare AI agents:
 
-#### `create_hacs_record`
+#### `save_record`
 **🎯 SELECT**: Create healthcare resources with selective data extraction
 
 ```python
@@ -21,27 +51,27 @@ patient_data = patient.model_dump(exclude={
     "text", "contained", "extension", "modifier_extension"  # Exclude FHIR overhead
 })
 
-result = use_tool("create_hacs_record", {
+result = use_tool("save_record", {
     "resource_type": "Patient",
     "resource_data": patient_data  # Optimized clinical context only
 })
 ```
 
-#### `get_resource`
+#### `read_record`
 Retrieve healthcare resource by ID and type
 
 ```python
-patient = use_tool("get_resource", {
+patient = use_tool("read_record", {
     "resource_type": "Patient", 
     "resource_id": "patient-123"
 })
 ```
 
-#### `update_resource`
+#### `update_record`
 Update existing healthcare resource
 
 ```python
-use_tool("update_resource", {
+use_tool("update_record", {
     "resource_type": "Patient",
     "resource_id": "patient-123", 
     "resource_data": {
@@ -52,21 +82,21 @@ use_tool("update_resource", {
 })
 ```
 
-#### `delete_resource`
+#### `delete_record`
 Remove healthcare resource
 
 ```python
-use_tool("delete_resource", {
+use_tool("delete_record", {
     "resource_type": "Patient",
     "resource_id": "patient-123"
 })
 ```
 
-#### `validate_resource_data`
-Validate resource data against FHIR schemas
+#### `validate_resource`
+Validate resource against model constraints
 
 ```python
-validation = use_tool("validate_resource_data", {
+validation = use_tool("validate_resource", {
     "resource_type": "Observation",
     "data": {
         "code_text": "Blood Pressure",
@@ -76,41 +106,14 @@ validation = use_tool("validate_resource_data", {
 })
 ```
 
-#### `list_available_resources`
-Get list of all available HACS resource types
+#### `list_models`
+List available HACS model types
 
 ```python
-resources = use_tool("list_available_resources", {})
+models = use_tool("list_models", {})
 ```
 
-#### `find_resources`
-Semantic search across healthcare resources
-
-```python
-results = use_tool("find_resources", {
-    "resource_type": "Patient",
-    "search_criteria": {
-        "semantic_query": "diabetes patients with poor glucose control"
-    },
-    "limit": 10
-})
-```
-
-#### `search_hacs_records`
-Advanced filtered search with multiple criteria
-
-```python
-records = use_tool("search_hacs_records", {
-    "query": "hypertension medication",
-    "resource_types": ["Patient", "Observation"],
-    "filters": {
-        "date_range": {
-            "start": "2024-01-01", 
-            "end": "2024-12-31"
-        }
-    }
-})
-```
+ 
 
 ### 🧠 Memory Operations (5 tools)
 
@@ -122,7 +125,7 @@ Clinical memory operations implementing context writing and selective memory acc
 **🖊️ WRITE**: Generate clinical memories with structured context metadata
 
 ```python
-# WRITE: Generate clinical context withmetadata
+# WRITE: Generate clinical context with metadata
 memory = use_tool("create_memory", {
     "content": "Patient reports 75% reduction in chest pain after metoprolol initiation. Excellent medication tolerance.",
     "memory_type": "episodic",
@@ -194,112 +197,158 @@ context_memories = use_tool("check_memory", {
 })
 ```
 
-### 🧩 Workflow Modeling (low-level)
+### ⚕️ Resource-Specific Tools (examples)
 
-Adapters for creating and using `ActivityDefinition`, `PlanDefinition`, and `Task` instances.
-
+#### Event
 ```python
-workflow = use_tool("execute_clinical_workflow", {
-    "workflow_type": "diabetes_assessment",
-    "patient_context": {
-        "hba1c": "8.2%",
-        "current_medications": ["metformin"]
-    },
-    "assessment_goals": ["glucose_control", "medication_optimization"]
-})
+from hacs_tools.domains.resource_tools import (
+  create_event_tool, update_event_status_tool, add_event_performer_tool, schedule_event_tool, summarize_event_tool
+)
+
+# Create and schedule an event
+evt = create_event_tool(subject="Patient/patient-123", code_text="physiotherapy_session", when="2025-02-01T10:00:00Z")
+if evt.success:
+  evt2 = schedule_event_tool(evt.data.get("event"), start="2025-02-01T10:00:00Z", end="2025-02-01T11:00:00Z")
+  summary = summarize_event_tool((evt2.data or {}).get("event") or evt.data.get("event"))
 ```
 
-#### Template registration and instantiation
-Register and instantiate stack templates for clinical workflows
-
+#### Appointment
 ```python
-result = use_tool("register_stack_template", {
-    "template": {"name": "Example", "version": "1.0.0", "layers": [], "variables": {}}
-})
+from hacs_tools.domains.resource_tools import (
+  schedule_appointment, reschedule_appointment, cancel_appointment, check_appointment_conflicts, send_appointment_reminders
+)
+
+appt = schedule_appointment("Patient/p1", "Practitioner/pr1", "2025-02-02T09:00:00Z", "2025-02-02T09:30:00Z")
+conflicts = check_appointment_conflicts((appt.data or {}).get("appointment"), existing=[])
 ```
 
-#### `create_activity_definition`
-Create an `ActivityDefinition` instance (adapter)
-
+#### CarePlan / CareTeam / Goal
 ```python
-validation = use_tool("validate_clinical_protocol", {
-    "protocol_data": {
-        "name": "Hypertension Management",
-        "steps": ["assess_bp", "lifestyle_counseling", "medication_if_needed"]
-    }
-})
+from hacs_tools.domains.resource_tools import (
+  create_care_plan, update_care_plan_progress, coordinate_care_activities, track_care_plan_goals,
+  assemble_care_team, assign_team_roles, coordinate_team_communication, track_team_responsibilities,
+  update_team_membership, track_goal_progress, update_goal_status, measure_goal_achievement, link_goal_to_careplan
+)
+
+cp = create_care_plan("Patient/p1", title="Diabetes care plan")
+track_goal_progress({"description": "reduce A1C to <7%"}, current_value=7.5)
 ```
 
-#### `create_plan_definition`
-Create a `PlanDefinition` and add goals/actions
-
+#### NutritionOrder
 ```python
-care_plan = use_tool("generate_care_plan", {
-    "patient_id": "patient-123",
-    "primary_conditions": ["diabetes", "hypertension"],
-    "goals": ["hba1c_reduction", "bp_control"]
-})
+from hacs_tools.domains.resource_tools import (
+  create_therapeutic_diet_order, manage_nutrition_restrictions, calculate_nutritional_requirements, coordinate_feeding_protocols
+)
+
+diet = create_therapeutic_diet_order("Patient/p1", diet_text="low_sodium")
+reqs = calculate_nutritional_requirements(80.0, 175.0, 45, "male")
 ```
 
-### 📚 Knowledge Management (Evidence)
+### 🧬 Terminology (optional)
 
-Context-specific tools for literature evidence. Prefer these over generic vector tools.
+High-level terminology tools help agents understand and align clinical codes without mutating resources directly.
 
-#### `index_evidence`
-Index literature evidence with citation and content; returns structured `Evidence` with embedding reference
-
+#### Visualize resources and annotations
 ```python
-result = use_tool("index_evidence", {
-    "citation": "Smith J. Hypertension Management. NEJM (2024)",
-    "content": "Guideline recommends initial therapy with ...",
-    "evidence_type": "guideline",
-    "tags": ["hypertension", "guideline"],
-})
+from hacs_utils.visualization import visualize_resource, visualize_annotations
+from hacs_models import Patient, AnnotatedDocument, Extraction, CharInterval
+
+# Resource card
+p = Patient(full_name="Jane Doe", birth_date="1990-01-01", gender="female")
+visualize_resource(p)
+
+# Annotations highlighting
+doc = AnnotatedDocument(text="BP 128/82, HR 72", extractions=[
+    Extraction(extraction_class="blood_pressure", extraction_text="128/82", char_interval=CharInterval(start_pos=3, end_pos=9))
+])
+visualize_annotations(doc)
 ```
 
-#### `check_evidence`
-Retrieve semantically relevant evidence for a query
+#### Summarize codable concepts in a document
+```python
+from hacs_tools.domains.terminology import summarize_codable_concepts
+
+summary = summarize_codable_concepts(composition_doc, query="hypertension", top_k=3)
+print(summary.data["summary"])  # human-readable summary for prompts
+```
+
+#### Annotate document codings (single artifact)
+```python
+from hacs_tools.domains.terminology import get_possible_codes
+
+report = get_possible_codes(composition_doc, query="blood pressure", top_k=2)
+# report.data = {resource_id, summary, candidates, umls}
+
+### Markdown visualization helpers (static docs)
 
 ```python
-evidence = use_tool("check_evidence", {
+from hacs_utils.visualization import resource_to_markdown, annotations_to_markdown
+from hacs_models import Patient, AnnotatedDocument, Extraction, CharInterval
+
+p = Patient(full_name="Jane Doe")
+print(resource_to_markdown(p, include_json=False))
+
+doc = AnnotatedDocument(text="BP 128/82, HR 72", extractions=[
+  Extraction(extraction_class="blood_pressure", extraction_text="128/82", char_interval=CharInterval(start_pos=3, end_pos=9))
+])
+print(annotations_to_markdown(doc))
+```
+```
+
+#### Map codes between systems (e.g., SNOMED → LOINC)
+```python
+from hacs_tools.domains.terminology import map_terminology
+
+mappings = map_terminology(
+    composition_doc,
+    source="SNOMED",
+    target="LOINC",
+    top_k=3
+)
+```
+
+### 📚 Evidence
+
+Use dedicated search for literature evidence.
+
+```python
+evidence = use_tool("search_evidence", {
     "query": "ACE inhibitor contraindications",
-    "limit": 5
+    "top_k": 5
 })
 ```
 
-> Note: Generic vector tools are deprecated in favor of context-specific tools.
+ 
 
 ### ⚕️ Schema Discovery (5 tools)
 
 Healthcare resource schema exploration and analysis.
 
-#### `discover_hacs_resources`
-Explore available healthcare resources
+#### `describe_models`
+Describe HACS model definitions
 
 ```python
-resources = use_tool("discover_hacs_resources", {
-    "category_filter": "clinical",
+resources = use_tool("describe_models", {
+    "resource_types": ["Patient", "Observation"],
     "include_examples": True
 })
 ```
 
-#### `get_hacs_resource_schema`
-Get detailed schema for resource type
+#### `list_model_fields`
+List fields for a resource type
 
 ```python
-schema = use_tool("get_hacs_resource_schema", {
-    "resource_type": "Patient",
-    "include_validation_rules": True
+schema = use_tool("list_model_fields", {
+    "resource_type": "Patient"
 })
 ```
 
-#### `compare_resource_schemas`
-Compare schemas between resource types
+#### `plan_bundle_schema`
+Plan a bundle schema across resource types
 
 ```python
-comparison = use_tool("compare_resource_schemas", {
-    "model_names": ["Patient", "Observation"],
-    "comparison_focus": "fields"
+plan = use_tool("plan_bundle_schema", {
+    "resource_types": ["Patient", "Document", "Encounter"]
 })
 ```
 
@@ -308,7 +357,7 @@ Analyze fields in healthcare model
 
 ```python
 analysis = use_tool("analyze_model_fields", {
-    "model_name": "Observation", 
+    "resource_name": "Observation", 
     "analysis_type": "comprehensive"
 })
 ```
@@ -318,331 +367,37 @@ Get field suggestions for models
 
 ```python
 suggestions = use_tool("suggest_model_fields", {
-    "model_name": "Patient",
+    "resource_name": "Patient",
     "use_case": "diabetes_management"
 })
 ```
 
-### 🛠️ Development Tools (4 tools)
+ 
 
-Tools for developing with HACS models and resources.
+ 
 
-#### `create_model_stack`
-Compose complex healthcare data structures
+ 
 
-```python
-stack = use_tool("create_model_stack", {
-    "primary_model": "Patient",
-    "related_models": ["Observation", "Encounter"],
-    "composition_type": "clinical_episode"
-})
-```
+ 
 
-#### `generate_test_data`
-Generate realistic test data for healthcare models
-
-```python
-test_data = use_tool("generate_test_data", {
-    "resource_type": "Patient",
-    "count": 10,
-    "demographics": "diverse",
-    "include_conditions": ["diabetes", "hypertension"]
-})
-```
-
-#### `validate_model_composition`
-Validate complex model relationships
-
-```python
-validation = use_tool("validate_model_composition", {
-    "composition_data": {
-        "patient": {...},
-        "observations": [...],
-        "encounter": {...}
-    }
-})
-```
-
-#### `optimize_model_for_llm`
-Optimize models for LLM consumption
-
-```python
-optimized = use_tool("optimize_model_for_llm", {
-    "model_data": {...},
-    "optimization_target": "token_efficiency",
-    "preserve_clinical_context": True
-})
-```
-
-### 🔗 FHIR Integration (3 tools)
-
-FHIR standards compliance and interoperability.
-
-#### `validate_fhir_compliance`
-Ensure FHIR standard compliance
-
-```python
-compliance = use_tool("validate_fhir_compliance", {
-    "resource_data": {...},
-    "fhir_version": "R4",
-    "strict_validation": True
-})
-```
-
-#### `convert_to_fhir`
-Convert HACS models to FHIR format
-
-```python
-fhir_resource = use_tool("convert_to_fhir", {
-    "hacs_resource": {...},
-    "target_fhir_version": "R4"
-})
-```
-
-#### `import_from_fhir`
-Import FHIR resources into HACS
-
-```python
-hacs_resource = use_tool("import_from_fhir", {
-    "fhir_resource": {...},
-    "enhance_for_agents": True
-})
-```
-
-### 📈 Healthcare Analytics (3 tools)
-
-Population health and quality measures.
-
-#### `calculate_quality_measures`
-Calculate healthcare quality indicators
-
-```python
-measures = use_tool("calculate_quality_measures", {
-    "measure_set": "diabetes_care",
-    "patient_population": "all_diabetes_patients",
-    "time_period": "last_12_months"
-})
-```
-
-#### `generate_population_insights`
-Analyze population health trends
-
-```python
-insights = use_tool("generate_population_insights", {
-    "population_criteria": {
-        "conditions": ["diabetes"],
-        "age_range": [18, 65]
-    },
-    "analysis_type": "outcome_trends"
-})
-```
-
-#### `risk_stratification`
-Stratify patients by risk levels
-
-```python
-stratification = use_tool("risk_stratification", {
-    "patient_cohort": "diabetes_patients",
-    "risk_factors": ["hba1c", "blood_pressure", "medications"],
-    "stratification_model": "clinical_guidelines"
-})
-```
-
-### 🤖 AI Integrations
-
-Removed to keep the toolset low-level and business-agnostic. Integrate AI models within workflows using hacs-utils and direct provider SDKs.
-
-#### `deploy_healthcare_model`
-Deploy AI models for healthcare workflows
-
-```python
-deployment = use_tool("deploy_healthcare_model", {
-    "model_type": "clinical_prediction",
-    "model_config": {...},
-    "deployment_target": "production"
-})
-```
-
-#### `evaluate_model_performance`
-Evaluate healthcare AI model performance
-
-```python
-evaluation = use_tool("evaluate_model_performance", {
-    "model_id": "clinical-model-123",
-    "evaluation_metrics": ["accuracy", "sensitivity", "specificity"],
-    "test_dataset": "validation_set"
-})
-```
-
-## Context Engineering Usage Patterns
-
-### Multi-Strategy Context Engineering
-
-Combine multiple context engineering strategies for optimal healthcare AI performance:
-
-```python
-def context_engineered_clinical_workflow(patient_id, clinical_query):
-    """Demonstrate all four context engineering strategies in tool usage"""
-    
-    # 🔒 ISOLATE: Setup healthcare AI with scoped permissions
-    clinical_context = {
-        "actor_permissions": ["patient:read", "observation:write", "memory:write"],
-        "compliance_boundaries": ["hipaa_compliant", "audit_logged"]
-    }
-    
-    # 🎯 SELECT: Search with selective criteria
-    search_results = use_tool("search_hacs_records", {
-        "query": clinical_query,
-        "resource_types": ["Patient", "Observation", "MemoryBlock"],
-        "importance_threshold": 0.7,  # SELECT high-importance only
-        "time_window": "last_12_months",  # SELECT relevant timeframe
-        "limit": 10
-    })
-    
-    # 🗜️ COMPRESS: Generate compressed clinical context
-    for result in search_results["results"]:
-        if result["resource_type"] == "Patient":
-            # COMPRESS: Use text summary instead of full patient data
-            patient_summary = result["data"]["text_summary"]
-            
-            # SELECT: Extract only essential observations
-            recent_obs = [
-                obs for obs in result.get("related_observations", [])
-                if obs.get("importance_score", 0) > 0.8
-            ]
-            
-            # COMPRESS: Generate clinical summary
-            clinical_summary = f"{patient_summary} | Recent: {len(recent_obs)} significant findings"
-    
-    # 🖊️ WRITE: Generate clinical context withmetadata
-    clinical_memory = use_tool("create_memory", {
-        "content": f"Clinical analysis for {clinical_query}: {clinical_summary}",
-        "memory_type": "episodic",
-        "importance_score": 0.9,
-        "tags": ["context_engineered", "clinical_analysis", "ai_generated"],
-        "context_metadata": {
-            "patient_id": patient_id,
-            "context_strategies_applied": ["isolate", "select", "compress", "write"],
-            "query_complexity": "multi_resource",
-            "clinical_significance": "high",
-            "compression_efficiency": 0.3  # Reduced to 30% of original context
-        }
-    })
-    
-    return {
-        "selected_results": search_results,
-        "compressed_summary": clinical_summary,
-        "written_context": clinical_memory,
-        "context_isolation": clinical_context
-    }
-```
-
-### Context Strategy Selection Guide
-
-Choose appropriate context engineering strategies based on your healthcare AI use case:
-
-| **Use Case** | **Primary Strategy** | **Secondary Strategy** | **Tool Examples** |
-|--------------|---------------------|----------------------|-------------------|
-| **Clinical Documentation** | 🖊️ WRITE | 🎯 SELECT | `create_memory`, `create_hacs_record` |
-| **Patient Search** | 🎯 SELECT | 🗜️ COMPRESS | `search_hacs_records`, `find_similar_cases` |
-| **Real-time Clinical Decision** | 🗜️ COMPRESS | 🎯 SELECT | `semantic_search_records`, `retrieve_context` |
-| **Population Health Analytics** | 🗜️ COMPRESS | 🔒 ISOLATE | `calculate_quality_measures`, `risk_stratification` |
-| **Care Plan Generation** | 🖊️ WRITE | 🗜️ COMPRESS | `generate_care_plan`, `execute_clinical_workflow` |
-| **Regulatory Compliance** | 🔒 ISOLATE | 🎯 SELECT | `validate_fhir_compliance`, `create_hacs_record` |
-
-### Error Handling
-
-```python
-def use_tool_safely(tool_name, arguments):
-    try:
-        result = call_mcp_tool(tool_name, arguments)
-        if result and "error" not in result:
-            return result
-        else:
-            print(f"Tool error: {result.get('error', 'Unknown error')}")
-            return None
-    except Exception as e:
-        print(f"Call failed: {e}")
-        return None
-```
-
-### Batch Operations
-
-```python
-# Create multiple resources efficiently
-resources_to_create = [
-    {"resource_type": "Patient", "resource_data": patient1_data},
-    {"resource_type": "Patient", "resource_data": patient2_data},
-    {"resource_type": "Observation", "resource_data": obs_data}
-]
-
-created_resources = []
-for resource_req in resources_to_create:
-    result = use_tool("create_hacs_record", resource_req)
-    if result:
-        created_resources.append(result)
-```
-
-### Clinical Workflow Integration
-
-```python
-# Complete clinical documentation workflow
-def document_patient_encounter(patient_id, encounter_data):
-    # 1. Create encounter
-    encounter = use_tool("create_hacs_record", {
-        "resource_type": "Encounter",
-        "resource_data": encounter_data
-    })
-    
-    # 2. Record observations
-    observations = []
-    for vital in encounter_data.get("vitals", []):
-        obs = use_tool("create_hacs_record", {
-            "resource_type": "Observation",
-            "resource_data": {
-                **vital,
-                "patient_id": patient_id,
-                "encounter_id": encounter["resource_id"]
-            }
-        })
-        observations.append(obs)
-    
-    # 3. Store clinical memory
-    memory = use_tool("create_memory", {
-        "content": encounter_data["clinical_notes"],
-        "memory_type": "episodic", 
-        "context_metadata": {
-            "patient_id": patient_id,
-            "encounter_id": encounter["resource_id"]
-        }
-    })
-    
-    return {
-        "encounter": encounter,
-        "observations": observations,
-        "memory": memory
-    }
-```
+## 
 
 ## Tool Discovery
 
-Get complete tool information programmatically:
-
+- MCP (curated):
 ```python
-# List all available tools
-tools = use_tool("list_tools", {})
+import requests
+resp = requests.post("http://localhost:8000/", json={"jsonrpc":"2.0","method":"tools/list","id":1})
+print(resp.json()["result"]["tools"])  # curated list
+```
 
-# Get tool details
-tool_info = use_tool("get_tool_info", {
-    "tool_name": "create_hacs_record"
-})
-
-# Search tools by category
-category_tools = use_tool("search_tools", {
-    "category": "memory_operations"
-})
+- Python (full registry):
+```python
+from hacs_registry import get_global_tool_registry
+reg = get_global_tool_registry()
+all_tools = [t.name for t in reg.get_all_tools()]  # complete catalog
 ```
 
 ---
 
-For more examples and integration patterns, see [Basic Usage Guide](basic-usage.md) and [Integration Guide](integrations.md).
+For more examples and integration patterns, see the [Quick Start](quick-start.md). Integration-specific docs have been consolidated into package READMEs.

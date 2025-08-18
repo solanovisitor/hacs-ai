@@ -114,7 +114,7 @@ except ImportError:
 from hacs_tools import (
     create_hacs_memory,
     search_hacs_memories,
-    search_hacs_records,
+    search_records,
     vector_similarity_search,
     validate_fhir_compliance,
 )

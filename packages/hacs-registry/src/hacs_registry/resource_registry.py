@@ -215,7 +215,7 @@ class RegisteredResource(BaseResource):
 
         return resource_map.get(self.resource_class)
 
-    def instantiate_resource(self, **kwargs) -> Optional[BaseResource]:
+    def pin_resource(self, **kwargs) -> Optional[BaseResource]:
         """Create an instance of the wrapped hacs-core resource."""
         resource_cls = self.get_resource_class()
         if resource_cls:

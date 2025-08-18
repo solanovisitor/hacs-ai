@@ -1,0 +1,376 @@
+{
+  "mapping_spec": {
+    "document": {
+      "resource_type": "Document",
+      "fields": {
+        "title": {
+          "source": "template_type",
+          "default": "Prontuário Eletrônico - Consulta Médica"
+        },
+        "subject_name": {
+          "source": "patient_identifier",
+          "extraction_rule": "Extract patient reference without personal data"
+        },
+        "content": {
+          "source": "transcription",
+          "template": "medical_consultation_pt"
+        },
+        "language": {
+          "default": "pt-BR"
+        },
+        "document_type": {
+          "default": "medical_record"
+        }
+      }
+    },
+    "clinical_resources": [
+      {
+        "resource_type": "Encounter",
+        "fields": {
+          "status": {
+            "default": "finished"
+          },
+          "class": {
+            "default": "ambulatory"
+          },
+          "type": {
+            "source": "chief_complaint",
+            "extraction_rule": "Extract from 'Queixa Principal' section"
+          },
+          "subject": {
+            "source": "patient_reference"
+          },
+          "reasonCode": {
+            "source": "chief_complaint",
+            "coding_system": "CID-10"
+          }
+        }
+      },
+      {
+        "resource_type": "Condition",
+        "fields": {
+          "code": {
+            "source": "diagnostic_hypotheses",
+            "extraction_rule": "Extract CID-10 codes from 'Hipóteses Diagnósticas' section",
+            "coding_system": "CID-10"
+          },
+          "clinicalStatus": {
+            "default": "active"
+          },
+          "verificationStatus": {
+            "source": "diagnosis_certainty",
+            "mapping": {
+              "confirmed": "confirmed",
+              "hypothesis": "provisional"
+            }
+          },
+          "subject": {
+            "source": "patient_reference"
+          },
+          "encounter": {
+            "source": "encounter_reference"
+          }
+        }
+      },
+      {
+        "resource_type": "Observation",
+        "multiple": true,
+        "fields": {
+          "status": {
+            "default": "final"
+          },
+          "category": {
+            "source": "observation_category",
+            "mapping": {
+              "vital_signs": "vital-signs",
+              "anthropometric": "survey",
+              "physical_exam": "exam"
+            }
+          },
+          "code": {
+            "source": "observation_type",
+            "coding_system": "LOINC"
+          },
+          "subject": {
+            "source": "patient_reference"
+          },
+          "encounter": {
+            "source": "encounter_reference"
+          },
+          "valueQuantity": {
+            "source": "measurement_value",
+            "extraction_rules": {
+              "weight": "Extract from 'Peso' in Dados Antropométricos",
+              "height": "Extract from 'Altura' in Dados Antropométricos",
+              "bmi": "Extract from 'IMC' in Dados Antropométricos",
+              "systolic_bp": "Extract from 'PA Sistólica' in Sinais Vitais",
+              "diastolic_bp": "Extract from 'PA Diastólica' in Sinais Vitais",
+              "temperature": "Extract from 'Temperatura' in Sinais Vitais",
+              "heart_rate": "Extract from 'Frequência cardíaca' in Sinais Vitais",
+              "respiratory_rate": "Extract from 'Frequência Respiratória' in Sinais Vitais",
+              "oxygen_saturation": "Extract from 'Saturação de O2' in Sinais Vitais",
+              "glucose": "Extract from 'Glicemia Capilar' in Sinais Vitais"
+            }
+          }
+        }
+      },
+      {
+        "resource_type": "MedicationStatement",
+        "multiple": true,
+        "fields": {
+          "status": {
+            "default": "active"
+          },
+          "medicationCodeableConcept": {
+            "source": "current_medications",
+            "extraction_rule": "Extract from 'Medicações em Uso' section"
+          },
+          "subject": {
+            "source": "patient_reference"
+          },
+          "context": {
+            "source": "encounter_reference"
+          },
+          "dosage": {
+            "source": "medication_dosage",
+            "extraction_rule": "Extract dosage and frequency from medication list"
+          }
+        }
+      },
+      {
+        "resource_type": "MedicationRequest",
+        "multiple": true,
+        "fields": {
+          "status": {
+            "default": "active"
+          },
+          "intent": {
+            "default": "order"
+          },
+          "medicationCodeableConcept": {
+            "source": "prescribed_medications",
+            "extraction_rule": "Extract from 'Medicações Prescritas' section"
+          },
+          "subject": {
+            "source": "patient_reference"
+          },
+          "encounter": {
+            "source": "encounter_reference"
+          },
+          "dosageInstruction": {
+            "source": "prescription_dosage",
+            "extraction_rule": "Extract dosage and instructions from prescription list"
+          }
+        }
+      },
+      {
+        "resource_type": "DiagnosticReport",
+        "multiple": true,
+        "fields": {
+          "status": {
+            "default": "final"
+          },
+          "category": {
+            "default": "LAB"
+          },
+          "code": {
+            "source": "exam_type",
+            "extraction_rule": "Extract from 'Resultado de Exames' section"
+          },
+          "subject": {
+            "source": "patient_reference"
+          },
+          "encounter": {
+            "source": "encounter_reference"
+          },
+          "result": {
+            "source": "exam_results",
+            "extraction_rule": "Extract results and values from exam results section"
+          }
+        }
+      },
+      {
+        "resource_type": "ServiceRequest",
+        "multiple": true,
+        "fields": {
+          "status": {
+            "default": "active"
+          },
+          "intent": {
+            "default": "order"
+          },
+          "code": {
+            "source": "requested_exams",
+            "extraction_rule": "Extract from 'Exames Complementares' section"
+          },
+          "subject": {
+            "source": "patient_reference"
+          },
+          "encounter": {
+            "source": "encounter_reference"
+          }
+        }
+      },
+      {
+        "resource_type": "FamilyMemberHistory",
+        "multiple": true,
+        "fields": {
+          "status": {
+            "default": "completed"
+          },
+          "patient": {
+            "source": "patient_reference"
+          },
+          "relationship": {
+            "source": "family_relationship",
+            "extraction_rule": "Extract family relationships from 'História Familiar' section"
+          },
+          "condition": {
+            "source": "family_conditions",
+            "extraction_rule": "Extract family medical conditions and diseases"
+          }
+        }
+      },
+      {
+        "resource_type": "AllergyIntolerance",
+        "multiple": true,
+        "fields": {
+          "clinicalStatus": {
+            "default": "active"
+          },
+          "verificationStatus": {
+            "default": "confirmed"
+          },
+          "patient": {
+            "source": "patient_reference"
+          },
+          "code": {
+            "source": "allergies",
+            "extraction_rule": "Extract allergies from 'História Pregressa' section"
+          }
+        }
+      }
+    ],
+    "variables": {
+      "patient_reference": {
+        "type": "string",
+        "description": "Anonymous patient identifier"
+      },
+      "encounter_reference": {
+        "type": "string",
+        "description": "Current encounter identifier"
+      },
+      "transcription": {
+        "type": "string",
+        "description": "Full medical consultation transcription in Portuguese"
+      },
+      "chief_complaint": {
+        "type": "string",
+        "extraction_section": "Queixa Principal"
+      },
+      "current_illness_history": {
+        "type": "string",
+        "extraction_section": "História da Doença Atual"
+      },
+      "past_medical_history": {
+        "type": "string",
+        "extraction_section": "História Pregressa"
+      },
+      "current_medications": {
+        "type": "array",
+        "extraction_section": "Medicações em Uso"
+      },
+      "vaccination_history": {
+        "type": "string",
+        "extraction_section": "História Vacinal"
+      },
+      "family_history": {
+        "type": "string",
+        "extraction_section": "História Familiar"
+      },
+      "social_history": {
+        "type": "string",
+        "extraction_section": "História Social e Hábitos de Vida"
+      },
+      "physical_exam": {
+        "type": "string",
+        "extraction_section": "Exame Físico"
+      },
+      "anthropometric_data": {
+        "type": "object",
+        "extraction_section": "Dados Antropométricos"
+      },
+      "vital_signs": {
+        "type": "object",
+        "extraction_section": "Sinais Vitais"
+      },
+      "exam_results": {
+        "type": "array",
+        "extraction_section": "Resultado de Exames"
+      },
+      "diagnostic_hypotheses": {
+        "type": "array",
+        "extraction_section": "Hipóteses Diagnósticas"
+      },
+      "prescribed_medications": {
+        "type": "array",
+        "extraction_section": "Medicações Prescritas"
+      },
+      "patient_instructions": {
+        "type": "array",
+        "extraction_section": "Orientações"
+      },
+      "requested_exams": {
+        "type": "array",
+        "extraction_section": "Exames Complementares"
+      },
+      "medical_certificate": {
+        "type": "string",
+        "extraction_section": "Atestado"
+      },
+      "referrals": {
+        "type": "string",
+        "extraction_section": "Encaminhamento"
+      }
+    },
+    "extraction_rules": {
+      "cid10_codes": {
+        "pattern": "([A-Z]\\d{2}(?:\\.\\d{1,2})?)",
+        "description": "Extract CID-10 diagnostic codes"
+      },
+      "medications": {
+        "pattern": "([A-Za-z]+(?:\\s+[A-Za-z]+)*?)\\s+(\\d+(?:\\.\\d+)?\\s*(?:mg|g|ml|mcg|UI)?)\\s*(?:[-,]\\s*)?(.+?)(?=\\n|$)",
+        "description": "Extract medication name, dosage, and instructions"
+      },
+      "vital_signs": {
+        "patterns": {
+          "blood_pressure": "(\\d{2,3})\\s*[x/]\\s*(\\d{2,3})\\s*mmHg",
+          "temperature": "(\\d{2}\\.\\d)\\s*°?C",
+          "heart_rate": "(\\d{2,3})\\s*bpm",
+          "respiratory_rate": "(\\d{1,2})\\s*irpm",
+          "oxygen_saturation": "(\\d{2,3})\\s*%",
+          "glucose": "(\\d{2,3})\\s*mg/dL"
+        }
+      },
+      "anthropometric": {
+        "patterns": {
+          "weight": "(\\d{2,3}(?:\\.\\d)?)\\s*kg",
+          "height": "(\\d{3})\\s*cm",
+          "bmi": "(\\d{2}\\.\\d)\\s*[Kk]g/m2"
+        }
+      }
+    },
+    "validation_rules": {
+      "required_sections": [
+        "Queixa Principal",
+        "História da Doença Atual"
+      ],
+      "cid10_validation": true,
+      "medication_validation": true,
+      "privacy_compliance": {
+        "exclude_personal_data": true,
+        "anonymize_patient_info": true
+      }
+    }
+  }
+}

@@ -1,20 +1,16 @@
 """
 LangChain Tools Integration for HACS
 
-This module provides aLangChain integration for all HACS tools,
-following LangChain best practices for tool creation, validation, and error handling.
+Clean, unified tool provisioning for LangChain (consumed by LangGraph as well).
 
-Key Features:
-    🔧 Proper @tool decorator usage with validation
-    📋Pydantic schemas for all inputs
-    🛡️ Error handling with ToolException
-    🔍 Tool discovery and registration
-    ⚡ Async/sync support for all tools
-    📊 Response format handling (content and artifacts)
+Boundaries:
+- Tool discovery/provisioning is centralized in hacs_utils.integrations.common.tool_loader
+- This module exposes LangChain BaseTool instances via langchain_tools()
+- LangGraph should consume the same LangChain BaseTool set (no separate provisioning)
 
-Author: HACS Development Team
-License: MIT
-Version: 0.3.0
+Notes:
+- Older, heavy wrappers and bespoke schemas are deprecated in favor of the centralized loader
+- Keep the public API small and SOLID: provisioning, lookup, and light validation helpers
 """
 
 import logging
@@ -66,11 +62,11 @@ def _lazy_import_hacs_tools():
         # Import HACS tools directly - they should work without LangChain mocking
         from hacs_tools.tools import ALL_HACS_TOOLS
         from hacs_tools import (
-            create_hacs_record,
-            get_hacs_record,
-            update_hacs_record,
-            delete_hacs_record,
-            search_hacs_records,
+            create_record,
+            get_record,
+            update_record,
+            delete_record,
+            search_records,
             discover_hacs_resources,
             get_hacs_resource_schema,
             analyze_resource_fields,
@@ -85,11 +81,11 @@ def _lazy_import_hacs_tools():
         )
 
         return {
-            'create_hacs_record': create_hacs_record,
-            'get_hacs_record': get_hacs_record,
-            'update_hacs_record': update_hacs_record,
-            'delete_hacs_record': delete_hacs_record,
-            'search_hacs_records': search_hacs_records,
+            'create_record': create_record,
+            'get_record': get_record,
+            'update_record': update_record,
+            'delete_record': delete_record,
+            'search_records': search_records,
             'discover_hacs_resources': discover_hacs_resources,
             'get_hacs_resource_schema': get_hacs_resource_schema,
             'analyze_resource_fields': analyze_resource_fields,
@@ -226,7 +222,7 @@ def create_langchain_tool_wrapper(func, name: str, description: str, args_schema
         raise
 
 
-def get_all_hacs_langchain_tools() -> List:
+def langchain_tools() -> List:
     """Get all HACS tools as LangChain BaseTool instances using centralized loader."""
     from ..common.tool_loader import get_all_hacs_tools_sync
     return get_all_hacs_tools_sync(framework="langchain")
@@ -234,7 +230,7 @@ def get_all_hacs_langchain_tools() -> List:
 
 def get_tool_by_name(tool_name: str):
     """Get a specific HACS tool by name."""
-    tools = get_all_hacs_langchain_tools()
+    tools = langchain_tools()
     for tool in tools:
         if hasattr(tool, 'name') and tool.name == tool_name:
             return tool
@@ -277,7 +273,7 @@ class HACSToolRegistry:
     def _initialize_tools(self):
         """Initialize all tools in the registry."""
         try:
-            tools = get_all_hacs_langchain_tools()
+            tools = langchain_tools()
             for tool in tools:
                 if hasattr(tool, 'name'):
                     self._tools[tool.name] = tool
@@ -370,32 +366,14 @@ def get_hacs_tools_by_category(category: str) -> List:
 
 # ===== Export all important classes and functions =====
 __all__ = [
-    # Main functions
+    # Provisioning
+    "langchain_tools",
+    # Lookups and simple helpers
+    "get_tool_by_name",
+    "validate_tool_inputs",
+    # Optional registry convenience
+    "HACSToolRegistry",
     "get_hacs_tools",
     "get_hacs_tool",
     "get_hacs_tools_by_category",
-    "get_all_hacs_langchain_tools",
-    "get_tool_by_name",
-    "validate_tool_inputs",
-
-    # Registry
-    "HACSToolRegistry",
-    "_registry",
-
-    # Schemas
-    "CreateRecordInput",
-    "GetRecordInput",
-    "UpdateRecordInput",
-    "DeleteRecordInput",
-    "SearchRecordsInput",
-    "ExecuteWorkflowInput",
-    "GetGuidanceInput",
-    "DiscoverResourcesInput",
-    "CreateTemplateInput",
-
-    # Utility
-    "create_langchain_tool_wrapper",
-
-    # Status flags
-    "_has_pydantic",
 ]

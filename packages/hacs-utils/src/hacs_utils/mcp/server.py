@@ -149,72 +149,36 @@ class HacsMCPServer:
             # BLOCK 1: MODEL DISCOVERY & DEVELOPMENT TOOLS
             model_tools = [
                 {
-                    "name": "discover_hacs_resources",
-                    "description": "🔍 **Model Discovery**: Explore all available HACS models withmetadata, field analysis, and usage patterns for development planning",
+                    "name": "describe_models",
+                    "description": "🔍 Describe HACS models with examples and usage",
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "category_filter": {"type": "string", "description": "Filter by model category (clinical, administrative, workflow)"},
-                            "include_field_counts": {"type": "boolean", "description": "Include detailed field statistics", "default": True},
-                            "include_examples": {"type": "boolean", "description": "Include usage examples", "default": True}
+                            "resource_types": {"type": "array", "items": {"type": "string"}},
+                            "include_examples": {"type": "boolean", "default": True}
                         },
                     },
                 },
                 {
-                    "name": "get_hacs_resource_schema",
-                    "description": "📋 **Schema Inspector**: Get detailed schema information for HACS models including field types, validation rules, examples, and FHIR mappings",
+                    "name": "list_model_fields",
+                    "description": "📋 List fields for a HACS model",
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "resource_type": {"type": "string", "description": "HACS resource type to inspect"},
-                            "include_examples": {"type": "boolean", "description": "Include field examples", "default": True},
-                            "include_validation_rules": {"type": "boolean", "description": "Include validation information", "default": True},
+                            "resource_type": {"type": "string"}
                         },
                         "required": ["resource_type"],
                     },
                 },
                 {
-                    "name": "create_clinical_template",
-                    "description": "🏥 **Template Generator**: Create pre-configured clinical templates for common healthcare scenarios with FHIR compliance and workflow integration",
+                    "name": "plan_bundle_schema",
+                    "description": "🧩 Plan a bundle schema across resource types",
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "template_type": {"type": "string", "enum": ["assessment", "intake", "discharge", "monitoring", "referral"], "description": "Type of clinical template"},
-                            "focus_area": {"type": "string", "description": "Clinical focus area (cardiology, general, emergency, mental_health, pediatric)"},
-                            "complexity_level": {"type": "string", "enum": ["minimal", "standard", "comprehensive"], "description": "Detail level", "default": "standard"},
-                            "include_workflow_fields": {"type": "boolean", "description": "Include workflow management fields", "default": True},
+                            "resource_types": {"type": "array", "items": {"type": "string"}}
                         },
-                        "required": ["template_type", "focus_area"],
-                    },
-                },
-                {
-                    "name": "create_model_stack",
-                    "description": "🏗️ **Model Composer**: Build complex data structures by stacking multiple HACS models with intelligent field merging and conflict resolution",
-                    "inputSchema": {
-                        "type": "object",
-                        "properties": {
-                            "base_model": {"type": "string", "description": "Base HACS model name"},
-                            "stack_name": {"type": "string", "description": "Name for the composed model"},
-                            "extensions": {"type": "array", "items": {"type": "object"}, "description": "Extension model specifications"},
-                            "merge_strategy": {"type": "string", "enum": ["overlay", "prefix", "namespace"], "description": "Field conflict resolution", "default": "overlay"},
-                        },
-                        "required": ["base_model", "stack_name"],
-                    },
-                },
-                {
-                    "name": "version_hacs_resource",
-                    "description": "📦 **Version Manager**: Create and manage versions of HACS models with schema tracking, change logs, and deployment status",
-                    "inputSchema": {
-                        "type": "object",
-                        "properties": {
-                            "model_name": {"type": "string", "description": "Model to version"},
-                            "version": {"type": "string", "description": "Version identifier (e.g., '1.0.0')"},
-                            "description": {"type": "string", "description": "Change description"},
-                            "schema_definition": {"type": "object", "description": "Schema definition"},
-                            "tags": {"type": "array", "items": {"type": "string"}, "description": "Version tags"},
-                            "status": {"type": "string", "enum": ["draft", "published", "deprecated"], "default": "published"},
-                        },
-                        "required": ["model_name", "version", "description", "schema_definition"],
+                        "required": ["resource_types"],
                     },
                 },
             ]
@@ -222,77 +186,52 @@ class HacsMCPServer:
             # BLOCK 2: REGISTRY & CRUD TOOLS
             registry_tools = [
                 {
-                    "name": "create_resource",
-                    "description": "➕ **Resource Creator**: Create new HACS resources withvalidation, auto-ID generation, FHIR compliance, and persistent storage",
+                    "name": "save_record",
+                    "description": "➕ Save a HACS resource record (typed CRUD)",
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "resource_type": {"type": "string", "description": "Type of HACS resource to create"},
-                            "resource_data": {"type": "object", "description": "Resource data following HACS schema"},
-                            "validate_fhir": {"type": "boolean", "description": "Perform FHIR validation", "default": True},
-                            "auto_generate_id": {"type": "boolean", "description": "Auto-generate unique ID", "default": True},
+                            "resource_type": {"type": "string"},
+                            "resource_data": {"type": "object"}
                         },
                         "required": ["resource_type", "resource_data"],
                     },
                 },
                 {
-                    "name": "get_resource",
-                    "description": "📖 **Resource Reader**: Retrieve HACS resources by ID with related data, audit information, and security validation",
+                    "name": "read_record",
+                    "description": "📖 Read a HACS record by ID",
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "resource_type": {"type": "string", "description": "Type of HACS resource"},
-                            "resource_id": {"type": "string", "description": "Unique resource identifier"},
-                            "include_related": {"type": "boolean", "description": "Include related resources", "default": False},
+                            "resource_type": {"type": "string"},
+                            "resource_id": {"type": "string"}
                         },
                         "required": ["resource_type", "resource_id"],
                     },
                 },
                 {
-                    "name": "update_resource",
-                    "description": "✏️ **Resource Updater**: Update existing HACS resources with validation, conflict detection, and audit tracking",
+                    "name": "update_record",
+                    "description": "✏️ Update a HACS record",
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "resource_type": {"type": "string", "description": "Type of HACS resource"},
-                            "resource_id": {"type": "string", "description": "Resource identifier"},
-                            "updates": {"type": "object", "description": "Fields to update"},
-                            "validate_before_update": {"type": "boolean", "description": "Validate before applying", "default": True},
+                            "resource_type": {"type": "string"},
+                            "resource_id": {"type": "string"},
+                            "patch": {"type": "object"}
                         },
-                        "required": ["resource_type", "resource_id", "updates"],
+                        "required": ["resource_type", "resource_id", "patch"],
                     },
                 },
                 {
-                    "name": "delete_resource",
-                    "description": "🗑️ **Resource Deleter**: Delete HACS resources with security validation, audit logging, and soft delete options",
+                    "name": "delete_record",
+                    "description": "🗑️ Delete a HACS record",
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "resource_type": {"type": "string", "description": "Type of HACS resource"},
-                            "resource_id": {"type": "string", "description": "Resource identifier"},
-                            "soft_delete": {"type": "boolean", "description": "Soft delete (recoverable)", "default": True},
+                            "resource_type": {"type": "string"},
+                            "resource_id": {"type": "string"}
                         },
                         "required": ["resource_type", "resource_id"],
-                    },
-                },
-                {
-                    "name": "validate_resource_data",
-                    "description": "✅ **Data Validator**: Validate resource data against HACS schemas with detailed error reporting and suggestions",
-                    "inputSchema": {
-                        "type": "object",
-                        "properties": {
-                            "resource_type": {"type": "string", "description": "HACS resource type"},
-                            "data": {"type": "object", "description": "Data to validate"},
-                        },
-                        "required": ["resource_type", "data"],
-                    },
-                },
-                {
-                    "name": "list_available_resources",
-                    "description": "📋 **Resource Catalog**: List all available HACS resource types with descriptions and capabilities",
-                    "inputSchema": {
-                        "type": "object",
-                        "properties": {},
                     },
                 },
             ]
@@ -300,36 +239,17 @@ class HacsMCPServer:
             # BLOCK 3: SEARCH & DISCOVERY TOOLS
             search_tools = [
                 {
-                    "name": "find_resources",
-                    "description": "🔍 **Smart Search**: Advanced resource search with semantic similarity, filters, faceted search, and relevance scoring",
-                    "inputSchema": {
-                        "type": "object",
-                        "properties": {
-                            "resource_type": {"type": "string", "description": "Type of resource to search"},
-                            "filters": {"type": "object", "description": "Field-based filters"},
-                            "semantic_query": {"type": "string", "description": "Natural language search query"},
-                            "limit": {"type": "integer", "minimum": 1, "maximum": 100, "description": "Max results", "default": 10},
-                            "include_score": {"type": "boolean", "description": "Include relevance scores", "default": True},
-                        },
-                        "required": ["resource_type"],
-                    },
-                },
-                {
                     "name": "search_hacs_records",
-                    "description": "📊 **Record Search**: Search HACS records with advanced filtering, sorting, and aggregation capabilities",
+                    "description": "📊 Search HACS records with filtering",
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "resource_type": {"type": "string", "description": "Resource type to search"},
-                            "filters": {"type": "object", "description": "Search filters"},
-                            "semantic_query": {"type": "string", "description": "Semantic search query"},
-                            "limit": {"type": "integer", "default": 10},
-                            "sort_by": {"type": "string", "description": "Sort field"},
-                            "sort_order": {"type": "string", "enum": ["asc", "desc"], "default": "desc"},
-                        },
-                        "required": ["resource_type"],
-                    },
-                },
+                            "query": {"type": "string"},
+                            "resource_types": {"type": "array", "items": {"type": "string"}},
+                            "limit": {"type": "integer", "default": 10}
+                        }
+                    }
+                }
             ]
 
             # BLOCK 4: MEMORY MANAGEMENT TOOLS
@@ -426,10 +346,10 @@ class HacsMCPServer:
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "model_name": {"type": "string", "description": "Model to analyze"},
+                            "resource_name": {"type": "string", "description": "Model to analyze"},
                             "field_category_filter": {"type": "string", "description": "Filter by field category"},
                         },
-                        "required": ["model_name"],
+                        "required": ["resource_name"],
                     },
                 },
                 {
@@ -438,10 +358,10 @@ class HacsMCPServer:
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "model_names": {"type": "array", "items": {"type": "string"}, "description": "Models to compare"},
+                            "resource_names": {"type": "array", "items": {"type": "string"}, "description": "Models to compare"},
                             "comparison_focus": {"type": "string", "enum": ["fields", "types", "validation"], "default": "fields"},
                         },
-                        "required": ["model_names"],
+                        "required": ["resource_names"],
                     },
                 },
             ]
@@ -454,12 +374,12 @@ class HacsMCPServer:
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "model_name": {"type": "string", "description": "Base model name"},
+                            "resource_name": {"type": "string", "description": "Base model name"},
                             "fields": {"type": "array", "items": {"type": "string"}, "description": "Fields to include"},
                             "view_name": {"type": "string", "description": "Custom view name"},
                             "include_optional": {"type": "boolean", "default": True},
                         },
-                        "required": ["model_name", "fields"],
+                        "required": ["resource_name", "fields"],
                     },
                 },
                 {
@@ -468,11 +388,11 @@ class HacsMCPServer:
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "model_name": {"type": "string", "description": "Base model"},
+                            "resource_name": {"type": "string", "description": "Base model"},
                             "use_case": {"type": "string", "description": "Intended use case"},
                             "max_fields": {"type": "integer", "minimum": 1, "maximum": 50, "default": 10},
                         },
-                        "required": ["model_name", "use_case"],
+                        "required": ["resource_name", "use_case"],
                     },
                 },
                 {
@@ -481,12 +401,12 @@ class HacsMCPServer:
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "model_name": {"type": "string", "description": "Model to optimize"},
+                            "resource_name": {"type": "string", "description": "Model to optimize"},
                             "optimization_goal": {"type": "string", "enum": ["token_efficiency", "accuracy", "completeness", "simplicity"], "default": "token_efficiency"},
                             "target_use_case": {"type": "string", "enum": ["structured_output", "classification", "extraction", "validation"], "default": "structured_output"},
                             "preserve_validation": {"type": "boolean", "default": True},
                         },
-                        "required": ["model_name"],
+                        "required": ["resource_name"],
                     },
                 },
             ]

@@ -31,152 +31,65 @@ from .annotation.data import FormatType
 
 T = TypeVar('T', bound=BaseModel)
 
-async def generate_structured_output(
+async def extract(
     llm_provider: Any,
     prompt: str,
     output_model: Type[T],
     *,
+    many: bool = False,
+    max_items: int = 10,
     format_type: FormatType = FormatType.JSON,
     fenced_output: bool = True,
     max_retries: int = 1,
     strict: bool = True,
     **kwargs,
-) -> T:
+) -> T | list[T]:
     """
-    Generate structured output from LLM using the specified Pydantic model.
+    Unified structured extraction (single or list) using a Pydantic model.
 
-    Args:
-        llm_provider: The LLM provider instance (must support ainvoke method)
-        prompt: The prompt to send to the LLM
-        output_model: The Pydantic model class to generate
-        **kwargs: Additional arguments passed to LLM
-
-    Returns:
-        Instance of the output_model with generated data
-
-    Raises:
-        ValueError: If LLM provider doesn't support required methods
+    - When many=False, returns a single instance of output_model
+    - When many=True, returns a list[output_model] (up to max_items)
     """
-    if not hasattr(llm_provider, 'ainvoke'):
-        # Try sync path via invoke/chat if available
-        if hasattr(llm_provider, 'invoke'):
-            response = llm_provider.invoke(
-                _build_structured_prompt(
-                    prompt, output_model, format_type=format_type, fenced=fenced_output, is_array=False
-                )
-            )
-            parsed = _try_parse_to_model(_to_text(response), output_model)
-            if parsed is not None:
-                return parsed
-            # Attempt one repair pass via sync path if possible
-            if max_retries > 0:
-                repair_resp = llm_provider.invoke(
-                    _build_repair_prompt(_to_text(response), output_model, format_type=format_type, fenced=fenced_output)
-                )
-                repaired = _try_parse_to_model(_to_text(repair_resp), output_model)
-                if repaired is not None:
-                    return repaired
-            if strict:
-                raise ValueError("Failed to parse structured output for provided model")
-            return _create_fallback_instance(output_model)
-        raise ValueError("LLM provider must support 'ainvoke' or 'invoke' method")
-
-    # Create a prompt that asks for structured output with fencing and example
+    # Build prompt
     structured_prompt = _build_structured_prompt(
-        prompt, output_model, format_type=format_type, fenced=fenced_output, is_array=False
+        prompt, output_model, format_type=format_type, fenced=fenced_output, is_array=many, max_items=max_items
     )
 
-    # Get response from LLM
-    response = await llm_provider.ainvoke(structured_prompt)
+    # Invoke provider (async preferred, sync fallback)
+    response = await _maybe_await_invoke(llm_provider, structured_prompt)
     text = _to_text(response)
-    parsed = _try_parse_to_model(text, output_model)
-    if parsed is not None:
-        return parsed
+    if many:
+        parsed_list = _try_parse_to_model_list(text, output_model, max_items=max_items)
+        if parsed_list is not None:
+            return parsed_list
+    else:
+        parsed = _try_parse_to_model(text, output_model)
+        if parsed is not None:
+            return parsed
+
     # Attempt repair passes
     attempts = 0
     while attempts < max_retries:
         attempts += 1
-        repair_prompt = _build_repair_prompt(text, output_model, format_type=format_type, fenced=fenced_output)
+        repair_prompt = _build_repair_prompt(text, output_model, format_type=format_type, fenced=fenced_output, is_array=many)
         response = await _maybe_await_invoke(llm_provider, repair_prompt)
         text = _to_text(response)
-        repaired = _try_parse_to_model(text, output_model)
-        if repaired is not None:
-            return repaired
+        if many:
+            repaired_list = _try_parse_to_model_list(text, output_model, max_items=max_items)
+            if repaired_list is not None:
+                return repaired_list
+        else:
+            repaired = _try_parse_to_model(text, output_model)
+            if repaired is not None:
+                return repaired
+
     if strict:
         raise ValueError("Failed to parse structured output for provided model")
-    return _create_fallback_instance(output_model)
+    return [_create_fallback_instance(output_model)] if many else _create_fallback_instance(output_model)
 
-async def generate_structured_list(
-    llm_provider: Any,
-    prompt: str,
-    output_model: Type[T],
-    max_items: int = 10,
-    *,
-    format_type: FormatType = FormatType.JSON,
-    fenced_output: bool = True,
-    max_retries: int = 1,
-    strict: bool = True,
-    **kwargs,
-) -> list[T]:
-    """
-    Generate a list of structured outputs from LLM.
+## Deprecated wrappers removed; use extract(..., many=...) instead.
 
-    Args:
-        llm_provider: The LLM provider instance (must support ainvoke method)
-        prompt: The prompt to send to the LLM
-        output_model: The Pydantic model class to generate
-        max_items: Maximum number of items to generate
-        **kwargs: Additional arguments passed to LLM
-
-    Returns:
-        List of instances of the output_model
-
-    Raises:
-        ValueError: If LLM provider doesn't support required methods
-    """
-    if not hasattr(llm_provider, 'ainvoke'):
-        if hasattr(llm_provider, 'invoke'):
-            response = llm_provider.invoke(
-                _build_structured_prompt(
-                    prompt, output_model, format_type=format_type, fenced=fenced_output, is_array=True, max_items=max_items
-                )
-            )
-            parsed = _try_parse_to_model_list(_to_text(response), output_model, max_items=max_items)
-            if parsed is not None:
-                return parsed
-            if max_retries > 0:
-                repair_resp = llm_provider.invoke(
-                    _build_repair_prompt(_to_text(response), output_model, format_type=format_type, fenced=fenced_output, is_array=True)
-                )
-                repaired = _try_parse_to_model_list(_to_text(repair_resp), output_model, max_items=max_items)
-                if repaired is not None:
-                    return repaired
-            if strict:
-                raise ValueError("Failed to parse structured list for provided model")
-            return [_create_fallback_instance(output_model)]
-        raise ValueError("LLM provider must support 'ainvoke' or 'invoke' method")
-
-    structured_prompt = _build_structured_prompt(
-        prompt, output_model, format_type=format_type, fenced=fenced_output, is_array=True, max_items=max_items
-    )
-
-    response = await llm_provider.ainvoke(structured_prompt)
-    text = _to_text(response)
-    parsed = _try_parse_to_model_list(text, output_model, max_items=max_items)
-    if parsed is not None:
-        return parsed
-    attempts = 0
-    while attempts < max_retries:
-        attempts += 1
-        repair_prompt = _build_repair_prompt(text, output_model, format_type=format_type, fenced=fenced_output, is_array=True)
-        response = await _maybe_await_invoke(llm_provider, repair_prompt)
-        text = _to_text(response)
-        repaired = _try_parse_to_model_list(text, output_model, max_items=max_items)
-        if repaired is not None:
-            return repaired
-    if strict:
-        raise ValueError("Failed to parse structured list for provided model")
-    return [_create_fallback_instance(output_model)]
+## Deprecated wrappers removed; use extract(..., many=True) instead.
 
 
 def generate_structured_output_openai(
@@ -256,11 +169,11 @@ def generate_structured_from_messages_anthropic(
         msg = client.messages.create(model=model or "claude-3-7-sonnet-latest", max_tokens=max_tokens, messages=msgs)
         return _parse_to_model(_to_text(msg), output_model)
 
-def _get_model_schema_example(model_class: Type[BaseModel]) -> str:
+def _get_model_schema_example(resource_class: Type[BaseModel]) -> str:
     """Get a JSON schema example for the model class."""
     try:
         # Try to get the JSON schema
-        schema = model_class.model_json_schema()
+        schema = resource_class.model_json_schema()
 
         # Create a simple example based on the schema
         example = {}
@@ -289,23 +202,23 @@ def _get_model_schema_example(model_class: Type[BaseModel]) -> str:
     except Exception:
         # If schema generation fails, create a fallback instance
         try:
-            example = _create_fallback_instance(model_class)
+            example = _create_fallback_instance(resource_class)
             return json.dumps(example.model_dump(), indent=2)
         except Exception:
             return '{"example": "data"}'
 
-def _create_fallback_instance(model_class: Type[T]) -> T:
+def _create_fallback_instance(resource_class: Type[T]) -> T:
     """Create a fallback instance of the model with reasonable defaults."""
     try:
         # Try to create with no arguments first
-        return model_class()
+        return resource_class()
     except Exception:
         try:
             # Try to create with empty dict
-            return model_class(**{})
+            return resource_class(**{})
         except Exception:
             # If that fails, try to create with default values for required fields
-            schema = model_class.model_json_schema()
+            schema = resource_class.model_json_schema()
             properties = schema.get('properties', {})
             required = schema.get('required', [])
 
@@ -340,7 +253,7 @@ def _create_fallback_instance(model_class: Type[T]) -> T:
                     # For unknown types, try to get a reasonable default
                     defaults[field_name] = None
 
-            return model_class(**defaults)
+            return resource_class(**defaults)
 
 
 def _extract_fenced(text: str) -> str:

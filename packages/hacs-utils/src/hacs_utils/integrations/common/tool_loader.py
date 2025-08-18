@@ -51,7 +51,7 @@ def _check_hacs_availability():
 
     # Check HACS Utils LangChain integration
     try:
-        from hacs_utils.integrations.langchain.tools import get_all_hacs_langchain_tools
+        from hacs_utils.integrations.langchain.tools import langchain_tools
         availability['hacs_utils_langchain'] = True
         logger.debug("✅ HACS Utils LangChain integration available")
     except ImportError:
@@ -119,8 +119,8 @@ def get_hacs_tools_from_utils() -> List[Any]:
         return []
 
     try:
-        from hacs_utils.integrations.langchain.tools import get_all_hacs_langchain_tools
-        tools = get_all_hacs_langchain_tools()
+        from hacs_utils.integrations.langchain.tools import langchain_tools
+        tools = langchain_tools()
         logger.info(f"✅ Loaded {len(tools)} tools from HACS Utils")
         return tools
     except Exception as e:
@@ -141,7 +141,9 @@ def get_hacs_tools_direct() -> List[Any]:
             registry = get_global_tool_registry()
             tools = [tool.function for tool in registry.get_all_tools()]
             logger.info(f"✅ Loaded {len(tools)} tools via HACS Registry")
-            return tools
+            # If registry has no tools (dev mode), fall back to direct import
+            if tools:
+                return tools
         except Exception as e:
             logger.warning(f"Failed to load from HACS Registry: {e}")
 
@@ -296,8 +298,43 @@ async def get_all_hacs_tools(framework: str = "langgraph") -> List[Any]:
     Returns:
         Complete list of HACS tools with framework-specific additions
     """
-    # Load core HACS tools
+    # Load core HACS tools (as plain callables)
     tools = await load_hacs_tools(framework)
+
+    # Adapt to LangChain BaseTool if requested
+    if framework == "langchain" and _AVAILABILITY['langchain'] and tools:
+        try:
+            from langchain_core.tools.structured import StructuredTool
+            import inspect
+            try:
+                from pydantic import create_model
+            except Exception:
+                create_model = None
+            reserved_params = {"actor_name", "db_adapter", "vector_store", "session_id", "config", "state", "store"}
+            adapted = []
+            for fn in tools:
+                try:
+                    # Optionally build a reduced args schema that hides reserved/injected params
+                    args_schema = None
+                    if create_model is not None:
+                        sig = inspect.signature(fn)
+                        fields = {}
+                        for name, param in sig.parameters.items():
+                            if name in ("self", "args", "kwargs") or name in reserved_params:
+                                continue
+                            # Basic JSON type mapping; LangChain will refine
+                            ann = param.annotation if param.annotation is not inspect._empty else str
+                            default = param.default if param.default is not inspect._empty else ...
+                            fields[name] = (ann, default)
+                        if fields:
+                            args_schema = create_model(f"{fn.__name__}Input", **fields)
+                    adapted.append(StructuredTool.from_function(func=fn, args_schema=args_schema))
+                except Exception:
+                    # Skip functions that cannot be adapted
+                    continue
+            tools = adapted
+        except ImportError:
+            logger.warning("LangChain not available; returning plain functions")
 
     # Add framework-specific built-in tools
     builtin_tools = get_framework_builtin_tools(framework)

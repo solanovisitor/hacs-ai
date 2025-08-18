@@ -24,7 +24,7 @@ Design Principles:
 
 import uuid
 from datetime import datetime, timezone
-from typing import Any, ClassVar, Type, TypeVar
+from typing import Any, ClassVar, Type, TypeVar, Optional, Dict, List
 import inspect
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
@@ -248,6 +248,14 @@ class BaseResource(BaseModel):
     _hacs_version: ClassVar[str] = "0.1.0"
     _fhir_version: ClassVar[str | None] = None  # Override in FHIR resources
 
+    # Optional documentation metadata (class-level), for agent discovery and registry overrides
+    _doc_scope_usage: ClassVar[Optional[str]] = None
+    _doc_boundaries: ClassVar[Optional[str]] = None
+    _doc_relationships: ClassVar[List[str]] = []
+    _doc_references: ClassVar[List[str]] = []
+    _doc_tools: ClassVar[List[str]] = []
+    _doc_examples: ClassVar[List[Dict[str, Any]]] = []
+
     def model_post_init(self, __context: Any) -> None:
         """
         Post-initialization hook for auto-generation of required fields.
@@ -419,6 +427,26 @@ class BaseResource(BaseModel):
             "description": doc,
             "fields": fields,
         }
+
+    @classmethod
+    def get_specifications(cls, language: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Return a structured definition for agents and registries, including docs and field schema.
+        Language parameter reserved for future localization via registry overrides.
+        """
+        base = cls.get_descriptive_schema()
+        docs = {
+            "scope_usage": cls._doc_scope_usage,
+            "boundaries": cls._doc_boundaries,
+            "relationships": list(cls._doc_relationships or []),
+            "references": list(cls._doc_references or []),
+            "tools": list(cls._doc_tools or []),
+            "examples": list(cls._doc_examples or []),
+        }
+        base["documentation"] = docs
+        if language:
+            base["language"] = language
+        return base
 
     def __str__(self) -> str:
         """

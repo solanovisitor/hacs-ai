@@ -39,12 +39,6 @@ services:
     environment:
       QDRANT__SERVICE__HTTP_PORT: 6333
       QDRANT__SERVICE__GRPC_PORT: 6334
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
     networks:
       - hacs-network
     profiles:
@@ -95,7 +89,7 @@ services:
     environment:
       - DATABASE_URL=${DATABASE_URL:-postgresql://hacs:${DB_PASSWORD:-hacs_dev}@postgres:5432/hacs}
       - PYTHONPATH=/app/packages/hacs-core/src:/app/packages/hacs-persistence/src:/app/packages/hacs-utils/src
-    command: ["python", "-c", "from hacs_persistence.migrations import run_migrations; run_migrations()"]
+    command: ["python", "-c", "import asyncio, os; from hacs_persistence.migrations import run_migration; asyncio.run(run_migration(os.getenv('DATABASE_URL')))" ]
     depends_on:
       postgres:
         condition: service_healthy
@@ -146,7 +140,7 @@ services:
       sh -c "
         echo 'Installing UV package manager...' &&
         curl -LsSf https://astral.sh/uv/install.sh | sh &&
-        export PATH=\"/root/.cargo/bin:\$PATH\" &&
+        export PATH=\"/root/.cargo/bin:$PATH\" &&
         echo 'Installing test dependencies with UV...' &&
         uv pip install pytest pytest-asyncio &&
         echo 'Waiting for services to be ready...' &&
@@ -164,6 +158,32 @@ services:
       - hacs-network
     profiles:
       - test
+
+  # Docs server (MkDocs Material + mkdocstrings)
+  docs:
+    build:
+      context: ./docs
+      dockerfile: Dockerfile
+    container_name: hacs-docs
+    working_dir: /docs
+    entrypoint: mkdocs
+    command: serve -a 0.0.0.0:8080
+    environment:
+      PYTHONPATH: "/docs/packages/hacs-auth/src:/docs/packages/hacs-core/src:/docs/packages/hacs-infrastructure/src:/docs/packages/hacs-models/src:/docs/packages/hacs-persistence/src:/docs/packages/hacs-registry/src:/docs/packages/hacs-tools/src:/docs/packages/hacs-utils/src:/docs/packages/hacs-cli/src"
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/docs
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - hacs-network
+    profiles:
+      - docs
 
 volumes:
   hacs_postgres_data:

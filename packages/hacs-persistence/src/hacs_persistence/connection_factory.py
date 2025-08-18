@@ -211,7 +211,7 @@ class HACSConnectionFactory:
         
         Example:
             async with HACSConnectionFactory.get_connection() as adapter:
-                result = await adapter.save_resource(resource)
+                result = await adapter.save_record(resource)
         """
         adapter = cls.get_adapter(database_url)
         try:

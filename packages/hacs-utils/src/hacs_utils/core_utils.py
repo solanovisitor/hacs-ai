@@ -257,7 +257,7 @@ class VersionManager:
             return cls.UTILITY_VERSION
 
 
-def _get_model_class(resource_type: str):
+def _get_resource_class(resource_type: str):
     """Get the model class for a resource type."""
     try:
         from hacs_core import (

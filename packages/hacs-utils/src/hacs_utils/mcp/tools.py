@@ -45,14 +45,14 @@ def _get_models_info() -> List[Dict[str, Any]]:
 def mcp_list_models() -> Dict[str, Any]:
     return {"success": True, "models": _get_models_info()}
 
-def mcp_get_model_schema(model_name: str) -> Dict[str, Any]:
+def mcp_get_model_schema(resource_name: str) -> Dict[str, Any]:
     try:
         import hacs_models as hm
     except Exception:
         import hacs_core as hm
-    cls = getattr(hm, model_name, None)
+    cls = getattr(hm, resource_name, None)
     if not cls or not hasattr(cls, "model_json_schema"):
-        return {"success": False, "error": f"Model not found: {model_name}"}
+        return {"success": False, "error": f"Model not found: {resource_name}"}
     try:
         ds = {}
         if hasattr(cls, "get_descriptive_schema"):
@@ -80,11 +80,11 @@ logger = logging.getLogger(__name__)
 
 # Simplified tool name mapping for MCP server (only where names differ)
 TOOL_NAME_MAPPING = {
-    "create_resource": "create_hacs_record",
-    "get_resource": "get_hacs_record",
-    "update_resource": "update_hacs_record",
-    "delete_resource": "delete_hacs_record",
-    "search_resources": "search_hacs_records",
+    "create_resource": "create_record",
+    "get_resource": "get_record",
+    "update_resource": "update_record",
+    "delete_resource": "delete_record",
+    "search_resources": "search_records",
     "create_memory": "create_hacs_memory",
     "search_memories": "search_hacs_memories",
 }

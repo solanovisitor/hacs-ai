@@ -23,6 +23,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
+from pydantic import ConfigDict
 
 
 # === BASE RESULT TYPES ===
@@ -54,9 +55,12 @@ class ResourceSchemaResult(BaseModel):
     including FHIR compliance details and validation rules.
     """
 
+    model_config = ConfigDict(populate_by_name=True)
+
     success: bool = Field(description="Whether schema operation succeeded")
     resource_type: str = Field(description="Type of healthcare resource (Patient, Observation, etc.)")
-    schema: Dict[str, Any] = Field(description="JSON schema definition for the resource")
+    # Avoid shadowing BaseModel.schema() by renaming with alias
+    json_schema: Dict[str, Any] = Field(alias="schema", description="JSON schema definition for the resource")
     fhir_compliance: bool = Field(description="Whether the schema is FHIR R4/R5 compliant")
     required_fields: List[str] = Field(description="List of required fields for validation")
     optional_fields: List[str] = Field(description="List of optional fields available")

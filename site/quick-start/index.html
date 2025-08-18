@@ -1,0 +1,960 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../api-reference/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.17">
+    
+    
+      
+        <title>Quick Start - HACS</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.7e37652d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#hacs-quick-start-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="HACS" class="md-header__button md-logo" aria-label="HACS" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            HACS
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Quick Start
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="HACS" class="md-nav__button md-logo" aria-label="HACS" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    HACS
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Quick Start
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quick Start
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-1-installation-and-minimal-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 1: Installation and minimal usage
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-add-capabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 2: Add capabilities
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 2: Add capabilities">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#llm-extraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      LLM extraction
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#database-persistence" class="md-nav__link">
+    <span class="md-ellipsis">
+      Database persistence
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#visualization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Visualization
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-integrate" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 3: Integrate
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-you-built" class="md-nav__link">
+    <span class="md-ellipsis">
+      🎯 What You Built
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Next Steps
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Next Steps">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#production-workflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      Production Workflows
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Documentation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#database-setup-migrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Database setup &amp; migrations
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Reference
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hacs-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    HACS Tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Tutorials
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/complete_context_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Complete Context Engineering
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/medication_extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Medication Extraction
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gallery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Gallery
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Testing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-1-installation-and-minimal-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 1: Installation and minimal usage
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-2-add-capabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 2: Add capabilities
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 2: Add capabilities">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#llm-extraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      LLM extraction
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#database-persistence" class="md-nav__link">
+    <span class="md-ellipsis">
+      Database persistence
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#visualization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Visualization
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#step-3-integrate" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 3: Integrate
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-you-built" class="md-nav__link">
+    <span class="md-ellipsis">
+      🎯 What You Built
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Next Steps
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Next Steps">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#production-workflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      Production Workflows
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Documentation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#database-setup-migrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Database setup &amp; migrations
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="hacs-quick-start-guide">HACS Quick Start Guide<a class="headerlink" href="#hacs-quick-start-guide" title="Permanent link">&para;</a></h1>
+<p><strong>Build a Healthcare Document Processing Pipeline in 5 Minutes</strong></p>
+<p>Extract structured healthcare data from clinical text and persist to database with proper actor security.</p>
+<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Python 3.11+</strong></li>
+<li><strong>Docker</strong> (for database)</li>
+</ul>
+<hr />
+<h2 id="step-1-installation-and-minimal-usage">Step 1: Installation and minimal usage<a class="headerlink" href="#step-1-installation-and-minimal-usage" title="Permanent link">&para;</a></h2>
+<p>Install with uv and run a minimal in‑process example using HACS models. HACS models are healthcare‑native, FHIR‑aligned typed data structures that form the canonical layer for agents, tools, and persistence. This first step introduces the core types and how resources are constructed and reasoned over in‑process.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Install uv and create Python 3.11 environment</span>
+curl<span class="w"> </span>-LsSf<span class="w"> </span>https://astral.sh/uv/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh
+uv<span class="w"> </span>venv<span class="w"> </span>-p<span class="w"> </span><span class="m">3</span>.11
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+
+<span class="c1"># Install core HACS packages</span>
+uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-U<span class="w"> </span>hacs-core<span class="w"> </span>hacs-models<span class="w"> </span>hacs-auth
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">Actor</span><span class="p">,</span> <span class="n">ActorRole</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Patient</span><span class="p">,</span> <span class="n">Observation</span><span class="p">,</span> <span class="n">CodeableConcept</span><span class="p">,</span> <span class="n">Quantity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">ObservationStatus</span>
+
+<span class="c1"># Provider (in‑process only)</span>
+<span class="n">doctor</span> <span class="o">=</span> <span class="n">Actor</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Dr. Sarah Chen&quot;</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="n">ActorRole</span><span class="o">.</span><span class="n">PHYSICIAN</span><span class="p">,</span> <span class="n">organization</span><span class="o">=</span><span class="s2">&quot;General Hospital&quot;</span><span class="p">)</span>
+
+<span class="c1"># Typed resources (no DB, no LLM)</span>
+<span class="n">patient</span> <span class="o">=</span> <span class="n">Patient</span><span class="p">(</span><span class="n">full_name</span><span class="o">=</span><span class="s2">&quot;Maria Rodriguez&quot;</span><span class="p">,</span> <span class="n">birth_date</span><span class="o">=</span><span class="s2">&quot;1985-03-15&quot;</span><span class="p">,</span> <span class="n">gender</span><span class="o">=</span><span class="s2">&quot;female&quot;</span><span class="p">)</span>
+<span class="n">bp</span> <span class="o">=</span> <span class="n">Observation</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">ObservationStatus</span><span class="o">.</span><span class="n">FINAL</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="n">CodeableConcept</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;Blood Pressure&quot;</span><span class="p">),</span> <span class="n">value_quantity</span><span class="o">=</span><span class="n">Quantity</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">128.0</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;mmHg&quot;</span><span class="p">),</span> <span class="n">subject</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Patient/</span><span class="si">{</span><span class="n">patient</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✅ Minimal example ready:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  Actor:&quot;</span><span class="p">,</span> <span class="n">doctor</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">doctor</span><span class="o">.</span><span class="n">role</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  Patient:&quot;</span><span class="p">,</span> <span class="n">patient</span><span class="o">.</span><span class="n">full_name</span><span class="p">,</span> <span class="n">patient</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  BP:&quot;</span><span class="p">,</span> <span class="n">bp</span><span class="o">.</span><span class="n">value_quantity</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">bp</span><span class="o">.</span><span class="n">value_quantity</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>✅ Minimal example ready:
+  Actor: Dr. Sarah Chen physician
+  Patient: Maria Rodriguez patient-2cafafa7
+  BP: 128.0 mmHg
+</code></pre></div>
+<p><em>This validates your local environment and demonstrates HACS typed models in‑process.</em></p>
+<hr />
+<h2 id="step-2-add-capabilities">Step 2: Add capabilities<a class="headerlink" href="#step-2-add-capabilities" title="Permanent link">&para;</a></h2>
+<p>Add structured extraction and PostgreSQL persistence to the minimal setup.</p>
+<p>The following snippets illustrate common extensions to the minimal setup.</p>
+<h3 id="llm-extraction">LLM extraction<a class="headerlink" href="#llm-extraction" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Prereq: uv pip install -U hacs-utils langchain-openai; set OPENAI_API_KEY</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Patient</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.structured</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>
+
+<span class="n">PatientInfo</span> <span class="o">=</span> <span class="n">Patient</span><span class="o">.</span><span class="n">pick</span><span class="p">(</span><span class="s2">&quot;full_name&quot;</span><span class="p">,</span> <span class="s2">&quot;birth_date&quot;</span><span class="p">,</span> <span class="s2">&quot;gender&quot;</span><span class="p">)</span>
+<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">note</span> <span class="o">=</span> <span class="s2">&quot;Maria Rodriguez (1985-03-15), female.&quot;</span>
+<span class="n">subset</span> <span class="o">=</span> <span class="n">extract</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Extract demographics.</span><span class="se">\n\n</span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">output_model</span><span class="o">=</span><span class="n">PatientInfo</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;extracted:&quot;</span><span class="p">,</span> <span class="n">subset</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+</code></pre></div>
+<p>See <code>docs/tutorials/medication_extraction.md</code> and API reference (structured extraction).</p>
+<h3 id="database-persistence">Database persistence<a class="headerlink" href="#database-persistence" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot; Prereq: uv pip install -U hacs-persistence; set DATABASE_URL &quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span><span class="o">,</span><span class="w"> </span><span class="nn">asyncio</span><span class="o">,</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_persistence</span><span class="w"> </span><span class="kn">import</span> <span class="n">HACSConnectionFactory</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">Actor</span><span class="p">,</span> <span class="n">ActorRole</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Patient</span><span class="p">,</span> <span class="n">Observation</span><span class="p">,</span> <span class="n">CodeableConcept</span><span class="p">,</span> <span class="n">Quantity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">ObservationStatus</span>
+
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(name)s</span><span class="s2">:</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;DATABASE_URL&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DATABASE_URL&quot;</span><span class="p">,</span> <span class="s2">&quot;postgresql://hacs:hacs_dev@localhost:5432/hacs&quot;</span><span class="p">)</span>
+
+<span class="n">adapter</span> <span class="o">=</span> <span class="n">HACSConnectionFactory</span><span class="o">.</span><span class="n">get_adapter</span><span class="p">(</span><span class="n">auto_migrate</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">doctor</span> <span class="o">=</span> <span class="n">Actor</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Dr. Sarah Chen&quot;</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="n">ActorRole</span><span class="o">.</span><span class="n">PHYSICIAN</span><span class="p">,</span> <span class="n">organization</span><span class="o">=</span><span class="s2">&quot;General Hospital&quot;</span><span class="p">)</span>
+<span class="n">patient</span> <span class="o">=</span> <span class="n">Patient</span><span class="p">(</span><span class="n">full_name</span><span class="o">=</span><span class="s2">&quot;Maria Rodriguez&quot;</span><span class="p">,</span> <span class="n">birth_date</span><span class="o">=</span><span class="s2">&quot;1985-03-15&quot;</span><span class="p">,</span> <span class="n">gender</span><span class="o">=</span><span class="s2">&quot;female&quot;</span><span class="p">)</span>
+<span class="n">bp_obs</span> <span class="o">=</span> <span class="n">Observation</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">ObservationStatus</span><span class="o">.</span><span class="n">FINAL</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="n">CodeableConcept</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;Blood Pressure&quot;</span><span class="p">),</span> <span class="n">value_quantity</span><span class="o">=</span><span class="n">Quantity</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">128.0</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;mmHg&quot;</span><span class="p">),</span> <span class="n">subject</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Patient/</span><span class="si">{</span><span class="n">patient</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">hr_obs</span> <span class="o">=</span> <span class="n">Observation</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">ObservationStatus</span><span class="o">.</span><span class="n">FINAL</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="n">CodeableConcept</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;Heart Rate&quot;</span><span class="p">),</span> <span class="n">value_quantity</span><span class="o">=</span><span class="n">Quantity</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">72.0</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;bpm&quot;</span><span class="p">),</span> <span class="n">subject</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Patient/</span><span class="si">{</span><span class="n">patient</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">():</span>
+    <span class="n">sp</span> <span class="o">=</span> <span class="k">await</span> <span class="n">adapter</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">patient</span><span class="p">,</span> <span class="n">doctor</span><span class="p">)</span>
+    <span class="n">bp_obs</span><span class="o">.</span><span class="n">subject</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Patient/</span><span class="si">{</span><span class="n">sp</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">hr_obs</span><span class="o">.</span><span class="n">subject</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Patient/</span><span class="si">{</span><span class="n">sp</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">await</span> <span class="n">adapter</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">bp_obs</span><span class="p">,</span> <span class="n">doctor</span><span class="p">)</span>
+    <span class="k">await</span> <span class="n">adapter</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">hr_obs</span><span class="p">,</span> <span class="n">doctor</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✅ Persisted Patient and Observations&quot;</span><span class="p">)</span>
+
+<span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">run</span><span class="p">())</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>INFO:hacs_persistence.adapter:PostgreSQLAdapter (Async) configured for schema &#39;public&#39;
+INFO:hacs_persistence.connection_factory:Created database adapter for schema &#39;public&#39;
+INFO:hacs_persistence.adapter:HACS resources table checked/created successfully
+INFO:hacs_persistence.adapter:Async connection pool established and tables initialized.
+INFO:hacs_persistence.adapter:Resource Patient/patient-d900519e saved successfully
+INFO:hacs_persistence.adapter:Resource Observation/observation-87dae782 saved successfully
+INFO:hacs_persistence.adapter:Resource Observation/observation-8280d00e saved successfully
+✅ Persisted Patient and Observations
+</code></pre></div>
+<h3 id="visualization">Visualization<a class="headerlink" href="#visualization" title="Permanent link">&para;</a></h3>
+<p>Render compact HTML cards for resources and highlight extractions in notebooks.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Prereq: uv pip install -U hacs-utils</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">visualize_resource</span><span class="p">,</span> <span class="n">visualize_annotations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnnotatedDocument</span><span class="p">,</span> <span class="n">Extraction</span><span class="p">,</span> <span class="n">CharInterval</span>
+
+<span class="n">visualize_resource</span><span class="p">(</span><span class="n">patient</span><span class="p">)</span>
+
+<span class="n">doc</span> <span class="o">=</span> <span class="n">AnnotatedDocument</span><span class="p">(</span>
+    <span class="n">text</span><span class="o">=</span><span class="s2">&quot;BP 128/82, HR 72&quot;</span><span class="p">,</span>
+    <span class="n">extractions</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">Extraction</span><span class="p">(</span>
+            <span class="n">extraction_class</span><span class="o">=</span><span class="s2">&quot;blood_pressure&quot;</span><span class="p">,</span>
+            <span class="n">extraction_text</span><span class="o">=</span><span class="s2">&quot;128/82&quot;</span><span class="p">,</span>
+            <span class="n">char_interval</span><span class="o">=</span><span class="n">CharInterval</span><span class="p">(</span><span class="n">start_pos</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">end_pos</span><span class="o">=</span><span class="mi">9</span><span class="p">),</span>
+        <span class="p">)</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+<span class="n">visualize_annotations</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>[Visualization] resource HTML type: str
+[Visualization] resource HTML length: 4452
+[Visualization] annotations HTML type: str
+[Visualization] annotations HTML length: 1555
+</code></pre></div>
+<p>Rendered previews:</p>
+<iframe src="../visuals/patient.html" width="100%" height="350" style="border:1px solid #e0e0e0; border-radius:6px;"></iframe>
+<iframe src="../visuals/annotations.html" width="100%" height="300" style="border:1px solid #e0e0e0; border-radius:6px;"></iframe>
+
+<hr />
+<h2 id="step-3-integrate">Step 3: Integrate<a class="headerlink" href="#step-3-integrate" title="Permanent link">&para;</a></h2>
+<p>Bind HACS tools to an agent.</p>
+<p>You can now bind HACS tools to an agent. Refer to the API reference and tools guide for details.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">langgraph.prebuilt</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_react_agent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.integrations.langchain.tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">hacs_langchain_tools</span>
+
+<span class="n">tools</span> <span class="o">=</span> <span class="n">hacs_langchain_tools</span><span class="p">()</span>
+<span class="n">agent</span> <span class="o">=</span> <span class="n">create_react_agent</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;anthropic:claude-3-7-sonnet-latest&quot;</span><span class="p">,</span> <span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;You are a healthcare assistant using HACS tools.&quot;</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="what-you-built">🎯 What You Built<a class="headerlink" href="#what-you-built" title="Permanent link">&para;</a></h2>
+<p>✅ <strong>Healthcare Document Processor</strong> - Extract structured data from clinical text<br />
+✅ <strong>FHIR-Compliant Database</strong> - PostgreSQL with healthcare schemas<br />
+✅ <strong>Actor-Based Security</strong> - Role-based permissions for providers<br />
+✅ <strong>AI-Ready Pipeline</strong> - Integrated with LangGraph and 20+ healthcare tools  </p>
+<h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
+<h3 id="production-workflows">Production Workflows<a class="headerlink" href="#production-workflows" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><a href="../tutorials/complete_context_engineering/">Complete Context Engineering</a></strong> - All 4 context strategies</li>
+<li><strong><a href="../tutorials/medication_extraction/">Medication Extraction</a></strong> - Extract medications from clinical notes</li>
+</ul>
+<h3 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><a href="../api-reference/">API Reference</a></strong> - Complete API documentation</li>
+<li><strong><a href="../hacs-tools/">HACS Tools</a></strong> - 20+ healthcare tools reference</li>
+<li><strong><a href="../testing/">Testing Guide</a></strong> - Testing and validation</li>
+</ul>
+<h3 id="database-setup-migrations">Database setup &amp; migrations<a class="headerlink" href="#database-setup-migrations" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>packages/hacs-persistence/README.md</code> — connection strings, schema overview, async migrations (<code>run_migration()</code>), guidance for <code>auto_migrate=True</code> in quick starts vs. explicit migrations in production</li>
+<li><code>docs/index.md</code> — HACS architecture (models, tools, persistence, integrations) and context‑engineering vision (Write, Select, Compress, Isolate)</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.92b07e13.min.js"></script>
+      
+    
+  </body>
+</html>

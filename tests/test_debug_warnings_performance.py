@@ -75,7 +75,7 @@ def test_debug_warnings_and_performance():
     simple_patient_data = {"full_name": "Performance Test", "gender": "other"}
     start_time = time.time()
     for i in range(50):
-        result = resource_management.create_hacs_record(
+        result = resource_management.create_record(
             actor_name="PerfTester",
             resource_type="Patient",
             resource_data={**simple_patient_data, "full_name": f"Test Patient {i}"}
@@ -96,7 +96,7 @@ def test_debug_warnings_and_performance():
     
     start_time = time.time()
     for i in range(25):
-        result = resource_management.create_hacs_record(
+        result = resource_management.create_record(
             actor_name="PerfTester",
             resource_type="Observation", 
             resource_data={**complex_obs_data, "value_quantity": {"value": 120 + i, "unit": "mmHg"}}
@@ -115,7 +115,7 @@ def test_debug_warnings_and_performance():
     
     resources_created = []
     for i in range(100):
-        result = resource_management.create_hacs_record(
+        result = resource_management.create_record(
             actor_name="MemoryTester",
             resource_type="Patient",
             resource_data={"full_name": f"Memory Test {i}", "gender": "other"}
@@ -151,7 +151,7 @@ def test_debug_warnings_and_performance():
     start_time = time.time()
     batch_results = []
     for item in batch_data:
-        result = resource_management.create_hacs_record(
+        result = resource_management.create_record(
             actor_name="BatchTester",
             resource_type=item["resource_type"],
             resource_data=item["data"]

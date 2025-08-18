@@ -47,18 +47,18 @@ def discover_working_hacs_resources() -> Dict[str, Type[BaseResource]]:
         try:
             module = importlib.import_module(f'hacs_core.models.{module_name}')
             if hasattr(module, class_name):
-                model_class = getattr(module, class_name)
-                if issubclass(model_class, BaseResource):
-                    working_resources[class_name] = model_class
+                resource_class = getattr(module, class_name)
+                if issubclass(resource_class, BaseResource):
+                    working_resources[class_name] = resource_class
         except ImportError:
             continue
 
     return working_resources
 
 
-def get_test_data_for_model(model_class: Type[BaseResource]) -> Dict[str, Any]:
+def get_test_data_for_model(resource_class: Type[BaseResource]) -> Dict[str, Any]:
     """Get test data that works for reliable models."""
-    model_name = model_class.__name__
+    resource_name = resource_class.__name__
 
     test_data = {
         "Patient": {
@@ -97,9 +97,9 @@ def get_test_data_for_model(model_class: Type[BaseResource]) -> Dict[str, Any]:
         }
     }
 
-    return test_data.get(model_name, {
-        "name": f"Test {model_name}",
-        "title": f"Test {model_name} Title"
+    return test_data.get(resource_name, {
+        "name": f"Test {resource_name}",
+        "title": f"Test {resource_name} Title"
     })
 
 

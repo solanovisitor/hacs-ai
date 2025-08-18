@@ -5,7 +5,11 @@ from typing import Any, Dict, List, Optional
 
 async def tool_loadout_node(state: Dict[str, Any], config: Any = None) -> Dict[str, Any]:
     """
-    LangGraph-compatible async node that selects tools semantically relevant to the current task.
+    Optional LangGraph node for semantic tool selection.
+
+    Purpose:
+    - Given task context, select a relevant subset of tool names for downstream use
+    - This does NOT provision tools; provisioning comes from the unified LangChain-based loader
 
     Expected state keys:
       - message (MessageDefinition or dict with 'content') [preferred]

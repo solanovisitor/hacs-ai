@@ -37,8 +37,16 @@ except ImportError:
 def get_all_tools():
     """Get all HACS tools using the registry system."""
     if _has_registry:
-        registry = get_global_tool_registry()
-        return [tool.function for tool in registry.get_all_tools()]
+        try:
+            registry = get_global_tool_registry()
+            tools = [tool.function for tool in registry.get_all_tools()]
+            # Fallback to direct import if registry has no tools (development mode)
+            if not tools:
+                return _get_tools_direct_import()
+            return tools
+        except Exception:
+            # Robust fallback
+            return _get_tools_direct_import()
     else:
         # Fallback: direct import for backward compatibility
         return _get_tools_direct_import()
@@ -74,43 +82,50 @@ def get_available_domains():
         registry = get_global_tool_registry()
         return list(registry.get_available_domains())
     else:
-        # Fallback: known domains
+        # Fallback: new 4-domain structure
         return [
-            "resource_management", "clinical_workflows", "memory_operations",
-            "knowledge_management", "schema_discovery", "development_tools",
-            "fhir_integration", "healthcare_analytics", "ai_integrations",
-            "admin_operations"
+            "modeling", "extraction", "database", "agents"
         ]
+
+
+def get_tools_by_tag(tag: str):
+    """Get tools by tag (e.g., 'records' or 'definitions')."""
+    if _has_registry:
+        registry = get_global_tool_registry()
+        try:
+            return [tool.function for tool in registry.get_tools_by_tag(tag)]
+        except Exception:
+            # Fallback to search_tools with tag filter if available
+            return [tool.function for tool in registry.search_tools(tags=[tag])]
+    return []
 
 
 def _get_tools_direct_import():
-    """Fallback: Direct import of tools when registry is not available."""
+    """Fallback: Direct import of tools when registry is not available.
+
+    Import each domain module individually so one missing module does not break discovery.
+    """
     tools = []
-    try:
-        # Import from domain modules
-        from .domains import (
-            resource_management, clinical_workflows, memory_operations,
-            schema_discovery,
-            ai_integrations,
-            admin_operations, evidence_tools
-        )
-
-        modules = [
-            resource_management, clinical_workflows, memory_operations,
-            schema_discovery,
-            ai_integrations,
-            admin_operations, evidence_tools
-        ]
-
-        for module in modules:
-            for attr_name in dir(module):
-                if not attr_name.startswith('_'):
-                    attr = getattr(module, attr_name)
-                    if callable(attr) and hasattr(attr, '__doc__'):
-                        tools.append(attr)
-    except ImportError:
-        pass
-
+    domain_module_names = [
+        "modeling",
+        "extraction", 
+        "database",
+        "agents",
+    ]
+    for mod_name in domain_module_names:
+        try:
+            module = __import__(f"hacs_tools.domains.{mod_name}", fromlist=["*"])
+        except Exception:
+            continue
+        for attr_name in dir(module):
+            if attr_name.startswith('_'):
+                continue
+            try:
+                attr = getattr(module, attr_name)
+            except Exception:
+                continue
+            if callable(attr) and hasattr(attr, '__doc__'):
+                tools.append(attr)
     return tools
 
 
@@ -119,10 +134,7 @@ def _get_tool_direct_import(name: str):
     try:
         # Try importing from each domain module
         domain_modules = [
-            "resource_management", "clinical_workflows", "memory_operations",
-            "schema_discovery",
-            "ai_integrations",
-            "admin_operations", "evidence_tools"
+            "modeling", "extraction", "database", "agents"
         ]
 
         for domain in domain_modules:

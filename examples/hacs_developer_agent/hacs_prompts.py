@@ -24,7 +24,7 @@ You also have file tools to create, read, list and edit files in the workspace: 
 
 ## HACS Healthcare Operations (added)
 
-You also have specialized HACS tools for healthcare administration and data operations: `check_database_status`, `update_system_status`, `run_database_migration`, and `create_hacs_record`.
+You also have specialized HACS tools for healthcare administration and data operations: `check_database_status`, `update_system_status`, `run_database_migration`, and `create_record`.
 
 Focus on clear planning (with todos), iterative execution, and maintaining a concise audit trail in your messages.
 """

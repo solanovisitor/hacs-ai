@@ -1,0 +1,110 @@
+
+<style>
+  .hacs-card { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+  .hacs-panel { border:1px solid #e0e0e0; border-radius:8px; padding:12px; margin:8px 0; }
+  .hacs-title { font-weight:600; margin-bottom:6px; }
+  .hacs-kv { display:grid; grid-template-columns: 160px 1fr; gap:6px 10px; font-size:13px; }
+  .hacs-k { color:#1565c0; font-weight:600; }
+  .hacs-v { color:#222; word-break:break-word; }
+  .hacs-json { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#fafafa; border:1px solid #eee; border-radius:6px; padding:10px; font-size:12px; overflow:auto; }
+  .hacs-section { margin-top:10px; font-size:12px; color:#666; }
+  .hacs-pill { display:inline-block; background:#e3f2fd; color:#0d47a1; border-radius:999px; padding:2px 8px; font-size:12px; font-weight:600; }
+  .hacs-doc { font-size:12px; color:#555; margin-top:6px; }
+  .hacs-hi { background:#fff59d; border-radius:3px; padding:1px 2px; }
+  .hacs-legend { font-size:12px; margin-bottom:6px; }
+  .hacs-chip { display:inline-block; padding:1px 6px; border-radius:12px; margin-right:4px; font-size:11px; }
+</style>
+
+    <div class="hacs-card">
+      <div class="hacs-panel">
+        <div class="hacs-title">Observation <span class="hacs-pill">observation-c31cc84e</span></div>
+        <div class="hacs-kv"><div class="hacs-k">resource_type</div><div class="hacs-v">Observation</div><div class="hacs-k">id</div><div class="hacs-v">observation-c31cc84e</div><div class="hacs-k">status</div><div class="hacs-v">final</div><div class="hacs-k">code.text</div><div class="hacs-v">Blood Pressure</div><div class="hacs-k">subject</div><div class="hacs-v">Patient/patient-87a8b708</div><div class="hacs-k">created_at</div><div class="hacs-v">2025-08-17T21:45:43.623780Z</div><div class="hacs-k">updated_at</div><div class="hacs-v">2025-08-17T21:45:43.623780Z</div></div>
+        <div class="hacs-section">Raw</div><div class="hacs-json">{
+  &quot;id&quot;: &quot;observation-c31cc84e&quot;,
+  &quot;created_at&quot;: &quot;2025-08-17T21:45:43.623780Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-08-17T21:45:43.623780Z&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;identifier&quot;: [],
+  &quot;language&quot;: null,
+  &quot;implicit_rules&quot;: null,
+  &quot;meta_profile&quot;: [],
+  &quot;meta_source&quot;: null,
+  &quot;meta_security&quot;: [],
+  &quot;meta_tag&quot;: [],
+  &quot;resource_type&quot;: &quot;Observation&quot;,
+  &quot;agent_context&quot;: null,
+  &quot;status&quot;: &quot;final&quot;,
+  &quot;text&quot;: null,
+  &quot;contained&quot;: null,
+  &quot;extension&quot;: null,
+  &quot;modifier_extension&quot;: null,
+  &quot;code&quot;: {
+    &quot;id&quot;: &quot;codeableconcept-b8910afb&quot;,
+    &quot;created_at&quot;: &quot;2025-08-17T21:45:43.623737Z&quot;,
+    &quot;updated_at&quot;: &quot;2025-08-17T21:45:43.623737Z&quot;,
+    &quot;version&quot;: &quot;1.0.0&quot;,
+    &quot;identifier&quot;: [],
+    &quot;language&quot;: null,
+    &quot;implicit_rules&quot;: null,
+    &quot;meta_profile&quot;: [],
+    &quot;meta_source&quot;: null,
+    &quot;meta_security&quot;: [],
+    &quot;meta_tag&quot;: [],
+    &quot;resource_type&quot;: &quot;CodeableConcept&quot;,
+    &quot;agent_context&quot;: null,
+    &quot;status&quot;: &quot;active&quot;,
+    &quot;text&quot;: &quot;Blood Pressure&quot;,
+    &quot;contained&quot;: null,
+    &quot;extension&quot;: null,
+    &quot;modifier_extension&quot;: null,
+    &quot;coding&quot;: []
+  },
+  &quot;category&quot;: [],
+  &quot;method&quot;: null,
+  &quot;device&quot;: null,
+  &quot;subject&quot;: &quot;Patient/patient-87a8b708&quot;,
+  &quot;encounter&quot;: null,
+  &quot;effective_date_time&quot;: null,
+  &quot;issued&quot;: null,
+  &quot;performer&quot;: [],
+  &quot;value_quantity&quot;: {
+    &quot;id&quot;: &quot;quantity-0b315cbc&quot;,
+    &quot;created_at&quot;: &quot;2025-08-17T21:45:43.623759Z&quot;,
+    &quot;updated_at&quot;: &quot;2025-08-17T21:45:43.623759Z&quot;,
+    &quot;version&quot;: &quot;1.0.0&quot;,
+    &quot;identifier&quot;: [],
+    &quot;language&quot;: null,
+    &quot;implicit_rules&quot;: null,
+    &quot;meta_profile&quot;: [],
+    &quot;meta_source&quot;: null,
+    &quot;meta_security&quot;: [],
+    &quot;meta_tag&quot;: [],
+    &quot;resource_type&quot;: &quot;Quantity&quot;,
+    &quot;agent_context&quot;: null,
+    &quot;status&quot;: &quot;active&quot;,
+    &quot;text&quot;: null,
+    &quot;contained&quot;: null,
+    &quot;extension&quot;: null,
+    &quot;modifier_extension&quot;: null,
+    &quot;value&quot;: 128.0,
+    &quot;comparator&quot;: null,
+    &quot;unit&quot;: &quot;mmHg&quot;,
+    &quot;system&quot;: null,
+    &quot;code&quot;: null
+  },
+  &quot;value_codeable_concept&quot;: null,
+  &quot;value_string&quot;: null,
+  &quot;value_boolean&quot;: null,
+  &quot;value_integer&quot;: null,
+  &quot;value_range&quot;: null,
+  &quot;data_absent_reason&quot;: null,
+  &quot;interpretation&quot;: [],
+  &quot;note&quot;: [],
+  &quot;reference_range&quot;: [],
+  &quot;interpretation_detail&quot;: null,
+  &quot;has_member&quot;: [],
+  &quot;derived_from&quot;: []
+}</div>
+      </div>
+    </div>
+    

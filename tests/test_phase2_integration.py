@@ -189,7 +189,8 @@ class TestPersistenceIntegration:
     def test_resource_tool_persistence_integration(self, mock_db_adapter):
         """Test resource management tool with database persistence."""
         
-        from hacs_tools.domains.resource_management import create_hacs_record
+        # Updated import: resource_management removed; use developer agent integration or database/modeling tools
+        from examples.hacs_developer_agent.hacs_tools_integration import create_record
         
         # Create a patient record
         patient_data = {
@@ -198,7 +199,7 @@ class TestPersistenceIntegration:
             "gender": "male"
         }
         
-        result = create_hacs_record(
+        result = create_record(
             actor_name="Test Doctor",
             resource_type="Patient",
             resource_data=patient_data,
@@ -430,7 +431,7 @@ class TestEndToEndIntegration:
         }
         
         create_result = await execute_hacs_tool(
-            tool_name="create_hacs_record",
+            tool_name="create_record",
             params={
                 "resource_type": "Patient",
                 "resource_data": patient_data,
@@ -448,7 +449,7 @@ class TestEndToEndIntegration:
         resource_id = create_result.data["data"]["resource_id"]
         
         retrieve_result = await execute_hacs_tool(
-            tool_name="get_hacs_record",
+            tool_name="get_record",
             params={
                 "resource_type": "Patient",
                 "resource_id": resource_id,

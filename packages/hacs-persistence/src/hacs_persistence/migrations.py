@@ -12,6 +12,8 @@ import sys
 from typing import Any
 
 import psycopg
+import urllib.parse as _urlparse
+import socket as _socket
 from psycopg.rows import dict_row
 
 logging.basicConfig(level=logging.INFO)
@@ -26,11 +28,46 @@ class HACSDatabaseMigration:
 
     async def _get_connection(self):
         """Get an asynchronous database connection."""
-        return await psycopg.AsyncConnection.connect(
-            self.database_url,
-            row_factory=dict_row,
-            autocommit=True
-        )
+        url = (self.database_url or "").strip()
+        # Ensure sslmode=require for Supabase
+        if (("supabase.co" in url) or ("supabase.net" in url)) and "sslmode=" not in url:
+            url = f"{url}{'&' if '?' in url else '?'}sslmode=require"
+
+        # Try robust connect: parse DSN and pass keyword args to libpq
+        try:
+            parsed = _urlparse.urlparse(url)
+            host = parsed.hostname
+            port = parsed.port or 5432
+            user = parsed.username
+            password = parsed.password
+            dbname = (parsed.path.lstrip("/") or "postgres")
+            query = dict(_urlparse.parse_qsl(parsed.query))
+            sslmode = query.get("sslmode") or ("require" if (host and ("supabase.co" in host or "supabase.net" in host)) else None)
+
+            # DNS preflight to surface clearer errors
+            try:
+                if host:
+                    _socket.getaddrinfo(host, port)
+            except Exception as e:
+                logger.error(f"DNS resolution failed for host '{host}': {e}")
+
+            return await psycopg.AsyncConnection.connect(
+                host=host,
+                port=port,
+                user=user,
+                password=password,
+                dbname=dbname,
+                sslmode=sslmode,
+                row_factory=dict_row,
+                autocommit=True,
+            )
+        except Exception:
+            # Fallback to raw URL connect
+            return await psycopg.AsyncConnection.connect(
+                url,
+                row_factory=dict_row,
+                autocommit=True,
+            )
 
     async def run_migration(self) -> bool:
         """Run the complete HACS database migration asynchronously."""
@@ -1040,7 +1077,7 @@ class HACSDatabaseMigration:
         await cursor.execute("""
             CREATE TABLE IF NOT EXISTS hacs_registry.model_versions (
                 id TEXT PRIMARY KEY,
-                model_name TEXT NOT NULL,
+                resource_name TEXT NOT NULL,
                 version TEXT NOT NULL,
                 description TEXT,
                 schema_definition JSONB NOT NULL,
@@ -1048,7 +1085,7 @@ class HACSDatabaseMigration:
                 status TEXT DEFAULT 'published',
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-                UNIQUE(model_name, version)
+                UNIQUE(resource_name, version)
             );
         """)
 
@@ -1285,6 +1322,8 @@ class HACSDatabaseMigration:
 
         for table in tables_with_updated_at:
             trigger_name = f"update_{table.replace('.', '_').replace('hacs_', '')}_updated_at"
+            # Ensure idempotency: drop existing trigger then create fresh
+            await cursor.execute(f"DROP TRIGGER IF EXISTS {trigger_name} ON {table};")
             await cursor.execute(f"""
                 CREATE TRIGGER {trigger_name}
                     BEFORE UPDATE ON {table}

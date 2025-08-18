@@ -169,11 +169,23 @@ class PluginRegistry:
             return 0
 
         # Walk through all modules in package
-        # Blocklist certain generic domains slated for removal
+        # Blocklist generic domains and removed legacy domains
         blocked_substrings = {
             'hacs_tools.domains.fhir_integration',
             'hacs_tools.domains.development_tools',
             'hacs_tools.domains.healthcare_analytics',
+            # Legacy domains that have been removed/consolidated into 4 core domains
+            'hacs_tools.domains.admin_operations',
+            'hacs_tools.domains.bundle_tools',
+            'hacs_tools.domains.evidence_tools',
+            'hacs_tools.domains.memory_operations',
+            'hacs_tools.domains.modeling_tools',
+            'hacs_tools.domains.persistence_tools',
+            'hacs_tools.domains.preferences_tools',
+            'hacs_tools.domains.resource_management',
+            'hacs_tools.domains.schema_discovery',
+            'hacs_tools.domains.vector_search',
+            'hacs_tools.domains.workflow_tools',
         }
 
         for importer, modname, ispkg in pkgutil.walk_packages(
@@ -211,9 +223,10 @@ class PluginRegistry:
             if self._is_potential_tool(attr, attr_name):
 
                 # Auto-register discovered tools
-                domain = self._infer_domain_from_module(module_name)
+                func_module = getattr(getattr(attr, 'func', attr), '__module__', module_name)
+                domain = self._infer_domain_from_module(func_module or module_name)
                 metadata = self._extract_metadata_from_function(
-                    attr, attr_name, domain, module_name
+                    attr, attr_name, domain, func_module or module_name
                 )
 
                 plugin = ToolPlugin(
@@ -293,7 +306,12 @@ class PluginRegistry:
                 'create', 'get', 'update', 'delete', 'search', 'analyze',
                 'execute', 'validate', 'convert', 'process', 'generate',
                 'discover', 'extract', 'transform', 'deploy', 'run',
-                'register', 'instantiate', 'optimize', 'compare'
+                'register', 'instantiate', 'optimize', 'compare',
+                # Additional modeling keywords for granular tools
+                'list', 'describe', 'pick', 'project', 'reference', 'add',
+                'invoke', 'plan', 'suggest', 'bundle',
+                # High-level task tools
+                'summarize', 'annotate', 'map', 'enrich'
             ]
 
             return any(keyword in name.lower() for keyword in tool_keywords)
@@ -304,18 +322,27 @@ class PluginRegistry:
         """Infer domain from module name."""
         module_parts = module_name.split('.')
 
-        # Look for domain indicators in module path
+        # Look for domain indicators in module path - new 4-domain structure
         domain_mappings = {
-            'resource_management': 'resource_management',
-            'clinical_workflow': 'clinical_workflows',
-            'clinical_workflows': 'clinical_workflows',
-            'schema_discovery': 'schema_discovery',
-            'memory_operation': 'memory_operations',
-            'memory_operations': 'memory_operations',
-            'evidence_tools': 'knowledge_management',
-            'knowledge_management': 'knowledge_management',
-            'development_tool': 'development_tools',
-            'development_tools': 'development_tools',
+            'modeling': 'modeling',
+            'extraction': 'extraction', 
+            'database': 'database',
+            'agents': 'agents',
+            'terminology': 'terminology',
+            # Legacy domain mappings for backward compatibility
+            'resource_management': 'modeling',
+            'clinical_workflow': 'modeling',
+            'clinical_workflows': 'modeling',
+            'bundle_tools': 'modeling',
+            'workflow_tools': 'modeling',
+            'modeling_tools': 'modeling',
+            'schema_discovery': 'extraction',
+            'evidence_tools': 'database',
+            'persistence_tools': 'database',
+            'admin_operations': 'database',
+            'memory_operation': 'agents',
+            'memory_operations': 'agents',
+            'preferences_tools': 'agents',
             'fhir_integration': 'fhir_integration',
             'healthcare_analytic': 'healthcare_analytics',
             'healthcare_analytics': 'healthcare_analytics',
@@ -356,7 +383,30 @@ class PluginRegistry:
         tags = []
         name_parts = tool_name.split('_')
         tags.extend(name_parts)
+        # High-signal domain tags for loadout
         tags.append(domain)
+        if domain in ("modeling", "agents", "extraction", "database", "terminology"):
+            tags.append(f"domain:{domain}")
+
+        # Add fine-grained tags for database tools to distinguish records vs definitions
+        if domain == "database":
+            lower_name = tool_name.lower()
+            if any(k in lower_name for k in ["save_record", "read_record", "update_record", "delete_record"]):
+                tags.append("records")
+            if any(k in lower_name for k in ["register_resource_definition", "list_resource_definitions", "get_resource_definition", "update_resource_definition_status"]):
+                tags.append("definitions")
+
+        # Add resource-specific tags if tool name indicates a resource
+        resource_indicators = [
+            "patient", "observation", "document", "condition", "medication",
+            "medicationrequest", "diagnosticreport", "servicerequest", "event",
+            "appointment", "careplan", "careteam", "goal", "nutritionorder"
+        ]
+        lname = tool_name.lower()
+        for r in resource_indicators:
+            if r in lname:
+                tags.append(f"resource:{r}")
+                break
 
         return PluginMetadata(
             name=tool_name,

@@ -7,7 +7,7 @@ def test_resource_management_create_minimals():
     from hacs_tools.domains import resource_management  # type: ignore
 
     # Patient
-    r1 = resource_management.create_hacs_record(
+    r1 = resource_management.create_record(
         actor_name="Tester",
         resource_type="Patient",
         resource_data={"full_name": "Alice Validation", "gender": "female"},
@@ -15,7 +15,7 @@ def test_resource_management_create_minimals():
     assert r1.success, r1.message
 
     # Observation
-    r2 = resource_management.create_hacs_record(
+    r2 = resource_management.create_record(
         actor_name="Tester",
         resource_type="Observation",
         resource_data={
@@ -27,7 +27,7 @@ def test_resource_management_create_minimals():
     assert r2.success, r2.message
 
     # MedicationRequest
-    r3 = resource_management.create_hacs_record(
+    r3 = resource_management.create_record(
         actor_name="Tester",
         resource_type="MedicationRequest",
         resource_data={
@@ -40,7 +40,7 @@ def test_resource_management_create_minimals():
     assert r3.success, r3.message
 
     # Procedure
-    r4 = resource_management.create_hacs_record(
+    r4 = resource_management.create_record(
         actor_name="Tester",
         resource_type="Procedure",
         resource_data={
@@ -52,7 +52,7 @@ def test_resource_management_create_minimals():
     assert r4.success, r4.message
 
     # ServiceRequest
-    r5 = resource_management.create_hacs_record(
+    r5 = resource_management.create_record(
         actor_name="Tester",
         resource_type="ServiceRequest",
         resource_data={
