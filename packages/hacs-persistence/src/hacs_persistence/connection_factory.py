@@ -6,6 +6,7 @@ managing connection pooling, and handling database initialization.
 """
 
 import logging
+import asyncio
 import os
 from typing import Optional, Dict, Any
 from contextlib import asynccontextmanager
@@ -110,23 +111,46 @@ class HACSConnectionFactory:
             RuntimeError: If migration fails
         """
         try:
+            # Helper to run async functions from sync context (handles running loop)
+            def _run(coro):
+                try:
+                    loop = asyncio.get_running_loop()
+                except RuntimeError:
+                    loop = None
+                if loop and loop.is_running():
+                    from threading import Thread
+                    result = {}
+                    err = {}
+                    def _runner():
+                        try:
+                            result['value'] = asyncio.run(coro)
+                        except Exception as ex:  # pragma: no cover
+                            err['error'] = ex
+                    t = Thread(target=_runner, daemon=True)
+                    t.start()
+                    t.join(timeout=30)
+                    if 'error' in err:
+                        raise err['error']
+                    return result.get('value')
+                return asyncio.run(coro)
+
             # Check migration status
-            status = get_migration_status(database_url)
-            
-            if status.get("schemas_exist", False):
+            status = _run(get_migration_status(database_url)) or {}
+
+            if status.get("migration_complete") or status.get("schemas_exist"):
                 logger.info("HACS database schemas already exist")
                 return True
-            
+
             # Run migration
             logger.info("Running HACS database migration...")
-            success = run_migration(database_url)
-            
+            success = _run(run_migration(database_url))
+
             if success:
                 logger.info("HACS database migration completed successfully")
                 return True
             else:
                 raise RuntimeError("Database migration failed")
-                
+
         except Exception as e:
             logger.error(f"Database migration error: {e}")
             raise RuntimeError(f"Failed to migrate database: {e}") from e

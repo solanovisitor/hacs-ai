@@ -33,10 +33,18 @@ nav:
   - Quick Start: quick-start.md
   - API Reference: api-reference.md
   - HACS Tools: hacs-tools.md
-  - Resources: resources.md
+  - How-to:
+      - Authenticate an Actor: how-to/authenticate_actor.md
+      - Connect to Postgres: how-to/connect_postgres.md
+      - Extend & Customize Resources: how-to/extend_resources.md
+      - Extract Annotations & Structured Outputs: how-to/extract_annotations.md
+      - Use & Register Tools: how-to/use_register_tools.md
+      - Create a simple agent (LangGraph): how-to/create_langgraph_agent.md
+      - Manage context with agentic tools: how-to/manage_context_tools.md
   - Tutorials:
       - Complete Context Engineering: tutorials/complete_context_engineering.md
       - Medication Extraction: tutorials/medication_extraction.md
   - Gallery: gallery.md
   - Testing: testing.md
+  - API (Resources): api-reference.md
 

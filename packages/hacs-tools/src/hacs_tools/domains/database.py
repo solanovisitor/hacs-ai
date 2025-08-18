@@ -34,9 +34,54 @@ from hacs_utils.preferences import merge_preferences
 # Tool domain: database - Persistence and registry operations
 
 logger = logging.getLogger(__name__)
-from hacs_registry.plugin_discovery import register_tool
+from hacs_registry.tool_registry import register_tool, VersionStatus
+try:
+    from pydantic import BaseModel, Field
+except Exception:  # pragma: no cover
+    class BaseModel:  # type: ignore
+        pass
+    def Field(*args, **kwargs):  # type: ignore
+        return None
 
 
+# ===== Pydantic input models for database tools =====
+class SaveResourceInput(BaseModel):
+    resource: Dict[str, Any]
+    as_typed: bool = Field(default=True)
+    schema_name: Optional[str] = Field(default=None, alias="schema")
+    index_semantic: bool = Field(default=False)
+    config: Optional[Dict[str, Any]] = None
+    state: Optional[Dict[str, Any]] = None
+
+
+class ReadResourceInput(BaseModel):
+    resource_type: str
+    resource_id: str
+    as_typed: bool = Field(default=True)
+    schema_name: Optional[str] = Field(default=None, alias="schema")
+    config: Optional[Dict[str, Any]] = None
+    state: Optional[Dict[str, Any]] = None
+
+
+class UpdateResourceInput(BaseModel):
+    resource_type: str
+    resource_id: str
+    patch: Dict[str, Any]
+    as_typed: bool = Field(default=True)
+    schema_name: Optional[str] = Field(default=None, alias="schema")
+    config: Optional[Dict[str, Any]] = None
+    state: Optional[Dict[str, Any]] = None
+
+
+class DeleteResourceInput(BaseModel):
+    resource_type: str
+    resource_id: str
+    schema_name: Optional[str] = Field(default=None, alias="schema")
+    config: Optional[Dict[str, Any]] = None
+    state: Optional[Dict[str, Any]] = None
+
+
+@register_tool(name="save_resource", domain="database", tags=["domain:database", "records"], status=VersionStatus.ACTIVE)
 async def save_resource(
     resource: Dict[str, Any],
     as_typed: bool = True,
@@ -119,7 +164,11 @@ async def save_resource(
             error=str(e)
         )
 
+# Attach args
+save_resource._tool_args = SaveResourceInput  # type: ignore[attr-defined]
 
+
+@register_tool(name="read_resource", domain="database", tags=["domain:database", "records"], status=VersionStatus.ACTIVE)
 async def read_resource(
     resource_type: str,
     resource_id: str,
@@ -179,7 +228,10 @@ async def read_resource(
             error=str(e)
         )
 
+read_resource._tool_args = ReadResourceInput  # type: ignore[attr-defined]
 
+
+@register_tool(name="update_resource", domain="database", tags=["domain:database", "records"], status=VersionStatus.ACTIVE)
 async def update_resource(
     resource_type: str,
     resource_id: str,
@@ -229,7 +281,10 @@ async def update_resource(
             error=str(e)
         )
 
+update_resource._tool_args = UpdateResourceInput  # type: ignore[attr-defined]
 
+
+@register_tool(name="delete_resource", domain="database", tags=["domain:database", "records"], status=VersionStatus.ACTIVE)
 async def delete_resource(
     resource_type: str,
     resource_id: str,
@@ -269,7 +324,10 @@ async def delete_resource(
             error=str(e)
         )
 
+delete_resource._tool_args = DeleteResourceInput  # type: ignore[attr-defined]
 
+
+@register_tool(name="register_model_version", domain="database", tags=["domain:database", "definitions"], status=VersionStatus.ACTIVE)
 async def register_model_version(
     resource_name: str,
     version: str,
@@ -329,6 +387,7 @@ async def register_model_version(
         )
 
 
+@register_tool(name="search_knowledge_items", domain="database", tags=["domain:database"], status=VersionStatus.ACTIVE)
 async def search_knowledge_items(
     query: str,
     top_k: int = 10,
@@ -391,6 +450,7 @@ async def search_knowledge_items(
         )
 
 
+@register_tool(name="search_memories", domain="database", tags=["domain:database"], status=VersionStatus.ACTIVE)
 async def search_memories(
     actor_id: Optional[str] = None,
     query: Optional[str] = None,
@@ -453,6 +513,7 @@ async def search_memories(
         )
 
 
+@register_tool(name="run_migrations", domain="database", tags=["domain:database"], status=VersionStatus.ACTIVE)
 async def run_migrations(database_url: Optional[str] = None) -> HACSResult:
     """
     Run database migrations to ensure the schema is up to date.
@@ -498,6 +559,7 @@ async def run_migrations(database_url: Optional[str] = None) -> HACSResult:
         )
 
 
+@register_tool(name="get_db_status", domain="database", tags=["domain:database"], status=VersionStatus.ACTIVE)
 async def get_db_status(database_url: Optional[str] = None) -> HACSResult:
     """
     Get database connection status and migration state.

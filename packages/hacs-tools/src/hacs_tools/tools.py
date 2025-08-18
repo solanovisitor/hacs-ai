@@ -207,3 +207,85 @@ __all__ = [
     # Legacy export
     "ALL_HACS_TOOLS",
 ]
+
+
+# === Convenience helpers for framework-bound usage ===
+
+def get_tool_handle(name: str, framework: str = "langchain"):
+    """
+    Get a framework-appropriate handle for a HACS tool by name.
+
+    - framework="langchain": returns a LangChain StructuredTool wrapper
+    - framework!="langchain": returns the underlying Python callable (from registry)
+    """
+    if framework == "langchain":
+        try:
+            # Lazy import to avoid circular deps at module load
+            from hacs_utils.integrations.common.tool_loader import get_all_hacs_tools_sync  # type: ignore
+            tools = get_all_hacs_tools_sync(framework="langchain")
+            for t in tools:
+                if getattr(t, "name", None) == name:
+                    return t
+            return None
+        except Exception:
+            return None
+    # Fallback to raw function via registry
+    return get_tool(name)
+
+
+def invoke_tool(name: str, arguments: dict, framework: str = "langchain"):
+    """
+    Invoke a HACS tool by name with the given arguments.
+
+    - framework="langchain": uses the LangChain tool wrapper's .invoke()
+    - framework!="langchain": calls the underlying Python function (**kwargs)
+    """
+    tool = get_tool_handle(name, framework=framework)
+    if tool is None:
+        raise ValueError(f"HACS tool not found: {name}")
+    if framework == "langchain":
+        return tool.invoke(arguments)
+    return tool(**arguments)
+
+
+def load_tool(name: str, framework: str = "langchain"):
+    """
+    Load a single HACS tool by name.
+
+    - framework="langchain": returns a LangChain StructuredTool
+    - otherwise: returns the underlying Python callable
+    """
+    if framework == "langchain":
+        try:
+            from hacs_utils.integrations.common.tool_loader import get_all_hacs_tools_sync  # type: ignore
+            tools = get_all_hacs_tools_sync(framework="langchain")
+            for t in tools:
+                if getattr(t, "name", None) == name:
+                    return t
+            return None
+        except Exception:
+            return None
+    return get_tool(name)
+
+
+def load_domain_tools(selector: str, framework: str = "langchain"):
+    """
+    Load tools by domain selector string.
+
+    Example: load_domain_tools('domain:modeling') or load_domain_tools('modeling')
+    """
+    # Normalize domain
+    domain = selector.split(":", 1)[1] if selector.startswith("domain:") else selector
+    try:
+        from hacs_registry import get_global_tool_registry  # type: ignore
+        reg = get_global_tool_registry()
+        defs = reg.search_tools(domain=domain)
+        names = {d.name for d in defs}
+        if framework == "langchain":
+            from hacs_utils.integrations.common.tool_loader import get_all_hacs_tools_sync  # type: ignore
+            all_tools = get_all_hacs_tools_sync(framework="langchain")
+            return [t for t in all_tools if getattr(t, "name", None) in names]
+        else:
+            return [get_tool(n) for n in names if get_tool(n) is not None]
+    except Exception:
+        return []

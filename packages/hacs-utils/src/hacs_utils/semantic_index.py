@@ -63,7 +63,7 @@ def build_tool_documents() -> List[Dict[str, Any]]:
     Build semantic docs for all registered tools: each doc has content + metadata.
     """
     try:
-        from hacs_registry.tool_registry import get_global_registry
+        from hacs_registry import get_global_tool_registry as get_global_registry
     except Exception:
         return []
 

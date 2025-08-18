@@ -30,7 +30,8 @@ from .core import RegistryAggregateRoot
 from .resource_registry import RegisteredResource, HACSResourceRegistry
 from .agent_registry import AgentConfiguration, HACSAgentRegistry
 from .iam_registry import ActorIdentity, HACSIAMRegistry
-from .tool_registry import ToolDefinition, HACSToolRegistry
+from hacs_models import ToolDefinition
+from .tool_registry import HACSToolRegistry
 
 logger = logging.getLogger(__name__)
 

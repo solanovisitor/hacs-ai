@@ -75,3 +75,13 @@ __all__ = [
     "ALL_HACS_TOOLS",
     "domains",
 ]
+
+# Convenience helpers
+from .tools import get_tool_handle, invoke_tool, load_tool, load_domain_tools
+
+__all__ += [
+    "get_tool_handle",
+    "invoke_tool",
+    "load_tool",
+    "load_domain_tools",
+]

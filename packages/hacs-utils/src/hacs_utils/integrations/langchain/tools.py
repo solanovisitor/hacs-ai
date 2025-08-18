@@ -259,7 +259,8 @@ def validate_tool_inputs(tool_name: str, inputs: Dict[str, Any]) -> bool:
 # ===== Tool Registry and Management =====
 
 # HACS Registry is required - no fallback
-from hacs_registry import get_global_registry, HACSToolRegistry as CoreToolRegistry
+from hacs_registry import get_global_tool_registry as get_global_registry
+from hacs_registry import HACSToolRegistry as CoreToolRegistry
 
 
 class HACSToolRegistry:

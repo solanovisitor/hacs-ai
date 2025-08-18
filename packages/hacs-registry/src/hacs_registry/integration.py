@@ -26,7 +26,7 @@ from typing import Any, Dict, List, Optional, Protocol, Type, Union, Callable
 from dataclasses import dataclass, field
 from contextlib import asynccontextmanager
 
-from .tool_registry import ToolDefinition
+from hacs_models import ToolDefinition
 from .tool_registry import HACSToolRegistry, get_global_registry
 
 logger = logging.getLogger(__name__)

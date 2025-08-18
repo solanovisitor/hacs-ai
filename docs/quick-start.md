@@ -41,13 +41,49 @@ print("✅ Minimal example ready:")
 print("  Actor:", doctor.name, doctor.role)
 print("  Patient:", patient.full_name, patient.id)
 print("  BP:", bp.value_quantity.value, bp.value_quantity.unit)
+
+# Always visualize structured records
+from hacs_utils.visualization import resource_to_markdown
+print("\nPatient record:")
+print(resource_to_markdown(patient, include_json=False))
+print("\nObservation record:")
+print(resource_to_markdown(bp, include_json=False))
 ```
 
 ```
 ✅ Minimal example ready:
   Actor: Dr. Sarah Chen physician
-  Patient: Maria Rodriguez patient-2cafafa7
+  Patient: Maria Rodriguez patient-3bd910dd
   BP: 128.0 mmHg
+
+Patient record:
+#### Patient
+
+| Field | Value |
+|---|---|
+| resource_type | Patient |
+| id | patient-3bd910dd |
+| status | active |
+| full_name | Maria Rodriguez |
+| gender | female |
+| birth_date | 1985-03-15 |
+| created_at | 2025-08-18T22:38:39.046248Z |
+| updated_at | 2025-08-18T22:38:39.046248Z |
+
+Observation record:
+#### Observation
+
+| Field | Value |
+|---|---|
+| resource_type | Observation |
+| id | observation-93675660 |
+| status | final |
+| code | Blood Pressure |
+| value.quantity | 128.0 mmHg |
+| subject | Patient/patient-3bd910dd |
+| performer | [] |
+| created_at | 2025-08-18T22:38:39.046393Z |
+| updated_at | 2025-08-18T22:38:39.046393Z |
 ```
 
 _This validates your local environment and demonstrates HACS typed models in‑process._
@@ -63,7 +99,7 @@ The following snippets illustrate common extensions to the minimal setup.
 ### LLM extraction
 
 ```python
-# Prereq: uv pip install -U hacs-utils langchain-openai; set OPENAI_API_KEY
+# Prereq: uv pip install -U hacs-utils[langchain]; set OPENAI_API_KEY
 
 from hacs_models import Patient
 from hacs_utils.structured import extract
@@ -179,9 +215,9 @@ You can now bind HACS tools to an agent. Refer to the API reference and tools gu
 
 ```python
 from langgraph.prebuilt import create_react_agent
-from hacs_utils.integrations.langchain.tools import hacs_langchain_tools
+from hacs_utils.integrations.langchain.tools import langchain_tools
 
-tools = hacs_langchain_tools()
+tools = langchain_tools()
 agent = create_react_agent(model="anthropic:claude-3-7-sonnet-latest", tools=tools, prompt="You are a healthcare assistant using HACS tools.")
 ```
 

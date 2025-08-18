@@ -8,7 +8,7 @@ code duplication and ensure consistency.
 import logging
 import os
 from functools import wraps
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ def optional_import(package_name: str, fallback_value: Any = None) -> Any:
         return fallback_value
 
 
-def get_api_key(key_name: str, env_var: str, required: bool = True) -> str | None:
+def get_api_key(key_name: str, env_var: str, required: bool = True) -> Optional[str]:
     """
     Get API key from environment with consistent error handling.
 

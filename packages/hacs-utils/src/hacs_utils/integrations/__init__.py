@@ -35,11 +35,10 @@ except ImportError as e:
     qdrant = None
     warnings.warn(f"Qdrant integration not available: {e}", UserWarning)
 
-try:
-    from . import langchain
-except ImportError as e:
-    langchain = None
-    warnings.warn(f"LangChain integration not available: {e}", UserWarning)
+# Avoid eager import to prevent circular imports with hacs_registry during startup.
+# LangChain submodules should be imported directly (e.g., hacs_utils.integrations.langchain.tools)
+# when needed by callers.
+langchain = None  # lazy
 
 try:
     from . import langgraph

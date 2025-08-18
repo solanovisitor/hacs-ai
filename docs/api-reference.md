@@ -1,14 +1,14 @@
 # HACS API Reference
 
-**Complete API documentation for HACS (Healthcare Agent Communication Standard)**
-
-This reference covers all HACS packages, tools, and integration patterns for healthcare AI development.
+Lightweight, developer-first reference to core packages and integrations. See How-to’s for step-by-step tasks.
 
 > **📚 Related Documentation:**
-> - [Quick Start Guide](quick-start.md) - Build a pipeline in 5 minutes
-> - [HACS Tools Reference](hacs-tools.md) - Tool catalog
-> - [Complete Context Engineering](tutorials/complete_context_engineering.md) - Full workflow tutorial
-> - [Medication Extraction](tutorials/medication_extraction.md) - Extract clinical data from text
+>
+> - [Quick Start Guide](quick-start.md)
+> - [How-to’s](how-to/authenticate_actor.md)
+> - [HACS Tools Reference](hacs-tools.md)
+> - [Complete Context Engineering](tutorials/complete_context_engineering.md)
+> - [Medication Extraction](tutorials/medication_extraction.md)
 
 ## 🧬 **Core HACS Packages**
 
@@ -86,7 +86,7 @@ Measurements and simple assertions…
 Do not use for diagnoses/problems…
 ```
 
-**FHIR-compliant healthcare models for AI agents**
+**FHIR-aligned healthcare models**
 
 ```python
 from hacs_models import Patient, Observation, CodeableConcept, Quantity
@@ -94,12 +94,15 @@ from hacs_models.types import ObservationStatus
 from hacs_utils.visualization import resource_to_markdown
 
 patient = Patient(full_name="John Smith", birth_date="1980-01-15", gender="male")
-print(resource_to_markdown(patient, include_json=False))
-
 obs = Observation(status=ObservationStatus.FINAL,
                   code=CodeableConcept(text="Blood Pressure"),
                   value_quantity=Quantity(value=120, unit="mmHg"),
                   subject=f"Patient/{patient.id}")
+
+# Always visualize created records
+print("Patient record:")
+print(resource_to_markdown(patient, include_json=False))
+print("\nObservation record:")
 print(resource_to_markdown(obs, include_json=False))
 ```
 
@@ -173,20 +176,15 @@ print(annotations_to_markdown(doc))
 Low-level, LLM-friendly tools organized into 4 domains: modeling, extraction, database, agents.
 
 ```python
-from hacs_tools.domains.database import save_record, read_record
-from hacs_tools.domains.modeling import describe_models, list_model_fields, plan_bundle_schema
-from hacs_tools.domains.extraction import synthesize_mapping_spec, extract_variables, apply_mapping_spec
-from hacs_tools.domains.agents import write_scratchpad, inject_preferences
+from dotenv import load_dotenv
+load_dotenv(dotenv_path=".env", override=True)
 
-# Create healthcare records (records CRUD)
-result = await save_record(patient.model_dump())
+from hacs_utils.integrations.common.tool_loader import get_all_hacs_tools_sync, set_injected_params
+set_injected_params({"actor_name": "llm-agent-docs"})
 
-# Search clinical records  
-search_result = {
-    "result": []  # via dedicated search tool or DB adapter
-}
-
-# Composition + ResourceBundle with MappingSpec/SourceBinding (canonical)
+tools = get_all_hacs_tools_sync(framework='langchain')
+print('tool_count:', len(tools))
+print('sample:', [t.name for t in tools[:8]])
 ```
 
 **Tool Categories (low-level only):**
@@ -525,9 +523,18 @@ schema = use_hacs_tool("list_model_fields", {
 
 ## 🔗 **Framework Integrations**
 
-### LangChain Integration (deprecated)
+### LangChain Integration
 
-Shims are retained for compatibility. Prefer LangGraph and MCP.
+LangChain packaging is provided via `hacs-utils` integrations. Install extras when needed:
+
+```bash
+uv pip install -U hacs-utils[langchain]
+```
+
+```
+tool_count: 47
+sample: ['pin_resource', 'compose_bundle', 'validate_resource', 'diff_resources', 'validate_bundle', 'list_models', 'describe_model', 'describe_models']
+```
 
 ### LangGraph Integration
 

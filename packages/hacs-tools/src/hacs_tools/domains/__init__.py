@@ -44,12 +44,19 @@ except Exception:
     summarize_codable_concepts = None
     map_terminology = None
 
-from .extraction import (
-    synthesize_mapping_spec,
-    extract_variables,
-    apply_mapping_spec,
-    summarize_context,
-)
+# Extraction domain is optional at import-time due to LLM dependencies. Defer failures.
+try:
+    from .extraction import (
+        synthesize_mapping_spec,
+        extract_variables,
+        apply_mapping_spec,
+        summarize_context,
+    )
+except Exception:
+    synthesize_mapping_spec = None  # type: ignore
+    extract_variables = None  # type: ignore
+    apply_mapping_spec = None  # type: ignore
+    summarize_context = None  # type: ignore
 
 from .database import (
     save_resource,
@@ -76,6 +83,12 @@ from .agents import (
     summarize_state,
     prune_state,
 )
+
+# Always import resource-specific tools module so decorated tools register with the registry
+try:
+    from . import resource_tools as _resource_tools  # noqa: F401
+except Exception:
+    _resource_tools = None  # type: ignore
 
 # Legacy imports removed - all functionality consolidated into 4 core domains
 # For backward compatibility, legacy tool names are mapped in the __all__ export below

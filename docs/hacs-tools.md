@@ -13,6 +13,104 @@ Notes:
 - Function names are identical in both modes. Some tools are async in Python (e.g., database); await them when used directly.
 - `tools/list` returns a curated set for quick starts. Any registry tool can still be called via `tools/call` by name.
 
+### LLM-bound usage (single declarative example)
+
+Use the previously authenticated Actor (see How-to) and let the LLM call tools declaratively with typed payloads.
+
+```python
+from dotenv import load_dotenv
+load_dotenv(dotenv_path=".env", override=True)
+
+# 1) Recreate the Actor context from the previous how-to
+from hacs_auth.auth_manager import AuthManager
+am = AuthManager()
+token = am.create_access_token(
+    user_id="dr_chen",  # Actor ID from the auth how-to
+    role="physician",
+    permissions=["patient:read", "patient:write"],
+    organization="General Hospital",
+)
+actor_name = "dr_chen"  # we inject the actor identity for tool calls
+
+# 2) Load HACS tools for LangChain and inject the actor
+from hacs_utils.integrations.common.tool_loader import set_injected_params
+from hacs_tools.tools import load_tool, load_domain_tools
+set_injected_params({"actor_name": actor_name})
+
+# Minimal, declarative loading
+pin = load_tool("pin_resource")
+modeling_tools = load_domain_tools("domain:modeling")
+
+# 3) Choose your LLM and parameters (developer-controlled)
+from langchain_openai import ChatOpenAI
+llm = ChatOpenAI(model="gpt-4.1-mini", temperature=0)
+
+# Smart selection: filter tools by domain/tags via registry, then bind
+agent = llm.bind_tools(modeling_tools)
+
+# 4) Provide unstructured context; the LLM will decide which tools to call
+messages = [
+    ("system", "You are a healthcare assistant. Use tools when helpful."),
+    ("human", "Create a Patient for Jane Doe and link provider Practitioner/pr1."),
+]
+
+result = agent.invoke(messages)
+
+# Optional: structured extraction with a typed subset (developer controls params)
+from hacs_models import Patient
+PatientInfo = Patient.pick("full_name", "birth_date")
+from hacs_utils.structured import extract
+# subset = await extract(llm, prompt="Extract demographics for: Jane Doe, 1990-01-01", output_model=PatientInfo)
+```
+
+### Minimal modeling flow (concise)
+
+```python
+from dotenv import load_dotenv
+load_dotenv(dotenv_path=".env", override=True)
+
+from hacs_models import Patient
+from hacs_utils.visualization import resource_to_markdown
+
+# 1) Create a full Patient record
+patient = Patient(full_name="Jane Doe", birth_date="1990-01-01", gender="female")
+print(resource_to_markdown(patient, include_json=False))
+
+# 2) Derive a lightweight view for prompts or APIs
+PatientSummary = Patient.pick("full_name", "birth_date")
+summary = PatientSummary(resource_type="Patient", full_name=patient.full_name, birth_date=patient.birth_date)
+print(resource_to_markdown(summary, include_json=False))
+
+# 3) Persist (requires DATABASE_URL). This shows the expected call shape.
+# from hacs_utils.integrations.common.tool_loader import get_all_hacs_tools_sync, set_injected_params
+# set_injected_params({"actor_name": "hacs-docs"})
+# tools = get_all_hacs_tools_sync(framework="langchain")
+# save = next(t for t in tools if t.name == "save_resource")
+# save.invoke({"resource_type":"Patient","resource_data": summary.model_dump()})
+```
+
+### Patient
+
+| Field | Value |
+|---|---|
+| resource_type | Patient |
+| id | patient-... |
+| status | active |
+| created_at | 2025-... |
+| updated_at | 2025-... |
+
+### PatientSubset
+
+| Field | Value |
+|---|---|
+| resource_type | Patient |
+| id | patient-... |
+| created_at | 2025-... |
+| updated_at | 2025-... |
+| full_name | Jane Doe |
+| birth_date | 1990-01-01 |
+```
+
 Examples
 
 Python API (Terminology):
@@ -396,6 +494,11 @@ print(resp.json()["result"]["tools"])  # curated list
 from hacs_registry import get_global_tool_registry
 reg = get_global_tool_registry()
 all_tools = [t.name for t in reg.get_all_tools()]  # complete catalog
+print(all_tools)
+```
+
+```
+['write_scratchpad', 'read_scratchpad', 'create_todo', 'list_todos', 'complete_todo', 'store_memory', 'retrieve_memories', 'inject_preferences', 'select_tools_for_task', 'summarize_state', 'prune_state', 'List', 'save_resource', 'read_resource', 'update_resource', 'delete_resource', 'register_model_version', 'search_knowledge_items', 'search_memories', 'run_migrations', 'get_db_status', 'register_resource_definition', 'get_all_tools', 'get_available_domains', 'get_tool', 'get_tools_by_domain', 'pin_resource', 'compose_bundle', 'validate_resource', 'diff_resources', 'validate_bundle', 'list_models', 'describe_model', 'describe_models', 'list_model_fields', 'list_fields', 'pick_resource_fields', 'project_resource_fields', 'to_reference', 'add_extension_to_resource', 'list_model_methods', 'invoke_model_method', 'add_bundle_entries', 'list_bundle_entries']
 ```
 
 ---

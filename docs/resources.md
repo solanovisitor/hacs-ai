@@ -1,8 +1,8 @@
 # HACS Resource Catalog
 
-Generated on 2025-08-18T17:00:45.103207Z
+Generated on 2025-08-18T17:19:51.358969Z
 
-This comprehensive catalog documents every HACS resource organized by domain and purpose. Each resource includes detailed specifications and interactive examples.
+This comprehensive catalog documents every HACS resource organized by domain and purpose. Each resource includes detailed specifications with resource-specific tools only, validated against the actual HACS implementation.
 
 ---
 
@@ -14,56 +14,48 @@ Foundation classes and base structures that all HACS models inherit from
 
 **Scope & Usage**
 
-BaseResource is the foundational class for all HACS healthcare resources, providing essential infrastructure for healthcare data modeling in AI agent systems. It establishes the core patterns for resource identification, lifecycle management, and data interchange that all HACS resources inherit.
+BaseResource is the foundational Pydantic model for all HACS healthcare resources, providing automatic ID generation, timestamp management, and type-safe validation. Every HACS resource (Patient, Observation, Actor, etc.) inherits from BaseResource to gain essential infrastructure: unique identification with resource-type prefixes, audit trails with created_at/updated_at timestamps, version tracking, and protocol compliance for serialization and validation. Designed specifically for LLM agent communication with JSON Schema generation, subset model creation via pick(), and optimized serialization for AI workflows.
 
 **Boundaries**
 
-BaseResource is an abstract foundation class that should not be instantiated directly in production systems. Use domain-specific resources (Patient, Observation, etc.) or extend BaseResource to create custom resource types.
-
-**Key Capabilities**
-
-- Automatic Identity Management: Generates unique, human-readable IDs with resource-type prefixes
-- Lifecycle Tracking: Automatic created_at and updated_at timestamp management
-- Version Control: Built-in version field for resource evolution and change tracking
-- Protocol Compliance: Implements Identifiable, Timestamped, Versioned, Serializable, and Validatable protocols
-- Type Safety: Full Pydantic v2 validation with rich type annotations
-- Schema Generation: Automatic JSON Schema generation for API documentation
-- Subset Creation: pick() method for creating lightweight models with specific fields
+BaseResource is an abstract foundation class - extend it to create custom resource types, but use existing domain resources (Patient, Observation, etc.) for standard healthcare data. Contains only infrastructure (ID, timestamps, validation) - no clinical or business logic. Not for general-purpose data modeling outside healthcare contexts. All subclasses must provide a resource_type field for proper identification and routing.
 
 **Relationships**
 
-- Parent of: All HACS resources inherit from BaseResource either directly or through DomainResource
+- Extended by: All HACS resources either directly or through DomainResource
 - Implements: Identifiable, Timestamped, Versioned, Serializable, Validatable protocols
-- Used by: All HACS tools, persistence layers, and validation systems
+- Used by: save_resource, read_resource, validate_resource, and all HACS persistence tools
+- Referenced via: Reference objects using 'ResourceType/id' format
+- Grouped in: ResourceBundle collections for batch operations
 
-**Related Tools**
+**References**
 
-- save_record: Persists BaseResource instances to HACS database
-- read_record: Retrieves BaseResource instances by ID and type
-- validate_resource: Validates BaseResource instances against schemas
-- create_reference: Creates Reference objects pointing to BaseResource instances
+- Reference.reference field uses 'ResourceType/id' format pointing to BaseResource instances
+- ResourceBundle.entry contains BaseResource instances
+- All HACS database tools operate on BaseResource subclasses
+
 
 **Example**
 
 === "Rendered"
 
-    #### ExampleResource
+    #### HealthcareResource
 
     | Field | Value |
     |---|---|
-    | resource_type | ExampleResource |
-    | id | exampleresource-76dace31 |
-    | name | Sample Healthcare Resource |
-    | created_at | 2025-08-18T17:00:45.104249Z |
-    | updated_at | 2025-08-18T17:00:45.104252Z |
+    | resource_type | HealthcareResource |
+    | id | healthcareresource-b4e8e7c9 |
+    | name | Clinical Data Point |
+    | created_at | 2025-08-18T17:19:51.359925Z |
+    | updated_at | 2025-08-18T17:19:51.359927Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "exampleresource-76dace31",
-      "created_at": "2025-08-18T17:00:45.104249Z",
-      "updated_at": "2025-08-18T17:00:45.104252Z",
+      "id": "healthcareresource-b4e8e7c9",
+      "created_at": "2025-08-18T17:19:51.359925Z",
+      "updated_at": "2025-08-18T17:19:51.359927Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -72,19 +64,19 @@ BaseResource is an abstract foundation class that should not be instantiated dir
       "meta_source": null,
       "meta_security": [],
       "meta_tag": [],
-      "resource_type": "ExampleResource",
+      "resource_type": "HealthcareResource",
       "agent_context": null,
-      "name": "Sample Healthcare Resource",
-      "value": 42
+      "name": "Clinical Data Point",
+      "category": "vital-signs"
     }
     ```
 
 === "YAML"
 
     ```yaml
-    id: exampleresource-76dace31
-    created_at: '2025-08-18T17:00:45.104249Z'
-    updated_at: '2025-08-18T17:00:45.104252Z'
+    id: healthcareresource-b4e8e7c9
+    created_at: '2025-08-18T17:19:51.359925Z'
+    updated_at: '2025-08-18T17:19:51.359927Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -93,16 +85,16 @@ BaseResource is an abstract foundation class that should not be instantiated dir
     meta_source: null
     meta_security: []
     meta_tag: []
-    resource_type: ExampleResource
+    resource_type: HealthcareResource
     agent_context: null
-    name: Sample Healthcare Resource
-    value: 42
+    name: Clinical Data Point
+    category: vital-signs
     
     ```
 
 === "Schema"
 
-    #### ExampleResource Schema
+    #### HealthcareResource Schema
 
     Foundation class for all HACS healthcare resources.
 
@@ -157,7 +149,7 @@ BaseResource is an abstract foundation class that should not be instantiated dir
     | resource_type | <class 'str'> | Type identifier for this resource (Patient, Observation, etc.) (e.g., Patient) |
     | agent_context | dict[str, typing.Any] | None | Arbitrary, agent-provided context payload for this resource (e.g., {'section_key': 'free text content'}) |
     | name | <class 'str'> | None |
-    | value | <class 'int'> | None |
+    | category | <class 'str'> | None |
 
 
 
@@ -165,53 +157,48 @@ BaseResource is an abstract foundation class that should not be instantiated dir
 
 **Scope & Usage**
 
-DomainResource extends BaseResource to provide the foundation for all clinical and healthcare domain-specific resources in HACS. It implements the FHIR DomainResource pattern, adding essential fields and functionality required for healthcare interoperability.
+DomainResource extends BaseResource with FHIR R4-compliant fields for clinical and healthcare domain resources. Adds status tracking (active/inactive/draft), human-readable text narratives for clinical review, contained resource support, and extension mechanisms for additional healthcare data. All clinical HACS resources (Patient, Observation, Procedure, Condition, etc.) inherit from DomainResource to gain these healthcare-specific capabilities. Essential for LLM agents processing clinical data as it provides standardized status lifecycle, text summaries for context, and extension points for AI-generated metadata.
 
 **Boundaries**
 
-DomainResource is designed specifically for healthcare and clinical domain resources. Use BaseResource directly for non-clinical resources like Actor, MessageDefinition, or infrastructure components.
-
-**Key Capabilities**
-
-- Clinical Status Management: Built-in status field with standard healthcare status values
-- Human-Readable Narratives: text field for clinical review and patient communication
-- Contained Resources: Support for resources that exist only within the parent resource context
-- Extension Framework: Structured extension fields for additional healthcare data
-- FHIR R4 Compliance: Follows FHIR DomainResource patterns for maximum interoperability
+Use DomainResource for clinical and healthcare domain resources that need status tracking, text narratives, or contained resources. Use BaseResource directly for non-clinical infrastructure resources (Actor, MessageDefinition, workflow definitions). DomainResource provides the healthcare domain patterns but not specific clinical logic - that belongs in concrete implementations like Patient or Observation.
 
 **Relationships**
 
-- Inherits from: BaseResource (gains all foundation capabilities)
-- Parent of: Patient, Observation, Procedure, Condition, DiagnosticReport, and all clinical resources
-- Implements: ClinicalResource protocol patterns for clinical workflows
+- Inherits from: BaseResource (gains ID, timestamps, validation, protocols)
+- Extended by: Patient, Observation, Procedure, Condition, DiagnosticReport, and all clinical resources
+- Implements: ClinicalResource protocol with get_patient_id() method
+- Contains: Other BaseResource instances via contained field
+- Extends: Healthcare vocabularies and systems via extension mechanism
 
-**Related Tools**
+**References**
 
-- save_clinical_record: Specialized persistence for domain resources
-- validate_clinical_resource: Clinical-specific validation including status transitions
-- generate_narrative: Automatic generation of human-readable text summaries
+- Clinical resources inherit DomainResource patterns: status, text, contained, extension
+- Contained resources are embedded DomainResource instances for inline data
+- Extensions reference HL7 FHIR StructureDefinitions and custom healthcare vocabularies
+
 
 **Example**
 
 === "Rendered"
 
-    #### ExampleDomain
+    #### ClinicalProtocol
 
     | Field | Value |
     |---|---|
-    | resource_type | ExampleDomain |
-    | id | exampledomain-acb0e08e |
+    | resource_type | ClinicalProtocol |
+    | id | clinicalprotocol-7e81f103 |
     | status | active |
-    | created_at | 2025-08-18T17:00:45.106700Z |
-    | updated_at | 2025-08-18T17:00:45.106705Z |
+    | created_at | 2025-08-18T17:19:51.361665Z |
+    | updated_at | 2025-08-18T17:19:51.361665Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "exampledomain-acb0e08e",
-      "created_at": "2025-08-18T17:00:45.106700Z",
-      "updated_at": "2025-08-18T17:00:45.106705Z",
+      "id": "clinicalprotocol-7e81f103",
+      "created_at": "2025-08-18T17:19:51.361665Z",
+      "updated_at": "2025-08-18T17:19:51.361665Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -220,24 +207,23 @@ DomainResource is designed specifically for healthcare and clinical domain resou
       "meta_source": null,
       "meta_security": [],
       "meta_tag": [],
-      "resource_type": "ExampleDomain",
+      "resource_type": "ClinicalProtocol",
       "agent_context": null,
       "status": "active",
-      "text": "Clinical protocol for patient care",
+      "text": "HbA1c monitoring protocol with quarterly assessments",
       "contained": null,
       "extension": null,
       "modifier_extension": null,
-      "title": "Clinical Protocol",
-      "description": "Standard operating procedure"
+      "title": "Diabetes Management Protocol"
     }
     ```
 
 === "YAML"
 
     ```yaml
-    id: exampledomain-acb0e08e
-    created_at: '2025-08-18T17:00:45.106700Z'
-    updated_at: '2025-08-18T17:00:45.106705Z'
+    id: clinicalprotocol-7e81f103
+    created_at: '2025-08-18T17:19:51.361665Z'
+    updated_at: '2025-08-18T17:19:51.361665Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -246,21 +232,20 @@ DomainResource is designed specifically for healthcare and clinical domain resou
     meta_source: null
     meta_security: []
     meta_tag: []
-    resource_type: ExampleDomain
+    resource_type: ClinicalProtocol
     agent_context: null
     status: active
-    text: Clinical protocol for patient care
+    text: HbA1c monitoring protocol with quarterly assessments
     contained: null
     extension: null
     modifier_extension: null
-    title: Clinical Protocol
-    description: Standard operating procedure
+    title: Diabetes Management Protocol
     
     ```
 
 === "Schema"
 
-    #### ExampleDomainResource Schema
+    #### ClinicalProtocol Schema
 
     Base class for domain-specific healthcare resources.
 
@@ -307,7 +292,6 @@ DomainResource is designed specifically for healthcare and clinical domain resou
     | extension | dict[str, typing.Any] | None | Additional content defined by implementations (e.g., {'url': 'custom-field', 'valueString': 'custom-value'}) |
     | modifier_extension | dict[str, typing.Any] | None | Extensions that cannot be ignored (e.g., {'url': 'critical-field', 'valueBoolean': True}) |
     | title | <class 'str'> | None |
-    | description | <class 'str'> | None |
 
 
 
@@ -315,24 +299,16 @@ DomainResource is designed specifically for healthcare and clinical domain resou
 
 **Scope & Usage**
 
-Reference provides a standardized mechanism for linking between HACS resources, enabling the creation of interconnected healthcare data networks. It implements FHIR-compliant reference patterns.
+FHIR-style reference to another resource instance.
 
 **Boundaries**
 
-Reference is designed specifically for resource-to-resource relationships and should not be used for general-purpose linking or URL management.
+Does not carry the target resource; use read tools to resolve.
 
-**Key Capabilities**
+**Relationships**
 
-- FHIR-Compliant Referencing: Standard reference format "ResourceType/id"
-- Type Safety: Explicit resource type specification for validation
-- Display Names: Human-readable display text for UI presentation
-- Cross-System References: Support for references to external systems
+- References: Any resource by type/id
 
-**Related Tools**
-
-- resolve_reference: Retrieve the actual resource instance from a Reference
-- create_reference: Generate Reference objects from resource instances
-- validate_reference: Check reference integrity and target existence
 
 **Example**
 
@@ -390,24 +366,21 @@ Reference is designed specifically for resource-to-resource relationships and sh
 
 **Scope & Usage**
 
-ResourceBundle provides a container mechanism for grouping related HACS resources into cohesive collections, supporting batch operations and logical grouping of healthcare data.
+Logical grouping of resources for transfer or template.
 
 **Boundaries**
 
-ResourceBundle is designed for grouping actual HACS resources, not for general-purpose data collection or arbitrary object containers.
+Not a long-term canonical store; persist individual resources.
 
-**Key Capabilities**
+**Relationships**
 
-- Multiple Bundle Types: Document, message, transaction, collection, and searchset bundles
-- Atomic Operations: Support for transactional updates across multiple resources
-- Reference Resolution: Automatic resolution of references within bundle context
-- Integrity Validation: Cross-resource validation and referential integrity checking
+- Contains entries with resources
 
-**Related Tools**
+**Tools**
 
-- create_bundle: Generate ResourceBundle instances from resource collections
-- validate_bundle: Comprehensive bundle validation
-- execute_bundle: Process transaction bundles with atomic operations
+- add_bundle_entries
+- validate_bundle
+
 
 **Example**
 
@@ -418,18 +391,18 @@ ResourceBundle is designed for grouping actual HACS resources, not for general-p
     | Field | Value |
     |---|---|
     | resource_type | ResourceBundle |
-    | id | resourcebundle-2d2c321a |
+    | id | resourcebundle-606fde34 |
     | status | draft |
-    | created_at | 2025-08-18T17:00:45.107857Z |
-    | updated_at | 2025-08-18T17:00:45.107858Z |
+    | created_at | 2025-08-18T17:19:51.362711Z |
+    | updated_at | 2025-08-18T17:19:51.362712Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "resourcebundle-2d2c321a",
-      "created_at": "2025-08-18T17:00:45.107857Z",
-      "updated_at": "2025-08-18T17:00:45.107858Z",
+      "id": "resourcebundle-606fde34",
+      "created_at": "2025-08-18T17:19:51.362711Z",
+      "updated_at": "2025-08-18T17:19:51.362712Z",
       "version": null,
       "identifier": [],
       "language": null,
@@ -462,9 +435,9 @@ ResourceBundle is designed for grouping actual HACS resources, not for general-p
 === "YAML"
 
     ```yaml
-    id: resourcebundle-2d2c321a
-    created_at: '2025-08-18T17:00:45.107857Z'
-    updated_at: '2025-08-18T17:00:45.107858Z'
+    id: resourcebundle-606fde34
+    created_at: '2025-08-18T17:19:51.362711Z'
+    updated_at: '2025-08-18T17:19:51.362712Z'
     version: null
     identifier: []
     language: null
@@ -594,7 +567,7 @@ Not a clinical resource. Use Practitioner for clinical staff records; Organizati
 
 - Organization
 
-**Related Tools**
+**Tools**
 
 - authenticate_actor
 - authorize_action
@@ -609,18 +582,18 @@ Not a clinical resource. Use Practitioner for clinical staff records; Organizati
     | Field | Value |
     |---|---|
     | resource_type | Actor |
-    | id | actor-1607d657 |
+    | id | actor-bebafd90 |
     | name | Dr. Sarah Chen |
-    | created_at | 2025-08-18T17:00:45.108583Z |
-    | updated_at | 2025-08-18T17:00:45.108584Z |
+    | created_at | 2025-08-18T17:19:51.363367Z |
+    | updated_at | 2025-08-18T17:19:51.363368Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "actor-1607d657",
-      "created_at": "2025-08-18T17:00:45.108583Z",
-      "updated_at": "2025-08-18T17:00:45.108584Z",
+      "id": "actor-bebafd90",
+      "created_at": "2025-08-18T17:19:51.363367Z",
+      "updated_at": "2025-08-18T17:19:51.363368Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -686,9 +659,9 @@ Not a clinical resource. Use Practitioner for clinical staff records; Organizati
 === "YAML"
 
     ```yaml
-    id: actor-1607d657
-    created_at: '2025-08-18T17:00:45.108583Z'
-    updated_at: '2025-08-18T17:00:45.108584Z'
+    id: actor-bebafd90
+    created_at: '2025-08-18T17:19:51.363367Z'
+    updated_at: '2025-08-18T17:19:51.363368Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -814,7 +787,7 @@ This is metadata for orchestration, not a clinical artifact.
 
 - Actor
 
-**Related Tools**
+**Tools**
 
 - consult_preferences
 - inject_preferences
@@ -829,17 +802,17 @@ This is metadata for orchestration, not a clinical artifact.
     | Field | Value |
     |---|---|
     | resource_type | ActorPreference |
-    | id | actorpreference-2624bed0 |
-    | created_at | 2025-08-18T17:00:45.109290Z |
-    | updated_at | 2025-08-18T17:00:45.109291Z |
+    | id | actorpreference-d9c28443 |
+    | created_at | 2025-08-18T17:19:51.364176Z |
+    | updated_at | 2025-08-18T17:19:51.364177Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "actorpreference-2624bed0",
-      "created_at": "2025-08-18T17:00:45.109290Z",
-      "updated_at": "2025-08-18T17:00:45.109291Z",
+      "id": "actorpreference-d9c28443",
+      "created_at": "2025-08-18T17:19:51.364176Z",
+      "updated_at": "2025-08-18T17:19:51.364177Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -863,9 +836,9 @@ This is metadata for orchestration, not a clinical artifact.
 === "YAML"
 
     ```yaml
-    id: actorpreference-2624bed0
-    created_at: '2025-08-18T17:00:45.109290Z'
-    updated_at: '2025-08-18T17:00:45.109291Z'
+    id: actorpreference-d9c28443
+    created_at: '2025-08-18T17:19:51.364176Z'
+    updated_at: '2025-08-18T17:19:51.364177Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -947,7 +920,7 @@ Patient resources do not contain clinical findings (use Observation/Condition), 
 - Encounter.subject
 - all clinical resources via subject/patient field
 
-**Related Tools**
+**Tools**
 
 - calculate_age
 - add_identifier
@@ -965,22 +938,22 @@ Patient resources do not contain clinical findings (use Observation/Condition), 
     | Field | Value |
     |---|---|
     | resource_type | Patient |
-    | id | patient-0cf31f9a |
+    | id | patient-99ee93c1 |
     | status | active |
     | full_name | Maria Rodriguez |
     | gender | female |
     | birth_date | 1985-03-15 |
     | phone | +1-555-0101 |
-    | created_at | 2025-08-18T17:00:45.109704Z |
-    | updated_at | 2025-08-18T17:00:45.109704Z |
+    | created_at | 2025-08-18T17:19:51.364589Z |
+    | updated_at | 2025-08-18T17:19:51.364590Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "patient-0cf31f9a",
-      "created_at": "2025-08-18T17:00:45.109704Z",
-      "updated_at": "2025-08-18T17:00:45.109704Z",
+      "id": "patient-99ee93c1",
+      "created_at": "2025-08-18T17:19:51.364589Z",
+      "updated_at": "2025-08-18T17:19:51.364590Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -998,9 +971,9 @@ Patient resources do not contain clinical findings (use Observation/Condition), 
       "modifier_extension": null,
       "name": [
         {
-          "id": "humanname-abc3d07a",
-          "created_at": "2025-08-18T17:00:45.109755Z",
-          "updated_at": "2025-08-18T17:00:45.109755Z",
+          "id": "humanname-02f5fbdb",
+          "created_at": "2025-08-18T17:19:51.364638Z",
+          "updated_at": "2025-08-18T17:19:51.364638Z",
           "version": "1.0.0",
           "identifier": [],
           "language": null,
@@ -1038,9 +1011,9 @@ Patient resources do not contain clinical findings (use Observation/Condition), 
       "photo": [],
       "telecom": [
         {
-          "id": "contactpoint-ae39e43a",
-          "created_at": "2025-08-18T17:00:45.109781Z",
-          "updated_at": "2025-08-18T17:00:45.109781Z",
+          "id": "contactpoint-ac853330",
+          "created_at": "2025-08-18T17:19:51.364666Z",
+          "updated_at": "2025-08-18T17:19:51.364667Z",
           "version": "1.0.0",
           "identifier": [],
           "language": null,
@@ -1081,9 +1054,9 @@ Patient resources do not contain clinical findings (use Observation/Condition), 
 === "YAML"
 
     ```yaml
-    id: patient-0cf31f9a
-    created_at: '2025-08-18T17:00:45.109704Z'
-    updated_at: '2025-08-18T17:00:45.109704Z'
+    id: patient-99ee93c1
+    created_at: '2025-08-18T17:19:51.364589Z'
+    updated_at: '2025-08-18T17:19:51.364590Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -1100,9 +1073,9 @@ Patient resources do not contain clinical findings (use Observation/Condition), 
     extension: null
     modifier_extension: null
     name:
-    - id: humanname-abc3d07a
-      created_at: '2025-08-18T17:00:45.109755Z'
-      updated_at: '2025-08-18T17:00:45.109755Z'
+    - id: humanname-02f5fbdb
+      created_at: '2025-08-18T17:19:51.364638Z'
+      updated_at: '2025-08-18T17:19:51.364638Z'
       version: 1.0.0
       identifier: []
       language: null
@@ -1136,9 +1109,9 @@ Patient resources do not contain clinical findings (use Observation/Condition), 
     multiple_birth_integer: null
     photo: []
     telecom:
-    - id: contactpoint-ae39e43a
-      created_at: '2025-08-18T17:00:45.109781Z'
-      updated_at: '2025-08-18T17:00:45.109781Z'
+    - id: contactpoint-ac853330
+      created_at: '2025-08-18T17:19:51.364666Z'
+      updated_at: '2025-08-18T17:19:51.364667Z'
       version: 1.0.0
       identifier: []
       language: null
@@ -1275,7 +1248,7 @@ Do not use for diagnoses/problems (use Condition), procedures performed (use Pro
 - DiagnosticReport.result
 - Condition.evidence
 
-**Related Tools**
+**Tools**
 
 - summarize_observation_value
 
@@ -1289,22 +1262,22 @@ Do not use for diagnoses/problems (use Condition), procedures performed (use Pro
     | Field | Value |
     |---|---|
     | resource_type | Observation |
-    | id | observation-9d4512fe |
+    | id | observation-865f901f |
     | status | final |
     | code | Blood Pressure |
     | value.quantity | 128.0 mmHg |
-    | subject | Patient/123 |
+    | subject | Patient/patient-12345 |
     | performer | [] |
-    | created_at | 2025-08-18T17:00:45.110968Z |
-    | updated_at | 2025-08-18T17:00:45.110968Z |
+    | created_at | 2025-08-18T17:19:51.365859Z |
+    | updated_at | 2025-08-18T17:19:51.365860Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "observation-9d4512fe",
-      "created_at": "2025-08-18T17:00:45.110968Z",
-      "updated_at": "2025-08-18T17:00:45.110968Z",
+      "id": "observation-865f901f",
+      "created_at": "2025-08-18T17:19:51.365859Z",
+      "updated_at": "2025-08-18T17:19:51.365860Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -1321,9 +1294,9 @@ Do not use for diagnoses/problems (use Condition), procedures performed (use Pro
       "extension": null,
       "modifier_extension": null,
       "code": {
-        "id": "codeableconcept-2f4176e8",
-        "created_at": "2025-08-18T17:00:45.110920Z",
-        "updated_at": "2025-08-18T17:00:45.110921Z",
+        "id": "codeableconcept-0434f2ed",
+        "created_at": "2025-08-18T17:19:51.365811Z",
+        "updated_at": "2025-08-18T17:19:51.365811Z",
         "version": "1.0.0",
         "identifier": [],
         "language": null,
@@ -1344,15 +1317,15 @@ Do not use for diagnoses/problems (use Condition), procedures performed (use Pro
       "category": [],
       "method": null,
       "device": null,
-      "subject": "Patient/123",
+      "subject": "Patient/patient-12345",
       "encounter": null,
       "effective_date_time": null,
       "issued": null,
       "performer": [],
       "value_quantity": {
-        "id": "quantity-0033fcda",
-        "created_at": "2025-08-18T17:00:45.110946Z",
-        "updated_at": "2025-08-18T17:00:45.110947Z",
+        "id": "quantity-e6aecfaf",
+        "created_at": "2025-08-18T17:19:51.365837Z",
+        "updated_at": "2025-08-18T17:19:51.365838Z",
         "version": "1.0.0",
         "identifier": [],
         "language": null,
@@ -1392,9 +1365,9 @@ Do not use for diagnoses/problems (use Condition), procedures performed (use Pro
 === "YAML"
 
     ```yaml
-    id: observation-9d4512fe
-    created_at: '2025-08-18T17:00:45.110968Z'
-    updated_at: '2025-08-18T17:00:45.110968Z'
+    id: observation-865f901f
+    created_at: '2025-08-18T17:19:51.365859Z'
+    updated_at: '2025-08-18T17:19:51.365860Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -1411,9 +1384,9 @@ Do not use for diagnoses/problems (use Condition), procedures performed (use Pro
     extension: null
     modifier_extension: null
     code:
-      id: codeableconcept-2f4176e8
-      created_at: '2025-08-18T17:00:45.110920Z'
-      updated_at: '2025-08-18T17:00:45.110921Z'
+      id: codeableconcept-0434f2ed
+      created_at: '2025-08-18T17:19:51.365811Z'
+      updated_at: '2025-08-18T17:19:51.365811Z'
       version: 1.0.0
       identifier: []
       language: null
@@ -1433,15 +1406,15 @@ Do not use for diagnoses/problems (use Condition), procedures performed (use Pro
     category: []
     method: null
     device: null
-    subject: Patient/123
+    subject: Patient/patient-12345
     encounter: null
     effective_date_time: null
     issued: null
     performer: []
     value_quantity:
-      id: quantity-0033fcda
-      created_at: '2025-08-18T17:00:45.110946Z'
-      updated_at: '2025-08-18T17:00:45.110947Z'
+      id: quantity-e6aecfaf
+      created_at: '2025-08-18T17:19:51.365837Z'
+      updated_at: '2025-08-18T17:19:51.365838Z'
       version: 1.0.0
       identifier: []
       language: null
@@ -1555,7 +1528,7 @@ Do not use for medications (use MedicationRequest/Statement), procedures (use Pr
 - Encounter.encounter
 - Observation/DiagnosticReport in evidence
 
-**Related Tools**
+**Tools**
 
 - add_condition_stage
 
@@ -1569,18 +1542,18 @@ Do not use for medications (use MedicationRequest/Statement), procedures (use Pr
     | Field | Value |
     |---|---|
     | resource_type | Condition |
-    | id | condition-326031c8 |
+    | id | condition-761f828f |
     | status | active |
-    | created_at | 2025-08-18T17:00:45.112029Z |
-    | updated_at | 2025-08-18T17:00:45.112029Z |
+    | created_at | 2025-08-18T17:19:51.371085Z |
+    | updated_at | 2025-08-18T17:19:51.371086Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "condition-326031c8",
-      "created_at": "2025-08-18T17:00:45.112029Z",
-      "updated_at": "2025-08-18T17:00:45.112029Z",
+      "id": "condition-761f828f",
+      "created_at": "2025-08-18T17:19:51.371085Z",
+      "updated_at": "2025-08-18T17:19:51.371086Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -1626,9 +1599,9 @@ Do not use for medications (use MedicationRequest/Statement), procedures (use Pr
 === "YAML"
 
     ```yaml
-    id: condition-326031c8
-    created_at: '2025-08-18T17:00:45.112029Z'
-    updated_at: '2025-08-18T17:00:45.112029Z'
+    id: condition-761f828f
+    created_at: '2025-08-18T17:19:51.371085Z'
+    updated_at: '2025-08-18T17:19:51.371086Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -1776,25 +1749,206 @@ Do not use for orders/requests (use ServiceRequest), appointments (use Appointme
     | Field | Value |
     |---|---|
     | resource_type | Procedure |
+    | id | procedure-cc728712 |
+    | status | completed |
+    | code | Sample Procedure |
+    | subject | Patient/patient-123 |
+    | performer | [] |
+    | created_at | 2025-08-18T17:19:51.376967Z |
+    | updated_at | 2025-08-18T17:19:51.376968Z |
 
 === "JSON"
 
     ```json
     {
-      "resource_type": "Procedure"
+      "id": "procedure-cc728712",
+      "created_at": "2025-08-18T17:19:51.376967Z",
+      "updated_at": "2025-08-18T17:19:51.376968Z",
+      "version": "1.0.0",
+      "identifier": [],
+      "language": null,
+      "implicit_rules": null,
+      "meta_profile": [],
+      "meta_source": null,
+      "meta_security": [],
+      "meta_tag": [],
+      "resource_type": "Procedure",
+      "agent_context": null,
+      "status": "completed",
+      "text": null,
+      "contained": null,
+      "extension": null,
+      "modifier_extension": null,
+      "status_reason": null,
+      "category": null,
+      "code": {
+        "id": "codeableconcept-d4fdc6f6",
+        "created_at": "2025-08-18T17:19:51.376943Z",
+        "updated_at": "2025-08-18T17:19:51.376946Z",
+        "version": "1.0.0",
+        "identifier": [],
+        "language": null,
+        "implicit_rules": null,
+        "meta_profile": [],
+        "meta_source": null,
+        "meta_security": [],
+        "meta_tag": [],
+        "resource_type": "CodeableConcept",
+        "agent_context": null,
+        "status": "active",
+        "text": "Sample Procedure",
+        "contained": null,
+        "extension": null,
+        "modifier_extension": null,
+        "coding": []
+      },
+      "subject": "Patient/patient-123",
+      "encounter": null,
+      "performed_date_time": null,
+      "performed_period_start": null,
+      "performed_period_end": null,
+      "performer": [],
+      "location": null,
+      "reason_code": [],
+      "reason_reference": [],
+      "body_site": [],
+      "outcome": null,
+      "report": [],
+      "complication": [],
+      "complication_detail": [],
+      "follow_up": [],
+      "note": [],
+      "focal_device": [],
+      "used_reference": [],
+      "used_code": [],
+      "duration_minutes": null
     }
     ```
 
 === "YAML"
 
     ```yaml
+    id: procedure-cc728712
+    created_at: '2025-08-18T17:19:51.376967Z'
+    updated_at: '2025-08-18T17:19:51.376968Z'
+    version: 1.0.0
+    identifier: []
+    language: null
+    implicit_rules: null
+    meta_profile: []
+    meta_source: null
+    meta_security: []
+    meta_tag: []
     resource_type: Procedure
+    agent_context: null
+    status: completed
+    text: null
+    contained: null
+    extension: null
+    modifier_extension: null
+    status_reason: null
+    category: null
+    code:
+      id: codeableconcept-d4fdc6f6
+      created_at: '2025-08-18T17:19:51.376943Z'
+      updated_at: '2025-08-18T17:19:51.376946Z'
+      version: 1.0.0
+      identifier: []
+      language: null
+      implicit_rules: null
+      meta_profile: []
+      meta_source: null
+      meta_security: []
+      meta_tag: []
+      resource_type: CodeableConcept
+      agent_context: null
+      status: active
+      text: Sample Procedure
+      contained: null
+      extension: null
+      modifier_extension: null
+      coding: []
+    subject: Patient/patient-123
+    encounter: null
+    performed_date_time: null
+    performed_period_start: null
+    performed_period_end: null
+    performer: []
+    location: null
+    reason_code: []
+    reason_reference: []
+    body_site: []
+    outcome: null
+    report: []
+    complication: []
+    complication_detail: []
+    follow_up: []
+    note: []
+    focal_device: []
+    used_reference: []
+    used_code: []
+    duration_minutes: null
     
     ```
 
 === "Schema"
 
-    _No schema available_
+    #### Procedure Schema
+
+    Procedure resource for healthcare procedures and interventions.
+
+    An action that is or was performed on or for a patient. This can be a
+    physical intervention like an operation, or less invasive like long term
+    services, counseling, or hypnotherapy.
+
+    This resource is used to record procedures performed on patients, including
+    surgical procedures, therapeutic procedures, diagnostic procedures, and
+    administrative procedures.
+
+    | Field | Type | Description |
+    |---|---|---|
+    | id | str | None | Unique identifier for this resource. Auto-generated if not provided. |
+    | created_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was created |
+    | updated_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was last updated |
+    | version | <class 'str'> | Version of the resource |
+    | identifier | list[str] | External identifiers for this procedure (e.g., ['urn:oid:1.2.3.4.5.6.7.8.9|12345', 'procedure-123456']) |
+    | language | str | None | Base language of the resource content (BCP-47, e.g., en, pt-BR) (e.g., en) |
+    | implicit_rules | str | None | Reference to rules followed when constructing the resource (URI) (e.g., http://example.org/implicit-rules/v1) |
+    | meta_profile | list[str] | Profiles asserting conformance of this resource (URIs) (e.g., ['http://hl7.org/fhir/StructureDefinition/Observation']) |
+    | meta_source | str | None | Source system that produced the resource (e.g., ehr-system-x) |
+    | meta_security | list[str] | Security labels applicable to this resource (policy/label codes) (e.g., ['very-sensitive', 'phi']) |
+    | meta_tag | list[str] | User or system-defined tags for search and grouping (e.g., ['triage', 'llm-context', 'draft']) |
+    | resource_type | typing.Literal['Procedure'] | None |
+    | agent_context | dict[str, typing.Any] | None | Arbitrary, agent-provided context payload for this resource (e.g., {'section_key': 'free text content'}) |
+    | status | <enum 'ProcedureStatus'> | Status of the procedure (preparation, in-progress, completed, etc.) |
+    | text | str | None | Human-readable summary of the resource content (e.g., Patient John Doe, 45 years old) |
+    | contained | list[hacs_models.base_resource.BaseResource] | None | Resources contained within this resource |
+    | extension | dict[str, typing.Any] | None | Additional content defined by implementations (e.g., {'url': 'custom-field', 'valueString': 'custom-value'}) |
+    | modifier_extension | dict[str, typing.Any] | None | Extensions that cannot be ignored (e.g., {'url': 'critical-field', 'valueBoolean': True}) |
+    | status_reason | hacs_models.observation.CodeableConcept | None | Reason for current status |
+    | category | hacs_models.observation.CodeableConcept | None | Classification of procedure (e.g., {'coding': [{'system': 'http://snomed.info/sct', 'code': '387713003', 'display': 'Surgical procedure'}], 'text': 'Surgical procedure'}) |
+    | code | <class 'hacs_models.observation.CodeableConcept'> | Identification of the procedure |
+    | subject | <class 'str'> | Who the procedure was performed on |
+    | encounter | str | None | Encounter created as part of |
+    | performed_date_time | str | None | When the procedure was performed |
+    | performed_period_start | str | None | Start of when the procedure was performed |
+    | performed_period_end | str | None | End of when the procedure was performed |
+    | performer | list[hacs_models.procedure.ProcedurePerformer] | The people who performed the procedure |
+    | location | str | None | Where the procedure happened |
+    | reason_code | list[hacs_models.observation.CodeableConcept] | Coded reason procedure performed |
+    | reason_reference | list[str] | The justification that the procedure was performed |
+    | body_site | list[hacs_models.observation.CodeableConcept] | Target body sites |
+    | outcome | hacs_models.observation.CodeableConcept | None | The result of procedure |
+    | report | list[str] | Any report resulting from the procedure |
+    | complication | list[hacs_models.observation.CodeableConcept] | Complication following the procedure |
+    | complication_detail | list[str] | A condition that is a result of the procedure |
+    | follow_up | list[hacs_models.observation.CodeableConcept] | Instructions for follow up |
+    | note | list[str] | Additional information about the procedure |
+    | focal_device | list[hacs_models.procedure.ProcedureFocalDevice] | Manipulated, implanted, or removed device |
+    | used_reference | list[str] | Items used during procedure |
+    | used_code | list[hacs_models.observation.CodeableConcept] | Coded items used during procedure |
+    | duration_minutes | int | None | Duration of the procedure in minutes (e.g., 30) |
+
 
 
 ### DiagnosticReport
@@ -1820,15 +1974,12 @@ Do not use for individual measurements (use Observation), procedure records (use
 - Observation.result
 - Encounter.encounter
 
-**Related Tools**
+**Tools**
 
-- pin_resource
-- validate_resource
-- describe_model
-- list_model_fields
-- save_record
-- read_record
-- update_record
+- summarize_report_tool
+- link_report_results_tool
+- attach_report_media_tool
+- validate_report_completeness_tool
 
 
 **Example**
@@ -1840,25 +1991,184 @@ Do not use for individual measurements (use Observation), procedure records (use
     | Field | Value |
     |---|---|
     | resource_type | DiagnosticReport |
+    | id | diagnosticreport-e953985e |
+    | status | final |
+    | code | Sample DiagnosticReport |
+    | performer | [] |
+    | based_on | [] |
+    | result | [] |
+    | created_at | 2025-08-18T17:19:51.381768Z |
+    | updated_at | 2025-08-18T17:19:51.381768Z |
 
 === "JSON"
 
     ```json
     {
-      "resource_type": "DiagnosticReport"
+      "id": "diagnosticreport-e953985e",
+      "created_at": "2025-08-18T17:19:51.381768Z",
+      "updated_at": "2025-08-18T17:19:51.381768Z",
+      "version": "1.0.0",
+      "identifier": [],
+      "language": null,
+      "implicit_rules": null,
+      "meta_profile": [],
+      "meta_source": null,
+      "meta_security": [],
+      "meta_tag": [],
+      "resource_type": "DiagnosticReport",
+      "agent_context": null,
+      "status": "final",
+      "text": null,
+      "contained": null,
+      "extension": null,
+      "modifier_extension": null,
+      "based_on": [],
+      "category": [],
+      "code": {
+        "id": "codeableconcept-1310712c",
+        "created_at": "2025-08-18T17:19:51.381756Z",
+        "updated_at": "2025-08-18T17:19:51.381756Z",
+        "version": "1.0.0",
+        "identifier": [],
+        "language": null,
+        "implicit_rules": null,
+        "meta_profile": [],
+        "meta_source": null,
+        "meta_security": [],
+        "meta_tag": [],
+        "resource_type": "CodeableConcept",
+        "agent_context": null,
+        "status": "active",
+        "text": "Sample DiagnosticReport",
+        "contained": null,
+        "extension": null,
+        "modifier_extension": null,
+        "coding": []
+      },
+      "subject": null,
+      "encounter": null,
+      "effective_datetime": null,
+      "effective_period": null,
+      "issued": null,
+      "performer": [],
+      "results_interpreter": [],
+      "specimen": [],
+      "result": [],
+      "imaging_study": [],
+      "media": [],
+      "conclusion": null,
+      "conclusion_code": [],
+      "presented_form": []
     }
     ```
 
 === "YAML"
 
     ```yaml
+    id: diagnosticreport-e953985e
+    created_at: '2025-08-18T17:19:51.381768Z'
+    updated_at: '2025-08-18T17:19:51.381768Z'
+    version: 1.0.0
+    identifier: []
+    language: null
+    implicit_rules: null
+    meta_profile: []
+    meta_source: null
+    meta_security: []
+    meta_tag: []
     resource_type: DiagnosticReport
+    agent_context: null
+    status: final
+    text: null
+    contained: null
+    extension: null
+    modifier_extension: null
+    based_on: []
+    category: []
+    code:
+      id: codeableconcept-1310712c
+      created_at: '2025-08-18T17:19:51.381756Z'
+      updated_at: '2025-08-18T17:19:51.381756Z'
+      version: 1.0.0
+      identifier: []
+      language: null
+      implicit_rules: null
+      meta_profile: []
+      meta_source: null
+      meta_security: []
+      meta_tag: []
+      resource_type: CodeableConcept
+      agent_context: null
+      status: active
+      text: Sample DiagnosticReport
+      contained: null
+      extension: null
+      modifier_extension: null
+      coding: []
+    subject: null
+    encounter: null
+    effective_datetime: null
+    effective_period: null
+    issued: null
+    performer: []
+    results_interpreter: []
+    specimen: []
+    result: []
+    imaging_study: []
+    media: []
+    conclusion: null
+    conclusion_code: []
+    presented_form: []
     
     ```
 
 === "Schema"
 
-    _No schema available_
+    #### DiagnosticReport Schema
+
+    DiagnosticReport resource for clinical decisions.
+
+    The findings and interpretation of diagnostic tests performed on patients,
+    groups of patients, devices, and locations, and/or specimens derived from these.
+
+    | Field | Type | Description |
+    |---|---|---|
+    | id | str | None | Unique identifier for this resource. Auto-generated if not provided. |
+    | created_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was created |
+    | updated_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was last updated |
+    | version | <class 'str'> | Version of the resource |
+    | identifier | list[str] | Business identifier for report |
+    | language | str | None | Base language of the resource content (BCP-47, e.g., en, pt-BR) (e.g., en) |
+    | implicit_rules | str | None | Reference to rules followed when constructing the resource (URI) (e.g., http://example.org/implicit-rules/v1) |
+    | meta_profile | list[str] | Profiles asserting conformance of this resource (URIs) (e.g., ['http://hl7.org/fhir/StructureDefinition/Observation']) |
+    | meta_source | str | None | Source system that produced the resource (e.g., ehr-system-x) |
+    | meta_security | list[str] | Security labels applicable to this resource (policy/label codes) (e.g., ['very-sensitive', 'phi']) |
+    | meta_tag | list[str] | User or system-defined tags for search and grouping (e.g., ['triage', 'llm-context', 'draft']) |
+    | resource_type | typing.Literal['DiagnosticReport'] | Resource type identifier |
+    | agent_context | dict[str, typing.Any] | None | Arbitrary, agent-provided context payload for this resource (e.g., {'section_key': 'free text content'}) |
+    | status | <enum 'DiagnosticReportStatus'> | Status of the diagnostic report |
+    | text | str | None | Human-readable summary of the resource content (e.g., Patient John Doe, 45 years old) |
+    | contained | list[hacs_models.base_resource.BaseResource] | None | Resources contained within this resource |
+    | extension | dict[str, typing.Any] | None | Additional content defined by implementations (e.g., {'url': 'custom-field', 'valueString': 'custom-value'}) |
+    | modifier_extension | dict[str, typing.Any] | None | Extensions that cannot be ignored (e.g., {'url': 'critical-field', 'valueBoolean': True}) |
+    | based_on | list[str] | What was requested |
+    | category | list[hacs_models.observation.CodeableConcept] | Service category |
+    | code | <class 'hacs_models.observation.CodeableConcept'> | Name/Code for this diagnostic report |
+    | subject | str | None | The subject of the report - usually, but not always, the patient |
+    | encounter | str | None | Health care event when test ordered |
+    | effective_datetime | str | None | Clinically relevant time/time-period for report |
+    | effective_period | str | None | Clinically relevant time period for report |
+    | issued | str | None | DateTime this version was made |
+    | performer | list[str] | Responsible Diagnostic Service |
+    | results_interpreter | list[str] | Primary result interpreter |
+    | specimen | list[str] | Specimens this report is based on |
+    | result | list[str] | Observations included in this report |
+    | imaging_study | list[str] | Reference to full details of imaging associated with the diagnostic report |
+    | media | list[hacs_models.diagnostic_report.DiagnosticReportMedia] | Key images associated with this report |
+    | conclusion | str | None | Clinical conclusion (impression) summary |
+    | conclusion_code | list[hacs_models.observation.CodeableConcept] | Codes for the clinical conclusion |
+    | presented_form | list[str] | Entire report as issued |
+
 
 
 ### AllergyIntolerance
@@ -1883,7 +2193,7 @@ Do not use for adverse events during treatment (use AdverseEvent), side effects 
 - medication and food ordering systems
 - clinical decision support
 
-**Related Tools**
+**Tools**
 
 - check_allergy_contraindications
 - validate_allergy_severity
@@ -1901,25 +2211,134 @@ Do not use for adverse events during treatment (use AdverseEvent), side effects 
     | Field | Value |
     |---|---|
     | resource_type | AllergyIntolerance |
+    | id | allergyintolerance-2e88495f |
+    | status | active |
+    | created_at | 2025-08-18T17:19:51.386972Z |
+    | updated_at | 2025-08-18T17:19:51.386972Z |
 
 === "JSON"
 
     ```json
     {
-      "resource_type": "AllergyIntolerance"
+      "id": "allergyintolerance-2e88495f",
+      "created_at": "2025-08-18T17:19:51.386972Z",
+      "updated_at": "2025-08-18T17:19:51.386972Z",
+      "version": "1.0.0",
+      "identifier": [],
+      "language": null,
+      "implicit_rules": null,
+      "meta_profile": [],
+      "meta_source": null,
+      "meta_security": [],
+      "meta_tag": [],
+      "resource_type": "AllergyIntolerance",
+      "agent_context": null,
+      "status": "active",
+      "text": null,
+      "contained": null,
+      "extension": null,
+      "modifier_extension": null,
+      "clinical_status": "active",
+      "verification_status": null,
+      "type": null,
+      "category": [],
+      "criticality": null,
+      "code": null,
+      "patient": "Patient/patient-123",
+      "encounter": null,
+      "onset_datetime": null,
+      "last_occurrence": null,
+      "recorder": null,
+      "asserter": null,
+      "reaction": [],
+      "note": null
     }
     ```
 
 === "YAML"
 
     ```yaml
+    id: allergyintolerance-2e88495f
+    created_at: '2025-08-18T17:19:51.386972Z'
+    updated_at: '2025-08-18T17:19:51.386972Z'
+    version: 1.0.0
+    identifier: []
+    language: null
+    implicit_rules: null
+    meta_profile: []
+    meta_source: null
+    meta_security: []
+    meta_tag: []
     resource_type: AllergyIntolerance
+    agent_context: null
+    status: active
+    text: null
+    contained: null
+    extension: null
+    modifier_extension: null
+    clinical_status: active
+    verification_status: null
+    type: null
+    category: []
+    criticality: null
+    code: null
+    patient: Patient/patient-123
+    encounter: null
+    onset_datetime: null
+    last_occurrence: null
+    recorder: null
+    asserter: null
+    reaction: []
+    note: null
     
     ```
 
 === "Schema"
 
-    _No schema available_
+    #### AllergyIntolerance Schema
+
+    AllergyIntolerance resource for patient safety.
+
+    Risk of harmful or undesirable, physiological response which is unique
+    to an individual and associated with exposure to a substance.
+
+    This is a SAFETY-CRITICAL resource in healthcare systems.
+
+    | Field | Type | Description |
+    |---|---|---|
+    | id | str | None | Unique identifier for this resource. Auto-generated if not provided. |
+    | created_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was created |
+    | updated_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was last updated |
+    | version | <class 'str'> | Version of the resource |
+    | identifier | list[str] | External identifiers for this item |
+    | language | str | None | Base language of the resource content (BCP-47, e.g., en, pt-BR) (e.g., en) |
+    | implicit_rules | str | None | Reference to rules followed when constructing the resource (URI) (e.g., http://example.org/implicit-rules/v1) |
+    | meta_profile | list[str] | Profiles asserting conformance of this resource (URIs) (e.g., ['http://hl7.org/fhir/StructureDefinition/Observation']) |
+    | meta_source | str | None | Source system that produced the resource (e.g., ehr-system-x) |
+    | meta_security | list[str] | Security labels applicable to this resource (policy/label codes) (e.g., ['very-sensitive', 'phi']) |
+    | meta_tag | list[str] | User or system-defined tags for search and grouping (e.g., ['triage', 'llm-context', 'draft']) |
+    | resource_type | typing.Literal['AllergyIntolerance'] | Resource type identifier |
+    | agent_context | dict[str, typing.Any] | None | Arbitrary, agent-provided context payload for this resource (e.g., {'section_key': 'free text content'}) |
+    | status | <class 'str'> | Current status of the resource (e.g., active) |
+    | text | str | None | Human-readable summary of the resource content (e.g., Patient John Doe, 45 years old) |
+    | contained | list[hacs_models.base_resource.BaseResource] | None | Resources contained within this resource |
+    | extension | dict[str, typing.Any] | None | Additional content defined by implementations (e.g., {'url': 'custom-field', 'valueString': 'custom-value'}) |
+    | modifier_extension | dict[str, typing.Any] | None | Extensions that cannot be ignored (e.g., {'url': 'critical-field', 'valueBoolean': True}) |
+    | clinical_status | <enum 'AllergyIntoleranceStatus'> | Active | inactive | resolved |
+    | verification_status | str | None | Assertion about certainty associated with the propensity |
+    | type | hacs_models.types.AllergyIntoleranceType | None | Allergy or Intolerance (generally food, medication, environment, biologic) |
+    | category | list[hacs_models.types.AllergyIntoleranceType] | Food | medication | environment | biologic |
+    | criticality | hacs_models.types.AllergyCriticality | None | Estimate of potential clinical harm |
+    | code | hacs_models.observation.CodeableConcept | None | Code that identifies the allergy or intolerance |
+    | patient | <class 'str'> | Who the allergy or intolerance is for |
+    | encounter | str | None | Encounter when the allergy or intolerance was asserted |
+    | onset_datetime | str | None | When allergy or intolerance was identified |
+    | last_occurrence | str | None | Date(/time) of last known occurrence of a reaction |
+    | recorder | str | None | Individual who recorded the record and takes responsibility |
+    | asserter | str | None | Source of the information about the allergy |
+    | reaction | list[hacs_models.allergy_intolerance.AllergyIntoleranceReaction] | Adverse reaction events linked to exposure to substance |
+    | note | str | None | Additional text not captured in other fields |
+
 
 
 ### FamilyMemberHistory
@@ -1943,7 +2362,7 @@ Do not record patient's own conditions (use Condition), non-biological relations
 - Patient.patient
 - Condition references for family member conditions
 
-**Related Tools**
+**Tools**
 
 - assess_genetic_risk
 - generate_family_history_summary
@@ -1960,18 +2379,18 @@ Do not record patient's own conditions (use Condition), non-biological relations
     | Field | Value |
     |---|---|
     | resource_type | FamilyMemberHistory |
-    | id | familymemberhistory-874a8cfb |
+    | id | familymemberhistory-a4251201 |
     | status | completed |
-    | created_at | 2025-08-18T17:00:45.113142Z |
-    | updated_at | 2025-08-18T17:00:45.113143Z |
+    | created_at | 2025-08-18T17:19:51.388622Z |
+    | updated_at | 2025-08-18T17:19:51.388622Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "familymemberhistory-874a8cfb",
-      "created_at": "2025-08-18T17:00:45.113142Z",
-      "updated_at": "2025-08-18T17:00:45.113143Z",
+      "id": "familymemberhistory-a4251201",
+      "created_at": "2025-08-18T17:19:51.388622Z",
+      "updated_at": "2025-08-18T17:19:51.388622Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -2000,9 +2419,9 @@ Do not record patient's own conditions (use Condition), non-biological relations
 === "YAML"
 
     ```yaml
-    id: familymemberhistory-874a8cfb
-    created_at: '2025-08-18T17:00:45.113142Z'
-    updated_at: '2025-08-18T17:00:45.113143Z'
+    id: familymemberhistory-a4251201
+    created_at: '2025-08-18T17:19:51.388622Z'
+    updated_at: '2025-08-18T17:19:51.388622Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -2107,7 +2526,7 @@ Do not use for immunization orders (use ServiceRequest), adverse reactions (use 
 - Patient.patient
 - vaccination schedules, adverse event monitoring
 
-**Related Tools**
+**Tools**
 
 - check_immunization_schedule
 - validate_vaccine_contraindications
@@ -2124,18 +2543,18 @@ Do not use for immunization orders (use ServiceRequest), adverse reactions (use 
     | Field | Value |
     |---|---|
     | resource_type | Immunization |
-    | id | immunization-74d7fbb0 |
+    | id | immunization-2644ac97 |
     | status | completed |
-    | created_at | 2025-08-18T17:00:45.113537Z |
-    | updated_at | 2025-08-18T17:00:45.113537Z |
+    | created_at | 2025-08-18T17:19:51.392084Z |
+    | updated_at | 2025-08-18T17:19:51.392084Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "immunization-74d7fbb0",
-      "created_at": "2025-08-18T17:00:45.113537Z",
-      "updated_at": "2025-08-18T17:00:45.113537Z",
+      "id": "immunization-2644ac97",
+      "created_at": "2025-08-18T17:19:51.392084Z",
+      "updated_at": "2025-08-18T17:19:51.392084Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -2171,9 +2590,9 @@ Do not use for immunization orders (use ServiceRequest), adverse reactions (use 
 === "YAML"
 
     ```yaml
-    id: immunization-74d7fbb0
-    created_at: '2025-08-18T17:00:45.113537Z'
-    updated_at: '2025-08-18T17:00:45.113537Z'
+    id: immunization-2644ac97
+    created_at: '2025-08-18T17:19:51.392084Z'
+    updated_at: '2025-08-18T17:19:51.392084Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -2298,7 +2717,7 @@ Do not use for prescriptions (use MedicationRequest), actual taking/administrati
 - MedicationRequest.medication
 - ingredient references to other Medication/Substance
 
-**Related Tools**
+**Tools**
 
 - check_drug_interactions
 - validate_medication_coding
@@ -2315,17 +2734,17 @@ Do not use for prescriptions (use MedicationRequest), actual taking/administrati
     | Field | Value |
     |---|---|
     | resource_type | Medication |
-    | id | medication-c50c38d7 |
-    | created_at | 2025-08-18T17:00:45.114495Z |
-    | updated_at | 2025-08-18T17:00:45.114497Z |
+    | id | medication-ba43d5aa |
+    | created_at | 2025-08-18T17:19:51.397734Z |
+    | updated_at | 2025-08-18T17:19:51.397735Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "medication-c50c38d7",
-      "created_at": "2025-08-18T17:00:45.114495Z",
-      "updated_at": "2025-08-18T17:00:45.114497Z",
+      "id": "medication-ba43d5aa",
+      "created_at": "2025-08-18T17:19:51.397734Z",
+      "updated_at": "2025-08-18T17:19:51.397735Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -2360,9 +2779,9 @@ Do not use for prescriptions (use MedicationRequest), actual taking/administrati
 === "YAML"
 
     ```yaml
-    id: medication-c50c38d7
-    created_at: '2025-08-18T17:00:45.114495Z'
-    updated_at: '2025-08-18T17:00:45.114497Z'
+    id: medication-ba43d5aa
+    created_at: '2025-08-18T17:19:51.397734Z'
+    updated_at: '2025-08-18T17:19:51.397735Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -2466,12 +2885,12 @@ Do not use for actual medication taking/administration (use MedicationStatement/
 - Medication.medicationReference
 - Encounter.encounter
 
-**Related Tools**
+**Tools**
 
-- validate_prescription
-- check_allergy_contraindications
-- check_drug_interactions
-- route_prescription
+- validate_prescription_tool
+- route_prescription_tool
+- check_contraindications_tool
+- check_drug_interactions_tool
 
 
 **Example**
@@ -2483,25 +2902,147 @@ Do not use for actual medication taking/administration (use MedicationStatement/
     | Field | Value |
     |---|---|
     | resource_type | MedicationRequest |
+    | id | medicationrequest-c795088e |
+    | status | active |
+    | subject | Patient/patient-123 |
+    | dosage_instruction | [] |
+    | intent | order |
+    | created_at | 2025-08-18T17:19:51.403999Z |
+    | updated_at | 2025-08-18T17:19:51.404000Z |
 
 === "JSON"
 
     ```json
     {
-      "resource_type": "MedicationRequest"
+      "id": "medicationrequest-c795088e",
+      "created_at": "2025-08-18T17:19:51.403999Z",
+      "updated_at": "2025-08-18T17:19:51.404000Z",
+      "version": "1.0.0",
+      "identifier": [],
+      "language": null,
+      "implicit_rules": null,
+      "meta_profile": [],
+      "meta_source": null,
+      "meta_security": [],
+      "meta_tag": [],
+      "resource_type": "MedicationRequest",
+      "agent_context": null,
+      "status": "active",
+      "text": null,
+      "contained": null,
+      "extension": null,
+      "modifier_extension": null,
+      "intent": "order",
+      "category": [],
+      "priority": null,
+      "do_not_perform": null,
+      "medication_codeable_concept": null,
+      "medication_reference": null,
+      "subject": "Patient/patient-123",
+      "encounter": null,
+      "authored_on": null,
+      "requester": null,
+      "performer": null,
+      "reason_code": [],
+      "reason_reference": [],
+      "note": [],
+      "dosage_instruction": [],
+      "dispense_request": null,
+      "substitution": null
     }
     ```
 
 === "YAML"
 
     ```yaml
+    id: medicationrequest-c795088e
+    created_at: '2025-08-18T17:19:51.403999Z'
+    updated_at: '2025-08-18T17:19:51.404000Z'
+    version: 1.0.0
+    identifier: []
+    language: null
+    implicit_rules: null
+    meta_profile: []
+    meta_source: null
+    meta_security: []
+    meta_tag: []
     resource_type: MedicationRequest
+    agent_context: null
+    status: active
+    text: null
+    contained: null
+    extension: null
+    modifier_extension: null
+    intent: order
+    category: []
+    priority: null
+    do_not_perform: null
+    medication_codeable_concept: null
+    medication_reference: null
+    subject: Patient/patient-123
+    encounter: null
+    authored_on: null
+    requester: null
+    performer: null
+    reason_code: []
+    reason_reference: []
+    note: []
+    dosage_instruction: []
+    dispense_request: null
+    substitution: null
     
     ```
 
 === "Schema"
 
-    _No schema available_
+    #### MedicationRequest Schema
+
+    MedicationRequest resource for prescription and medication ordering.
+
+    An order or request for both supply of the medication and the instructions
+    for administration of the medication to a patient. Used for prescriptions,
+    medication orders, and other medication-related requests.
+
+    This is a SAFETY-CRITICAL resource in healthcare systems for medication management.
+
+    | Field | Type | Description |
+    |---|---|---|
+    | id | str | None | Unique identifier for this resource. Auto-generated if not provided. |
+    | created_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was created |
+    | updated_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was last updated |
+    | version | <class 'str'> | Version of the resource |
+    | identifier | list[str] | External identifiers for this medication request (e.g., ['urn:oid:1.2.3.4.5.6.7.8.9|12345', 'prescription-number-67890']) |
+    | language | str | None | Base language of the resource content (BCP-47, e.g., en, pt-BR) (e.g., en) |
+    | implicit_rules | str | None | Reference to rules followed when constructing the resource (URI) (e.g., http://example.org/implicit-rules/v1) |
+    | meta_profile | list[str] | Profiles asserting conformance of this resource (URIs) (e.g., ['http://hl7.org/fhir/StructureDefinition/Observation']) |
+    | meta_source | str | None | Source system that produced the resource (e.g., ehr-system-x) |
+    | meta_security | list[str] | Security labels applicable to this resource (policy/label codes) (e.g., ['very-sensitive', 'phi']) |
+    | meta_tag | list[str] | User or system-defined tags for search and grouping (e.g., ['triage', 'llm-context', 'draft']) |
+    | resource_type | typing.Literal['MedicationRequest'] | None |
+    | agent_context | dict[str, typing.Any] | None | Arbitrary, agent-provided context payload for this resource (e.g., {'section_key': 'free text content'}) |
+    | status | <enum 'MedicationRequestStatus'> | Status of the medication request (active, completed, cancelled, etc.) |
+    | text | str | None | Human-readable summary of the resource content (e.g., Patient John Doe, 45 years old) |
+    | contained | list[hacs_models.base_resource.BaseResource] | None | Resources contained within this resource |
+    | extension | dict[str, typing.Any] | None | Additional content defined by implementations (e.g., {'url': 'custom-field', 'valueString': 'custom-value'}) |
+    | modifier_extension | dict[str, typing.Any] | None | Extensions that cannot be ignored (e.g., {'url': 'critical-field', 'valueBoolean': True}) |
+    | intent | <enum 'MedicationRequestIntent'> | Intent of the medication request (proposal, plan, order, etc.) |
+    | category | list[hacs_models.observation.CodeableConcept] | Type of medication usage (inpatient, outpatient, community, etc.) (e.g., [{'coding': [{'system': 'http://terminology.hl7.org/CodeSystem/medicationrequest-category', 'code': 'outpatient', 'display': 'Outpatient'}], 'text': 'Outpatient'}]) |
+    | priority | hacs_models.types.MedicationRequestPriority | None | Routine | urgent | asap | stat |
+    | do_not_perform | bool | None | True if medication must not be performed |
+    | medication_codeable_concept | hacs_models.observation.CodeableConcept | None | Medication to be taken (coded) |
+    | medication_reference | str | None | Reference to medication resource |
+    | subject | <class 'str'> | Who or group medication request is for |
+    | encounter | str | None | Encounter created as part of |
+    | authored_on | str | None | When request was initially authored |
+    | requester | str | None | Who/what requested the medication |
+    | performer | str | None | Intended performer of administration |
+    | reason_code | list[hacs_models.observation.CodeableConcept] | Reason or indication for ordering the medication |
+    | reason_reference | list[str] | Condition or observation that supports why the medication was ordered |
+    | note | list[str] | Information about the prescription |
+    | dosage_instruction | list[hacs_models.medication_request.Dosage] | How medication should be taken |
+    | dispense_request | dict[str, typing.Any] | None | Medication supply authorization (e.g., {'initial_fill': {'quantity': {'value': 30, 'unit': 'tablets'}, 'duration': {'value': 30, 'unit': 'days'}}, 'dispense_interval': {'value': 30, 'unit': 'days'}, 'validity_period': {'start': '2024-01-01T00:00:00Z', 'end': '2024-12-31T23:59:59Z'}, 'number_of_repeats_allowed': 5, 'quantity': {'value': 100, 'unit': 'tablets'}, 'expected_supply_duration': {'value': 30, 'unit': 'days'}, 'performer': 'Organization/pharmacy-123'}) |
+    | substitution | hacs_models.medication_request.MedicationRequestSubstitution | None | Any restrictions on medication substitution |
+
 
 
 ---
@@ -2532,7 +3073,7 @@ Do not use for recording what actually happened during the visit (use Encounter)
 - ServiceRequest for ordered services
 - Location for venue
 
-**Related Tools**
+**Tools**
 
 - schedule_appointment
 - reschedule_appointment
@@ -2550,18 +3091,18 @@ Do not use for recording what actually happened during the visit (use Encounter)
     | Field | Value |
     |---|---|
     | resource_type | Appointment |
-    | id | appointment-78bc0eea |
+    | id | appointment-e4b715ab |
     | status | booked |
-    | created_at | 2025-08-18T17:00:45.115187Z |
-    | updated_at | 2025-08-18T17:00:45.115188Z |
+    | created_at | 2025-08-18T17:19:51.405663Z |
+    | updated_at | 2025-08-18T17:19:51.405663Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "appointment-78bc0eea",
-      "created_at": "2025-08-18T17:00:45.115187Z",
-      "updated_at": "2025-08-18T17:00:45.115188Z",
+      "id": "appointment-e4b715ab",
+      "created_at": "2025-08-18T17:19:51.405663Z",
+      "updated_at": "2025-08-18T17:19:51.405663Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -2589,9 +3130,9 @@ Do not use for recording what actually happened during the visit (use Encounter)
 === "YAML"
 
     ```yaml
-    id: appointment-78bc0eea
-    created_at: '2025-08-18T17:00:45.115187Z'
-    updated_at: '2025-08-18T17:00:45.115188Z'
+    id: appointment-e4b715ab
+    created_at: '2025-08-18T17:19:51.405663Z'
+    updated_at: '2025-08-18T17:19:51.405663Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -2696,13 +3237,10 @@ Do not use for medication orders (use MedicationRequest), appointment scheduling
 - Encounter.encounter
 - Condition/Observation in reasonReference
 
-**Related Tools**
+**Tools**
 
-- create_lab_request
-- create_imaging_request
-- create_referral_request
-- validate_service_request
-- route_service_request
+- validate_service_request_tool
+- route_service_request_tool
 
 
 **Example**
@@ -2714,25 +3252,202 @@ Do not use for medication orders (use MedicationRequest), appointment scheduling
     | Field | Value |
     |---|---|
     | resource_type | ServiceRequest |
+    | id | servicerequest-720aa227 |
+    | status | active |
+    | subject | Patient/patient-123 |
+    | performer | [] |
+    | based_on | [] |
+    | intent | order |
+    | created_at | 2025-08-18T17:19:51.444976Z |
+    | updated_at | 2025-08-18T17:19:51.444981Z |
 
 === "JSON"
 
     ```json
     {
-      "resource_type": "ServiceRequest"
+      "id": "servicerequest-720aa227",
+      "created_at": "2025-08-18T17:19:51.444976Z",
+      "updated_at": "2025-08-18T17:19:51.444981Z",
+      "version": "1.0.0",
+      "identifier": [],
+      "language": null,
+      "implicit_rules": null,
+      "meta_profile": [],
+      "meta_source": null,
+      "meta_security": [],
+      "meta_tag": [],
+      "resource_type": "ServiceRequest",
+      "agent_context": null,
+      "status": "active",
+      "text": null,
+      "contained": null,
+      "extension": null,
+      "modifier_extension": null,
+      "instantiates_canonical": [],
+      "instantiates_uri": [],
+      "based_on": [],
+      "replaces": [],
+      "requisition": null,
+      "intent": "order",
+      "category": [],
+      "priority": null,
+      "do_not_perform": null,
+      "code": null,
+      "order_detail": [],
+      "quantity_quantity": null,
+      "quantity_ratio": null,
+      "quantity_range": null,
+      "subject": "Patient/patient-123",
+      "encounter": null,
+      "occurrence_datetime": null,
+      "occurrence_period": null,
+      "occurrence_timing": null,
+      "as_needed_boolean": null,
+      "as_needed_codeable_concept": null,
+      "authored_on": null,
+      "requester": null,
+      "performer_type": null,
+      "performer": [],
+      "location_code": [],
+      "location_reference": [],
+      "reason_code": [],
+      "reason_reference": [],
+      "insurance": [],
+      "supporting_info": [],
+      "specimen": [],
+      "body_site": [],
+      "note": [],
+      "patient_instruction": null,
+      "relevant_history": []
     }
     ```
 
 === "YAML"
 
     ```yaml
+    id: servicerequest-720aa227
+    created_at: '2025-08-18T17:19:51.444976Z'
+    updated_at: '2025-08-18T17:19:51.444981Z'
+    version: 1.0.0
+    identifier: []
+    language: null
+    implicit_rules: null
+    meta_profile: []
+    meta_source: null
+    meta_security: []
+    meta_tag: []
     resource_type: ServiceRequest
+    agent_context: null
+    status: active
+    text: null
+    contained: null
+    extension: null
+    modifier_extension: null
+    instantiates_canonical: []
+    instantiates_uri: []
+    based_on: []
+    replaces: []
+    requisition: null
+    intent: order
+    category: []
+    priority: null
+    do_not_perform: null
+    code: null
+    order_detail: []
+    quantity_quantity: null
+    quantity_ratio: null
+    quantity_range: null
+    subject: Patient/patient-123
+    encounter: null
+    occurrence_datetime: null
+    occurrence_period: null
+    occurrence_timing: null
+    as_needed_boolean: null
+    as_needed_codeable_concept: null
+    authored_on: null
+    requester: null
+    performer_type: null
+    performer: []
+    location_code: []
+    location_reference: []
+    reason_code: []
+    reason_reference: []
+    insurance: []
+    supporting_info: []
+    specimen: []
+    body_site: []
+    note: []
+    patient_instruction: null
+    relevant_history: []
     
     ```
 
 === "Schema"
 
-    _No schema available_
+    #### ServiceRequest Schema
+
+    ServiceRequest resource for care coordination.
+
+    A record of a request for service such as diagnostic investigations,
+    treatments, or operations to be performed.
+
+    | Field | Type | Description |
+    |---|---|---|
+    | id | str | None | Unique identifier for this resource. Auto-generated if not provided. |
+    | created_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was created |
+    | updated_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was last updated |
+    | version | <class 'str'> | Version of the resource |
+    | identifier | list[str] | External identifiers for this item |
+    | language | str | None | Base language of the resource content (BCP-47, e.g., en, pt-BR) (e.g., en) |
+    | implicit_rules | str | None | Reference to rules followed when constructing the resource (URI) (e.g., http://example.org/implicit-rules/v1) |
+    | meta_profile | list[str] | Profiles asserting conformance of this resource (URIs) (e.g., ['http://hl7.org/fhir/StructureDefinition/Observation']) |
+    | meta_source | str | None | Source system that produced the resource (e.g., ehr-system-x) |
+    | meta_security | list[str] | Security labels applicable to this resource (policy/label codes) (e.g., ['very-sensitive', 'phi']) |
+    | meta_tag | list[str] | User or system-defined tags for search and grouping (e.g., ['triage', 'llm-context', 'draft']) |
+    | resource_type | typing.Literal['ServiceRequest'] | Resource type identifier |
+    | agent_context | dict[str, typing.Any] | None | Arbitrary, agent-provided context payload for this resource (e.g., {'section_key': 'free text content'}) |
+    | status | <enum 'ServiceRequestStatus'> | Draft | active | on-hold | revoked | completed | entered-in-error | unknown |
+    | text | str | None | Human-readable summary of the resource content (e.g., Patient John Doe, 45 years old) |
+    | contained | list[hacs_models.base_resource.BaseResource] | None | Resources contained within this resource |
+    | extension | dict[str, typing.Any] | None | Additional content defined by implementations (e.g., {'url': 'custom-field', 'valueString': 'custom-value'}) |
+    | modifier_extension | dict[str, typing.Any] | None | Extensions that cannot be ignored (e.g., {'url': 'critical-field', 'valueBoolean': True}) |
+    | instantiates_canonical | list[str] | Instantiates FHIR protocol or definition |
+    | instantiates_uri | list[str] | Instantiates external protocol or definition |
+    | based_on | list[str] | What request fulfills |
+    | replaces | list[str] | What request replaces |
+    | requisition | str | None | Composite Request ID |
+    | intent | <enum 'ServiceRequestIntent'> | Proposal | plan | directive | order | original-order | reflex-order | filler-order | instance-order | option |
+    | category | list[hacs_models.observation.CodeableConcept] | Classification of service |
+    | priority | hacs_models.types.ServiceRequestPriority | None | Routine | urgent | asap | stat |
+    | do_not_perform | bool | None | True if service/procedure should not be performed |
+    | code | hacs_models.observation.CodeableConcept | None | What is being requested/ordered |
+    | order_detail | list[hacs_models.observation.CodeableConcept] | Additional order information |
+    | quantity_quantity | hacs_models.observation.Quantity | None | Service amount as quantity |
+    | quantity_ratio | str | None | Service amount as ratio |
+    | quantity_range | str | None | Service amount as range |
+    | subject | <class 'str'> | Individual or entity the service is ordered for |
+    | encounter | str | None | Encounter in which the request was created |
+    | occurrence_datetime | str | None | When service should occur |
+    | occurrence_period | str | None | When service should occur (period) |
+    | occurrence_timing | str | None | When service should occur (timing) |
+    | as_needed_boolean | bool | None | Preconditions for service |
+    | as_needed_codeable_concept | hacs_models.observation.CodeableConcept | None | Preconditions for service |
+    | authored_on | str | None | Date request signed |
+    | requester | str | None | Who/what is requesting service |
+    | performer_type | hacs_models.observation.CodeableConcept | None | Performer role |
+    | performer | list[str] | Requested performer |
+    | location_code | list[hacs_models.observation.CodeableConcept] | Requested location |
+    | location_reference | list[str] | Requested location reference |
+    | reason_code | list[hacs_models.observation.CodeableConcept] | Explanation/Justification for procedure or service |
+    | reason_reference | list[str] | Explanation/Justification for service or service |
+    | insurance | list[str] | Associated insurance coverage |
+    | supporting_info | list[str] | Additional clinical information |
+    | specimen | list[str] | Procedure Samples |
+    | body_site | list[hacs_models.observation.CodeableConcept] | Location on Body |
+    | note | list[str] | Comments |
+    | patient_instruction | str | None | Patient or consumer-oriented instructions |
+    | relevant_history | list[str] | Request provenance |
+
 
 
 ### CarePlan
@@ -2758,7 +3473,7 @@ Do not use for individual orders (use ServiceRequest), single goals (use Goal as
 - Condition.addresses
 - ServiceRequest via activities
 
-**Related Tools**
+**Tools**
 
 - create_care_plan
 - update_care_plan_progress
@@ -2776,19 +3491,19 @@ Do not use for individual orders (use ServiceRequest), single goals (use Goal as
     | Field | Value |
     |---|---|
     | resource_type | CarePlan |
-    | id | careplan-aefa47c4 |
+    | id | careplan-9de116b1 |
     | status | active |
     | intent | plan |
-    | created_at | 2025-08-18T17:00:45.115765Z |
-    | updated_at | 2025-08-18T17:00:45.115765Z |
+    | created_at | 2025-08-18T17:19:51.447245Z |
+    | updated_at | 2025-08-18T17:19:51.447247Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "careplan-aefa47c4",
-      "created_at": "2025-08-18T17:00:45.115765Z",
-      "updated_at": "2025-08-18T17:00:45.115765Z",
+      "id": "careplan-9de116b1",
+      "created_at": "2025-08-18T17:19:51.447245Z",
+      "updated_at": "2025-08-18T17:19:51.447247Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -2818,9 +3533,9 @@ Do not use for individual orders (use ServiceRequest), single goals (use Goal as
 === "YAML"
 
     ```yaml
-    id: careplan-aefa47c4
-    created_at: '2025-08-18T17:00:45.115765Z'
-    updated_at: '2025-08-18T17:00:45.115765Z'
+    id: careplan-9de116b1
+    created_at: '2025-08-18T17:19:51.447245Z'
+    updated_at: '2025-08-18T17:19:51.447247Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -2928,7 +3643,7 @@ Do not use for individual practitioner details (use Practitioner/PractitionerRol
 - CarePlan.careTeam
 - Practitioner/Organization via participants
 
-**Related Tools**
+**Tools**
 
 - assemble_care_team
 - assign_team_roles
@@ -2946,18 +3661,18 @@ Do not use for individual practitioner details (use Practitioner/PractitionerRol
     | Field | Value |
     |---|---|
     | resource_type | CareTeam |
-    | id | careteam-dcaad0f3 |
+    | id | careteam-341fb885 |
     | status | active |
-    | created_at | 2025-08-18T17:00:45.117223Z |
-    | updated_at | 2025-08-18T17:00:45.117224Z |
+    | created_at | 2025-08-18T17:19:51.448839Z |
+    | updated_at | 2025-08-18T17:19:51.448840Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "careteam-dcaad0f3",
-      "created_at": "2025-08-18T17:00:45.117223Z",
-      "updated_at": "2025-08-18T17:00:45.117224Z",
+      "id": "careteam-341fb885",
+      "created_at": "2025-08-18T17:19:51.448839Z",
+      "updated_at": "2025-08-18T17:19:51.448840Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -2983,9 +3698,9 @@ Do not use for individual practitioner details (use Practitioner/PractitionerRol
 === "YAML"
 
     ```yaml
-    id: careteam-dcaad0f3
-    created_at: '2025-08-18T17:00:45.117223Z'
-    updated_at: '2025-08-18T17:00:45.117224Z'
+    id: careteam-341fb885
+    created_at: '2025-08-18T17:19:51.448839Z'
+    updated_at: '2025-08-18T17:19:51.448840Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -3085,7 +3800,7 @@ Do not use for nutritional assessments (use Observation), meal planning without 
 - medical conditions requiring nutritional intervention
 - allergy restrictions
 
-**Related Tools**
+**Tools**
 
 - create_therapeutic_diet_order
 - manage_nutrition_restrictions
@@ -3102,19 +3817,19 @@ Do not use for nutritional assessments (use Observation), meal planning without 
     | Field | Value |
     |---|---|
     | resource_type | NutritionOrder |
-    | id | nutritionorder-bfa1a545 |
+    | id | nutritionorder-45a9df10 |
     | status | active |
     | intent | order |
-    | created_at | 2025-08-18T17:00:45.117560Z |
-    | updated_at | 2025-08-18T17:00:45.117560Z |
+    | created_at | 2025-08-18T17:19:51.450405Z |
+    | updated_at | 2025-08-18T17:19:51.450405Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "nutritionorder-bfa1a545",
-      "created_at": "2025-08-18T17:00:45.117560Z",
-      "updated_at": "2025-08-18T17:00:45.117560Z",
+      "id": "nutritionorder-45a9df10",
+      "created_at": "2025-08-18T17:19:51.450405Z",
+      "updated_at": "2025-08-18T17:19:51.450405Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -3143,9 +3858,9 @@ Do not use for nutritional assessments (use Observation), meal planning without 
 === "YAML"
 
     ```yaml
-    id: nutritionorder-bfa1a545
-    created_at: '2025-08-18T17:00:45.117560Z'
-    updated_at: '2025-08-18T17:00:45.117560Z'
+    id: nutritionorder-45a9df10
+    created_at: '2025-08-18T17:19:51.450405Z'
+    updated_at: '2025-08-18T17:19:51.450405Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -3250,7 +3965,7 @@ Do not use for patient-specific care plans (use CarePlan), individual orders (us
 - CarePlan when instantiated
 - ServiceRequest when protocols generate orders
 
-**Related Tools**
+**Tools**
 
 - instantiate_clinical_protocol
 - validate_protocol_adherence
@@ -3267,18 +3982,18 @@ Do not use for patient-specific care plans (use CarePlan), individual orders (us
     | Field | Value |
     |---|---|
     | resource_type | PlanDefinition |
-    | id | plandefinition-f67e5573 |
+    | id | plandefinition-bbcb8809 |
     | status | draft |
-    | created_at | 2025-08-18T17:00:45.117970Z |
-    | updated_at | 2025-08-18T17:00:45.117971Z |
+    | created_at | 2025-08-18T17:19:51.455863Z |
+    | updated_at | 2025-08-18T17:19:51.455867Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "plandefinition-f67e5573",
-      "created_at": "2025-08-18T17:00:45.117970Z",
-      "updated_at": "2025-08-18T17:00:45.117971Z",
+      "id": "plandefinition-bbcb8809",
+      "created_at": "2025-08-18T17:19:51.455863Z",
+      "updated_at": "2025-08-18T17:19:51.455867Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -3329,9 +4044,9 @@ Do not use for patient-specific care plans (use CarePlan), individual orders (us
 === "YAML"
 
     ```yaml
-    id: plandefinition-f67e5573
-    created_at: '2025-08-18T17:00:45.117970Z'
-    updated_at: '2025-08-18T17:00:45.117971Z'
+    id: plandefinition-bbcb8809
+    created_at: '2025-08-18T17:19:51.455863Z'
+    updated_at: '2025-08-18T17:19:51.455867Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -3480,7 +4195,7 @@ Do not use for roles/assignments (use PractitionerRole when available) or for or
 
 - Organization affiliations, CareTeam membership
 
-**Related Tools**
+**Tools**
 
 - verify_practitioner_credential
 - link_practitioner_to_organization
@@ -3496,19 +4211,19 @@ Do not use for roles/assignments (use PractitionerRole when available) or for or
     | Field | Value |
     |---|---|
     | resource_type | Practitioner |
-    | id | practitioner-805976e1 |
+    | id | practitioner-47722625 |
     | status | active |
     | name | [] |
-    | created_at | 2025-08-18T17:00:45.118545Z |
-    | updated_at | 2025-08-18T17:00:45.118545Z |
+    | created_at | 2025-08-18T17:19:51.465793Z |
+    | updated_at | 2025-08-18T17:19:51.465794Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "practitioner-805976e1",
-      "created_at": "2025-08-18T17:00:45.118545Z",
-      "updated_at": "2025-08-18T17:00:45.118545Z",
+      "id": "practitioner-47722625",
+      "created_at": "2025-08-18T17:19:51.465793Z",
+      "updated_at": "2025-08-18T17:19:51.465794Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -3539,9 +4254,9 @@ Do not use for roles/assignments (use PractitionerRole when available) or for or
 === "YAML"
 
     ```yaml
-    id: practitioner-805976e1
-    created_at: '2025-08-18T17:00:45.118545Z'
-    updated_at: '2025-08-18T17:00:45.118545Z'
+    id: practitioner-47722625
+    created_at: '2025-08-18T17:19:51.465793Z'
+    updated_at: '2025-08-18T17:19:51.465794Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -3630,7 +4345,7 @@ Not for individuals (use Practitioner). Use Location for physical service sites.
 - Encounter.serviceProvider
 - Practitioner.organization
 
-**Related Tools**
+**Tools**
 
 - register_organization
 - link_organization_affiliation
@@ -3646,18 +4361,18 @@ Not for individuals (use Practitioner). Use Location for physical service sites.
     | Field | Value |
     |---|---|
     | resource_type | Organization |
-    | id | organization-2378d6eb |
+    | id | organization-35af4931 |
     | status | active |
-    | created_at | 2025-08-18T17:00:45.118932Z |
-    | updated_at | 2025-08-18T17:00:45.118933Z |
+    | created_at | 2025-08-18T17:19:51.473772Z |
+    | updated_at | 2025-08-18T17:19:51.473775Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "organization-2378d6eb",
-      "created_at": "2025-08-18T17:00:45.118932Z",
-      "updated_at": "2025-08-18T17:00:45.118933Z",
+      "id": "organization-35af4931",
+      "created_at": "2025-08-18T17:19:51.473772Z",
+      "updated_at": "2025-08-18T17:19:51.473775Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -3689,9 +4404,9 @@ Not for individuals (use Practitioner). Use Location for physical service sites.
 === "YAML"
 
     ```yaml
-    id: organization-2378d6eb
-    created_at: '2025-08-18T17:00:45.118932Z'
-    updated_at: '2025-08-18T17:00:45.118933Z'
+    id: organization-35af4931
+    created_at: '2025-08-18T17:19:51.473772Z'
+    updated_at: '2025-08-18T17:19:51.473775Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -3793,7 +4508,7 @@ Do not store narrative clinical content here (use Document/Composition). Use Ima
 - custodian Organization
 - author Practitioner/Organization
 
-**Related Tools**
+**Tools**
 
 - validate_document_metadata
 - resolve_document_location
@@ -3810,18 +4525,18 @@ Do not store narrative clinical content here (use Document/Composition). Use Ima
     | Field | Value |
     |---|---|
     | resource_type | DocumentReference |
-    | id | documentreference-fef5ed8c |
+    | id | documentreference-1548d074 |
     | status | current |
-    | created_at | 2025-08-18T17:00:45.119332Z |
-    | updated_at | 2025-08-18T17:00:45.119332Z |
+    | created_at | 2025-08-18T17:19:51.475576Z |
+    | updated_at | 2025-08-18T17:19:51.475577Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "documentreference-fef5ed8c",
-      "created_at": "2025-08-18T17:00:45.119332Z",
-      "updated_at": "2025-08-18T17:00:45.119332Z",
+      "id": "documentreference-1548d074",
+      "created_at": "2025-08-18T17:19:51.475576Z",
+      "updated_at": "2025-08-18T17:19:51.475577Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -3854,9 +4569,9 @@ Do not store narrative clinical content here (use Document/Composition). Use Ima
 === "YAML"
 
     ```yaml
-    id: documentreference-fef5ed8c
-    created_at: '2025-08-18T17:00:45.119332Z'
-    updated_at: '2025-08-18T17:00:45.119332Z'
+    id: documentreference-1548d074
+    created_at: '2025-08-18T17:19:51.475576Z'
+    updated_at: '2025-08-18T17:19:51.475577Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -3959,17 +4674,17 @@ Clinical documentation belongs in Document; link Evidence from documents.
     | Field | Value |
     |---|---|
     | resource_type | Evidence |
-    | id | evidence-93b94b1b |
-    | created_at | 2025-08-18T17:00:45.119934Z |
-    | updated_at | 2025-08-18T17:00:45.119935Z |
+    | id | evidence-c81c7241 |
+    | created_at | 2025-08-18T17:19:51.478257Z |
+    | updated_at | 2025-08-18T17:19:51.478258Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "evidence-93b94b1b",
-      "created_at": "2025-08-18T17:00:45.119934Z",
-      "updated_at": "2025-08-18T17:00:45.119935Z",
+      "id": "evidence-c81c7241",
+      "created_at": "2025-08-18T17:19:51.478257Z",
+      "updated_at": "2025-08-18T17:19:51.478258Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -4011,9 +4726,9 @@ Clinical documentation belongs in Document; link Evidence from documents.
 === "YAML"
 
     ```yaml
-    id: evidence-93b94b1b
-    created_at: '2025-08-18T17:00:45.119934Z'
-    updated_at: '2025-08-18T17:00:45.119935Z'
+    id: evidence-c81c7241
+    created_at: '2025-08-18T17:19:51.478257Z'
+    updated_at: '2025-08-18T17:19:51.478258Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -4124,7 +4839,7 @@ Not persisted as a clinical record. Use Document/Composition for clinical narrat
 
 - Subtype of: MessageDefinition
 
-**Related Tools**
+**Tools**
 
 - standardize_messages
 - semantic_tool_loadout
@@ -4139,25 +4854,130 @@ Not persisted as a clinical record. Use Document/Composition for clinical narrat
     | Field | Value |
     |---|---|
     | resource_type | AgentMessage |
+    | id | agentmessage-debb5be7 |
+    | created_at | 2025-08-18T17:19:51.479659Z |
+    | updated_at | 2025-08-18T17:19:51.479660Z |
 
 === "JSON"
 
     ```json
     {
-      "resource_type": "AgentMessage"
+      "id": "agentmessage-debb5be7",
+      "created_at": "2025-08-18T17:19:51.479659Z",
+      "updated_at": "2025-08-18T17:19:51.479660Z",
+      "version": "1.0.0",
+      "identifier": [],
+      "language": null,
+      "implicit_rules": null,
+      "meta_profile": [],
+      "meta_source": null,
+      "meta_security": [],
+      "meta_tag": [],
+      "resource_type": "AgentMessage",
+      "agent_context": null,
+      "content": "Sample AgentMessage content",
+      "role": null,
+      "message_type": null,
+      "name": null,
+      "additional_kwargs": {},
+      "response_metadata": {},
+      "tool_calls": [],
+      "attachments": [],
+      "url": null,
+      "title": null,
+      "status": null,
+      "experimental": null,
+      "publisher": null,
+      "purpose": null,
+      "description": null,
+      "event_code": null,
+      "event_system": null,
+      "category": null
     }
     ```
 
 === "YAML"
 
     ```yaml
+    id: agentmessage-debb5be7
+    created_at: '2025-08-18T17:19:51.479659Z'
+    updated_at: '2025-08-18T17:19:51.479660Z'
+    version: 1.0.0
+    identifier: []
+    language: null
+    implicit_rules: null
+    meta_profile: []
+    meta_source: null
+    meta_security: []
+    meta_tag: []
     resource_type: AgentMessage
+    agent_context: null
+    content: Sample AgentMessage content
+    role: null
+    message_type: null
+    name: null
+    additional_kwargs: {}
+    response_metadata: {}
+    tool_calls: []
+    attachments: []
+    url: null
+    title: null
+    status: null
+    experimental: null
+    publisher: null
+    purpose: null
+    description: null
+    event_code: null
+    event_system: null
+    category: null
     
     ```
 
 === "Schema"
 
-    _No schema available_
+    #### AgentMessage Schema
+
+    Standard HACS message model for agent I/O and definitions.
+
+    - Runtime fields: content, role, message_type, additional_kwargs,
+      response_metadata, tool_calls, attachments
+    - Definition fields (optional): url, version, name, title, status,
+      publisher, description, purpose, event_code, event_system, category
+
+    | Field | Type | Description |
+    |---|---|---|
+    | id | str | None | Unique identifier for this resource. Auto-generated if not provided. |
+    | created_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was created |
+    | updated_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was last updated |
+    | version | <class 'str'> | Version of the resource |
+    | identifier | list[str] | External identifiers for the resource (e.g., MRN, accession, system-specific IDs) (e.g., ['MRN:12345', 'local:abc-001']) |
+    | language | str | None | Base language of the resource content (BCP-47, e.g., en, pt-BR) (e.g., en) |
+    | implicit_rules | str | None | Reference to rules followed when constructing the resource (URI) (e.g., http://example.org/implicit-rules/v1) |
+    | meta_profile | list[str] | Profiles asserting conformance of this resource (URIs) (e.g., ['http://hl7.org/fhir/StructureDefinition/Observation']) |
+    | meta_source | str | None | Source system that produced the resource (e.g., ehr-system-x) |
+    | meta_security | list[str] | Security labels applicable to this resource (policy/label codes) (e.g., ['very-sensitive', 'phi']) |
+    | meta_tag | list[str] | User or system-defined tags for search and grouping (e.g., ['triage', 'llm-context', 'draft']) |
+    | resource_type | typing.Literal['AgentMessage'] | None |
+    | agent_context | dict[str, typing.Any] | None | Arbitrary, agent-provided context payload for this resource (e.g., {'section_key': 'free text content'}) |
+    | content | typing.Union[str, typing.List[typing.Union[str, typing.Dict[str, typing.Any]]]] | Message content as plain text or a list of blocks (strings or typed dicts). |
+    | role | typing.Optional[hacs_models.types.MessageRole] | Message role (system, user, assistant, etc.) |
+    | message_type | typing.Optional[hacs_models.types.MessageType] | Message content type (text, structured, etc.) |
+    | name | typing.Optional[str] | Optional human-readable message label |
+    | additional_kwargs | typing.Dict[str, typing.Any] | Provider-specific payload (tool calls, etc.) |
+    | response_metadata | typing.Dict[str, typing.Any] | Response metadata (headers, logprobs, token counts, model) |
+    | tool_calls | typing.List[typing.Dict[str, typing.Any]] | Tool/function calls encoded by the provider |
+    | attachments | typing.List[typing.Dict[str, typing.Any]] | Attached files or references |
+    | url | typing.Optional[str] | Canonical URL for message definition |
+    | title | typing.Optional[str] | Title for the message definition |
+    | status | typing.Optional[str] | draft | active | retired | unknown |
+    | experimental | typing.Optional[bool] | None |
+    | publisher | typing.Optional[str] | None |
+    | purpose | typing.Optional[str] | None |
+    | description | typing.Optional[str] | None |
+    | event_code | typing.Optional[str] | Event code identifying the message trigger |
+    | event_system | typing.Optional[str] | Code system for the event code |
+    | category | typing.Optional[str] | consequence | currency | notification |
+
 
 
 ### MessageDefinition
@@ -4174,7 +4994,7 @@ Not a clinical document; represents transport of instructions, content, and tool
 
 - Referenced by: AgentMessage as runtime specialization
 
-**Related Tools**
+**Tools**
 
 - standardize_messages
 - log_llm_request
@@ -4189,25 +5009,130 @@ Not a clinical document; represents transport of instructions, content, and tool
     | Field | Value |
     |---|---|
     | resource_type | MessageDefinition |
+    | id | messagedefinition-ca395079 |
+    | created_at | 2025-08-18T17:19:51.480912Z |
+    | updated_at | 2025-08-18T17:19:51.480913Z |
 
 === "JSON"
 
     ```json
     {
-      "resource_type": "MessageDefinition"
+      "id": "messagedefinition-ca395079",
+      "created_at": "2025-08-18T17:19:51.480912Z",
+      "updated_at": "2025-08-18T17:19:51.480913Z",
+      "version": "1.0.0",
+      "identifier": [],
+      "language": null,
+      "implicit_rules": null,
+      "meta_profile": [],
+      "meta_source": null,
+      "meta_security": [],
+      "meta_tag": [],
+      "resource_type": "MessageDefinition",
+      "agent_context": null,
+      "content": "Sample MessageDefinition content",
+      "role": null,
+      "message_type": null,
+      "name": null,
+      "additional_kwargs": {},
+      "response_metadata": {},
+      "tool_calls": [],
+      "attachments": [],
+      "url": null,
+      "title": null,
+      "status": null,
+      "experimental": null,
+      "publisher": null,
+      "purpose": null,
+      "description": null,
+      "event_code": null,
+      "event_system": null,
+      "category": null
     }
     ```
 
 === "YAML"
 
     ```yaml
+    id: messagedefinition-ca395079
+    created_at: '2025-08-18T17:19:51.480912Z'
+    updated_at: '2025-08-18T17:19:51.480913Z'
+    version: 1.0.0
+    identifier: []
+    language: null
+    implicit_rules: null
+    meta_profile: []
+    meta_source: null
+    meta_security: []
+    meta_tag: []
     resource_type: MessageDefinition
+    agent_context: null
+    content: Sample MessageDefinition content
+    role: null
+    message_type: null
+    name: null
+    additional_kwargs: {}
+    response_metadata: {}
+    tool_calls: []
+    attachments: []
+    url: null
+    title: null
+    status: null
+    experimental: null
+    publisher: null
+    purpose: null
+    description: null
+    event_code: null
+    event_system: null
+    category: null
     
     ```
 
 === "Schema"
 
-    _No schema available_
+    #### MessageDefinition Schema
+
+    Standard HACS message model for agent I/O and definitions.
+
+    - Runtime fields: content, role, message_type, additional_kwargs,
+      response_metadata, tool_calls, attachments
+    - Definition fields (optional): url, version, name, title, status,
+      publisher, description, purpose, event_code, event_system, category
+
+    | Field | Type | Description |
+    |---|---|---|
+    | id | str | None | Unique identifier for this resource. Auto-generated if not provided. |
+    | created_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was created |
+    | updated_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was last updated |
+    | version | <class 'str'> | Version of the resource |
+    | identifier | list[str] | External identifiers for the resource (e.g., MRN, accession, system-specific IDs) (e.g., ['MRN:12345', 'local:abc-001']) |
+    | language | str | None | Base language of the resource content (BCP-47, e.g., en, pt-BR) (e.g., en) |
+    | implicit_rules | str | None | Reference to rules followed when constructing the resource (URI) (e.g., http://example.org/implicit-rules/v1) |
+    | meta_profile | list[str] | Profiles asserting conformance of this resource (URIs) (e.g., ['http://hl7.org/fhir/StructureDefinition/Observation']) |
+    | meta_source | str | None | Source system that produced the resource (e.g., ehr-system-x) |
+    | meta_security | list[str] | Security labels applicable to this resource (policy/label codes) (e.g., ['very-sensitive', 'phi']) |
+    | meta_tag | list[str] | User or system-defined tags for search and grouping (e.g., ['triage', 'llm-context', 'draft']) |
+    | resource_type | typing.Literal['MessageDefinition'] | None |
+    | agent_context | dict[str, typing.Any] | None | Arbitrary, agent-provided context payload for this resource (e.g., {'section_key': 'free text content'}) |
+    | content | typing.Union[str, typing.List[typing.Union[str, typing.Dict[str, typing.Any]]]] | Message content as plain text or a list of blocks (strings or typed dicts). |
+    | role | typing.Optional[hacs_models.types.MessageRole] | Message role (system, user, assistant, etc.) |
+    | message_type | typing.Optional[hacs_models.types.MessageType] | Message content type (text, structured, etc.) |
+    | name | typing.Optional[str] | Optional human-readable message label |
+    | additional_kwargs | typing.Dict[str, typing.Any] | Provider-specific payload (tool calls, etc.) |
+    | response_metadata | typing.Dict[str, typing.Any] | Response metadata (headers, logprobs, token counts, model) |
+    | tool_calls | typing.List[typing.Dict[str, typing.Any]] | Tool/function calls encoded by the provider |
+    | attachments | typing.List[typing.Dict[str, typing.Any]] | Attached files or references |
+    | url | typing.Optional[str] | Canonical URL for message definition |
+    | title | typing.Optional[str] | Title for the message definition |
+    | status | typing.Optional[str] | draft | active | retired | unknown |
+    | experimental | typing.Optional[bool] | None |
+    | publisher | typing.Optional[str] | None |
+    | purpose | typing.Optional[str] | None |
+    | description | typing.Optional[str] | None |
+    | event_code | typing.Optional[str] | Event code identifying the message trigger |
+    | event_system | typing.Optional[str] | Code system for the event code |
+    | category | typing.Optional[str] | consequence | currency | notification |
+
 
 
 ### MemoryBlock
@@ -4224,7 +5149,7 @@ Not a clinical record; may link to clinical resources as context.
 
 - Referenced by: Agents; Indexed for retrieval
 
-**Related Tools**
+**Tools**
 
 - store_memory
 - retrieve_memories
@@ -4239,25 +5164,118 @@ Not a clinical record; may link to clinical resources as context.
     | Field | Value |
     |---|---|
     | resource_type | MemoryBlock |
+    | id | memoryblock-f21657d1 |
+    | created_at | 2025-08-18T17:19:51.481956Z |
+    | updated_at | 2025-08-18T17:19:51.481956Z |
 
 === "JSON"
 
     ```json
     {
-      "resource_type": "MemoryBlock"
+      "id": "memoryblock-f21657d1",
+      "created_at": "2025-08-18T17:19:51.481956Z",
+      "updated_at": "2025-08-18T17:19:51.481956Z",
+      "version": "1.0.0",
+      "identifier": [],
+      "language": null,
+      "implicit_rules": null,
+      "meta_profile": [],
+      "meta_source": null,
+      "meta_security": [],
+      "meta_tag": [],
+      "resource_type": "MemoryBlock",
+      "agent_context": null,
+      "memory_type": "semantic",
+      "content": "Sample MemoryBlock content",
+      "summary": null,
+      "importance_score": 0.5,
+      "confidence_score": 0.8,
+      "context_metadata": {},
+      "related_memories": [],
+      "tags": [],
+      "access_count": 0,
+      "vector_id": null,
+      "last_accessed": null,
+      "last_summarized": null
     }
     ```
 
 === "YAML"
 
     ```yaml
+    id: memoryblock-f21657d1
+    created_at: '2025-08-18T17:19:51.481956Z'
+    updated_at: '2025-08-18T17:19:51.481956Z'
+    version: 1.0.0
+    identifier: []
+    language: null
+    implicit_rules: null
+    meta_profile: []
+    meta_source: null
+    meta_security: []
+    meta_tag: []
     resource_type: MemoryBlock
+    agent_context: null
+    memory_type: semantic
+    content: Sample MemoryBlock content
+    summary: null
+    importance_score: 0.5
+    confidence_score: 0.8
+    context_metadata: {}
+    related_memories: []
+    tags: []
+    access_count: 0
+    vector_id: null
+    last_accessed: null
+    last_summarized: null
     
     ```
 
 === "Schema"
 
-    _No schema available_
+    #### MemoryBlock Schema
+
+    Base memory block for AI agent cognition.
+
+    Represents a unit of memory that can be stored, retrieved, and processed
+    by AI agents in healthcare workflows. Supports multiple memory types
+    based on cognitive science models.
+
+    Features:
+        - Typed memory categorization
+        - Importance and confidence scoring
+        - Context metadata for healthcare workflows
+        - Memory relationship tracking
+        - Tag-based organization
+
+    | Field | Type | Description |
+    |---|---|---|
+    | id | str | None | Unique identifier for this resource. Auto-generated if not provided. |
+    | created_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was created |
+    | updated_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was last updated |
+    | version | <class 'str'> | Version of the resource |
+    | identifier | list[str] | External identifiers for the resource (e.g., MRN, accession, system-specific IDs) (e.g., ['MRN:12345', 'local:abc-001']) |
+    | language | str | None | Base language of the resource content (BCP-47, e.g., en, pt-BR) (e.g., en) |
+    | implicit_rules | str | None | Reference to rules followed when constructing the resource (URI) (e.g., http://example.org/implicit-rules/v1) |
+    | meta_profile | list[str] | Profiles asserting conformance of this resource (URIs) (e.g., ['http://hl7.org/fhir/StructureDefinition/Observation']) |
+    | meta_source | str | None | Source system that produced the resource (e.g., ehr-system-x) |
+    | meta_security | list[str] | Security labels applicable to this resource (policy/label codes) (e.g., ['very-sensitive', 'phi']) |
+    | meta_tag | list[str] | User or system-defined tags for search and grouping (e.g., ['triage', 'llm-context', 'draft']) |
+    | resource_type | typing.Literal['MemoryBlock'] | Resource type identifier |
+    | agent_context | dict[str, typing.Any] | None | Arbitrary, agent-provided context payload for this resource (e.g., {'section_key': 'free text content'}) |
+    | memory_type | typing.Literal['episodic', 'procedural', 'executive', 'semantic', 'working'] | Type of memory this block represents (e.g., episodic) |
+    | content | <class 'str'> | The actual memory content or information (e.g., Patient John Doe expressed concern about chest pain during consultation) |
+    | summary | str | None | Compressed summary of the memory content (e.g., Patient chest pain concern) |
+    | importance_score | <class 'float'> | Importance score from 0.0 to 1.0 for memory prioritization |
+    | confidence_score | <class 'float'> | Confidence in memory accuracy from 0.0 to 1.0 |
+    | context_metadata | dict[str, typing.Any] | Structured context metadata (patient_id, encounter_id, etc.) (e.g., {'patient_id': 'patient-123', 'encounter_id': 'encounter-456'}) |
+    | related_memories | list[str] | IDs of related memory blocks |
+    | tags | list[str] | Tags for categorizing and searching memories (e.g., ['patient_interaction', 'vital_signs', 'diagnosis']) |
+    | access_count | <class 'int'> | Number of times this memory has been accessed |
+    | vector_id | str | None | Vector embedding ID for semantic search |
+    | last_accessed | datetime.datetime | None | Timestamp of last access |
+    | last_summarized | datetime.datetime | None | Timestamp when the summary was last updated |
+
 
 
 ### EpisodicMemory
@@ -4274,7 +5292,7 @@ Use SemanticMemory for facts/concepts; WorkingMemory for short-lived context.
 
 - Subtype of: MemoryBlock
 
-**Related Tools**
+**Tools**
 
 - store_memory
 - retrieve_memories
@@ -4284,30 +5302,124 @@ Use SemanticMemory for facts/concepts; WorkingMemory for short-lived context.
 
 === "Rendered"
 
-    #### EpisodicMemory
+    #### MemoryBlock
 
     | Field | Value |
     |---|---|
-    | resource_type | EpisodicMemory |
+    | resource_type | MemoryBlock |
+    | id | memoryblock-0d2b424e |
+    | created_at | 2025-08-18T17:19:51.482970Z |
+    | updated_at | 2025-08-18T17:19:51.482970Z |
 
 === "JSON"
 
     ```json
     {
-      "resource_type": "EpisodicMemory"
+      "id": "memoryblock-0d2b424e",
+      "created_at": "2025-08-18T17:19:51.482970Z",
+      "updated_at": "2025-08-18T17:19:51.482970Z",
+      "version": "1.0.0",
+      "identifier": [],
+      "language": null,
+      "implicit_rules": null,
+      "meta_profile": [],
+      "meta_source": null,
+      "meta_security": [],
+      "meta_tag": [],
+      "resource_type": "MemoryBlock",
+      "agent_context": null,
+      "memory_type": "episodic",
+      "content": "Sample EpisodicMemory content",
+      "summary": null,
+      "importance_score": 0.5,
+      "confidence_score": 0.8,
+      "context_metadata": {},
+      "related_memories": [],
+      "tags": [],
+      "access_count": 0,
+      "vector_id": null,
+      "last_accessed": null,
+      "last_summarized": null,
+      "event_time": null,
+      "location": null,
+      "participants": []
     }
     ```
 
 === "YAML"
 
     ```yaml
-    resource_type: EpisodicMemory
+    id: memoryblock-0d2b424e
+    created_at: '2025-08-18T17:19:51.482970Z'
+    updated_at: '2025-08-18T17:19:51.482970Z'
+    version: 1.0.0
+    identifier: []
+    language: null
+    implicit_rules: null
+    meta_profile: []
+    meta_source: null
+    meta_security: []
+    meta_tag: []
+    resource_type: MemoryBlock
+    agent_context: null
+    memory_type: episodic
+    content: Sample EpisodicMemory content
+    summary: null
+    importance_score: 0.5
+    confidence_score: 0.8
+    context_metadata: {}
+    related_memories: []
+    tags: []
+    access_count: 0
+    vector_id: null
+    last_accessed: null
+    last_summarized: null
+    event_time: null
+    location: null
+    participants: []
     
     ```
 
 === "Schema"
 
-    _No schema available_
+    #### EpisodicMemory Schema
+
+    Episodic memory for specific events and experiences.
+
+    Stores memories of specific events, interactions, and experiences
+    that occurred at particular times and places.
+
+    | Field | Type | Description |
+    |---|---|---|
+    | id | str | None | Unique identifier for this resource. Auto-generated if not provided. |
+    | created_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was created |
+    | updated_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was last updated |
+    | version | <class 'str'> | Version of the resource |
+    | identifier | list[str] | External identifiers for the resource (e.g., MRN, accession, system-specific IDs) (e.g., ['MRN:12345', 'local:abc-001']) |
+    | language | str | None | Base language of the resource content (BCP-47, e.g., en, pt-BR) (e.g., en) |
+    | implicit_rules | str | None | Reference to rules followed when constructing the resource (URI) (e.g., http://example.org/implicit-rules/v1) |
+    | meta_profile | list[str] | Profiles asserting conformance of this resource (URIs) (e.g., ['http://hl7.org/fhir/StructureDefinition/Observation']) |
+    | meta_source | str | None | Source system that produced the resource (e.g., ehr-system-x) |
+    | meta_security | list[str] | Security labels applicable to this resource (policy/label codes) (e.g., ['very-sensitive', 'phi']) |
+    | meta_tag | list[str] | User or system-defined tags for search and grouping (e.g., ['triage', 'llm-context', 'draft']) |
+    | resource_type | typing.Literal['MemoryBlock'] | Resource type identifier |
+    | agent_context | dict[str, typing.Any] | None | Arbitrary, agent-provided context payload for this resource (e.g., {'section_key': 'free text content'}) |
+    | memory_type | typing.Literal['episodic'] | Episodic memory type |
+    | content | <class 'str'> | The actual memory content or information (e.g., Patient John Doe expressed concern about chest pain during consultation) |
+    | summary | str | None | Compressed summary of the memory content (e.g., Patient chest pain concern) |
+    | importance_score | <class 'float'> | Importance score from 0.0 to 1.0 for memory prioritization |
+    | confidence_score | <class 'float'> | Confidence in memory accuracy from 0.0 to 1.0 |
+    | context_metadata | dict[str, typing.Any] | Structured context metadata (patient_id, encounter_id, etc.) (e.g., {'patient_id': 'patient-123', 'encounter_id': 'encounter-456'}) |
+    | related_memories | list[str] | IDs of related memory blocks |
+    | tags | list[str] | Tags for categorizing and searching memories (e.g., ['patient_interaction', 'vital_signs', 'diagnosis']) |
+    | access_count | <class 'int'> | Number of times this memory has been accessed |
+    | vector_id | str | None | Vector embedding ID for semantic search |
+    | last_accessed | datetime.datetime | None | Timestamp of last access |
+    | last_summarized | datetime.datetime | None | Timestamp when the summary was last updated |
+    | event_time | datetime.datetime | None | When the remembered event occurred |
+    | location | str | None | Where the remembered event occurred (e.g., Emergency Room) |
+    | participants | list[str] | Who was involved in the remembered event (e.g., ['Patient/patient-123', 'Practitioner/dr-smith']) |
+
 
 
 ### SemanticMemory
@@ -4324,7 +5436,7 @@ Not clinical truth; may be derived and should be auditable.
 
 - Subtype of: MemoryBlock
 
-**Related Tools**
+**Tools**
 
 - store_memory
 - retrieve_memories
@@ -4334,30 +5446,124 @@ Not clinical truth; may be derived and should be auditable.
 
 === "Rendered"
 
-    #### SemanticMemory
+    #### MemoryBlock
 
     | Field | Value |
     |---|---|
-    | resource_type | SemanticMemory |
+    | resource_type | MemoryBlock |
+    | id | memoryblock-a7e57c54 |
+    | created_at | 2025-08-18T17:19:51.484115Z |
+    | updated_at | 2025-08-18T17:19:51.484116Z |
 
 === "JSON"
 
     ```json
     {
-      "resource_type": "SemanticMemory"
+      "id": "memoryblock-a7e57c54",
+      "created_at": "2025-08-18T17:19:51.484115Z",
+      "updated_at": "2025-08-18T17:19:51.484116Z",
+      "version": "1.0.0",
+      "identifier": [],
+      "language": null,
+      "implicit_rules": null,
+      "meta_profile": [],
+      "meta_source": null,
+      "meta_security": [],
+      "meta_tag": [],
+      "resource_type": "MemoryBlock",
+      "agent_context": null,
+      "memory_type": "semantic",
+      "content": "Sample SemanticMemory content",
+      "summary": null,
+      "importance_score": 0.5,
+      "confidence_score": 0.8,
+      "context_metadata": {},
+      "related_memories": [],
+      "tags": [],
+      "access_count": 0,
+      "vector_id": null,
+      "last_accessed": null,
+      "last_summarized": null,
+      "knowledge_domain": null,
+      "source": null,
+      "evidence_level": null
     }
     ```
 
 === "YAML"
 
     ```yaml
-    resource_type: SemanticMemory
+    id: memoryblock-a7e57c54
+    created_at: '2025-08-18T17:19:51.484115Z'
+    updated_at: '2025-08-18T17:19:51.484116Z'
+    version: 1.0.0
+    identifier: []
+    language: null
+    implicit_rules: null
+    meta_profile: []
+    meta_source: null
+    meta_security: []
+    meta_tag: []
+    resource_type: MemoryBlock
+    agent_context: null
+    memory_type: semantic
+    content: Sample SemanticMemory content
+    summary: null
+    importance_score: 0.5
+    confidence_score: 0.8
+    context_metadata: {}
+    related_memories: []
+    tags: []
+    access_count: 0
+    vector_id: null
+    last_accessed: null
+    last_summarized: null
+    knowledge_domain: null
+    source: null
+    evidence_level: null
     
     ```
 
 === "Schema"
 
-    _No schema available_
+    #### SemanticMemory Schema
+
+    Semantic memory for general knowledge and facts.
+
+    Stores factual information, general knowledge, and learned concepts
+    that are not tied to specific experiences.
+
+    | Field | Type | Description |
+    |---|---|---|
+    | id | str | None | Unique identifier for this resource. Auto-generated if not provided. |
+    | created_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was created |
+    | updated_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was last updated |
+    | version | <class 'str'> | Version of the resource |
+    | identifier | list[str] | External identifiers for the resource (e.g., MRN, accession, system-specific IDs) (e.g., ['MRN:12345', 'local:abc-001']) |
+    | language | str | None | Base language of the resource content (BCP-47, e.g., en, pt-BR) (e.g., en) |
+    | implicit_rules | str | None | Reference to rules followed when constructing the resource (URI) (e.g., http://example.org/implicit-rules/v1) |
+    | meta_profile | list[str] | Profiles asserting conformance of this resource (URIs) (e.g., ['http://hl7.org/fhir/StructureDefinition/Observation']) |
+    | meta_source | str | None | Source system that produced the resource (e.g., ehr-system-x) |
+    | meta_security | list[str] | Security labels applicable to this resource (policy/label codes) (e.g., ['very-sensitive', 'phi']) |
+    | meta_tag | list[str] | User or system-defined tags for search and grouping (e.g., ['triage', 'llm-context', 'draft']) |
+    | resource_type | typing.Literal['MemoryBlock'] | Resource type identifier |
+    | agent_context | dict[str, typing.Any] | None | Arbitrary, agent-provided context payload for this resource (e.g., {'section_key': 'free text content'}) |
+    | memory_type | typing.Literal['semantic'] | Semantic memory type |
+    | content | <class 'str'> | The actual memory content or information (e.g., Patient John Doe expressed concern about chest pain during consultation) |
+    | summary | str | None | Compressed summary of the memory content (e.g., Patient chest pain concern) |
+    | importance_score | <class 'float'> | Importance score from 0.0 to 1.0 for memory prioritization |
+    | confidence_score | <class 'float'> | Confidence in memory accuracy from 0.0 to 1.0 |
+    | context_metadata | dict[str, typing.Any] | Structured context metadata (patient_id, encounter_id, etc.) (e.g., {'patient_id': 'patient-123', 'encounter_id': 'encounter-456'}) |
+    | related_memories | list[str] | IDs of related memory blocks |
+    | tags | list[str] | Tags for categorizing and searching memories (e.g., ['patient_interaction', 'vital_signs', 'diagnosis']) |
+    | access_count | <class 'int'> | Number of times this memory has been accessed |
+    | vector_id | str | None | Vector embedding ID for semantic search |
+    | last_accessed | datetime.datetime | None | Timestamp of last access |
+    | last_summarized | datetime.datetime | None | Timestamp when the summary was last updated |
+    | knowledge_domain | str | None | Domain or field this knowledge belongs to (e.g., cardiology) |
+    | source | str | None | Source of this knowledge (e.g., Medical textbook) |
+    | evidence_level | str | None | Level of evidence supporting this knowledge (e.g., high) |
+
 
 
 ### WorkingMemory
@@ -4374,7 +5580,7 @@ Should be pruned/expired to avoid context poisoning.
 
 - Subtype of: MemoryBlock
 
-**Related Tools**
+**Tools**
 
 - store_memory
 - retrieve_memories
@@ -4385,30 +5591,124 @@ Should be pruned/expired to avoid context poisoning.
 
 === "Rendered"
 
-    #### WorkingMemory
+    #### MemoryBlock
 
     | Field | Value |
     |---|---|
-    | resource_type | WorkingMemory |
+    | resource_type | MemoryBlock |
+    | id | memoryblock-ee3c884c |
+    | created_at | 2025-08-18T17:19:51.485183Z |
+    | updated_at | 2025-08-18T17:19:51.485184Z |
 
 === "JSON"
 
     ```json
     {
-      "resource_type": "WorkingMemory"
+      "id": "memoryblock-ee3c884c",
+      "created_at": "2025-08-18T17:19:51.485183Z",
+      "updated_at": "2025-08-18T17:19:51.485184Z",
+      "version": "1.0.0",
+      "identifier": [],
+      "language": null,
+      "implicit_rules": null,
+      "meta_profile": [],
+      "meta_source": null,
+      "meta_security": [],
+      "meta_tag": [],
+      "resource_type": "MemoryBlock",
+      "agent_context": null,
+      "memory_type": "working",
+      "content": "Sample WorkingMemory content",
+      "summary": null,
+      "importance_score": 0.5,
+      "confidence_score": 0.8,
+      "context_metadata": {},
+      "related_memories": [],
+      "tags": [],
+      "access_count": 0,
+      "vector_id": null,
+      "last_accessed": null,
+      "last_summarized": null,
+      "task_context": null,
+      "processing_stage": null,
+      "ttl_seconds": null
     }
     ```
 
 === "YAML"
 
     ```yaml
-    resource_type: WorkingMemory
+    id: memoryblock-ee3c884c
+    created_at: '2025-08-18T17:19:51.485183Z'
+    updated_at: '2025-08-18T17:19:51.485184Z'
+    version: 1.0.0
+    identifier: []
+    language: null
+    implicit_rules: null
+    meta_profile: []
+    meta_source: null
+    meta_security: []
+    meta_tag: []
+    resource_type: MemoryBlock
+    agent_context: null
+    memory_type: working
+    content: Sample WorkingMemory content
+    summary: null
+    importance_score: 0.5
+    confidence_score: 0.8
+    context_metadata: {}
+    related_memories: []
+    tags: []
+    access_count: 0
+    vector_id: null
+    last_accessed: null
+    last_summarized: null
+    task_context: null
+    processing_stage: null
+    ttl_seconds: null
     
     ```
 
 === "Schema"
 
-    _No schema available_
+    #### WorkingMemory Schema
+
+    Working memory for temporary information processing.
+
+    Stores information that is actively being processed or manipulated
+    in current tasks and workflows.
+
+    | Field | Type | Description |
+    |---|---|---|
+    | id | str | None | Unique identifier for this resource. Auto-generated if not provided. |
+    | created_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was created |
+    | updated_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was last updated |
+    | version | <class 'str'> | Version of the resource |
+    | identifier | list[str] | External identifiers for the resource (e.g., MRN, accession, system-specific IDs) (e.g., ['MRN:12345', 'local:abc-001']) |
+    | language | str | None | Base language of the resource content (BCP-47, e.g., en, pt-BR) (e.g., en) |
+    | implicit_rules | str | None | Reference to rules followed when constructing the resource (URI) (e.g., http://example.org/implicit-rules/v1) |
+    | meta_profile | list[str] | Profiles asserting conformance of this resource (URIs) (e.g., ['http://hl7.org/fhir/StructureDefinition/Observation']) |
+    | meta_source | str | None | Source system that produced the resource (e.g., ehr-system-x) |
+    | meta_security | list[str] | Security labels applicable to this resource (policy/label codes) (e.g., ['very-sensitive', 'phi']) |
+    | meta_tag | list[str] | User or system-defined tags for search and grouping (e.g., ['triage', 'llm-context', 'draft']) |
+    | resource_type | typing.Literal['MemoryBlock'] | Resource type identifier |
+    | agent_context | dict[str, typing.Any] | None | Arbitrary, agent-provided context payload for this resource (e.g., {'section_key': 'free text content'}) |
+    | memory_type | typing.Literal['working'] | Working memory type |
+    | content | <class 'str'> | The actual memory content or information (e.g., Patient John Doe expressed concern about chest pain during consultation) |
+    | summary | str | None | Compressed summary of the memory content (e.g., Patient chest pain concern) |
+    | importance_score | <class 'float'> | Importance score from 0.0 to 1.0 for memory prioritization |
+    | confidence_score | <class 'float'> | Confidence in memory accuracy from 0.0 to 1.0 |
+    | context_metadata | dict[str, typing.Any] | Structured context metadata (patient_id, encounter_id, etc.) (e.g., {'patient_id': 'patient-123', 'encounter_id': 'encounter-456'}) |
+    | related_memories | list[str] | IDs of related memory blocks |
+    | tags | list[str] | Tags for categorizing and searching memories (e.g., ['patient_interaction', 'vital_signs', 'diagnosis']) |
+    | access_count | <class 'int'> | Number of times this memory has been accessed |
+    | vector_id | str | None | Vector embedding ID for semantic search |
+    | last_accessed | datetime.datetime | None | Timestamp of last access |
+    | last_summarized | datetime.datetime | None | Timestamp when the summary was last updated |
+    | task_context | str | None | Current task context for this working memory (e.g., patient_assessment) |
+    | processing_stage | str | None | Current processing stage (e.g., input) |
+    | ttl_seconds | int | None | Time-to-live in seconds for this working memory (e.g., 300) |
+
 
 
 ---
@@ -4431,11 +5731,6 @@ Not a FHIR resource; bridges AI agent workflows with clinical artifacts.
 
 - May reference: PlanDefinition, ActivityDefinition
 
-**Related Tools**
-
-- describe_model
-- list_model_fields
-
 
 **Example**
 
@@ -4446,18 +5741,18 @@ Not a FHIR resource; bridges AI agent workflows with clinical artifacts.
     | Field | Value |
     |---|---|
     | resource_type | WorkflowDefinition |
-    | id | workflowdefinition-7d3d62f9 |
+    | id | workflowdefinition-4bab59cd |
     | status | draft |
-    | created_at | 2025-08-18T17:00:45.126463Z |
-    | updated_at | 2025-08-18T17:00:45.126464Z |
+    | created_at | 2025-08-18T17:19:51.486207Z |
+    | updated_at | 2025-08-18T17:19:51.486208Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "workflowdefinition-7d3d62f9",
-      "created_at": "2025-08-18T17:00:45.126463Z",
-      "updated_at": "2025-08-18T17:00:45.126464Z",
+      "id": "workflowdefinition-4bab59cd",
+      "created_at": "2025-08-18T17:19:51.486207Z",
+      "updated_at": "2025-08-18T17:19:51.486208Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -4481,9 +5776,9 @@ Not a FHIR resource; bridges AI agent workflows with clinical artifacts.
 === "YAML"
 
     ```yaml
-    id: workflowdefinition-7d3d62f9
-    created_at: '2025-08-18T17:00:45.126463Z'
-    updated_at: '2025-08-18T17:00:45.126464Z'
+    id: workflowdefinition-4bab59cd
+    created_at: '2025-08-18T17:19:51.486207Z'
+    updated_at: '2025-08-18T17:19:51.486208Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -4591,13 +5886,13 @@ Do not use when a more specific resource exists (e.g., Procedure, MedicationAdmi
 - Encounter.encounter
 - ServiceRequest in basedOn
 
-**Related Tools**
+**Tools**
 
-- create_event
-- update_event_status
-- add_event_performer
-- schedule_event
-- summarize_event
+- create_event_tool
+- update_event_status_tool
+- add_event_performer_tool
+- schedule_event_tool
+- summarize_event_tool
 
 
 **Example**
@@ -4609,20 +5904,20 @@ Do not use when a more specific resource exists (e.g., Procedure, MedicationAdmi
     | Field | Value |
     |---|---|
     | resource_type | Event |
-    | id | event-e01ef92c |
+    | id | event-b5a78813 |
     | status | in-progress |
     | performer | [] |
     | based_on | [] |
-    | created_at | 2025-08-18T17:00:45.126906Z |
-    | updated_at | 2025-08-18T17:00:45.126906Z |
+    | created_at | 2025-08-18T17:19:51.490625Z |
+    | updated_at | 2025-08-18T17:19:51.490625Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "event-e01ef92c",
-      "created_at": "2025-08-18T17:00:45.126906Z",
-      "updated_at": "2025-08-18T17:00:45.126906Z",
+      "id": "event-b5a78813",
+      "created_at": "2025-08-18T17:19:51.490625Z",
+      "updated_at": "2025-08-18T17:19:51.490625Z",
       "version": "1.0.0",
       "identifier": [],
       "language": null,
@@ -4664,9 +5959,9 @@ Do not use when a more specific resource exists (e.g., Procedure, MedicationAdmi
 === "YAML"
 
     ```yaml
-    id: event-e01ef92c
-    created_at: '2025-08-18T17:00:45.126906Z'
-    updated_at: '2025-08-18T17:00:45.126906Z'
+    id: event-b5a78813
+    created_at: '2025-08-18T17:19:51.490625Z'
+    updated_at: '2025-08-18T17:19:51.490625Z'
     version: 1.0.0
     identifier: []
     language: null
@@ -4771,11 +6066,6 @@ Describes structure; not data.
 
 - Links: source → target by path/type
 
-**Related Tools**
-
-- follow_graph
-- describe_model
-
 
 **Example**
 
@@ -4786,25 +6076,101 @@ Describes structure; not data.
     | Field | Value |
     |---|---|
     | resource_type | GraphDefinition |
+    | id | graphdefinition-a6499317 |
+    | status | active |
+    | name | Sample GraphDefinition |
+    | created_at | 2025-08-18T17:19:51.494187Z |
+    | updated_at | 2025-08-18T17:19:51.494188Z |
 
 === "JSON"
 
     ```json
     {
-      "resource_type": "GraphDefinition"
+      "id": "graphdefinition-a6499317",
+      "created_at": "2025-08-18T17:19:51.494187Z",
+      "updated_at": "2025-08-18T17:19:51.494188Z",
+      "version": "1.0.0",
+      "identifier": [],
+      "language": null,
+      "implicit_rules": null,
+      "meta_profile": [],
+      "meta_source": null,
+      "meta_security": [],
+      "meta_tag": [],
+      "resource_type": "GraphDefinition",
+      "agent_context": null,
+      "status": "active",
+      "text": null,
+      "contained": null,
+      "extension": null,
+      "modifier_extension": null,
+      "name": "Sample GraphDefinition",
+      "start": "Patient",
+      "description": null,
+      "link": []
     }
     ```
 
 === "YAML"
 
     ```yaml
+    id: graphdefinition-a6499317
+    created_at: '2025-08-18T17:19:51.494187Z'
+    updated_at: '2025-08-18T17:19:51.494188Z'
+    version: 1.0.0
+    identifier: []
+    language: null
+    implicit_rules: null
+    meta_profile: []
+    meta_source: null
+    meta_security: []
+    meta_tag: []
     resource_type: GraphDefinition
+    agent_context: null
+    status: active
+    text: null
+    contained: null
+    extension: null
+    modifier_extension: null
+    name: Sample GraphDefinition
+    start: Patient
+    description: null
+    link: []
     
     ```
 
 === "Schema"
 
-    _No schema available_
+    #### GraphDefinition Schema
+
+    Minimal GraphDefinition aligned with FHIR to describe traversals between resources.
+    This enables declaring how to navigate between linked records.
+
+    | Field | Type | Description |
+    |---|---|---|
+    | id | str | None | Unique identifier for this resource. Auto-generated if not provided. |
+    | created_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was created |
+    | updated_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was last updated |
+    | version | <class 'str'> | Version of the resource |
+    | identifier | list[str] | External identifiers for the resource (e.g., MRN, accession, system-specific IDs) (e.g., ['MRN:12345', 'local:abc-001']) |
+    | language | str | None | Base language of the resource content (BCP-47, e.g., en, pt-BR) (e.g., en) |
+    | implicit_rules | str | None | Reference to rules followed when constructing the resource (URI) (e.g., http://example.org/implicit-rules/v1) |
+    | meta_profile | list[str] | Profiles asserting conformance of this resource (URIs) (e.g., ['http://hl7.org/fhir/StructureDefinition/Observation']) |
+    | meta_source | str | None | Source system that produced the resource (e.g., ehr-system-x) |
+    | meta_security | list[str] | Security labels applicable to this resource (policy/label codes) (e.g., ['very-sensitive', 'phi']) |
+    | meta_tag | list[str] | User or system-defined tags for search and grouping (e.g., ['triage', 'llm-context', 'draft']) |
+    | resource_type | typing.Literal['GraphDefinition'] | None |
+    | agent_context | dict[str, typing.Any] | None | Arbitrary, agent-provided context payload for this resource (e.g., {'section_key': 'free text content'}) |
+    | status | <class 'str'> | Status of the graph definition |
+    | text | str | None | Human-readable summary of the resource content (e.g., Patient John Doe, 45 years old) |
+    | contained | list[hacs_models.base_resource.BaseResource] | None | Resources contained within this resource |
+    | extension | dict[str, typing.Any] | None | Additional content defined by implementations (e.g., {'url': 'custom-field', 'valueString': 'custom-value'}) |
+    | modifier_extension | dict[str, typing.Any] | None | Extensions that cannot be ignored (e.g., {'url': 'critical-field', 'valueBoolean': True}) |
+    | name | <class 'str'> | Human-readable name |
+    | start | <class 'str'> | Type of the starting resource (e.g., 'Patient') |
+    | description | typing.Optional[str] | Markdown description |
+    | link | typing.List[hacs_models.graph_definition.GraphDefinitionLink] | Links this graph makes rules about |
+
 
 
 ---
@@ -4833,7 +6199,7 @@ Does not include the full content of a code system; use external services for te
 - ValueSet.include.system_uri
 - TerminologyConcept.system_uri
 
-**Related Tools**
+**Tools**
 
 - get_possible_codes
 - expand_value_set
@@ -4848,25 +6214,106 @@ Does not include the full content of a code system; use external services for te
     | Field | Value |
     |---|---|
     | resource_type | TerminologySystem |
+    | id | terminologysystem-1422a90e |
+    | status | active |
+    | name | Sample TerminologySystem |
+    | created_at | 2025-08-18T17:19:51.495686Z |
+    | updated_at | 2025-08-18T17:19:51.495687Z |
 
 === "JSON"
 
     ```json
     {
-      "resource_type": "TerminologySystem"
+      "id": "terminologysystem-1422a90e",
+      "created_at": "2025-08-18T17:19:51.495686Z",
+      "updated_at": "2025-08-18T17:19:51.495687Z",
+      "version": null,
+      "identifier": [],
+      "language": null,
+      "implicit_rules": null,
+      "meta_profile": [],
+      "meta_source": null,
+      "meta_security": [],
+      "meta_tag": [],
+      "resource_type": "TerminologySystem",
+      "agent_context": null,
+      "status": "active",
+      "text": null,
+      "contained": null,
+      "extension": null,
+      "modifier_extension": null,
+      "name": "Sample TerminologySystem",
+      "system_uri": "http://example.org/terminologysystem",
+      "publisher": null,
+      "description": null,
+      "jurisdiction": null,
+      "tooling": null
     }
     ```
 
 === "YAML"
 
     ```yaml
+    id: terminologysystem-1422a90e
+    created_at: '2025-08-18T17:19:51.495686Z'
+    updated_at: '2025-08-18T17:19:51.495687Z'
+    version: null
+    identifier: []
+    language: null
+    implicit_rules: null
+    meta_profile: []
+    meta_source: null
+    meta_security: []
+    meta_tag: []
     resource_type: TerminologySystem
+    agent_context: null
+    status: active
+    text: null
+    contained: null
+    extension: null
+    modifier_extension: null
+    name: Sample TerminologySystem
+    system_uri: http://example.org/terminologysystem
+    publisher: null
+    description: null
+    jurisdiction: null
+    tooling: null
     
     ```
 
 === "Schema"
 
-    _No schema available_
+    #### TerminologySystem Schema
+
+    Represents a terminology code system (e.g., SNOMED CT, LOINC, RxNorm, UMLS).
+
+    | Field | Type | Description |
+    |---|---|---|
+    | id | str | None | Unique identifier for this resource. Auto-generated if not provided. |
+    | created_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was created |
+    | updated_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was last updated |
+    | version | typing.Optional[str] | System version |
+    | identifier | list[str] | External identifiers for the resource (e.g., MRN, accession, system-specific IDs) (e.g., ['MRN:12345', 'local:abc-001']) |
+    | language | str | None | Base language of the resource content (BCP-47, e.g., en, pt-BR) (e.g., en) |
+    | implicit_rules | str | None | Reference to rules followed when constructing the resource (URI) (e.g., http://example.org/implicit-rules/v1) |
+    | meta_profile | list[str] | Profiles asserting conformance of this resource (URIs) (e.g., ['http://hl7.org/fhir/StructureDefinition/Observation']) |
+    | meta_source | str | None | Source system that produced the resource (e.g., ehr-system-x) |
+    | meta_security | list[str] | Security labels applicable to this resource (policy/label codes) (e.g., ['very-sensitive', 'phi']) |
+    | meta_tag | list[str] | User or system-defined tags for search and grouping (e.g., ['triage', 'llm-context', 'draft']) |
+    | resource_type | typing.Literal['TerminologySystem'] | None |
+    | agent_context | dict[str, typing.Any] | None | Arbitrary, agent-provided context payload for this resource (e.g., {'section_key': 'free text content'}) |
+    | status | <class 'str'> | Current status of the resource (e.g., active) |
+    | text | str | None | Human-readable summary of the resource content (e.g., Patient John Doe, 45 years old) |
+    | contained | list[hacs_models.base_resource.BaseResource] | None | Resources contained within this resource |
+    | extension | dict[str, typing.Any] | None | Additional content defined by implementations (e.g., {'url': 'custom-field', 'valueString': 'custom-value'}) |
+    | modifier_extension | dict[str, typing.Any] | None | Extensions that cannot be ignored (e.g., {'url': 'critical-field', 'valueBoolean': True}) |
+    | name | <class 'str'> | Human-friendly name of the terminology system |
+    | system_uri | <class 'str'> | Canonical URI identifying the code system |
+    | publisher | typing.Optional[str] | Organization publishing the system |
+    | description | typing.Optional[str] | Short description of the system |
+    | jurisdiction | typing.Optional[str] | Jurisdiction(s) for use |
+    | tooling | typing.Optional[str] | Preferred tooling/integration (e.g., umls) |
+
 
 
 ### TerminologyConcept
@@ -4888,7 +6335,7 @@ Not a clinical record; acts as a coding primitive used inside CodeableConcept an
 
 - ValueSet.expanded_concepts
 
-**Related Tools**
+**Tools**
 
 - get_possible_codes
 
@@ -4943,7 +6390,7 @@ Does not define a code system; use TerminologySystem for system metadata. Expans
 - TerminologySystem
 - TerminologyConcept
 
-**Related Tools**
+**Tools**
 
 - expand_value_set
 - validate_code_in_valueset
@@ -4958,18 +6405,18 @@ Does not define a code system; use TerminologySystem for system metadata. Expans
     | Field | Value |
     |---|---|
     | resource_type | ValueSet |
-    | id | valueset-18e3b5c9 |
+    | id | valueset-85d76621 |
     | status | active |
-    | created_at | 2025-08-18T17:00:45.127984Z |
-    | updated_at | 2025-08-18T17:00:45.127985Z |
+    | created_at | 2025-08-18T17:19:51.499691Z |
+    | updated_at | 2025-08-18T17:19:51.499691Z |
 
 === "JSON"
 
     ```json
     {
-      "id": "valueset-18e3b5c9",
-      "created_at": "2025-08-18T17:00:45.127984Z",
-      "updated_at": "2025-08-18T17:00:45.127985Z",
+      "id": "valueset-85d76621",
+      "created_at": "2025-08-18T17:19:51.499691Z",
+      "updated_at": "2025-08-18T17:19:51.499691Z",
       "version": null,
       "identifier": [],
       "language": null,
@@ -4998,9 +6445,9 @@ Does not define a code system; use TerminologySystem for system metadata. Expans
 === "YAML"
 
     ```yaml
-    id: valueset-18e3b5c9
-    created_at: '2025-08-18T17:00:45.127984Z'
-    updated_at: '2025-08-18T17:00:45.127985Z'
+    id: valueset-85d76621
+    created_at: '2025-08-18T17:19:51.499691Z'
+    updated_at: '2025-08-18T17:19:51.499691Z'
     version: null
     identifier: []
     language: null
@@ -5064,7 +6511,28 @@ Does not define a code system; use TerminologySystem for system metadata. Expans
 
 ### ConceptMap
 
-_No documentation available_
+**Scope & Usage**
+
+DomainResource extends BaseResource with FHIR R4-compliant fields for clinical and healthcare domain resources. Adds status tracking (active/inactive/draft), human-readable text narratives for clinical review, contained resource support, and extension mechanisms for additional healthcare data. All clinical HACS resources (Patient, Observation, Procedure, Condition, etc.) inherit from DomainResource to gain these healthcare-specific capabilities. Essential for LLM agents processing clinical data as it provides standardized status lifecycle, text summaries for context, and extension points for AI-generated metadata.
+
+**Boundaries**
+
+Use DomainResource for clinical and healthcare domain resources that need status tracking, text narratives, or contained resources. Use BaseResource directly for non-clinical infrastructure resources (Actor, MessageDefinition, workflow definitions). DomainResource provides the healthcare domain patterns but not specific clinical logic - that belongs in concrete implementations like Patient or Observation.
+
+**Relationships**
+
+- Inherits from: BaseResource (gains ID, timestamps, validation, protocols)
+- Extended by: Patient, Observation, Procedure, Condition, DiagnosticReport, and all clinical resources
+- Implements: ClinicalResource protocol with get_patient_id() method
+- Contains: Other BaseResource instances via contained field
+- Extends: Healthcare vocabularies and systems via extension mechanism
+
+**References**
+
+- Clinical resources inherit DomainResource patterns: status, text, contained, extension
+- Contained resources are embedded DomainResource instances for inline data
+- Extensions reference HL7 FHIR StructureDefinitions and custom healthcare vocabularies
+
 
 **Example**
 
@@ -5075,25 +6543,99 @@ _No documentation available_
     | Field | Value |
     |---|---|
     | resource_type | ConceptMap |
+    | id | conceptmap-a3469eb1 |
+    | status | active |
+    | created_at | 2025-08-18T17:19:51.502132Z |
+    | updated_at | 2025-08-18T17:19:51.502132Z |
 
 === "JSON"
 
     ```json
     {
-      "resource_type": "ConceptMap"
+      "id": "conceptmap-a3469eb1",
+      "created_at": "2025-08-18T17:19:51.502132Z",
+      "updated_at": "2025-08-18T17:19:51.502132Z",
+      "version": null,
+      "identifier": [],
+      "language": null,
+      "implicit_rules": null,
+      "meta_profile": [],
+      "meta_source": null,
+      "meta_security": [],
+      "meta_tag": [],
+      "resource_type": "ConceptMap",
+      "agent_context": null,
+      "status": "active",
+      "text": null,
+      "contained": null,
+      "extension": null,
+      "modifier_extension": null,
+      "name": null,
+      "source": "http://source.example.org",
+      "target": "http://target.example.org",
+      "group": []
     }
     ```
 
 === "YAML"
 
     ```yaml
+    id: conceptmap-a3469eb1
+    created_at: '2025-08-18T17:19:51.502132Z'
+    updated_at: '2025-08-18T17:19:51.502132Z'
+    version: null
+    identifier: []
+    language: null
+    implicit_rules: null
+    meta_profile: []
+    meta_source: null
+    meta_security: []
+    meta_tag: []
     resource_type: ConceptMap
+    agent_context: null
+    status: active
+    text: null
+    contained: null
+    extension: null
+    modifier_extension: null
+    name: null
+    source: http://source.example.org
+    target: http://target.example.org
+    group: []
     
     ```
 
 === "Schema"
 
-    _No schema available_
+    #### ConceptMap Schema
+
+    Mappings between concepts in two code systems.
+
+    | Field | Type | Description |
+    |---|---|---|
+    | id | str | None | Unique identifier for this resource. Auto-generated if not provided. |
+    | created_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was created |
+    | updated_at | <class 'datetime.datetime'> | ISO 8601 timestamp when this resource was last updated |
+    | version | typing.Optional[str] | Version label for this concept map |
+    | identifier | list[str] | External identifiers for the resource (e.g., MRN, accession, system-specific IDs) (e.g., ['MRN:12345', 'local:abc-001']) |
+    | language | str | None | Base language of the resource content (BCP-47, e.g., en, pt-BR) (e.g., en) |
+    | implicit_rules | str | None | Reference to rules followed when constructing the resource (URI) (e.g., http://example.org/implicit-rules/v1) |
+    | meta_profile | list[str] | Profiles asserting conformance of this resource (URIs) (e.g., ['http://hl7.org/fhir/StructureDefinition/Observation']) |
+    | meta_source | str | None | Source system that produced the resource (e.g., ehr-system-x) |
+    | meta_security | list[str] | Security labels applicable to this resource (policy/label codes) (e.g., ['very-sensitive', 'phi']) |
+    | meta_tag | list[str] | User or system-defined tags for search and grouping (e.g., ['triage', 'llm-context', 'draft']) |
+    | resource_type | typing.Literal['ConceptMap'] | None |
+    | agent_context | dict[str, typing.Any] | None | Arbitrary, agent-provided context payload for this resource (e.g., {'section_key': 'free text content'}) |
+    | status | <class 'str'> | Current status of the resource (e.g., active) |
+    | text | str | None | Human-readable summary of the resource content (e.g., Patient John Doe, 45 years old) |
+    | contained | list[hacs_models.base_resource.BaseResource] | None | Resources contained within this resource |
+    | extension | dict[str, typing.Any] | None | Additional content defined by implementations (e.g., {'url': 'custom-field', 'valueString': 'custom-value'}) |
+    | modifier_extension | dict[str, typing.Any] | None | Extensions that cannot be ignored (e.g., {'url': 'critical-field', 'valueBoolean': True}) |
+    | name | typing.Optional[str] | Name of the concept map |
+    | source | <class 'str'> | Source system URI |
+    | target | <class 'str'> | Target system URI |
+    | group | typing.List[hacs_models.terminology.ConceptMapElement] | List of mapping elements |
+
 
 
 ---

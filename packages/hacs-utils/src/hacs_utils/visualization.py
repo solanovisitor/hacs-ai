@@ -679,7 +679,7 @@ def resource_docs_to_markdown(resource_or_class: Any) -> str:
             lines.append(f"- {item}")
         lines.append("")
     if tools:
-        lines += ["**Related Tools**", ""]
+        lines += ["**Tools**", ""]
         for t in tools:
             lines.append(f"- {t}")
         lines.append("")

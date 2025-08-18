@@ -27,18 +27,142 @@ from hacs_models import (
     MessageDefinition
 )
 from hacs_utils.memory_utils import gather_memories, merge_memories, filter_memories
-from hacs_utils.preferences import merge_preferences, inject_preferences
+from hacs_utils.preferences import merge_preferences, inject_preferences as _inject_preferences
 from hacs_utils.semantic_index import semantic_tool_loadout
 # Tool domain: agents - Context Engineering for AI Agents
 
 logger = logging.getLogger(__name__)
+from hacs_registry.tool_registry import register_tool, VersionStatus
+try:
+    from pydantic import BaseModel, Field
+except Exception:  # pragma: no cover
+    class BaseModel:  # type: ignore
+        pass
+    def Field(*args, **kwargs):  # type: ignore
+        return None
 
 
+# ===== Pydantic input models for agents tools =====
+class WriteScratchpadInput(BaseModel):
+    content: str
+    entry_type: str = Field(default="note")
+    session_id: Optional[str] = None
+    tags: Optional[List[str]] = None
+    messages: Optional[List[Dict[str, Any]]] = None
+    config: Optional[Dict[str, Any]] = None
+    state: Optional[Dict[str, Any]] = None
+
+
+class ReadScratchpadInput(BaseModel):
+    session_id: Optional[str] = None
+    entry_type: Optional[str] = None
+    limit: int = 10
+    messages: Optional[List[Dict[str, Any]]] = None
+    config: Optional[Dict[str, Any]] = None
+    state: Optional[Dict[str, Any]] = None
+
+
+class CreateTodoInput(BaseModel):
+    content: Optional[str] = None
+    priority: Optional[str | int] = None
+    status: Optional[str] = None
+    clinical_urgency: Optional[str] = None
+    task_description: Optional[str] = None
+    category: Optional[str] = None
+    due_date: Optional[str] = None
+    context: Optional[Dict[str, Any]] = None
+    messages: Optional[List[Dict[str, Any]]] = None
+    config: Optional[Dict[str, Any]] = None
+    state: Optional[Dict[str, Any]] = None
+
+
+class ListTodosInput(BaseModel):
+    status: Optional[str] = None
+    category: Optional[str] = None
+    priority_min: Optional[int] = None
+    limit: int = 20
+    messages: Optional[List[Dict[str, Any]]] = None
+    config: Optional[Dict[str, Any]] = None
+    state: Optional[Dict[str, Any]] = None
+
+
+class CompleteTodoInput(BaseModel):
+    todo_id: str
+    completion_notes: Optional[str] = None
+    messages: Optional[List[Dict[str, Any]]] = None
+    config: Optional[Dict[str, Any]] = None
+    state: Optional[Dict[str, Any]] = None
+
+
+class StoreMemoryInput(BaseModel):
+    content: str
+    memory_type: str = Field(default="episodic")
+    actor_id: Optional[str] = None
+    context: Optional[Dict[str, Any]] = None
+    tags: Optional[List[str]] = None
+    messages: Optional[List[Dict[str, Any]]] = None
+    config: Optional[Dict[str, Any]] = None
+    state: Optional[Dict[str, Any]] = None
+
+
+class RetrieveMemoriesInput(BaseModel):
+    query: Optional[str] = None
+    actor_id: Optional[str] = None
+    memory_type: Optional[str] = None
+    tags: Optional[List[str]] = None
+    limit: int = 10
+    messages: Optional[List[Dict[str, Any]]] = None
+    config: Optional[Dict[str, Any]] = None
+    state: Optional[Dict[str, Any]] = None
+
+
+class InjectPreferencesInput(BaseModel):
+    message: Dict[str, Any]
+    actor_id: str
+    preference_scope: str = Field(default="response_format")
+    messages: Optional[List[Dict[str, Any]]] = None
+    config: Optional[Dict[str, Any]] = None
+    state: Optional[Dict[str, Any]] = None
+
+
+class SelectToolsForTaskInput(BaseModel):
+    task_description: str
+    max_tools: int = 10
+    domain_filter: Optional[str] = None
+    exclude_tools: Optional[List[str]] = None
+    messages: Optional[List[Dict[str, Any]]] = None
+    config: Optional[Dict[str, Any]] = None
+    state: Optional[Dict[str, Any]] = None
+
+
+class SummarizeStateInput(BaseModel):
+    state_data: Dict[str, Any]
+    focus_areas: Optional[List[str]] = None
+    compression_ratio: float = 0.3
+    messages: Optional[List[Dict[str, Any]]] = None
+    config: Optional[Dict[str, Any]] = None
+    state: Optional[Dict[str, Any]] = None
+
+
+class PruneStateInput(BaseModel):
+    state_data: Dict[str, Any]
+    keep_fields: Optional[List[str]] = None
+    max_messages: int = 20
+    max_tools: int = 30
+    messages: Optional[List[Dict[str, Any]]] = None
+    config: Optional[Dict[str, Any]] = None
+    state: Optional[Dict[str, Any]] = None
+
+
+@register_tool(name="write_scratchpad", domain="agents", tags=["domain:agents"], status=VersionStatus.ACTIVE)
 def write_scratchpad(
     content: str,
     entry_type: str = "note",
     session_id: Optional[str] = None,
-    tags: Optional[List[str]] = None
+    tags: Optional[List[str]] = None,
+    messages: Optional[List[Dict[str, Any]]] = None,
+    config: Optional[Dict[str, Any]] = None,
+    state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:
     """
     Write an entry to the agent's scratchpad for working memory.
@@ -57,11 +181,12 @@ def write_scratchpad(
         entry = AgentScratchpadEntry(
             entry_type=entry_type,
             content=content,
-            context={
+            agent_id="system",  # Default agent_id since it's required
+            tags=tags or [],
+            metadata={
                 "session_id": session_id,
                 "created_at": datetime.now().isoformat()
-            },
-            tags=tags or []
+            }
         )
         
         return HACSResult(
@@ -81,11 +206,18 @@ def write_scratchpad(
             error=str(e)
         )
 
+# Attach args
+write_scratchpad._tool_args = WriteScratchpadInput  # type: ignore[attr-defined]
 
+
+@register_tool(name="read_scratchpad", domain="agents", tags=["domain:agents"], status=VersionStatus.ACTIVE)
 def read_scratchpad(
     session_id: Optional[str] = None,
     entry_type: Optional[str] = None,
-    limit: int = 10
+    limit: int = 10,
+    messages: Optional[List[Dict[str, Any]]] = None,
+    config: Optional[Dict[str, Any]] = None,
+    state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:
     """
     Read entries from the agent's scratchpad.
@@ -131,7 +263,10 @@ def read_scratchpad(
             error=str(e)
         )
 
+read_scratchpad._tool_args = ReadScratchpadInput  # type: ignore[attr-defined]
 
+
+@register_tool(name="create_todo", domain="agents", tags=["domain:agents"], status=VersionStatus.ACTIVE)
 def create_todo(
     # Canonical fields (align with AgentTodo model)
     content: Optional[str] = None,
@@ -143,6 +278,9 @@ def create_todo(
     category: Optional[str] = None,
     due_date: Optional[str] = None,
     context: Optional[Dict[str, Any]] = None,
+    messages: Optional[List[Dict[str, Any]]] = None,
+    config: Optional[Dict[str, Any]] = None,
+    state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:
     """
     Create a todo item for agent task planning.
@@ -214,12 +352,18 @@ def create_todo(
             error=str(e)
         )
 
+create_todo._tool_args = CreateTodoInput  # type: ignore[attr-defined]
 
+
+@register_tool(name="list_todos", domain="agents", tags=["domain:agents"], status=VersionStatus.ACTIVE)
 def list_todos(
     status: Optional[str] = None,
     category: Optional[str] = None,
     priority_min: Optional[int] = None,
-    limit: int = 20
+    limit: int = 20,
+    messages: Optional[List[Dict[str, Any]]] = None,
+    config: Optional[Dict[str, Any]] = None,
+    state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:
     """
     List agent todo items with optional filtering.
@@ -282,8 +426,11 @@ def list_todos(
             error=str(e)
         )
 
+list_todos._tool_args = ListTodosInput  # type: ignore[attr-defined]
 
-def complete_todo(todo_id: str, completion_notes: Optional[str] = None) -> HACSResult:
+
+@register_tool(name="complete_todo", domain="agents", tags=["domain:agents"], status=VersionStatus.ACTIVE)
+def complete_todo(todo_id: str, completion_notes: Optional[str] = None, messages: Optional[List[Dict[str, Any]]] = None, config: Optional[Dict[str, Any]] = None, state: Optional[Dict[str, Any]] = None) -> HACSResult:
     """
     Mark a todo item as completed.
     
@@ -316,13 +463,19 @@ def complete_todo(todo_id: str, completion_notes: Optional[str] = None) -> HACSR
             error=str(e)
         )
 
+complete_todo._tool_args = CompleteTodoInput  # type: ignore[attr-defined]
 
+
+@register_tool(name="store_memory", domain="agents", tags=["domain:agents"], status=VersionStatus.ACTIVE)
 def store_memory(
     content: str,
     memory_type: str = "episodic",
     actor_id: Optional[str] = None,
     context: Optional[Dict[str, Any]] = None,
-    tags: Optional[List[str]] = None
+    tags: Optional[List[str]] = None,
+    messages: Optional[List[Dict[str, Any]]] = None,
+    config: Optional[Dict[str, Any]] = None,
+    state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:
     """
     Store a memory for long-term agent context.
@@ -369,13 +522,19 @@ def store_memory(
             error=str(e)
         )
 
+store_memory._tool_args = StoreMemoryInput  # type: ignore[attr-defined]
 
+
+@register_tool(name="retrieve_memories", domain="agents", tags=["domain:agents"], status=VersionStatus.ACTIVE)
 def retrieve_memories(
     query: Optional[str] = None,
     actor_id: Optional[str] = None,
     memory_type: Optional[str] = None,
     tags: Optional[List[str]] = None,
-    limit: int = 10
+    limit: int = 10,
+    messages: Optional[List[Dict[str, Any]]] = None,
+    config: Optional[Dict[str, Any]] = None,
+    state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:
     """
     Retrieve relevant memories based on query and context.
@@ -428,11 +587,17 @@ def retrieve_memories(
             error=str(e)
         )
 
+retrieve_memories._tool_args = RetrieveMemoriesInput  # type: ignore[attr-defined]
 
+
+@register_tool(name="inject_preferences", domain="agents", tags=["domain:agents"], status=VersionStatus.ACTIVE)
 def inject_preferences(
     message: Dict[str, Any],
     actor_id: str,
-    preference_scope: str = "response_format"
+    preference_scope: str = "response_format",
+    messages: Optional[List[Dict[str, Any]]] = None,
+    config: Optional[Dict[str, Any]] = None,
+    state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:
     """
     Inject actor preferences into a message or context.
@@ -456,7 +621,7 @@ def inject_preferences(
         message_def = MessageDefinition(**message)
         
         # Inject preferences
-        injected_message = inject_preferences(message_def, preferences)
+        injected_message = _inject_preferences(message_def, preferences)
         
         return HACSResult(
             success=True,
@@ -475,12 +640,18 @@ def inject_preferences(
             error=str(e)
         )
 
+inject_preferences._tool_args = InjectPreferencesInput  # type: ignore[attr-defined]
 
+
+@register_tool(name="select_tools_for_task", domain="agents", tags=["domain:agents"], status=VersionStatus.ACTIVE)
 def select_tools_for_task(
     task_description: str,
     max_tools: int = 10,
     domain_filter: Optional[str] = None,
-    exclude_tools: Optional[List[str]] = None
+    exclude_tools: Optional[List[str]] = None,
+    messages: Optional[List[Dict[str, Any]]] = None,
+    config: Optional[Dict[str, Any]] = None,
+    state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:
     """
     Select relevant tools for a task using semantic tool loadout.
@@ -526,11 +697,17 @@ def select_tools_for_task(
             error=str(e)
         )
 
+select_tools_for_task._tool_args = SelectToolsForTaskInput  # type: ignore[attr-defined]
 
+
+@register_tool(name="summarize_state", domain="agents", tags=["domain:agents"], status=VersionStatus.ACTIVE)
 def summarize_state(
     state_data: Dict[str, Any],
     focus_areas: Optional[List[str]] = None,
-    compression_ratio: float = 0.3
+    compression_ratio: float = 0.3,
+    messages: Optional[List[Dict[str, Any]]] = None,
+    config: Optional[Dict[str, Any]] = None,
+    state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:
     """
     Summarize agent state for context compression.
@@ -592,12 +769,18 @@ def summarize_state(
             error=str(e)
         )
 
+summarize_state._tool_args = SummarizeStateInput  # type: ignore[attr-defined]
 
+
+@register_tool(name="prune_state", domain="agents", tags=["domain:agents"], status=VersionStatus.ACTIVE)
 def prune_state(
     state_data: Dict[str, Any],
     keep_fields: Optional[List[str]] = None,
     max_messages: int = 20,
-    max_tools: int = 30
+    max_tools: int = 30,
+    messages: Optional[List[Dict[str, Any]]] = None,
+    config: Optional[Dict[str, Any]] = None,
+    state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:
     """
     Prune agent state by removing low-priority elements.
@@ -668,6 +851,8 @@ def prune_state(
             message="Failed to prune state",
             error=str(e)
         )
+
+prune_state._tool_args = PruneStateInput  # type: ignore[attr-defined]
 
 
 # Export canonical tool names (without _tool suffix)

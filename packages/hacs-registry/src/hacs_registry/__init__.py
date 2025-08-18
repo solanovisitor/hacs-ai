@@ -57,20 +57,12 @@ from .iam_registry import (
 )
 
 # Tool registry (existing)
+# Unified tool registry and plugin discovery
 from .tool_registry import (
     HACSToolRegistry,
+    register_tool,
     get_global_registry as get_global_tool_registry,
     discover_hacs_tools
-)
-
-# Plugin discovery system
-from .plugin_discovery import (
-    PluginRegistry,
-    ToolPlugin,
-    PluginMetadata,
-    register_tool,
-    discover_hacs_plugins,
-    plugin_registry
 )
 
 # Versioning system
@@ -167,7 +159,6 @@ __all__ = [
     # Plugin discovery system
     "PluginRegistry",
     "ToolPlugin",
-    "PluginMetadata",
     "register_tool",
     "discover_hacs_plugins",
     "plugin_registry",

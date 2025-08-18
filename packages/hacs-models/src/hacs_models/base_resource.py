@@ -323,48 +323,52 @@ class BaseResource(BaseModel):
     @classmethod
     def pick(cls: Type[T], *fields: str) -> Type[T]:
         """
-        Create a subset model containing only specified fields.
+        Create a subset Pydantic model containing only specified fields.
 
-        Useful for creating lightweight models for specific use cases,
-        API responses, or when you only need certain fields from a model.
-        Essential fields (id, resource_type, timestamps) are always included.
+        - Always includes essentials: id, resource_type, created_at, updated_at
+        - Allows extra fields (extensions) on the subset for forward-compatibility
+        - Uses the original field annotations and defaults where available
 
-        Args:
-            *fields: Names of fields to include in the subset model
-
-        Returns:
-            New Pydantic model class with only the specified fields
-
-        Example:
-            >>> PatientSummary = Patient.pick("full_name", "birth_date", "gender")
-            >>> summary = PatientSummary(
-            ...     resource_type="Patient",
-            ...     full_name="Jane Doe",
-            ...     birth_date="1990-01-15",
-            ...     gender="female"
-            ... )
-            >>> # summary only has the picked fields plus essentials
+        Returns a new Pydantic model class suitable for schema generation and validation
+        of lightweight payloads (e.g., prompts, APIs).
         """
-        # Essential fields that are always included
+        from pydantic import Field as PydField, ConfigDict as PydConfig
+
         essential_fields = {"id", "resource_type", "created_at", "updated_at"}
         selected_fields = set(fields) | essential_fields
 
-        # Get field definitions from the original model
-        model_fields = cls.model_fields
-        config = cls.model_config
+        new_fields: dict[str, tuple[Any, Any]] = {}
+        original_fields = getattr(cls, "model_fields", {})
 
-        # Build new field dictionary with only selected fields
-        new_fields = {}
-        for field_name in selected_fields:
-            if field_name in model_fields:
-                new_fields[field_name] = model_fields[field_name]
+        for name in selected_fields:
+            if name not in original_fields:
+                continue
+            f = original_fields[name]
+            annotation = getattr(f, "annotation", Any) or Any
+            # Determine default: required (ellipsis), explicit default, or default_factory
+            default: Any
+            try:
+                if getattr(f, "default_factory", None) is not None:
+                    default = PydField(default_factory=f.default_factory, description=getattr(f, "description", None))
+                elif getattr(f, "is_required", False):
+                    # Auto-generate id for subsets; keep resource_type default if present
+                    if name == "id":
+                        default = PydField(default=None, description=getattr(f, "description", None))
+                    else:
+                        default = ...
+                else:
+                    default = getattr(f, "default", None)
+            except Exception:
+                default = getattr(f, "default", None)
+            new_fields[name] = (annotation, default)
 
-        # Create the subset model class
+        # Subset config: allow extras to support extensions while keeping other defaults sane
+        subset_config = PydConfig(extra="allow")
+
         subset_model = create_model(
             f"{cls.__name__}Subset",
+            __config__=subset_config,
             **new_fields,
-            __config__=config,
-            __base__=cls,
         )
 
         return subset_model  # type: ignore[return-value]

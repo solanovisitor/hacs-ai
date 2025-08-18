@@ -105,6 +105,12 @@ mr_list = extract(
 # Instantiate and persist Patient and MedicationRequests
 patient_res = pin_resource("Patient", {"full_name": "Eve Everywoman"})
 pat_dict = (patient_res.data or {}).get("resource", {})
+
+# Always visualize created records
+from hacs_utils.visualization import resource_to_markdown
+print("Created Patient:")
+print(resource_to_markdown(pat_dict, include_json=False))
+
 save_record(resource=pat_dict)
 
 pat_ref = make_reference(resource=pat_dict).data["reference"]
@@ -112,6 +118,11 @@ persisted_mrs = []
 for mri in mr_list:
   mr_res = pin_resource("MedicationRequest", mri.model_dump())
   mr_dict = (mr_res.data or {}).get("resource", {})
+  
+  # Always visualize created medication records
+  print(f"Created MedicationRequest:")
+  print(resource_to_markdown(mr_dict, include_json=False))
+  
   # Set subject reference to patient
   mr_with_subject = set_reference(mr_dict, field="subject", reference=pat_ref).data["resource"]
   save_record(resource=mr_with_subject)

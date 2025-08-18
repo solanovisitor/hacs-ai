@@ -74,7 +74,7 @@ async def tool_loadout_node(state: Dict[str, Any], config: Any = None) -> Dict[s
     # Optionally resolve tool metadata via registry
     tool_defs: List[Dict[str, Any]] = []
     try:
-        from hacs_registry.tool_registry import get_global_registry
+        from hacs_registry import get_global_tool_registry as get_global_registry
         reg = get_global_registry()
         for n in names:
             t = reg.get_tool(n)

@@ -18,15 +18,28 @@ from typing import Dict, List, Any, Optional, Union, Set
 from datetime import datetime
 
 from hacs_models import HACSResult, BaseResource, DomainResource, Reference
+from hacs_registry.tool_registry import register_tool, VersionStatus
+try:
+    from pydantic import BaseModel, Field
+except Exception:  # pragma: no cover
+    class BaseModel:  # type: ignore
+        pass
+    def Field(*args, **kwargs):  # type: ignore
+        return None
 from hacs_core import Actor
 from hacs_models import get_model_registry, ResourceBundle, BundleEntry, Document
 from hacs_models.utils import set_nested_field
-from hacs_utils.structured import extract
+# from hacs_utils.structured import extract  # Temporarily disabled
 # Tool domain: modeling - Resource instantiation, validation, composition, diffing
 
 logger = logging.getLogger(__name__)
 
 
+class PinResourceInput(BaseModel):
+    resource_type: str = Field(description="HACS resource type (e.g., Patient)")
+    resource_data: Dict[str, Any] = Field(description="Resource payload")
+
+@register_tool(name="pin_resource", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE)
 def pin_resource(resource_type: str, resource_data: Dict[str, Any]) -> HACSResult:
     """
     Instantiate a HACS resource from a resource type string and data dictionary.
@@ -66,6 +79,9 @@ def pin_resource(resource_type: str, resource_data: Dict[str, Any]) -> HACSResul
             error=str(e)
         )
 
+# Attach explicit args model for integrations
+pin_resource._tool_args = PinResourceInput  # type: ignore[attr-defined]
+
 
 def pin_resources(items: List[Dict[str, Any]]) -> HACSResult:
     """
@@ -88,6 +104,13 @@ def pin_resources(items: List[Dict[str, Any]]) -> HACSResult:
     return HACSResult(success=all(r["success"] for r in results), message=f"Instantiated {len(results)} resources", data={"results": results})
 
 
+class ComposeBundleInput(BaseModel):
+    entries: List[Dict[str, Any]]
+    bundle_type: str = Field(default="document")
+    title: Optional[str] = None
+    description: Optional[str] = None
+
+@register_tool(name="compose_bundle", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE)
 def compose_bundle(
     entries: List[Dict[str, Any]], 
     bundle_type: str = "document",
@@ -166,7 +189,13 @@ def compose_bundle(
             error=str(e)
         )
 
+compose_bundle._tool_args = ComposeBundleInput  # type: ignore[attr-defined]
 
+
+class ValidateResourceInput(BaseModel):
+    resource: Dict[str, Any]
+
+@register_tool(name="validate_resource", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE)
 def validate_resource(resource: Dict[str, Any]) -> HACSResult:
     """
     Validate a HACS resource for correctness and integrity.
@@ -236,6 +265,8 @@ def validate_resource(resource: Dict[str, Any]) -> HACSResult:
             data={"valid": False, "issues": [str(e)]}
         )
 
+validate_resource._tool_args = ValidateResourceInput  # type: ignore[attr-defined]
+
 
 def validate_resources(resources: List[Dict[str, Any]]) -> HACSResult:
     """Validate multiple resources at once."""
@@ -251,6 +282,11 @@ def validate_resources(resources: List[Dict[str, Any]]) -> HACSResult:
     return HACSResult(success=all(r.get("success") for r in results), message=f"Validated {len(results)} resources", data={"results": results})
 
 
+class DiffResourcesInput(BaseModel):
+    before: Dict[str, Any]
+    after: Dict[str, Any]
+
+@register_tool(name="diff_resources", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE)
 def diff_resources(before: Dict[str, Any], after: Dict[str, Any]) -> HACSResult:
     """
     Compare two resources and identify the differences between them.
@@ -310,6 +346,8 @@ def diff_resources(before: Dict[str, Any], after: Dict[str, Any]) -> HACSResult:
             error=str(e)
         )
 
+diff_resources._tool_args = DiffResourcesInput  # type: ignore[attr-defined]
+
 
 def diff_pairs(pairs: List[Dict[str, Any]]) -> HACSResult:
     """
@@ -324,6 +362,10 @@ def diff_pairs(pairs: List[Dict[str, Any]]) -> HACSResult:
     return HACSResult(success=True, message=f"Computed {len(diffs)} diffs", data={"results": diffs})
 
 
+class ValidateBundleInput(BaseModel):
+    bundle: Dict[str, Any]
+
+@register_tool(name="validate_bundle", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE)
 def validate_bundle(bundle: Dict[str, Any]) -> HACSResult:
     """
     Validate a ResourceBundle for integrity and consistency.
@@ -385,6 +427,8 @@ def validate_bundle(bundle: Dict[str, Any]) -> HACSResult:
             data={"valid": False, "issues": [str(e)]}
         )
 
+validate_bundle._tool_args = ValidateBundleInput  # type: ignore[attr-defined]
+
 
 def validate_bundles(bundles: List[Dict[str, Any]]) -> HACSResult:
     """Validate multiple bundles."""
@@ -409,6 +453,7 @@ __all__ = [
 # Granular Modeling Tools (introspection + pick)
 # --------------------------------------------
 
+@register_tool(name="list_models", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE)
 def list_models() -> HACSResult:
     """
     List all available HACS model types.
@@ -427,6 +472,10 @@ def list_models() -> HACSResult:
         return HACSResult(success=False, message="Failed to list models", error=str(e))
 
 
+class DescribeModelInput(BaseModel):
+    resource_type: str
+
+@register_tool(name="describe_model", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE)
 def describe_model(resource_type: str) -> HACSResult:
     """
     Return a lightweight descriptive schema for a model (title, docstring, fields).
@@ -454,6 +503,10 @@ def describe_model(resource_type: str) -> HACSResult:
         return HACSResult(success=False, message="Failed to describe model", error=str(e))
 
 
+class DescribeModelsInput(BaseModel):
+    resource_types: List[str]
+
+@register_tool(name="describe_models", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE)
 def describe_models(resource_types: List[str]) -> HACSResult:
     """Describe multiple models at once."""
     items: List[Dict[str, Any]] = []
@@ -463,6 +516,10 @@ def describe_models(resource_types: List[str]) -> HACSResult:
     return HACSResult(success=all(i.get("success") for i in items), message=f"Described {len(items)} models", data={"results": items})
 
 
+class ListModelFieldsInput(BaseModel):
+    resource_type: str
+
+@register_tool(name="list_model_fields", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE)
 def list_model_fields(resource_type: str) -> HACSResult:
     """
     List fields for a given model with basic type info and descriptions.
@@ -485,6 +542,10 @@ def list_model_fields(resource_type: str) -> HACSResult:
         return HACSResult(success=False, message="Failed to list fields", error=str(e))
 
 
+class ListFieldsInput(BaseModel):
+    resource_types: List[str]
+
+@register_tool(name="list_fields", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE)
 def list_fields(resource_types: List[str]) -> HACSResult:
     """List fields for multiple models."""
     results: List[Dict[str, Any]] = []
@@ -494,6 +555,11 @@ def list_fields(resource_types: List[str]) -> HACSResult:
     return HACSResult(success=True, message=f"Listed fields for {len(results)} models", data={"results": results})
 
 
+class PickResourceFieldsInput(BaseModel):
+    resource_type: str
+    fields: List[str]
+
+@register_tool(name="pick_resource_fields", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE)
 def pick_resource_fields(resource_type: str, fields: List[str]) -> HACSResult:
     """
     Create a subset schema for the specified resource fields (plus essentials).
@@ -528,6 +594,11 @@ def pick_resource_fields(resource_type: str, fields: List[str]) -> HACSResult:
         return HACSResult(success=False, message="Failed to create subset schema", error=str(e))
 
 
+class ProjectResourceFieldsInput(BaseModel):
+    resource: Dict[str, Any]
+    fields: List[str]
+
+@register_tool(name="project_resource_fields", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE)
 def project_resource_fields(resource: Dict[str, Any], fields: List[str]) -> HACSResult:
     """
     Project a resource dictionary to only selected fields (plus essentials).
@@ -552,6 +623,10 @@ def project_resource_fields(resource: Dict[str, Any], fields: List[str]) -> HACS
         return HACSResult(success=False, message="Failed to project resource", error=str(e))
 
 
+class ToReferenceInput(BaseModel):
+    resource: Dict[str, Any]
+
+@register_tool(name="to_reference", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE)
 def to_reference(resource: Dict[str, Any]) -> HACSResult:
     """
     Return a FHIR-style reference string "ResourceType/id" for a resource.
@@ -573,6 +648,12 @@ def to_reference(resource: Dict[str, Any]) -> HACSResult:
         return HACSResult(success=False, message="Failed to create reference", error=str(e))
 
 
+class AddExtensionInput(BaseModel):
+    resource: Dict[str, Any]
+    url: str
+    value: Any
+
+@register_tool(name="add_extension_to_resource", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE)
 def add_extension_to_resource(resource: Dict[str, Any], url: str, value: Any) -> HACSResult:
     """
     Add an extension to a DomainResource-compatible resource.
@@ -597,6 +678,10 @@ def add_extension_to_resource(resource: Dict[str, Any], url: str, value: Any) ->
         return HACSResult(success=False, message="Failed to add extension", error=str(e))
 
 
+class ListModelMethodsInput(BaseModel):
+    resource_type: str
+
+@register_tool(name="list_model_methods", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE)
 def list_model_methods(resource_type: str) -> HACSResult:
     """
     List safe, instance-level methods for a model that agents can call.
@@ -630,6 +715,12 @@ def list_model_methods(resource_type: str) -> HACSResult:
         return HACSResult(success=False, message="Failed to list methods", error=str(e))
 
 
+class InvokeModelMethodInput(BaseModel):
+    resource: Dict[str, Any]
+    method_name: str
+    arguments: Optional[Dict[str, Any]] = None
+
+@register_tool(name="invoke_model_method", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE)
 def invoke_model_method(resource: Dict[str, Any], method_name: str, arguments: Optional[Dict[str, Any]] = None) -> HACSResult:
     """
     Safely invoke a whitelisted instance method on a resource model.
@@ -692,6 +783,11 @@ def invoke_model_method(resource: Dict[str, Any], method_name: str, arguments: O
         return HACSResult(success=False, message="Failed to invoke method", error=str(e))
 
 
+class AddBundleEntriesInput(BaseModel):
+    bundle: Dict[str, Any]
+    entries: List[Dict[str, Any]]
+
+@register_tool(name="add_bundle_entries", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE)
 def add_bundle_entries(bundle: Dict[str, Any], entries: List[Dict[str, Any]]) -> HACSResult:
     """
     Add multiple entries to a ResourceBundle in a single operation.
@@ -719,6 +815,10 @@ def add_bundle_entries(bundle: Dict[str, Any], entries: List[Dict[str, Any]]) ->
         return HACSResult(success=False, message="Failed to add bundle entries", error=str(e))
 
 
+class ListBundleEntriesInput(BaseModel):
+    bundle: Dict[str, Any]
+
+@register_tool(name="list_bundle_entries", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE)
 def list_bundle_entries(bundle: Dict[str, Any]) -> HACSResult:
     """
     List entries of a ResourceBundle with minimal details.
@@ -1076,13 +1176,8 @@ def suggest_bundle_schema(use_case: str, candidate_resources: Optional[List[str]
             "required": ["resources"]
         }
 
-        llm_result = generate_structured_output(
-            prompt=prompt,
-            response_model=response_schema,
-            llm_provider="openai",
-            format_type="json",
-            fenced_output=True,
-        )
+        # LLM generation temporarily disabled - fallback to deterministic plan
+        llm_result = HACSResult(success=False, message="LLM not available")
 
         if llm_result.success and llm_result.data:
             plan_items = []

@@ -75,6 +75,11 @@ print("   Birth Date:", patient.birth_date)
 print("   Chief Complaint:", patient.agent_context["chief_complaint"])
 print(f"   Full record size: {len(str(patient.model_dump()))} characters")
 
+# Always visualize created records
+from hacs_utils.visualization import resource_to_markdown
+print("\nPatient record:")
+print(resource_to_markdown(patient, include_json=False))
+
 observations = [
     Observation(
         status=ObservationStatus.FINAL,
@@ -100,6 +105,9 @@ print("\n📊 Clinical Observations Created:")
 for i, obs in enumerate(observations, 1):
     print(f"   {i}. {obs.code.text}: {obs.value_quantity.value} {obs.value_quantity.unit}")
     print(f"      Observation ID: {obs.id}")
+    # Visualize each observation
+    print(f"   Observation {i} record:")
+    print(resource_to_markdown(obs, include_json=False))
 print(f"   Total observations: {len(observations)}")
 ```
 

@@ -9,7 +9,7 @@ def get_tool_catalog() -> List[Dict[str, Any]]:
     Returns list of {name, description, category, domain, tags}.
     """
     try:
-        from hacs_registry.tool_registry import get_global_registry
+        from hacs_registry import get_global_tool_registry as get_global_registry
     except Exception:
         return []
 

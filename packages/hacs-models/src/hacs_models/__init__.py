@@ -132,7 +132,8 @@ from .resource_bundle import ResourceBundle, BundleEntry, BundleType
 from .reference import Reference
 from .graph_definition import GraphDefinition, GraphDefinitionLink, GraphDefinitionLinkTarget
 from .event import Event, EventPerformer
-from .terminology import TerminologySystem, TerminologyConcept, ValueSet, ConceptMap, ConceptMapElement
+from .terminology import TerminologySystem, TerminologyConcept, ValueSet, ConceptMap
+from .tool_definition import ToolDefinition
 from .resource_bundle import WorkflowBindingType, WorkflowBinding, LinkRelation
 from .resource_bundle import ResourceBundle as _RB
 UseCase = _RB.UseCase
@@ -476,6 +477,9 @@ def get_model_registry() -> dict[str, type[BaseResource]]:
         >>> patient = PatientModel(full_name="John Doe")
     """
     return {
+        # Foundation classes
+        "BaseResource": BaseResource,
+        "DomainResource": DomainResource,
         # Security and messaging
         "Actor": Actor,
         "ActorPreference": ActorPreference,
@@ -529,6 +533,102 @@ def get_model_registry() -> dict[str, type[BaseResource]]:
 def _seed_default_model_docs() -> None:
     """Seed default HACS documentation metadata for core models (overrideable by registry)."""
     docs: dict[str, dict] = {
+        "BaseResource": {
+            "scope_usage": "BaseResource is the foundational Pydantic model for all HACS healthcare resources, providing automatic ID generation, timestamp management, and type-safe validation. Every HACS resource (Patient, Observation, Actor, etc.) inherits from BaseResource to gain essential infrastructure: unique identification with resource-type prefixes, audit trails with created_at/updated_at timestamps, version tracking, and protocol compliance for serialization and validation. Designed specifically for LLM agent communication with JSON Schema generation, subset model creation via pick(), and optimized serialization for AI workflows.",
+            "boundaries": "BaseResource is an abstract foundation class - extend it to create custom resource types, but use existing domain resources (Patient, Observation, etc.) for standard healthcare data. Contains only infrastructure (ID, timestamps, validation) - no clinical or business logic. Not for general-purpose data modeling outside healthcare contexts. All subclasses must provide a resource_type field for proper identification and routing.",
+            "relationships": [
+                "Extended by: All HACS resources either directly or through DomainResource",
+                "Implements: Identifiable, Timestamped, Versioned, Serializable, Validatable protocols",
+                "Used by: save_resource, read_resource, validate_resource, and all HACS persistence tools",
+                "Referenced via: Reference objects using 'ResourceType/id' format",
+                "Grouped in: ResourceBundle collections for batch operations"
+            ],
+            "references": [
+                "Reference.reference field uses 'ResourceType/id' format pointing to BaseResource instances",
+                "ResourceBundle.entry contains BaseResource instances",
+                "All HACS database tools operate on BaseResource subclasses"
+            ],
+            "tools": [
+                # BaseResource provides foundation - specific tools are in subclasses
+            ],
+            "examples": [
+                {"id": "custom-12345", "resource_type": "CustomResource", "created_at": "2024-01-15T10:00:00Z", "updated_at": "2024-01-15T10:00:00Z", "version": "1.0.0"},
+                {"resource_type": "HealthcareResource", "agent_context": {"llm_generated": True, "confidence": 0.95}, "meta_tag": ["ai-generated", "validated"]}
+            ],
+        },
+        "DomainResource": {
+            "scope_usage": "DomainResource extends BaseResource with FHIR R4-compliant fields for clinical and healthcare domain resources. Adds status tracking (active/inactive/draft), human-readable text narratives for clinical review, contained resource support, and extension mechanisms for additional healthcare data. All clinical HACS resources (Patient, Observation, Procedure, Condition, etc.) inherit from DomainResource to gain these healthcare-specific capabilities. Essential for LLM agents processing clinical data as it provides standardized status lifecycle, text summaries for context, and extension points for AI-generated metadata.",
+            "boundaries": "Use DomainResource for clinical and healthcare domain resources that need status tracking, text narratives, or contained resources. Use BaseResource directly for non-clinical infrastructure resources (Actor, MessageDefinition, workflow definitions). DomainResource provides the healthcare domain patterns but not specific clinical logic - that belongs in concrete implementations like Patient or Observation.",
+            "relationships": [
+                "Inherits from: BaseResource (gains ID, timestamps, validation, protocols)",
+                "Extended by: Patient, Observation, Procedure, Condition, DiagnosticReport, and all clinical resources",
+                "Implements: ClinicalResource protocol with get_patient_id() method",
+                "Contains: Other BaseResource instances via contained field",
+                "Extends: Healthcare vocabularies and systems via extension mechanism"
+            ],
+            "references": [
+                "Clinical resources inherit DomainResource patterns: status, text, contained, extension",
+                "Contained resources are embedded DomainResource instances for inline data",
+                "Extensions reference HL7 FHIR StructureDefinitions and custom healthcare vocabularies"
+            ],
+            "tools": [
+                # DomainResource provides clinical foundation - specific tools are in subclasses
+            ],
+            "examples": [
+                {"resource_type": "ClinicalProtocol", "status": "active", "text": "Diabetes management protocol with HbA1c monitoring", "extension": {"http://hl7.org/fhir/StructureDefinition/workflow-priority": {"valueCode": "high"}}},
+                {"resource_type": "CareGuideline", "status": "draft", "text": "AI-generated care recommendations based on patient history", "agent_context": {"llm_confidence": 0.92, "source_evidence": ["pubmed:12345", "guideline:ada-2024"]}}
+            ],
+        },
+        "Reference": {
+            "scope_usage": "Reference implements FHIR-compliant resource linking using the standard 'ResourceType/id' format for connecting HACS resources without embedding full objects. Critical for LLM agents to understand resource relationships and navigate healthcare data graphs. Supports both internal references (Patient/123) and external absolute URLs (http://external.org/fhir/Patient/456). Includes optional display text for human-readable context and type field for validation. Essential for maintaining referential integrity in distributed healthcare systems while enabling efficient data exchange.",
+            "boundaries": "Use Reference only for linking to actual HACS resources or well-defined external FHIR resources. Not for general URLs, user IDs, session tokens, or non-resource identifiers. References should point to resources that exist and are accessible within the system context. The reference format must follow FHIR patterns: 'ResourceType/id' for internal or absolute URLs for external.",
+            "relationships": [
+                "Points to: Any HACS BaseResource subclass (Patient, Observation, Practitioner, etc.)",
+                "Used in: All clinical resources for subject, performer, author, organization fields",
+                "Enables: Resource graph traversal and relationship queries without full object loading",
+                "Supports: Both internal system references and external FHIR system references",
+                "Validates: Reference format and type consistency during resource validation"
+            ],
+            "references": [
+                "Patient.subject, Observation.subject, Procedure.subject - clinical resource associations",
+                "Practitioner.performer, Observation.performer - healthcare provider associations",
+                "Organization.managingOrganization, Patient.managingOrganization - facility associations",
+                "External FHIR systems via absolute URL format"
+            ],
+            "tools": [
+                # Reference is a data structure - no specific tools beyond general resource operations
+            ],
+            "examples": [
+                {"reference": "Patient/patient-12345", "type": "Patient", "display": "Maria Rodriguez, DOB: 1985-03-15"},
+                {"reference": "Practitioner/dr-smith-789", "type": "Practitioner", "display": "Dr. Robert Smith, MD - Cardiology"},
+                {"reference": "http://external-ehr.org/fhir/Patient/ext-456", "type": "Patient", "display": "External Patient Record"}
+            ],
+        },
+        "ResourceBundle": {
+            "scope_usage": "ResourceBundle implements FHIR Bundle patterns for grouping related HACS resources into logical collections, enabling batch operations and maintaining referential integrity across multiple resources. Essential for LLM agents processing multiple related healthcare records (patient + observations + medications) as a cohesive unit. Supports different bundle types: 'collection' for search results, 'document' for clinical documents, 'transaction' for atomic updates. Each bundle contains BundleEntry objects that wrap individual resources with metadata for processing context.",
+            "boundaries": "Use ResourceBundle only for grouping actual HACS BaseResource instances, not for general data collections or arbitrary objects. Each bundle must have a clear healthcare purpose (care episode, search results, clinical document, transaction set). Bundle entries should contain resources that are logically related and benefit from being processed together. Not for non-healthcare data or general-purpose list containers.",
+            "relationships": [
+                "Contains: Multiple BaseResource instances through BundleEntry wrappers",
+                "Manages: Internal reference resolution within bundle scope for efficient processing",
+                "Supports: Cross-resource validation and referential integrity across bundle contents",
+                "Enables: Atomic batch operations and transactional updates via compose_bundle tool",
+                "Implements: FHIR Bundle.type patterns (collection, document, transaction, message, searchset)"
+            ],
+            "references": [
+                "BundleEntry.resource contains actual HACS resource instances",
+                "BundleEntry.link provides navigation between related bundle entries", 
+                "Internal bundle references are resolved within bundle scope for performance",
+                "External references point to resources outside the current bundle"
+            ],
+            "tools": [
+                "compose_bundle", "validate_bundle"
+            ],
+            "examples": [
+                {"type": "collection", "total": 2, "entry": [{"resource": {"resource_type": "Patient", "full_name": "John Doe"}}, {"resource": {"resource_type": "Observation", "code": {"text": "Blood Pressure"}}}]},
+                {"type": "document", "timestamp": "2024-01-15T10:00:00Z", "identifier": {"value": "clinical-summary-2024-001"}, "entry": [{"resource": {"resource_type": "Patient", "id": "patient-123"}}, {"resource": {"resource_type": "Observation", "subject": "Patient/patient-123"}}]},
+                {"type": "transaction", "entry": [{"request": {"method": "POST", "url": "Patient"}, "resource": {"resource_type": "Patient", "full_name": "New Patient"}}, {"request": {"method": "PUT", "url": "Observation/obs-456"}, "resource": {"resource_type": "Observation", "status": "final"}}]}
+            ],
+        },
         "Patient": {
             "scope_usage": "Demographics and administrative information for a person or animal receiving care. Supports care providers, general practitioners, care teams, emergency contacts, and family relationships. Includes identity management, communication preferences, language requirements, and life status (deceased, active). Optimized for AI agent context engineering with automatic name parsing and flexible input formats.",
             "boundaries": "Patient resources do not contain clinical findings (use Observation/Condition), care plans (use CarePlan), appointments (use Appointment), or billing information (use Account/Coverage). Do not use for practitioners (use Practitioner) or organizations (use Organization). Patient linkage allows connecting related patients (family members, merged records).",
@@ -638,7 +738,7 @@ def _seed_default_model_docs() -> None:
                 "Patient.subject", "Practitioner.requester", "Medication.medicationReference", "Encounter.encounter"
             ],
             "tools": [
-                "validate_prescription", "check_allergy_contraindications", "check_drug_interactions", "route_prescription"
+                "validate_prescription_tool", "route_prescription_tool", "check_contraindications_tool", "check_drug_interactions_tool"
             ],
             "methods": [
                 "update_timestamp()", "dosage instruction management", "status lifecycle management"
@@ -660,7 +760,7 @@ def _seed_default_model_docs() -> None:
                 "Patient.subject", "ServiceRequest.basedOn", "Observation.result", "Encounter.encounter"
             ],
             "tools": [
-                "pin_resource", "validate_resource", "describe_model", "list_model_fields", "save_record", "read_record", "update_record"
+                "summarize_report_tool", "link_report_results_tool", "attach_report_media_tool", "validate_report_completeness_tool"
             ],
             "methods": [
                 "update_timestamp()", "result grouping", "status lifecycle management", "media attachment handling"
@@ -682,7 +782,7 @@ def _seed_default_model_docs() -> None:
                 "Patient.subject", "Practitioner.requester", "Encounter.encounter", "Condition/Observation in reasonReference"
             ],
             "tools": [
-                "create_lab_request", "create_imaging_request", "create_referral_request", "validate_service_request", "route_service_request"
+                "validate_service_request_tool", "route_service_request_tool"
             ],
             "methods": [
                 "update_timestamp()", "status lifecycle management", "priority and timing management"
@@ -1005,7 +1105,9 @@ def _seed_default_model_docs() -> None:
             "boundaries": "Not a FHIR resource; bridges AI agent workflows with clinical artifacts.",
             "relationships": ["May reference: PlanDefinition, ActivityDefinition"],
             "references": [],
-            "tools": ["describe_model", "list_model_fields"],
+            "tools": [
+                # WorkflowDefinition is a structural resource - no specific operational tools
+            ],
             "examples": [{"name": "Document Processing Workflow"}],
         },
         "Reference": {
@@ -1013,7 +1115,9 @@ def _seed_default_model_docs() -> None:
             "boundaries": "Does not carry the target resource; use read tools to resolve.",
             "relationships": ["References: Any resource by type/id"],
             "references": [],
-            "tools": ["to_reference", "make_reference", "set_reference"],
+            "tools": [
+                # Reference is a data structure - no specific tools beyond general resource operations
+            ],
             "examples": [{"reference": "Patient/123", "display": "Jane Doe"}],
         },
         "GraphDefinition": {
@@ -1021,7 +1125,9 @@ def _seed_default_model_docs() -> None:
             "boundaries": "Describes structure; not data.",
             "relationships": ["Links: source → target by path/type"],
             "references": [],
-            "tools": ["follow_graph", "describe_model"],
+            "tools": [
+                # GraphDefinition is a structural resource - no specific operational tools
+            ],
             "examples": [{"name": "Patient Care Graph"}],
         },
         "Event": {
@@ -1035,7 +1141,7 @@ def _seed_default_model_docs() -> None:
                 "Patient.subject", "Encounter.encounter", "ServiceRequest in basedOn"
             ],
             "tools": [
-                "create_event", "update_event_status", "add_event_performer", "schedule_event", "summarize_event"
+                "create_event_tool", "update_event_status_tool", "add_event_performer_tool", "schedule_event_tool", "summarize_event_tool"
             ],
             "examples": [
                 {"status": "in-progress", "subject": "Patient/123", "code": {"text": "Data review"}, "occurrenceDateTime": "2025-01-01T10:00:00Z"}
