@@ -126,7 +126,7 @@ class ModelConfig(BaseModel):
     """LLM model configuration."""
 
     provider: Literal["openai", "anthropic", "auto"] = Field(default="auto")
-    model: str = Field(default="gpt-4o-mini")
+    model: str = Field(default="gpt-5")
     temperature: float = Field(default=0.3)
     max_tokens: Optional[int] = None
 

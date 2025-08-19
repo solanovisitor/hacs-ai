@@ -106,7 +106,7 @@ from hacs_utils.structured import extract
 from langchain_openai import ChatOpenAI
 
 PatientInfo = Patient.pick("full_name", "birth_date", "gender")
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+llm = ChatOpenAI(model="gpt-5", temperature=0)
 note = "Maria Rodriguez (1985-03-15), female."
 subset = extract(llm, prompt=f"Extract demographics.\n\n{note}", output_model=PatientInfo)
 print("extracted:", subset.model_dump())

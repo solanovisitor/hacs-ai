@@ -32,7 +32,7 @@ prompt = (
 
 ### 1) Grounded mentions (optional)
 # Run extraction with source grounding and chunk alignment to see mentions and spans
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+llm = ChatOpenAI(model="gpt-5", temperature=0)
 extractions = generate_chunked_extractions(
     client=llm,
     text=input_text,
