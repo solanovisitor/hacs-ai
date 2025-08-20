@@ -12,10 +12,18 @@ Design Goals:
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Protocol, TypeVar, runtime_checkable
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Protocol,
+    TypeVar,
+    runtime_checkable,
+)
 from dataclasses import dataclass
 from enum import Enum
-import warnings
 
 # Consolidate registration path into hacs-registry (single source of truth)
 try:
@@ -25,11 +33,12 @@ except Exception:  # pragma: no cover - fallback if registry not available
     _registry_register_tool = None  # type: ignore
 
 # Type variables
-F = TypeVar('F', bound=Callable[..., Any])
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 class ToolCategory(str, Enum):
     """Categories for organizing tools."""
+
     RESOURCE_MANAGEMENT = "resource_management"
     CLINICAL_WORKFLOWS = "clinical_workflows"
     MEMORY_OPERATIONS = "memory_operations"
@@ -45,6 +54,7 @@ class ToolCategory(str, Enum):
 @dataclass
 class ToolMetadata:
     """Metadata for tool registration."""
+
     name: str
     description: str
     category: ToolCategory
@@ -88,11 +98,7 @@ class ToolRegistry(Protocol):
     in their specific format while maintaining a common interface.
     """
 
-    def register_tool(
-        self,
-        func: Callable,
-        metadata: ToolMetadata
-    ) -> None:
+    def register_tool(self, func: Callable, metadata: ToolMetadata) -> None:
         """Register a tool with metadata.
 
         Args:
@@ -195,7 +201,7 @@ class FrameworkAdapter(ABC):
         if not callable(func):
             errors.append("Tool must be callable")
 
-        if not hasattr(func, '__name__'):
+        if not hasattr(func, "__name__"):
             errors.append("Tool must have a name")
 
         if not func.__doc__:
@@ -220,8 +226,10 @@ class NoOpAdapter(FrameworkAdapter):
 
     def create_tool_decorator(self) -> ToolDecorator:
         """Return a no-op decorator that just returns the function unchanged."""
+
         def noop_decorator(func: F) -> F:
             return func
+
         return noop_decorator
 
     def create_tool_registry(self) -> ToolRegistry:
@@ -254,7 +262,8 @@ class InMemoryToolRegistry:
             return list(self._tools.keys())
 
         return [
-            name for name, metadata in self._metadata.items()
+            name
+            for name, metadata in self._metadata.items()
             if metadata.category == category
         ]
 
@@ -324,7 +333,7 @@ def register_tool_with_metadata(func: Callable, metadata: ToolMetadata) -> Calla
     registered_func = func
     if _registry_register_tool is not None:
         try:
-            domain = (metadata.domains[0] if metadata.domains else "general")
+            domain = metadata.domains[0] if metadata.domains else "general"
             # Use tags to carry category and observability hints
             tags = list(metadata.tags or [])
             if metadata.category:
@@ -359,7 +368,7 @@ def hacs_tool(
     domains: List[str] = None,
     enable_tracing: bool = True,
     enable_metrics: bool = True,
-    **kwargs
+    **kwargs,
 ) -> Callable[[F], F]:
     """Decorator for Hacs Tools with automatic metadata and observability.
 
@@ -378,13 +387,14 @@ def hacs_tool(
     Returns:
         Decorator function
     """
+
     def decorator(func: F) -> F:
         metadata = ToolMetadata(
             name=name,
             description=description,
             category=category,
             domains=domains or [],
-            **kwargs
+            **kwargs,
         )
 
         # Add observability metadata

@@ -43,10 +43,7 @@ class MetricsCollector:
             self.logger.info("Metrics collector initialized")
 
     async def record_metric(
-        self,
-        metric_name: str,
-        value: Any,
-        tags: Optional[Dict[str, str]] = None
+        self, metric_name: str, value: Any, tags: Optional[Dict[str, str]] = None
     ) -> None:
         """Record a metric value."""
         try:
@@ -54,7 +51,7 @@ class MetricsCollector:
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "name": metric_name,
                 "value": value,
-                "tags": tags or {}
+                "tags": tags or {},
             }
 
             self._metrics[metric_name].append(metric_entry)
@@ -68,17 +65,16 @@ class MetricsCollector:
         """Increment a counter metric."""
         try:
             self._counters[counter_name] += amount
-            await self.record_metric(f"counter.{counter_name}", self._counters[counter_name])
+            await self.record_metric(
+                f"counter.{counter_name}", self._counters[counter_name]
+            )
 
         except Exception as e:
             self.logger.error(f"Failed to increment counter: {e}")
 
     def get_metrics(self) -> Dict[str, Any]:
         """Get all collected metrics."""
-        return {
-            "metrics": dict(self._metrics),
-            "counters": dict(self._counters)
-        }
+        return {"metrics": dict(self._metrics), "counters": dict(self._counters)}
 
     async def cleanup(self) -> None:
         """Clean up metrics collector."""

@@ -1,20 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict
 
-from hacs_models import (
-    AnnotationWorkflowResource,
-    PromptTemplateResource,
-    ExtractionSchemaResource,
-    MappingSpec,
-    ResourceBundle,
-    BundleEntry,
-)
 
 from .data import Document, AnnotatedDocument, FormatType
 from .chunking import ChunkIterator, make_batches_of_textchunk
 from .prompting import PromptTemplateStructured, QAPromptGenerator
-from .inference import BaseLanguageModel, OpenAILanguageModel
+from .inference import BaseLanguageModel
 from .resolver import AbstractResolver
 
 
@@ -67,7 +59,9 @@ class Annotator:
                 # Align to source chunk to produce CharInterval and AlignmentStatus
                 if hasattr(resolver, "align"):
                     try:
-                        extractions = resolver.align(extractions, ch.chunk_text, char_offset=ch.start_index)
+                        extractions = resolver.align(
+                            extractions, ch.chunk_text, char_offset=ch.start_index
+                        )
                     except Exception:
                         # Best-effort: keep unaligned if align fails
                         pass
@@ -75,6 +69,6 @@ class Annotator:
                 # Update running offset conservatively (chunk iterator provides indices)
             # No need to update char_offset here since align uses ch.start_index
 
-        return AnnotatedDocument(document_id=doc.document_id, extractions=all_extractions, text=text)
-
-
+        return AnnotatedDocument(
+            document_id=doc.document_id, extractions=all_extractions, text=text
+        )

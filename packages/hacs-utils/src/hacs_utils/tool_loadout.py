@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 
 
 def get_tool_catalog() -> List[Dict[str, Any]]:
@@ -17,18 +17,21 @@ def get_tool_catalog() -> List[Dict[str, Any]]:
     tools = reg.get_all_tools()
     catalog: List[Dict[str, Any]] = []
     for t in tools:
-        catalog.append({
-            "name": t.name,
-            "description": t.description,
-            "category": t.category,
-            "domain": t.domain,
-            "tags": list(getattr(t, "tags", []) or []),
-        })
+        catalog.append(
+            {
+                "name": t.name,
+                "description": t.description,
+                "category": t.category,
+                "domain": t.domain,
+                "tags": list(getattr(t, "tags", []) or []),
+            }
+        )
     return catalog
 
 
 def _compute_embedding_fallback(text: str, dim: int = 384) -> List[float]:
     import hashlib
+
     h = int(hashlib.md5(text.encode()).hexdigest(), 16)
     return [(h >> i) % 100 / 100.0 for i in range(dim)]
 
@@ -77,7 +80,10 @@ def embed_tool_catalog(
         elif hasattr(vector_store, "upsert"):
             vector_store.upsert(vectors=[(emb_id, embedding, meta)])
         elif hasattr(vector_store, "add"):
-            vector_store.add(collection_name=collection_name, points=[{"id": emb_id, "vector": embedding, "payload": meta}])
+            vector_store.add(
+                collection_name=collection_name,
+                points=[{"id": emb_id, "vector": embedding, "payload": meta}],
+            )
         elif hasattr(vector_store, "store_vector"):
             vector_store.store_vector(emb_id, embedding, meta)
         else:
@@ -111,6 +117,3 @@ def select_tools_semantic(
         if nm:
             tool_names.append(nm)
     return tool_names[:k]
-
-
-

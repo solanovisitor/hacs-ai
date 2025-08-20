@@ -1,5 +1,4 @@
-"""
-HACS Log Aggregation and Correlation System
+"""HACS Log Aggregation and Correlation System
 
 This module provideslog aggregation, correlation, and analysis
 capabilities for healthcare AI systems with HIPAA-compliant centralized logging.
@@ -19,24 +18,19 @@ Version: 1.0.0
 """
 
 import asyncio
-import json
-import time
-import re
-import hashlib
-from datetime import datetime, timezone, timedelta
-from typing import Any, Dict, List, Optional, Callable, Union, AsyncGenerator
-from dataclasses import dataclass, field
-from enum import Enum
-from collections import defaultdict, deque
 import logging
-from pathlib import Path
-
-from .observability import StructuredLogger, LogLevel
-from .healthcare_monitoring import HealthcareMonitoringManager
+import re
+from collections import defaultdict, deque
+from collections.abc import AsyncGenerator, Callable
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
+from enum import Enum
+from typing import Any
 
 
 class LogSeverity(str, Enum):
     """Log severity levels for analysis."""
+
     DEBUG = "debug"
     INFO = "info"
     WARN = "warn"
@@ -47,6 +41,7 @@ class LogSeverity(str, Enum):
 
 class CorrelationType(str, Enum):
     """Types of log correlation."""
+
     TRACE_ID = "trace_id"
     SESSION_ID = "session_id"
     USER_ID = "user_id"
@@ -59,23 +54,24 @@ class CorrelationType(str, Enum):
 @dataclass
 class LogEntry:
     """Structured log entry."""
+
     timestamp: datetime
     level: LogSeverity
     service: str
     message: str
     logger_name: str
-    trace_id: Optional[str] = None
-    span_id: Optional[str] = None
-    session_id: Optional[str] = None
-    user_id: Optional[str] = None
-    patient_id_hash: Optional[str] = None
-    organization: Optional[str] = None
-    workflow_type: Optional[str] = None
-    ip_address: Optional[str] = None
-    extra_fields: Dict[str, Any] = field(default_factory=dict)
-    tags: List[str] = field(default_factory=list)
+    trace_id: str | None = None
+    span_id: str | None = None
+    session_id: str | None = None
+    user_id: str | None = None
+    patient_id_hash: str | None = None
+    organization: str | None = None
+    workflow_type: str | None = None
+    ip_address: str | None = None
+    extra_fields: dict[str, Any] = field(default_factory=dict)
+    tags: list[str] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "timestamp": self.timestamp.isoformat(),
@@ -92,35 +88,37 @@ class LogEntry:
             "workflow_type": self.workflow_type,
             "ip_address": self.ip_address,
             "tags": self.tags,
-            **self.extra_fields
+            **self.extra_fields,
         }
 
 
 @dataclass
 class LogPattern:
     """Pattern for log analysis."""
+
     name: str
     pattern: str
     description: str
     severity: LogSeverity
-    action: Optional[str] = None
-    tags: List[str] = field(default_factory=list)
+    action: str | None = None
+    tags: list[str] = field(default_factory=list)
 
 
 @dataclass
 class LogCorrelation:
     """Correlated log entries."""
+
     correlation_id: str
     correlation_type: CorrelationType
-    entries: List[LogEntry]
+    entries: list[LogEntry]
     start_time: datetime
     end_time: datetime
     duration_ms: float
     entry_count: int
     error_count: int
-    services_involved: List[str]
+    services_involved: list[str]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "correlation_id": self.correlation_id,
@@ -131,7 +129,7 @@ class LogCorrelation:
             "entry_count": self.entry_count,
             "error_count": self.error_count,
             "services_involved": self.services_involved,
-            "entries": [entry.to_dict() for entry in self.entries]
+            "entries": [entry.to_dict() for entry in self.entries],
         }
 
 
@@ -139,10 +137,7 @@ class LogAggregator:
     """Centralized log aggregation system."""
 
     def __init__(
-        self,
-        buffer_size: int = 10000,
-        flush_interval_seconds: int = 30,
-        retention_days: int = 30
+        self, buffer_size: int = 10000, flush_interval_seconds: int = 30, retention_days: int = 30
     ):
         """Initialize log aggregator."""
         self.buffer_size = buffer_size
@@ -151,20 +146,20 @@ class LogAggregator:
 
         # Log storage
         self._log_buffer: deque = deque(maxlen=buffer_size)
-        self._log_index: Dict[str, List[LogEntry]] = defaultdict(list)
-        self._correlation_cache: Dict[str, LogCorrelation] = {}
+        self._log_index: dict[str, list[LogEntry]] = defaultdict(list)
+        self._correlation_cache: dict[str, LogCorrelation] = {}
 
         # Pattern matching
-        self._patterns: List[LogPattern] = []
-        self._pattern_matches: Dict[str, int] = defaultdict(int)
+        self._patterns: list[LogPattern] = []
+        self._pattern_matches: dict[str, int] = defaultdict(int)
 
         # Streaming subscribers
-        self._stream_subscribers: List[Callable[[LogEntry], None]] = []
+        self._stream_subscribers: list[Callable[[LogEntry], None]] = []
 
         # Background tasks
         self._running = False
-        self._flush_task: Optional[asyncio.Task] = None
-        self._cleanup_task: Optional[asyncio.Task] = None
+        self._flush_task: asyncio.Task | None = None
+        self._cleanup_task: asyncio.Task | None = None
 
         # Healthcare-specific patterns
         self._setup_healthcare_patterns()
@@ -180,7 +175,7 @@ class LogAggregator:
                 pattern=r"PHI.*(?:access|read|write|modify)",
                 description="PHI access detected",
                 severity=LogSeverity.AUDIT,
-                tags=["phi", "audit", "hipaa"]
+                tags=["phi", "audit", "hipaa"],
             ),
             LogPattern(
                 name="authentication_failure",
@@ -188,7 +183,7 @@ class LogAggregator:
                 description="Authentication failure detected",
                 severity=LogSeverity.WARN,
                 action="security_alert",
-                tags=["security", "auth", "failure"]
+                tags=["security", "auth", "failure"],
             ),
             LogPattern(
                 name="hipaa_violation",
@@ -196,7 +191,7 @@ class LogAggregator:
                 description="Potential HIPAA violation",
                 severity=LogSeverity.ERROR,
                 action="compliance_alert",
-                tags=["hipaa", "compliance", "violation"]
+                tags=["hipaa", "compliance", "violation"],
             ),
             LogPattern(
                 name="clinical_alert",
@@ -204,7 +199,7 @@ class LogAggregator:
                 description="Clinical alert detected",
                 severity=LogSeverity.ERROR,
                 action="clinical_alert",
-                tags=["clinical", "patient_safety", "alert"]
+                tags=["clinical", "patient_safety", "alert"],
             ),
             LogPattern(
                 name="system_error",
@@ -212,14 +207,14 @@ class LogAggregator:
                 description="System error detected",
                 severity=LogSeverity.ERROR,
                 action="system_alert",
-                tags=["system", "error", "reliability"]
+                tags=["system", "error", "reliability"],
             ),
             LogPattern(
                 name="performance_issue",
                 pattern=r"(?:slow|timeout|performance|latency).*(?:warning|issue|problem)",
                 description="Performance issue detected",
                 severity=LogSeverity.WARN,
-                tags=["performance", "latency", "monitoring"]
+                tags=["performance", "latency", "monitoring"],
             ),
             LogPattern(
                 name="security_threat",
@@ -227,8 +222,8 @@ class LogAggregator:
                 description="Security threat detected",
                 severity=LogSeverity.ERROR,
                 action="security_incident",
-                tags=["security", "threat", "incident"]
-            )
+                tags=["security", "threat", "incident"],
+            ),
         ]
 
         self._patterns.extend(patterns)
@@ -268,21 +263,16 @@ class LogAggregator:
         self.logger.info("Log aggregation stopped")
 
     def add_log_entry(
-        self,
-        level: LogSeverity,
-        service: str,
-        message: str,
-        logger_name: str = "unknown",
-        **kwargs
+        self, level: LogSeverity, service: str, message: str, logger_name: str = "unknown", **kwargs
     ):
         """Add a log entry to the aggregation system."""
         entry = LogEntry(
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             level=level,
             service=service,
             message=message,
             logger_name=logger_name,
-            **kwargs
+            **kwargs,
         )
 
         # Add to buffer
@@ -301,11 +291,13 @@ class LogAggregator:
             except Exception as e:
                 self.logger.error(f"Error notifying subscriber: {e}")
 
-    def add_structured_log(self, log_data: Dict[str, Any]):
+    def add_structured_log(self, log_data: dict[str, Any]):
         """Add structured log data."""
         try:
             entry = LogEntry(
-                timestamp=datetime.fromisoformat(log_data.get("timestamp", datetime.now(timezone.utc).isoformat())),
+                timestamp=datetime.fromisoformat(
+                    log_data.get("timestamp", datetime.now(UTC).isoformat())
+                ),
                 level=LogSeverity(log_data.get("level", "info")),
                 service=log_data.get("service", "unknown"),
                 message=log_data.get("message", ""),
@@ -319,12 +311,27 @@ class LogAggregator:
                 workflow_type=log_data.get("workflow_type"),
                 ip_address=log_data.get("ip_address"),
                 tags=log_data.get("tags", []),
-                extra_fields={k: v for k, v in log_data.items() if k not in [
-                    "timestamp", "level", "service", "message", "logger",
-                    "trace_id", "span_id", "session_id", "user_id",
-                    "patient_id_hash", "organization", "workflow_type",
-                    "ip_address", "tags"
-                ]}
+                extra_fields={
+                    k: v
+                    for k, v in log_data.items()
+                    if k
+                    not in [
+                        "timestamp",
+                        "level",
+                        "service",
+                        "message",
+                        "logger",
+                        "trace_id",
+                        "span_id",
+                        "session_id",
+                        "user_id",
+                        "patient_id_hash",
+                        "organization",
+                        "workflow_type",
+                        "ip_address",
+                        "tags",
+                    ]
+                },
             )
 
             # Add to buffer
@@ -403,8 +410,8 @@ class LogAggregator:
         self,
         correlation_type: CorrelationType,
         correlation_value: str,
-        time_window_minutes: int = 60
-    ) -> Optional[LogCorrelation]:
+        time_window_minutes: int = 60,
+    ) -> LogCorrelation | None:
         """Correlate logs by correlation type and value."""
         correlation_key = f"{correlation_type.value}:{correlation_value}"
 
@@ -418,7 +425,7 @@ class LogAggregator:
             return None
 
         # Filter by time window
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         cutoff = now - timedelta(minutes=time_window_minutes)
         recent_entries = [e for e in entries if e.timestamp >= cutoff]
 
@@ -432,7 +439,9 @@ class LogAggregator:
         start_time = recent_entries[0].timestamp
         end_time = recent_entries[-1].timestamp
         duration_ms = (end_time - start_time).total_seconds() * 1000
-        error_count = sum(1 for e in recent_entries if e.level in [LogSeverity.ERROR, LogSeverity.FATAL])
+        error_count = sum(
+            1 for e in recent_entries if e.level in [LogSeverity.ERROR, LogSeverity.FATAL]
+        )
         services_involved = list(set(e.service for e in recent_entries))
 
         correlation = LogCorrelation(
@@ -444,7 +453,7 @@ class LogAggregator:
             duration_ms=duration_ms,
             entry_count=len(recent_entries),
             error_count=error_count,
-            services_involved=services_involved
+            services_involved=services_involved,
         )
 
         # Cache correlation
@@ -455,13 +464,13 @@ class LogAggregator:
     def search_logs(
         self,
         query: str = "",
-        level: Optional[LogSeverity] = None,
-        service: Optional[str] = None,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-        tags: Optional[List[str]] = None,
-        limit: int = 100
-    ) -> List[LogEntry]:
+        level: LogSeverity | None = None,
+        service: str | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+        tags: list[str] | None = None,
+        limit: int = 100,
+    ) -> list[LogEntry]:
         """Search logs with filters."""
         results = []
 
@@ -487,9 +496,9 @@ class LogAggregator:
 
         return results
 
-    def get_log_statistics(self, hours: int = 24) -> Dict[str, Any]:
+    def get_log_statistics(self, hours: int = 24) -> dict[str, Any]:
         """Get log statistics for specified time period."""
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        cutoff = datetime.now(UTC) - timedelta(hours=hours)
         recent_logs = [e for e in self._log_buffer if e.timestamp >= cutoff]
 
         # Count by level
@@ -511,7 +520,7 @@ class LogAggregator:
             "hourly_distribution": dict(hourly_counts),
             "pattern_matches": dict(self._pattern_matches),
             "error_rate": level_counts.get("error", 0) / max(len(recent_logs), 1) * 100,
-            "top_services": sorted(service_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+            "top_services": sorted(service_counts.items(), key=lambda x: x[1], reverse=True)[:10],
         }
 
     def subscribe_to_stream(self, callback: Callable[[LogEntry], None]):
@@ -524,9 +533,7 @@ class LogAggregator:
             self._stream_subscribers.remove(callback)
 
     async def stream_logs(
-        self,
-        level_filter: Optional[LogSeverity] = None,
-        service_filter: Optional[str] = None
+        self, level_filter: LogSeverity | None = None, service_filter: str | None = None
     ) -> AsyncGenerator[LogEntry, None]:
         """Stream logs asynchronously."""
         queue = asyncio.Queue()
@@ -545,7 +552,7 @@ class LogAggregator:
                 try:
                     entry = await asyncio.wait_for(queue.get(), timeout=1)
                     yield entry
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     continue
         finally:
             self.unsubscribe_from_stream(stream_callback)
@@ -584,7 +591,7 @@ class LogAggregator:
 
     async def _cleanup_old_data(self):
         """Clean up old logs and correlations."""
-        cutoff = datetime.now(timezone.utc) - timedelta(days=self.retention_days)
+        cutoff = datetime.now(UTC) - timedelta(days=self.retention_days)
 
         # Clean up log index
         for key, entries in list(self._log_index.items()):
@@ -601,7 +608,7 @@ class LogAggregator:
 
 
 # Global log aggregator
-_log_aggregator: Optional[LogAggregator] = None
+_log_aggregator: LogAggregator | None = None
 
 
 def get_log_aggregator() -> LogAggregator:
@@ -613,28 +620,26 @@ def get_log_aggregator() -> LogAggregator:
 
 
 def initialize_log_aggregation(
-    buffer_size: int = 10000,
-    flush_interval_seconds: int = 30,
-    retention_days: int = 30
+    buffer_size: int = 10000, flush_interval_seconds: int = 30, retention_days: int = 30
 ) -> LogAggregator:
     """Initialize log aggregation system."""
     global _log_aggregator
     _log_aggregator = LogAggregator(
         buffer_size=buffer_size,
         flush_interval_seconds=flush_interval_seconds,
-        retention_days=retention_days
+        retention_days=retention_days,
     )
     return _log_aggregator
 
 
 # Export public API
 __all__ = [
+    "CorrelationType",
     "LogAggregator",
-    "LogEntry",
     "LogCorrelation",
+    "LogEntry",
     "LogPattern",
     "LogSeverity",
-    "CorrelationType",
     "get_log_aggregator",
     "initialize_log_aggregation",
 ]

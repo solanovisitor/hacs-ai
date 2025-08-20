@@ -17,12 +17,15 @@ License: MIT
 """
 
 import logging
-from typing import Optional, Dict, Any, List, Type
+from typing import Optional, Dict
 from contextlib import asynccontextmanager
 
 # Import protocols from hacs-core
 from hacs_core.persistence_protocols import (
-    Repository, PersistenceProvider, UnitOfWork, EntityId
+    Repository,
+    PersistenceProvider,
+    UnitOfWork,
+    EntityId,
 )
 
 # Import registry types
@@ -68,7 +71,9 @@ class RegistryPersistenceService:
 
         return self._repositories[aggregate_type]
 
-    async def save_registered_resource(self, resource: RegisteredResource) -> RegisteredResource:
+    async def save_registered_resource(
+        self, resource: RegisteredResource
+    ) -> RegisteredResource:
         """Save a registered resource."""
         repository = self._get_repository("RegisteredResource")
         if repository is None:
@@ -81,7 +86,9 @@ class RegistryPersistenceService:
             self.logger.error(f"Failed to save registered resource: {e}")
             return resource
 
-    async def find_registered_resource(self, resource_id: EntityId) -> Optional[RegisteredResource]:
+    async def find_registered_resource(
+        self, resource_id: EntityId
+    ) -> Optional[RegisteredResource]:
         """Find a registered resource by ID."""
         repository = self._get_repository("RegisteredResource")
         if repository is None:
@@ -93,7 +100,9 @@ class RegistryPersistenceService:
             self.logger.error(f"Failed to find registered resource: {e}")
             return None
 
-    async def save_agent_configuration(self, agent: AgentConfiguration) -> AgentConfiguration:
+    async def save_agent_configuration(
+        self, agent: AgentConfiguration
+    ) -> AgentConfiguration:
         """Save an agent configuration."""
         repository = self._get_repository("AgentConfiguration")
         if repository is None:
@@ -175,9 +184,9 @@ class RegistryRepositoryWrapper:
         """Save an aggregate."""
         try:
             # Serialize aggregate
-            if hasattr(aggregate, 'model_dump'):
+            if hasattr(aggregate, "model_dump"):
                 data = aggregate.model_dump()
-            elif hasattr(aggregate, 'to_dict'):
+            elif hasattr(aggregate, "to_dict"):
                 data = aggregate.to_dict()
             else:
                 data = aggregate.__dict__.copy()
@@ -193,10 +202,14 @@ class RegistryRepositoryWrapper:
             self.logger.error(f"Failed to save {self.aggregate_type}: {e}")
             raise
 
-    async def find_by_id(self, aggregate_id: EntityId) -> Optional[RegistryAggregateRoot]:
+    async def find_by_id(
+        self, aggregate_id: EntityId
+    ) -> Optional[RegistryAggregateRoot]:
         """Find an aggregate by ID."""
         try:
-            data = await self.persistence_provider.load(self.aggregate_type, aggregate_id)
+            data = await self.persistence_provider.load(
+                self.aggregate_type, aggregate_id
+            )
             if data is None:
                 return None
 
@@ -220,7 +233,9 @@ class RegistryRepositoryWrapper:
     async def exists(self, aggregate_id: EntityId) -> bool:
         """Check if aggregate exists."""
         try:
-            return await self.persistence_provider.exists(self.aggregate_type, aggregate_id)
+            return await self.persistence_provider.exists(
+                self.aggregate_type, aggregate_id
+            )
         except Exception as e:
             self.logger.error(f"Failed to check existence: {e}")
             return False
@@ -228,7 +243,9 @@ class RegistryRepositoryWrapper:
     async def delete(self, aggregate_id: EntityId) -> bool:
         """Delete an aggregate."""
         try:
-            return await self.persistence_provider.delete(self.aggregate_type, aggregate_id)
+            return await self.persistence_provider.delete(
+                self.aggregate_type, aggregate_id
+            )
         except Exception as e:
             self.logger.error(f"Failed to delete {self.aggregate_type}: {e}")
             return False
@@ -269,7 +286,9 @@ class RegistryPersistenceIntegration:
         if self._resource_registry is None:
             self._resource_registry = HACSResourceRegistry()
             if self.persistence_service:
-                self._resource_registry.set_persistence_service(self.persistence_service)
+                self._resource_registry.set_persistence_service(
+                    self.persistence_service
+                )
         return self._resource_registry
 
     def get_agent_registry(self) -> HACSAgentRegistry:

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, Optional
+from typing import Any, Dict, Optional
 
 try:
     from langgraph.constants import END
     from langgraph.graph import StateGraph
+
     _has_langgraph = True
 except Exception:
     END = "END"
@@ -12,7 +13,6 @@ except Exception:
     _has_langgraph = False
 
 from hacs_utils.preferences import merge_preferences, inject_preferences
-from hacs_models import MessageDefinition
 
 
 async def preference_injection_node(state: Dict[str, Any], config: Any = None) -> Dict[str, Any]:
@@ -55,7 +55,9 @@ async def preference_injection_node(state: Dict[str, Any], config: Any = None) -
         agent_id=cfg.get("agent_id") or state.get("agent_id"),
         tool_name=cfg.get("tool_name") or state.get("tool_name"),
         session_id=cfg.get("session_id") or state.get("session_id"),
-        in_memory_preferences=cfg.get("in_memory_preferences") or state.get("in_memory_preferences") or [],
+        in_memory_preferences=cfg.get("in_memory_preferences")
+        or state.get("in_memory_preferences")
+        or [],
         db_adapter=cfg.get("db_adapter") or state.get("db_adapter"),
     )
     message = state.get("message")
@@ -67,5 +69,3 @@ async def preference_injection_node(state: Dict[str, Any], config: Any = None) -
 
 
 __all__ = ["preference_injection_node"]
-
-

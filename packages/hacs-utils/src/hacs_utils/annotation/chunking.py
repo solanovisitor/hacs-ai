@@ -136,9 +136,7 @@ def split_recursive(
         it = ChunkIterator(document, max_char_buffer=chunk_size, chunk_overlap=chunk_overlap)
         return list(iter(it))
 
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=chunk_size, chunk_overlap=chunk_overlap
-    )
+    splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     texts = splitter.split_text(document.text)
     chunks: list[TextChunk] = []
     cursor = 0
@@ -194,7 +192,9 @@ def split_html(
         it = ChunkIterator(document, max_char_buffer=chunk_size, chunk_overlap=chunk_overlap)
         return list(iter(it))
 
-    splitter = HTMLHeaderTextSplitter(headers_to_split_on=[("h1", "h1"), ("h2", "h2"), ("h3", "h3")])
+    splitter = HTMLHeaderTextSplitter(
+        headers_to_split_on=[("h1", "h1"), ("h2", "h2"), ("h3", "h3")]
+    )
     try:
         html_docs = splitter.split_text(document.text)
         text_segments = [getattr(d, "page_content", str(d)) for d in html_docs]
@@ -210,13 +210,16 @@ def split_html(
 
 
 def split_code(
-    document: Document, *, chunk_size: int = 1000, chunk_overlap: int = 0, language: str | None = None
+    document: Document,
+    *,
+    chunk_size: int = 1000,
+    chunk_overlap: int = 0,
+    language: str | None = None,
 ) -> list[TextChunk]:
     try:
         # Try language-specific splitters when available; fallback to recursive
         from langchain_text_splitters import (
             PythonCodeTextSplitter,
-            RecursiveCharacterTextSplitter,
         )
     except Exception:
         it = ChunkIterator(document, max_char_buffer=chunk_size, chunk_overlap=chunk_overlap)
@@ -267,5 +270,3 @@ def select_chunks(document: Document, policy: ChunkingPolicy) -> list[TextChunk]
         return split_code(document, chunk_size=size, chunk_overlap=overlap)
     # semantic: placeholder -> recursive
     return split_recursive(document, chunk_size=size, chunk_overlap=overlap)
-
-

@@ -22,7 +22,11 @@ def test_structured_extraction_via_langchain_minimal():
     # Tiny subset schema
     PatientInfo = Patient.pick("full_name", "birth_date")
 
-    llm = ChatOpenAI(model=os.getenv("HACS_LLM_MODEL", "gpt-5-mini-2025-08-07"), timeout=20, max_retries=1)
+    llm = ChatOpenAI(
+        model=os.getenv("HACS_LLM_MODEL", "gpt-5-mini-2025-08-07"),
+        timeout=20,
+        max_retries=1,
+    )
     note = "John Smith (1980-05-15), male."
 
     instance = extract(

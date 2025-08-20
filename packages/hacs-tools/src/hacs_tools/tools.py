@@ -27,8 +27,9 @@ try:
         get_global_tool_registry,
         discover_hacs_tools,
         get_langchain_tools,
-        get_mcp_tools
+        get_mcp_tools,
     )
+
     _has_registry = True
 except ImportError:
     _has_registry = False
@@ -57,7 +58,7 @@ def get_tool(name: str):
     if _has_registry:
         registry = get_global_tool_registry()
         func = registry.get_tool_function(name)
-        if not func and not name.endswith('_tool'):
+        if not func and not name.endswith("_tool"):
             # Try common *_tool suffix aliasing
             func = registry.get_tool_function(f"{name}_tool")
         return func
@@ -83,9 +84,7 @@ def get_available_domains():
         return list(registry.get_available_domains())
     else:
         # Fallback: new 4-domain structure
-        return [
-            "modeling", "extraction", "database", "agents"
-        ]
+        return ["modeling", "extraction", "database", "agents"]
 
 
 def get_tools_by_tag(tag: str):
@@ -108,7 +107,7 @@ def _get_tools_direct_import():
     tools = []
     domain_module_names = [
         "modeling",
-        "extraction", 
+        "extraction",
         "database",
         "agents",
     ]
@@ -118,13 +117,13 @@ def _get_tools_direct_import():
         except Exception:
             continue
         for attr_name in dir(module):
-            if attr_name.startswith('_'):
+            if attr_name.startswith("_"):
                 continue
             try:
                 attr = getattr(module, attr_name)
             except Exception:
                 continue
-            if callable(attr) and hasattr(attr, '__doc__'):
+            if callable(attr) and hasattr(attr, "__doc__"):
                 tools.append(attr)
     return tools
 
@@ -133,9 +132,7 @@ def _get_tool_direct_import(name: str):
     """Fallback: Get specific tool by direct import."""
     try:
         # Try importing from each domain module
-        domain_modules = [
-            "modeling", "extraction", "database", "agents"
-        ]
+        domain_modules = ["modeling", "extraction", "database", "agents"]
 
         for domain in domain_modules:
             try:
@@ -182,7 +179,7 @@ def __dir__():
         "get_tool",
         "get_tools_by_domain",
         "get_available_domains",
-        "ALL_HACS_TOOLS"
+        "ALL_HACS_TOOLS",
     ]
 
     if _has_registry:
@@ -203,13 +200,13 @@ __all__ = [
     "get_tool",
     "get_tools_by_domain",
     "get_available_domains",
-
     # Legacy export
     "ALL_HACS_TOOLS",
 ]
 
 
 # === Convenience helpers for framework-bound usage ===
+
 
 def get_tool_handle(name: str, framework: str = "langchain"):
     """
@@ -222,6 +219,7 @@ def get_tool_handle(name: str, framework: str = "langchain"):
         try:
             # Lazy import to avoid circular deps at module load
             from hacs_utils.integrations.common.tool_loader import get_all_hacs_tools_sync  # type: ignore
+
             tools = get_all_hacs_tools_sync(framework="langchain")
             for t in tools:
                 if getattr(t, "name", None) == name:
@@ -258,6 +256,7 @@ def load_tool(name: str, framework: str = "langchain"):
     if framework == "langchain":
         try:
             from hacs_utils.integrations.common.tool_loader import get_all_hacs_tools_sync  # type: ignore
+
             tools = get_all_hacs_tools_sync(framework="langchain")
             for t in tools:
                 if getattr(t, "name", None) == name:
@@ -278,11 +277,13 @@ def load_domain_tools(selector: str, framework: str = "langchain"):
     domain = selector.split(":", 1)[1] if selector.startswith("domain:") else selector
     try:
         from hacs_registry import get_global_tool_registry  # type: ignore
+
         reg = get_global_tool_registry()
         defs = reg.search_tools(domain=domain)
         names = {d.name for d in defs}
         if framework == "langchain":
             from hacs_utils.integrations.common.tool_loader import get_all_hacs_tools_sync  # type: ignore
+
             all_tools = get_all_hacs_tools_sync(framework="langchain")
             return [t for t in all_tools if getattr(t, "name", None) in names]
         else:

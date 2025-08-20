@@ -14,11 +14,12 @@ from hacs_models import Actor, Evidence, MemoryBlock
 try:
     from hacs_models import Observation, Patient
 except ImportError:
-        # Create placeholder classes if neither is available
-        class _PlaceholderModel:
-            pass
-        Observation = _PlaceholderModel
-        Patient = _PlaceholderModel
+    # Create placeholder classes if neither is available
+    class _PlaceholderModel:
+        pass
+
+    Observation = _PlaceholderModel
+    Patient = _PlaceholderModel
 from pydantic import BaseModel, Field
 
 
@@ -58,17 +59,11 @@ class CrewAITask(BaseModel):
     agent_role: CrewAIAgentRole = Field(description="Assigned agent role")
     context: dict[str, Any] = Field(default_factory=dict, description="Task context")
     tools: list[str] = Field(default_factory=list, description="Available tools")
-    resources: dict[str, Any] = Field(
-        default_factory=dict, description="HACS resources"
-    )
-    dependencies: list[str] = Field(
-        default_factory=list, description="Task dependencies"
-    )
+    resources: dict[str, Any] = Field(default_factory=dict, description="HACS resources")
+    dependencies: list[str] = Field(default_factory=list, description="Task dependencies")
     priority: int = Field(default=5, ge=1, le=10, description="Task priority")
     timeout_minutes: int = Field(default=30, description="Task timeout in minutes")
-    actor_context: dict[str, Any] = Field(
-        default_factory=dict, description="Actor context"
-    )
+    actor_context: dict[str, Any] = Field(default_factory=dict, description="Actor context")
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -79,19 +74,13 @@ class CrewAIAgentBinding(BaseModel):
     role: CrewAIAgentRole = Field(description="Agent role")
     goal: str = Field(description="Agent goal")
     backstory: str = Field(description="Agent backstory")
-    capabilities: list[str] = Field(
-        default_factory=list, description="Agent capabilities"
-    )
+    capabilities: list[str] = Field(default_factory=list, description="Agent capabilities")
     tools: list[str] = Field(default_factory=list, description="Available tools")
-    hacs_permissions: list[str] = Field(
-        default_factory=list, description="HACS permissions"
-    )
+    hacs_permissions: list[str] = Field(default_factory=list, description="HACS permissions")
     memory_access: bool = Field(default=True, description="Memory access enabled")
     evidence_access: bool = Field(default=True, description="Evidence access enabled")
     actor_binding: str | None = Field(default=None, description="Bound HACS Actor ID")
-    specializations: list[str] = Field(
-        default_factory=list, description="Clinical specializations"
-    )
+    specializations: list[str] = Field(default_factory=list, description="Clinical specializations")
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -256,9 +245,7 @@ class CrewAIAdapter:
             actor_context = {
                 "actor_id": actor.id,
                 "actor_name": actor.name,
-                "actor_role": actor.role.value
-                if hasattr(actor.role, "value")
-                else str(actor.role),
+                "actor_role": actor.role.value if hasattr(actor.role, "value") else str(actor.role),
                 "permissions": actor.permissions,
             }
 
@@ -396,9 +383,7 @@ class CrewAIAdapter:
             else 0
         )
         avg_quality = (
-            sum(e.quality_score for e in evidence_list) / len(evidence_list)
-            if evidence_list
-            else 0
+            sum(e.quality_score for e in evidence_list) / len(evidence_list) if evidence_list else 0
         )
 
         context = {

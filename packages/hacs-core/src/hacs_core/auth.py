@@ -17,9 +17,13 @@ class AuthConfig(BaseModel):
 
     jwt_secret: str = Field(..., description="JWT secret key")
     jwt_algorithm: str = Field(default="HS256", description="JWT algorithm")
-    token_expire_minutes: int = Field(default=30, description="Token expiration in minutes")
+    token_expire_minutes: int = Field(
+        default=30, description="Token expiration in minutes"
+    )
     oauth2_client_id: Optional[str] = Field(None, description="OAuth2 client ID")
-    oauth2_client_secret: Optional[str] = Field(None, description="OAuth2 client secret")
+    oauth2_client_secret: Optional[str] = Field(
+        None, description="OAuth2 client secret"
+    )
     oauth2_redirect_uri: Optional[str] = Field(None, description="OAuth2 redirect URI")
 
 
@@ -35,6 +39,7 @@ class TokenData(BaseModel):
 
 class AuthError(Exception):
     """Authentication error."""
+
     pass
 
 
@@ -45,7 +50,9 @@ class AuthManager:
         """Initialize auth manager."""
         if config is None:
             config = AuthConfig(
-                jwt_secret=os.getenv("HACS_JWT_SECRET", "dev-secret-change-in-production"),
+                jwt_secret=os.getenv(
+                    "HACS_JWT_SECRET", "dev-secret-change-in-production"
+                ),
                 jwt_algorithm=os.getenv("HACS_JWT_ALGORITHM", "HS256"),
                 token_expire_minutes=int(os.getenv("HACS_TOKEN_EXPIRE_MINUTES", "30")),
                 oauth2_client_id=os.getenv("HACS_OAUTH2_CLIENT_ID"),
@@ -54,7 +61,9 @@ class AuthManager:
             )
         self.config = config
 
-    def create_access_token(self, user_id: str, role: str, permissions: list[str]) -> str:
+    def create_access_token(
+        self, user_id: str, role: str, permissions: list[str]
+    ) -> str:
         """Create a JWT access token."""
         now = datetime.now(timezone.utc)
         expire = now + timedelta(minutes=self.config.token_expire_minutes)
@@ -67,7 +76,9 @@ class AuthManager:
             "exp": expire.timestamp(),
         }
 
-        return jwt.encode(payload, self.config.jwt_secret, algorithm=self.config.jwt_algorithm)
+        return jwt.encode(
+            payload, self.config.jwt_secret, algorithm=self.config.jwt_algorithm
+        )
 
     def verify_token(self, token: str) -> TokenData:
         """Verify and decode a JWT token."""
@@ -101,7 +112,9 @@ class AuthManager:
         """Check if token has required permission."""
         return required_permission in token_data.permissions
 
-    def require_permission(self, token_data: TokenData, required_permission: str) -> None:
+    def require_permission(
+        self, token_data: TokenData, required_permission: str
+    ) -> None:
         """Require specific permission or raise error."""
         if not self.has_permission(token_data, required_permission):
             raise AuthError(f"Permission denied: {required_permission} required")
@@ -109,6 +122,7 @@ class AuthManager:
 
 def require_auth(permission: Optional[str] = None):
     """Decorator to require authentication and optional permission."""
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             # Extract token from kwargs or context
@@ -137,7 +151,9 @@ def require_auth(permission: Optional[str] = None):
             kwargs["token_data"] = token_data
 
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 

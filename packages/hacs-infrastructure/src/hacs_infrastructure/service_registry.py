@@ -1,5 +1,4 @@
-"""
-Service Registry and Discovery for HACS Infrastructure
+"""Service Registry and Discovery for HACS Infrastructure
 
 This module providesservice registry and discovery capabilities
 with health monitoring, load balancing, and automatic failover.
@@ -7,15 +6,12 @@ with health monitoring, load balancing, and automatic failover.
 
 import asyncio
 import threading
-import time
-from datetime import datetime, timezone
+from collections.abc import Callable
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set
-from urllib.parse import urlparse
+from typing import Any
 
 from pydantic import BaseModel, Field
-
-from .protocols import HealthCheckable, ServiceProvider
 
 
 class ServiceStatus(str, Enum):
@@ -41,17 +37,21 @@ class ServiceInfo(BaseModel):
     protocol: str = Field("http", description="Service protocol")
 
     # Service metadata
-    tags: Set[str] = Field(default_factory=set, description="Service tags")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    tags: set[str] = Field(default_factory=set, description="Service tags")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
     # Health and status
     status: ServiceStatus = Field(ServiceStatus.UNKNOWN, description="Current service status")
-    last_health_check: Optional[datetime] = Field(None, description="Last health check timestamp")
-    health_check_url: Optional[str] = Field(None, description="Health check endpoint")
+    last_health_check: datetime | None = Field(None, description="Last health check timestamp")
+    health_check_url: str | None = Field(None, description="Health check endpoint")
 
     # Registration details
-    registered_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Registration timestamp")
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Last update timestamp")
+    registered_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC), description="Registration timestamp"
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC), description="Last update timestamp"
+    )
 
     # Load balancing
     weight: int = Field(100, description="Load balancing weight")
@@ -70,7 +70,7 @@ class ServiceInfo(BaseModel):
     def update_status(self, status: ServiceStatus) -> None:
         """Update service status."""
         self.status = status
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
 
 class HealthCheck(BaseModel):
@@ -83,15 +83,16 @@ class HealthCheck(BaseModel):
     success_threshold: int = Field(1, description="Consecutive successes before marking healthy")
 
     # Custom health check function
-    custom_check: Optional[Callable[[ServiceInfo], bool]] = Field(None, description="Custom health check function")
+    custom_check: Callable[[ServiceInfo], bool] | None = Field(
+        None, description="Custom health check function"
+    )
 
     class Config:
         arbitrary_types_allowed = True
 
 
 class ServiceRegistry:
-    """
-    Service registry with health monitoring and discovery capabilities.
+    """Service registry with health monitoring and discovery capabilities.
 
     Providesservice management including:
     - Service registration and deregistration
@@ -101,20 +102,19 @@ class ServiceRegistry:
     - Automatic cleanup of stale services
     """
 
-    def __init__(self, health_check_config: Optional[HealthCheck] = None):
-        """
-        Initialize service registry.
+    def __init__(self, health_check_config: HealthCheck | None = None):
+        """Initialize service registry.
 
         Args:
             health_check_config: Health check configuration
         """
-        self._services: Dict[str, ServiceInfo] = {}
-        self._services_by_name: Dict[str, List[str]] = {}
+        self._services: dict[str, ServiceInfo] = {}
+        self._services_by_name: dict[str, list[str]] = {}
         self._health_config = health_check_config or HealthCheck()
-        self._health_failures: Dict[str, int] = {}
-        self._health_successes: Dict[str, int] = {}
+        self._health_failures: dict[str, int] = {}
+        self._health_successes: dict[str, int] = {}
         self._lock = threading.RLock()
-        self._health_check_task: Optional[asyncio.Task] = None
+        self._health_check_task: asyncio.Task | None = None
         self._running = False
 
     def register_service(
@@ -124,13 +124,12 @@ class ServiceRegistry:
         port: int,
         version: str = "1.0.0",
         protocol: str = "http",
-        tags: Optional[Set[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        health_check_url: Optional[str] = None,
-        weight: int = 100
+        tags: set[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        health_check_url: str | None = None,
+        weight: int = 100,
     ) -> str:
-        """
-        Register a service.
+        """Register a service.
 
         Args:
             name: Service name
@@ -159,7 +158,7 @@ class ServiceRegistry:
                 tags=tags or set(),
                 metadata=metadata or {},
                 health_check_url=health_check_url,
-                weight=weight
+                weight=weight,
             )
 
             self._services[service_id] = service_info
@@ -177,8 +176,7 @@ class ServiceRegistry:
         return service_id
 
     def deregister_service(self, service_id: str) -> bool:
-        """
-        Deregister a service.
+        """Deregister a service.
 
         Args:
             service_id: Service identifier
@@ -198,8 +196,7 @@ class ServiceRegistry:
             # Remove from name index
             if service.name in self._services_by_name:
                 self._services_by_name[service.name] = [
-                    sid for sid in self._services_by_name[service.name]
-                    if sid != service_id
+                    sid for sid in self._services_by_name[service.name] if sid != service_id
                 ]
                 if not self._services_by_name[service.name]:
                     del self._services_by_name[service.name]
@@ -210,9 +207,8 @@ class ServiceRegistry:
 
         return True
 
-    def get_service(self, service_id: str) -> Optional[ServiceInfo]:
-        """
-        Get service by ID.
+    def get_service(self, service_id: str) -> ServiceInfo | None:
+        """Get service by ID.
 
         Args:
             service_id: Service identifier
@@ -224,13 +220,9 @@ class ServiceRegistry:
             return self._services.get(service_id)
 
     def get_services_by_name(
-        self,
-        name: str,
-        healthy_only: bool = True,
-        tags: Optional[Set[str]] = None
-    ) -> List[ServiceInfo]:
-        """
-        Get services by name with optional filtering.
+        self, name: str, healthy_only: bool = True, tags: set[str] | None = None
+    ) -> list[ServiceInfo]:
+        """Get services by name with optional filtering.
 
         Args:
             name: Service name
@@ -262,19 +254,18 @@ class ServiceRegistry:
 
             return services
 
-    def get_all_services(self) -> List[ServiceInfo]:
+    def get_all_services(self) -> list[ServiceInfo]:
         """Get all registered services."""
         with self._lock:
             return list(self._services.values())
 
-    def get_service_names(self) -> List[str]:
+    def get_service_names(self) -> list[str]:
         """Get all registered service names."""
         with self._lock:
             return list(self._services_by_name.keys())
 
     def update_service_status(self, service_id: str, status: ServiceStatus) -> bool:
-        """
-        Update service status.
+        """Update service status.
 
         Args:
             service_id: Service identifier
@@ -292,8 +283,7 @@ class ServiceRegistry:
             return True
 
     def update_service_connections(self, service_id: str, connections: int) -> bool:
-        """
-        Update service connection count.
+        """Update service connection count.
 
         Args:
             service_id: Service identifier
@@ -308,7 +298,7 @@ class ServiceRegistry:
                 return False
 
             service.connections = connections
-            service.updated_at = datetime.now(timezone.utc)
+            service.updated_at = datetime.now(UTC)
             return True
 
     async def start_health_monitoring(self) -> None:
@@ -350,10 +340,7 @@ class ServiceRegistry:
             services_to_check = list(self._services.values())
 
         # Check services concurrently
-        tasks = [
-            self._check_service_health(service)
-            for service in services_to_check
-        ]
+        tasks = [self._check_service_health(service) for service in services_to_check]
 
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
@@ -368,7 +355,7 @@ class ServiceRegistry:
                 is_healthy = self._health_config.custom_check(service)
             elif service.health_check_url:
                 is_healthy = await self._http_health_check(service)
-            elif hasattr(service, 'health_check'):
+            elif hasattr(service, "health_check"):
                 is_healthy = service.health_check()
             else:
                 # Default: assume healthy if service is reachable
@@ -398,7 +385,7 @@ class ServiceRegistry:
         try:
             reader, writer = await asyncio.wait_for(
                 asyncio.open_connection(service.host, service.port),
-                timeout=self._health_config.timeout
+                timeout=self._health_config.timeout,
             )
             writer.close()
             await writer.wait_closed()
@@ -413,7 +400,7 @@ class ServiceRegistry:
             if not service:
                 return
 
-            service.last_health_check = datetime.now(timezone.utc)
+            service.last_health_check = datetime.now(UTC)
 
             if is_healthy:
                 self._health_successes[service_id] = self._health_successes.get(service_id, 0) + 1
@@ -432,9 +419,8 @@ class ServiceRegistry:
                     if service.status != ServiceStatus.UNHEALTHY:
                         service.update_status(ServiceStatus.UNHEALTHY)
 
-    def get_health_summary(self) -> Dict[str, Any]:
-        """
-        Get health summary of all services.
+    def get_health_summary(self) -> dict[str, Any]:
+        """Get health summary of all services.
 
         Returns:
             Dictionary with health statistics
@@ -442,7 +428,9 @@ class ServiceRegistry:
         with self._lock:
             total = len(self._services)
             healthy = sum(1 for s in self._services.values() if s.status == ServiceStatus.HEALTHY)
-            unhealthy = sum(1 for s in self._services.values() if s.status == ServiceStatus.UNHEALTHY)
+            unhealthy = sum(
+                1 for s in self._services.values() if s.status == ServiceStatus.UNHEALTHY
+            )
             unknown = total - healthy - unhealthy
 
             return {
@@ -451,34 +439,28 @@ class ServiceRegistry:
                 "unhealthy_services": unhealthy,
                 "unknown_services": unknown,
                 "health_check_enabled": self._health_config.enabled,
-                "monitoring_active": self._running
+                "monitoring_active": self._running,
             }
 
 
 class ServiceDiscovery:
-    """
-    Service discovery client with load balancing and failover.
+    """Service discovery client with load balancing and failover.
     """
 
     def __init__(self, registry: ServiceRegistry):
-        """
-        Initialize service discovery.
+        """Initialize service discovery.
 
         Args:
             registry: Service registry instance
         """
         self._registry = registry
-        self._round_robin_counters: Dict[str, int] = {}
+        self._round_robin_counters: dict[str, int] = {}
         self._lock = threading.Lock()
 
     def discover_service(
-        self,
-        name: str,
-        tags: Optional[Set[str]] = None,
-        load_balance: str = "round_robin"
-    ) -> Optional[ServiceInfo]:
-        """
-        Discover a service instance.
+        self, name: str, tags: set[str] | None = None, load_balance: str = "round_robin"
+    ) -> ServiceInfo | None:
+        """Discover a service instance.
 
         Args:
             name: Service name
@@ -498,15 +480,14 @@ class ServiceDiscovery:
         # Apply load balancing strategy
         if load_balance == "round_robin":
             return self._round_robin_select(name, services)
-        elif load_balance == "weighted":
+        if load_balance == "weighted":
             return self._weighted_select(services)
-        elif load_balance == "least_connections":
+        if load_balance == "least_connections":
             return self._least_connections_select(services)
-        else:
-            # Default to first service
-            return services[0]
+        # Default to first service
+        return services[0]
 
-    def _round_robin_select(self, service_name: str, services: List[ServiceInfo]) -> ServiceInfo:
+    def _round_robin_select(self, service_name: str, services: list[ServiceInfo]) -> ServiceInfo:
         """Round-robin load balancing."""
         with self._lock:
             counter = self._round_robin_counters.get(service_name, 0)
@@ -514,7 +495,7 @@ class ServiceDiscovery:
             self._round_robin_counters[service_name] = counter + 1
             return selected
 
-    def _weighted_select(self, services: List[ServiceInfo]) -> ServiceInfo:
+    def _weighted_select(self, services: list[ServiceInfo]) -> ServiceInfo:
         """Weighted load balancing."""
         import random
 
@@ -532,18 +513,14 @@ class ServiceDiscovery:
 
         return services[-1]  # Fallback
 
-    def _least_connections_select(self, services: List[ServiceInfo]) -> ServiceInfo:
+    def _least_connections_select(self, services: list[ServiceInfo]) -> ServiceInfo:
         """Least connections load balancing."""
         return min(services, key=lambda s: s.connections)
 
     def get_service_url(
-        self,
-        name: str,
-        tags: Optional[Set[str]] = None,
-        load_balance: str = "round_robin"
-    ) -> Optional[str]:
-        """
-        Get service URL with load balancing.
+        self, name: str, tags: set[str] | None = None, load_balance: str = "round_robin"
+    ) -> str | None:
+        """Get service URL with load balancing.
 
         Args:
             name: Service name
@@ -557,13 +534,9 @@ class ServiceDiscovery:
         return service.url if service else None
 
     def get_all_service_urls(
-        self,
-        name: str,
-        tags: Optional[Set[str]] = None,
-        healthy_only: bool = True
-    ) -> List[str]:
-        """
-        Get all URLs for a service.
+        self, name: str, tags: set[str] | None = None, healthy_only: bool = True
+    ) -> list[str]:
+        """Get all URLs for a service.
 
         Args:
             name: Service name

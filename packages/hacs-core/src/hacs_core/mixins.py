@@ -15,7 +15,7 @@ Usage:
 
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, ClassVar, Type
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -92,7 +92,7 @@ class SerializableMixin(BaseModel):
         return self.model_dump()
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'SerializableMixin':
+    def from_dict(cls, data: Dict[str, Any]) -> "SerializableMixin":
         """Create object from dictionary representation."""
         return cls(**data)
 
@@ -139,9 +139,9 @@ class ClinicalResourceMixin(BaseModel):
     def get_patient_id(self) -> Optional[str]:
         """Get the patient ID associated with this resource."""
         # Default implementation - can be overridden by subclasses
-        if hasattr(self, 'patient_id'):
-            return getattr(self, 'patient_id')
-        elif hasattr(self, 'subject') and hasattr(self.subject, 'id'):
+        if hasattr(self, "patient_id"):
+            return getattr(self, "patient_id")
+        elif hasattr(self, "subject") and hasattr(self.subject, "id"):
             return self.subject.id
         return None
 
@@ -198,42 +198,40 @@ class ConfigurationProviderMixin(BaseModel):
 
 # Composite mixins for common combinations
 
+
 class CoreResourceMixin(
     IdentifiableMixin,
     TimestampedMixin,
     VersionedMixin,
     SerializableMixin,
-    ValidatableMixin
+    ValidatableMixin,
 ):
     """
     Composite mixin implementing all core resource protocols.
 
     Use this for resources that need full protocol compliance.
     """
+
     pass
 
 
-class ClinicalEntityMixin(
-    CoreResourceMixin,
-    ClinicalResourceMixin
-):
+class ClinicalEntityMixin(CoreResourceMixin, ClinicalResourceMixin):
     """
     Composite mixin for clinical entities.
 
     Implements Identifiable, Timestamped, Versioned, ClinicalResource protocols.
     """
+
     pass
 
 
-class ConfigurableActorMixin(
-    ActorCapabilityMixin,
-    ConfigurationProviderMixin
-):
+class ConfigurableActorMixin(ActorCapabilityMixin, ConfigurationProviderMixin):
     """
     Composite mixin for configurable actors.
 
     Implements ActorCapability and ConfigurationProvider protocols.
     """
+
     pass
 
 
@@ -248,7 +246,6 @@ __all__ = [
     "ClinicalResourceMixin",
     "ActorCapabilityMixin",
     "ConfigurationProviderMixin",
-
     # Composite mixins
     "CoreResourceMixin",
     "ClinicalEntityMixin",

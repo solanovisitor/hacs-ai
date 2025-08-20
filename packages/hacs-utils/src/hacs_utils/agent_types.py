@@ -13,15 +13,14 @@ Core principles:
 """
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Literal
-from datetime import datetime
-from pydantic import BaseModel, Field
 
-from hacs_models import BaseResource
+
 HACS_MODELS_AVAILABLE = True
+
 
 class HealthcareDomain(str, Enum):
     """Healthcare domain specializations."""
+
     GENERAL = "general"
     CARDIOLOGY = "cardiology"
     ONCOLOGY = "oncology"
@@ -40,8 +39,10 @@ class HealthcareDomain(str, Enum):
     RESEARCH = "research"
     EDUCATION = "education"
 
+
 class AgentRole(str, Enum):
     """Agent role types for specialized functionality."""
+
     CLINICAL_ASSISTANT = "clinical_assistant"
     DIAGNOSTIC_ASSISTANT = "diagnostic_assistant"
     TREATMENT_PLANNER = "treatment_planner"
@@ -55,8 +56,10 @@ class AgentRole(str, Enum):
     CLINICAL_DECISION_SUPPORT = "clinical_decision_support"
     PROTOCOL_ADVISOR = "protocol_advisor"
 
+
 class AgentInteractionStrategy(str, Enum):
     """Strategy types for different agent communication and interaction approaches."""
+
     CONVERSATIONAL = "conversational"
     WORKFLOW_BASED = "workflow_based"
     EVENT_DRIVEN = "event_driven"
@@ -64,8 +67,10 @@ class AgentInteractionStrategy(str, Enum):
     REAL_TIME = "real_time"
     HYBRID = "hybrid"
 
+
 class AgentMemoryStrategy(str, Enum):
     """Agent memory management strategies."""
+
     EPISODIC = "episodic"
     PROCEDURAL = "procedural"
     EXECUTIVE = "executive"
@@ -73,8 +78,10 @@ class AgentMemoryStrategy(str, Enum):
     SEMANTIC = "semantic"
     HYBRID = "hybrid"
 
+
 class AgentChainStrategy(str, Enum):
     """Agent chain execution strategies."""
+
     SEQUENTIAL = "sequential"
     PARALLEL = "parallel"
     CONDITIONAL = "conditional"
@@ -82,8 +89,10 @@ class AgentChainStrategy(str, Enum):
     HIERARCHICAL = "hierarchical"
     ADAPTIVE = "adaptive"
 
+
 class AgentRetrievalStrategy(str, Enum):
     """Agent document retrieval strategies."""
+
     SEMANTIC = "semantic"
     TEMPORAL = "temporal"
     PATIENT_SPECIFIC = "patient_specific"
@@ -92,8 +101,10 @@ class AgentRetrievalStrategy(str, Enum):
     CLINICAL_CONTEXT = "clinical_context"
     SIMILARITY_BASED = "similarity_based"
 
+
 class VectorStoreType(str, Enum):
     """Vector store implementation types."""
+
     CHROMA = "chroma"
     FAISS = "faiss"
     QDRANT = "qdrant"
@@ -102,8 +113,10 @@ class VectorStoreType(str, Enum):
     WEAVIATE = "weaviate"
     OPENSEARCH = "opensearch"
 
+
 class EmbeddingStrategy(str, Enum):
     """Embedding strategy types."""
+
     CLINICAL = "clinical"
     GENERAL = "general"
     MULTILINGUAL = "multilingual"
@@ -111,22 +124,28 @@ class EmbeddingStrategy(str, Enum):
     BIOMEDICAL = "biomedical"
     CUSTOM = "custom"
 
+
 class ConversionStrategy(str, Enum):
     """Strategy enumeration for different conversion approaches."""
-    STRICT = "strict"          # Exact type matching required
-    FLEXIBLE = "flexible"      # Allow type coercion
-    FUZZY = "fuzzy"           # Best-effort conversion
+
+    STRICT = "strict"  # Exact type matching required
+    FLEXIBLE = "flexible"  # Allow type coercion
+    FUZZY = "fuzzy"  # Best-effort conversion
     METADATA_RICH = "metadata_rich"  # Preserve all metadata
+
 
 class ValidationSeverity(str, Enum):
     """Severity levels for validation results."""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
     CRITICAL = "critical"
 
+
 class ValidationCategory(str, Enum):
     """Categories of validation checks."""
+
     TYPE_SAFETY = "type_safety"
     CONFIGURATION = "configuration"
     HEALTHCARE_COMPLIANCE = "healthcare_compliance"
@@ -135,20 +154,25 @@ class ValidationCategory(str, Enum):
     COMPATIBILITY = "compatibility"
     BUSINESS_RULES = "business_rules"
 
+
 # ============================================================================
 # SCRATCHPAD AND TODO TYPES - Common Agent Patterns
 # ============================================================================
 
+
 class TodoPriority(str, Enum):
     """Priority levels for agent todos and tasks."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
     URGENT = "urgent"
 
+
 class TodoStatus(str, Enum):
     """Status values for agent todos and tasks."""
+
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -156,13 +180,16 @@ class TodoStatus(str, Enum):
     BLOCKED = "blocked"
     ON_HOLD = "on_hold"
 
+
 class ClinicalUrgency(str, Enum):
     """Clinical urgency levels for healthcare tasks."""
+
     ROUTINE = "routine"
     URGENT = "urgent"
     EMERGENCY = "emergency"
     CRITICAL = "critical"
     STAT = "stat"  # Immediate priority
+
 
 from hacs_models import AgentTodo as ScratchpadTodo
 
@@ -176,27 +203,24 @@ from hacs_models import AgentTask as AgentTask
 
 __all__ = [
     # Healthcare domain types
-    'HealthcareDomain',
-    'AgentRole',
-
+    "HealthcareDomain",
+    "AgentRole",
     # Agent strategies
-    'AgentInteractionStrategy',
-    'AgentMemoryStrategy',
-    'AgentChainStrategy',
-    'AgentRetrievalStrategy',
-    'VectorStoreType',
-    'EmbeddingStrategy',
-    'ConversionStrategy',
-
+    "AgentInteractionStrategy",
+    "AgentMemoryStrategy",
+    "AgentChainStrategy",
+    "AgentRetrievalStrategy",
+    "VectorStoreType",
+    "EmbeddingStrategy",
+    "ConversionStrategy",
     # Validation types
-    'ValidationSeverity',
-    'ValidationCategory',
-
+    "ValidationSeverity",
+    "ValidationCategory",
     # Agent scratchpad and task types
-    'TodoPriority',
-    'TodoStatus',
-    'ClinicalUrgency',
-    'ScratchpadTodo',
-    'AgentScratchpadEntry',
-    'AgentTask',
+    "TodoPriority",
+    "TodoStatus",
+    "ClinicalUrgency",
+    "ScratchpadTodo",
+    "AgentScratchpadEntry",
+    "AgentTask",
 ]

@@ -10,8 +10,6 @@ from hacs_models import (
     DocumentStatus,
     DocumentType,
     ConfidentialityLevel,
-    DocumentAuthor,
-    DocumentAttester,
     DocumentSection,
     DocumentEncounter,
     create_discharge_summary,
@@ -30,7 +28,7 @@ class TestDocument:
             document_type=DocumentType.PROGRESS_NOTE,
             title="Test Progress Note",
             subject_id="patient-001",
-            subject_name="John Doe"
+            subject_name="John Doe",
         )
 
         assert doc.document_type == DocumentType.PROGRESS_NOTE
@@ -47,13 +45,13 @@ class TestDocument:
         doc1 = Document(
             document_type=DocumentType.PROGRESS_NOTE,
             title="Test 1",
-            subject_id="patient-001"
+            subject_id="patient-001",
         )
 
         doc2 = Document(
             document_type=DocumentType.PROGRESS_NOTE,
             title="Test 2",
-            subject_id="patient-001"
+            subject_id="patient-001",
         )
 
         assert doc1.document_identifier != doc2.document_identifier
@@ -65,14 +63,14 @@ class TestDocument:
         doc = Document(
             document_type=DocumentType.PROGRESS_NOTE,
             title="Test Document",
-            subject_id="patient-001"
+            subject_id="patient-001",
         )
 
         doc.add_section(
             title="Assessment",
             text="Patient is stable and improving.",
             code="assessment",
-            metadata={"priority": "high"}
+            metadata={"priority": "high"},
         )
 
         assert len(doc.sections) == 1
@@ -87,14 +85,14 @@ class TestDocument:
         doc = Document(
             document_type=DocumentType.PROGRESS_NOTE,
             title="Test Document",
-            subject_id="patient-001"
+            subject_id="patient-001",
         )
 
         doc.add_author(
             name="Dr. Jane Smith",
             role="attending-physician",
             organization="General Hospital",
-            specialty="Internal Medicine"
+            specialty="Internal Medicine",
         )
 
         assert len(doc.authors) == 1
@@ -109,7 +107,7 @@ class TestDocument:
         doc = Document(
             document_type=DocumentType.DISCHARGE_SUMMARY,
             title="Test Document",
-            subject_id="patient-001"
+            subject_id="patient-001",
         )
 
         doc.add_attester(
@@ -117,7 +115,7 @@ class TestDocument:
             party_name="Dr. John Doe",
             party_id="doc-123",
             organization="General Hospital",
-            signature="digital-signature-hash"
+            signature="digital-signature-hash",
         )
 
         assert len(doc.attesters) == 1
@@ -134,7 +132,7 @@ class TestDocument:
             document_type=DocumentType.PROGRESS_NOTE,
             title="Progress Note",
             subject_id="patient-001",
-            subject_name="John Doe"
+            subject_name="John Doe",
         )
 
         doc.add_author("Dr. Jane Smith")
@@ -156,7 +154,7 @@ class TestDocument:
         doc = Document(
             document_type=DocumentType.PROGRESS_NOTE,
             title="Test Document",
-            subject_id="patient-001"
+            subject_id="patient-001",
         )
 
         doc.add_section("Assessment", "Patient assessment")
@@ -177,7 +175,7 @@ class TestDocument:
         doc = Document(
             document_type=DocumentType.PROGRESS_NOTE,
             title="Test Document",
-            subject_id="patient-001"
+            subject_id="patient-001",
         )
 
         doc.add_section("Assessment 1", "First assessment", code="assessment")
@@ -197,7 +195,7 @@ class TestDocument:
         doc = Document(
             document_type=DocumentType.PROGRESS_NOTE,
             title="Test Document",
-            subject_id="patient-001"
+            subject_id="patient-001",
         )
 
         doc.add_section("Assessment", "This is a test assessment with ten words total.")
@@ -211,21 +209,21 @@ class TestDocument:
         doc1 = Document(
             document_type=DocumentType.PROGRESS_NOTE,
             title="Test Document",
-            subject_id="patient-001"
+            subject_id="patient-001",
         )
         doc1.add_section("Assessment", "Same content")
 
         doc2 = Document(
             document_type=DocumentType.PROGRESS_NOTE,
             title="Test Document",
-            subject_id="patient-001"
+            subject_id="patient-001",
         )
         doc2.add_section("Assessment", "Same content")
 
         doc3 = Document(
             document_type=DocumentType.PROGRESS_NOTE,
             title="Test Document",
-            subject_id="patient-001"
+            subject_id="patient-001",
         )
         doc3.add_section("Assessment", "Different content")
 
@@ -246,7 +244,7 @@ class TestLangChainIntegration:
             document_type=DocumentType.PROGRESS_NOTE,
             title="Progress Note",
             subject_id="patient-001",
-            subject_name="John Doe"
+            subject_name="John Doe",
         )
 
         doc.add_author("Dr. Jane Smith", role="physician")
@@ -283,8 +281,8 @@ class TestLangChainIntegration:
                 "subject_id": "patient-001",
                 "subject_name": "Jane Doe",
                 "primary_author": "Dr. Smith",
-                "document_type": "progress-note"
-            }
+                "document_type": "progress-note",
+            },
         }
 
         doc = Document.from_langchain_document(langchain_doc)
@@ -301,7 +299,7 @@ class TestLangChainIntegration:
         doc = Document(
             document_type=DocumentType.PROGRESS_NOTE,
             title="Progress Note",
-            subject_id="patient-001"
+            subject_id="patient-001",
         )
 
         doc.add_section("Assessment", "Patient assessment details")
@@ -336,7 +334,7 @@ class TestDocumentSection:
             title="Assessment",
             text="Patient assessment details",
             code="assessment",
-            metadata={"priority": "high"}
+            metadata={"priority": "high"},
         )
 
         assert section.title == "Assessment"
@@ -347,18 +345,15 @@ class TestDocumentSection:
     def test_nested_sections(self):
         """Test nested sections functionality."""
         parent_section = DocumentSection(
-            title="Physical Exam",
-            text="Overall physical examination findings"
+            title="Physical Exam", text="Overall physical examination findings"
         )
 
         subsection1 = DocumentSection(
-            title="Cardiovascular",
-            text="Heart rate regular, no murmurs"
+            title="Cardiovascular", text="Heart rate regular, no murmurs"
         )
 
         subsection2 = DocumentSection(
-            title="Respiratory",
-            text="Lungs clear bilaterally"
+            title="Respiratory", text="Lungs clear bilaterally"
         )
 
         parent_section.sections = [subsection1, subsection2]
@@ -373,13 +368,11 @@ class TestDocumentSection:
     def test_section_word_count(self):
         """Test section word count calculation."""
         section = DocumentSection(
-            title="Assessment",
-            text="This is a test assessment with exactly ten words."
+            title="Assessment", text="This is a test assessment with exactly ten words."
         )
 
         subsection = DocumentSection(
-            title="Subsection",
-            text="Additional five words here."
+            title="Subsection", text="Additional five words here."
         )
 
         section.sections = [subsection]
@@ -392,12 +385,14 @@ class TestDocumentValidation:
 
     def test_final_document_requires_sections(self):
         """Test that final documents must have sections."""
-        with pytest.raises(ValueError, match="Final documents must contain at least one section"):
+        with pytest.raises(
+            ValueError, match="Final documents must contain at least one section"
+        ):
             Document(
                 document_type=DocumentType.PROGRESS_NOTE,
                 title="Test Document",
                 subject_id="patient-001",
-                status=DocumentStatus.FINAL
+                status=DocumentStatus.FINAL,
             )
 
     def test_document_validation(self):
@@ -406,7 +401,7 @@ class TestDocumentValidation:
             document_type=DocumentType.DISCHARGE_SUMMARY,
             title="Discharge Summary",
             subject_id="patient-001",
-            status=DocumentStatus.FINAL
+            status=DocumentStatus.FINAL,
         )
 
         # Add required sections
@@ -437,7 +432,7 @@ class TestFactoryFunctions:
             patient_id="patient-001",
             patient_name="John Doe",
             primary_author="Dr. Smith",
-            encounter_id="enc-001"
+            encounter_id="enc-001",
         )
 
         assert doc.document_type == DocumentType.DISCHARGE_SUMMARY
@@ -455,7 +450,7 @@ class TestFactoryFunctions:
             patient_id="patient-001",
             patient_name="John Doe",
             author="Dr. Smith",
-            note_type="daily"
+            note_type="daily",
         )
 
         assert doc.document_type == DocumentType.PROGRESS_NOTE
@@ -473,7 +468,7 @@ class TestFactoryFunctions:
             patient_name="John Doe",
             consultant="Dr. Specialist",
             specialty="Cardiology",
-            referring_physician="Dr. Primary"
+            referring_physician="Dr. Primary",
         )
 
         assert doc.document_type == DocumentType.CONSULTATION_NOTE
@@ -492,7 +487,7 @@ class TestFactoryFunctions:
             patient_id="patient-001",
             patient_name="John Doe",
             author="Dr. Smith",
-            summary_type="comprehensive"
+            summary_type="comprehensive",
         )
 
         assert doc.document_type == DocumentType.CLINICAL_SUMMARY
@@ -512,7 +507,7 @@ class TestDocumentTypes:
         doc = Document(
             document_type=DocumentType.DISCHARGE_SUMMARY,
             title="Test",
-            subject_id="patient-001"
+            subject_id="patient-001",
         )
 
         assert doc.document_type == DocumentType.DISCHARGE_SUMMARY
@@ -524,7 +519,7 @@ class TestDocumentTypes:
             document_type=DocumentType.PROGRESS_NOTE,
             title="Test",
             subject_id="patient-001",
-            status=DocumentStatus.FINAL
+            status=DocumentStatus.FINAL,
         )
 
         assert doc.status == DocumentStatus.FINAL
@@ -536,7 +531,7 @@ class TestDocumentTypes:
             document_type=DocumentType.PROGRESS_NOTE,
             title="Test",
             subject_id="patient-001",
-            confidentiality=ConfidentialityLevel.RESTRICTED
+            confidentiality=ConfidentialityLevel.RESTRICTED,
         )
 
         assert doc.confidentiality == ConfidentialityLevel.RESTRICTED
@@ -553,7 +548,7 @@ class TestDocumentEncounter:
             type="inpatient",
             period_start=datetime.now(timezone.utc),
             location="General Hospital",
-            class_code="inpatient"
+            class_code="inpatient",
         )
 
         assert encounter.id == "enc-001"
@@ -564,16 +559,14 @@ class TestDocumentEncounter:
     def test_document_with_encounter(self):
         """Test document with encounter context."""
         encounter = DocumentEncounter(
-            id="enc-001",
-            type="emergency",
-            class_code="emergency"
+            id="enc-001", type="emergency", class_code="emergency"
         )
 
         doc = Document(
             document_type=DocumentType.PROGRESS_NOTE,
             title="Emergency Note",
             subject_id="patient-001",
-            encounter=encounter
+            encounter=encounter,
         )
 
         langchain_doc = doc.to_langchain_document()

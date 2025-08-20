@@ -8,7 +8,7 @@ fields when generating stacks.
 
 from typing import Any, Dict, List, Optional
 import inspect
-from hacs_registry import get_global_tool_registry
+
 
 def _get_models_info() -> List[Dict[str, Any]]:
     try:
@@ -34,16 +34,20 @@ def _get_models_info() -> List[Dict[str, Any]]:
                     description = inspect.getdoc(cls) or ""
             except Exception:
                 description = ""
-            models.append({
-                "name": name,
-                "fields": list(getattr(cls, "model_fields").keys()),
-                "schema": schema,
-                "description": description,
-            })
+            models.append(
+                {
+                    "name": name,
+                    "fields": list(getattr(cls, "model_fields").keys()),
+                    "schema": schema,
+                    "description": description,
+                }
+            )
     return models
+
 
 def mcp_list_models() -> Dict[str, Any]:
     return {"success": True, "models": _get_models_info()}
+
 
 def mcp_get_model_schema(resource_name: str) -> Dict[str, Any]:
     try:
@@ -61,6 +65,7 @@ def mcp_get_model_schema(resource_name: str) -> Dict[str, Any]:
     except Exception as e:
         return {"success": False, "error": str(e)}
 
+
 """
 HACS MCP Tools - Clean Wrapper for HACS Tools
 
@@ -71,7 +76,7 @@ Follows Single Responsibility Principle - only handles MCP tool execution.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from datetime import datetime
 
 from .messages import CallToolResult
@@ -118,6 +123,7 @@ class HACSToolsLoader:
         try:
             # Priority 1: Use centralized loader from hacs-utils
             from hacs_utils.integrations.common.tool_loader import get_all_hacs_tools_sync
+
             tools = get_all_hacs_tools_sync(framework="mcp")
             self._register_tools(tools)
             logger.info(f"✅ Loaded {len(tools)} tools via centralized loader")
@@ -125,6 +131,7 @@ class HACSToolsLoader:
             try:
                 # Priority 2: Direct hacs-tools import
                 from hacs_tools import get_all_tools
+
                 tools = get_all_tools()
                 self._register_tools(tools)
                 logger.info(f"✅ Loaded {len(tools)} tools via HACS Tools registry")
@@ -136,9 +143,9 @@ class HACSToolsLoader:
     def _register_tools(self, tools: List[Any]) -> None:
         """Register tools in the internal dictionary."""
         for tool in tools:
-            if hasattr(tool, '__name__'):
+            if hasattr(tool, "__name__"):
                 self._tools[tool.__name__] = tool
-            elif hasattr(tool, 'name'):
+            elif hasattr(tool, "name"):
                 self._tools[tool.name] = tool
 
 
@@ -180,8 +187,7 @@ def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> CallToolResult:
 
         if tool_func is None:
             return CallToolResult(
-                content=[{"type": "text", "text": f"Tool '{tool_name}' not found"}],
-                isError=True
+                content=[{"type": "text", "text": f"Tool '{tool_name}' not found"}], isError=True
             )
 
         # Execute the tool
@@ -194,7 +200,7 @@ def execute_tool(tool_name: str, arguments: Dict[str, Any]) -> CallToolResult:
         logger.error(f"Error executing tool {tool_name}: {e}")
         return CallToolResult(
             content=[{"type": "text", "text": f"Error executing {tool_name}: {str(e)}"}],
-            isError=True
+            isError=True,
         )
 
 
@@ -202,41 +208,27 @@ def _format_result(result: Any, tool_name: str) -> CallToolResult:
     """Format tool execution result for MCP."""
     try:
         # Handle different result types
-        if hasattr(result, 'success') and hasattr(result, 'data'):
+        if hasattr(result, "success") and hasattr(result, "data"):
             # HACS Result object
             content = {
                 "success": result.success,
                 "data": result.data,
-                "message": getattr(result, 'message', ''),
+                "message": getattr(result, "message", ""),
                 "tool": tool_name,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
             return CallToolResult(
-                content=[{"type": "text", "text": str(content)}],
-                isError=not result.success
+                content=[{"type": "text", "text": str(content)}], isError=not result.success
             )
         else:
             # Simple result
-            content = {
-                "result": result,
-                "tool": tool_name,
-                "timestamp": datetime.now().isoformat()
-            }
-            return CallToolResult(
-                content=[{"type": "text", "text": str(content)}],
-                isError=False
-            )
+            content = {"result": result, "tool": tool_name, "timestamp": datetime.now().isoformat()}
+            return CallToolResult(content=[{"type": "text", "text": str(content)}], isError=False)
     except Exception as e:
         logger.error(f"Error formatting result for {tool_name}: {e}")
         return CallToolResult(
-            content=[{"type": "text", "text": f"Error formatting result: {str(e)}"}],
-            isError=True
+            content=[{"type": "text", "text": f"Error formatting result: {str(e)}"}], isError=True
         )
 
 
-__all__ = [
-    'execute_tool',
-    'get_all_hacs_tools',
-    'HACSToolsLoader',
-    'get_tools_loader'
-]
+__all__ = ["execute_tool", "get_all_hacs_tools", "HACSToolsLoader", "get_tools_loader"]

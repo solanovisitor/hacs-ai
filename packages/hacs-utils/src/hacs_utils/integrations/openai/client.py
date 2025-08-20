@@ -60,6 +60,29 @@ class OpenAIClient:
             max_retries=max_retries,
         )
 
+    # ---- Adapters ----
+    def to_langchain(self):
+        """Return a LangChain ChatOpenAI instance configured like this client.
+
+        Skips if langchain_openai is not installed.
+        """
+        try:
+            from langchain_openai import ChatOpenAI  # type: ignore
+        except Exception as e:  # pragma: no cover - optional dep
+            raise ImportError(f"langchain-openai not available: {e}")
+
+        load_dotenv()
+        kv = dotenv_values()
+        api_key = kv.get("OPENAI_API_KEY")
+        # Map basic params
+        return ChatOpenAI(
+            model=self.model,
+            temperature=self.temperature,
+            max_retries=self.client.max_retries if hasattr(self.client, "max_retries") else 1,
+            timeout=self.client.timeout if hasattr(self.client, "timeout") else 30,
+            api_key=api_key,
+        )
+
         # Setup instructor if available
         self.instructor_client = None
         if instructor:
@@ -242,7 +265,11 @@ class OpenAIClient:
             return resp.choices[0].message.content or ""
         except Exception:
             # Best effort stringify
-            return json.dumps(resp.model_dump(mode="json")) if hasattr(resp, "model_dump") else str(resp)
+            return (
+                json.dumps(resp.model_dump(mode="json"))
+                if hasattr(resp, "model_dump")
+                else str(resp)
+            )
 
 
 """Deprecated: OpenAIStructuredGenerator removed. Use hacs_utils.structured instead."""

@@ -51,21 +51,24 @@ def store_embedding(
                 if embedding is None:
                     # Deterministic hash-based embedding
                     import hashlib
+
                     content_hash = hashlib.md5(content.encode()).hexdigest()
                     hash_value = int(content_hash, 16)
                     embedding = [(hash_value >> i) % 100 / 100.0 for i in range(384)]
                     embedding_method = "deterministic_hash"
 
                 embed_metadata = (metadata or {}).copy()
-                embed_metadata.update({
-                    "stored_by": actor_name,
-                    "clinical_context": clinical_context,
-                    "content_type": "healthcare_text",
-                    "collection": collection_name,
-                    "content_length": len(content),
-                    "embedding_method": embedding_method,
-                    "stored_at": datetime.now().isoformat()
-                })
+                embed_metadata.update(
+                    {
+                        "stored_by": actor_name,
+                        "clinical_context": clinical_context,
+                        "content_type": "healthcare_text",
+                        "collection": collection_name,
+                        "content_length": len(content),
+                        "embedding_method": embedding_method,
+                        "stored_at": datetime.now().isoformat(),
+                    }
+                )
 
                 embedding_id = f"{collection_name}:{abs(hash(content)) % 10_000_000}"
 
@@ -78,7 +81,9 @@ def store_embedding(
                 elif hasattr(vector_store, "add"):
                     vector_store.add(
                         collection_name=collection_name,
-                        points=[{"id": embedding_id, "vector": embedding, "payload": embed_metadata}],
+                        points=[
+                            {"id": embedding_id, "vector": embedding, "payload": embed_metadata}
+                        ],
                     )
                     storage_status = "success_qdrant"
                 elif hasattr(vector_store, "store_vector"):
@@ -97,14 +102,16 @@ def store_embedding(
             embedding_id = f"emb-{hash(content) % 1000000:06d}"
 
         storage_metadata = metadata or {}
-        storage_metadata.update({
-            "stored_by": actor_name,
-            "clinical_context": clinical_context,
-            "content_type": "healthcare_text",
-            "collection": collection_name,
-            "embedding_method": embedding_method,
-            "storage_status": storage_status,
-        })
+        storage_metadata.update(
+            {
+                "stored_by": actor_name,
+                "clinical_context": clinical_context,
+                "content_type": "healthcare_text",
+                "collection": collection_name,
+                "embedding_method": embedding_method,
+                "storage_status": storage_status,
+            }
+        )
 
         return VectorStoreResult(
             success=True,
@@ -113,11 +120,13 @@ def store_embedding(
             results_count=1,
             embedding_dimensions=384,
             message=f"Embedding stored (storage_status={storage_status}) in {collection_name}",
-            search_results=[{
-                "embedding_id": embedding_id,
-                "content_preview": content[:100] + "..." if len(content) > 100 else content,
-                "metadata": storage_metadata,
-            }],
+            search_results=[
+                {
+                    "embedding_id": embedding_id,
+                    "content_preview": content[:100] + "..." if len(content) > 100 else content,
+                    "metadata": storage_metadata,
+                }
+            ],
         )
     except Exception as e:
         return VectorStoreResult(
@@ -171,9 +180,13 @@ def vector_similarity_search(
             },
         ]
 
-        filtered_results = [r for r in mock_results if r["similarity_score"] >= similarity_threshold]
+        filtered_results = [
+            r for r in mock_results if r["similarity_score"] >= similarity_threshold
+        ]
         if clinical_filter:
-            filtered_results = [r for r in filtered_results if r["clinical_context"] == clinical_filter]
+            filtered_results = [
+                r for r in filtered_results if r["clinical_context"] == clinical_filter
+            ]
 
         final_results = filtered_results[:limit]
         similarity_scores = [r["similarity_score"] for r in final_results]
@@ -259,7 +272,8 @@ def vector_hybrid_search(
 
         for result in mock_results:
             result["combined_score"] = (
-                result["keyword_score"] * keyword_weight + result["semantic_score"] * semantic_weight
+                result["keyword_score"] * keyword_weight
+                + result["semantic_score"] * semantic_weight
             )
 
         mock_results.sort(key=lambda x: x["combined_score"], reverse=True)
@@ -379,5 +393,3 @@ __all__ = [
     "get_vector_collection_stats",
     "optimize_vector_collection",
 ]
-
-

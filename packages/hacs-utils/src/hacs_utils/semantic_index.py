@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Iterable
+from typing import Any, Dict, List, Tuple
 
 from hacs_models import BaseResource, DomainResource
 
@@ -113,7 +113,11 @@ async def index_resource(
         vector_store=vector_store,
     )
     # Return minimal summary
-    return {"success": result.success, "message": result.message, "search_results": result.search_results}
+    return {
+        "success": result.success,
+        "message": result.message,
+        "search_results": result.search_results,
+    }
 
 
 async def index_tool_catalog(
@@ -195,13 +199,12 @@ def semantic_resource_search(
     results: List[Dict[str, Any]] = []
     for r in res.search_results or []:
         meta = r.get("metadata", {})
-        results.append({
-            "resource_type": meta.get("resource_type"),
-            "resource_id": meta.get("resource_id"),
-            "content": r.get("content"),
-            "similarity_score": r.get("similarity_score"),
-        })
+        results.append(
+            {
+                "resource_type": meta.get("resource_type"),
+                "resource_id": meta.get("resource_id"),
+                "content": r.get("content"),
+                "similarity_score": r.get("similarity_score"),
+            }
+        )
     return results
-
-
-

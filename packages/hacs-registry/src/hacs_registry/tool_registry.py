@@ -6,7 +6,7 @@ eliminating duplication and providing a single source of truth for HACS tools.
 
 Key Features:
     🔍 Automatic tool discovery from HACS domains
-    📊 Tool categorization and metadata management  
+    📊 Tool categorization and metadata management
     🔎 Advanced search and filtering capabilities
     🛠️ Framework-agnostic tool definitions
     📋 Tool compatibility and dependency tracking
@@ -25,13 +25,13 @@ import inspect
 import logging
 import pkgutil
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set, Callable, Union
-from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Set, Callable
 
 from .versioning import VersionStatus
 from hacs_models import ToolDefinition
 
 logger = logging.getLogger(__name__)
+
 
 class HACSToolRegistry:
     """
@@ -50,66 +50,120 @@ class HACSToolRegistry:
         self._initialized = False
         self._search_paths: List[str] = []
         # Canonical public tool allowlist (target ~22 tools)
-        self._public_allowlist: Set[str] = set([
-            # Modeling
-            "pin_resource", "compose_bundle", "validate_resource", "diff_resources", "validate_bundle",
-            "list_models", "describe_model", "list_model_fields", "to_reference",
-            # Database
-            "save_resource", "read_resource", "update_resource", "delete_resource",
-            "register_model_version", "search_memories", "run_migrations", "get_db_status",
-            # Agents
-            "write_scratchpad", "read_scratchpad", "summarize_state", "select_tools_for_task", "retrieve_memories",
-        ])
+        self._public_allowlist: Set[str] = set(
+            [
+                # Modeling
+                "pin_resource",
+                "compose_bundle",
+                "validate_resource",
+                "diff_resources",
+                "validate_bundle",
+                "list_models",
+                "describe_model",
+                "list_model_fields",
+                "to_reference",
+                # Database
+                "save_resource",
+                "read_resource",
+                "update_resource",
+                "delete_resource",
+                "register_model_version",
+                "search_memories",
+                "run_migrations",
+                "get_db_status",
+                # Agents
+                "write_scratchpad",
+                "read_scratchpad",
+                "summarize_state",
+                "select_tools_for_task",
+                "retrieve_memories",
+            ]
+        )
         # Toggle to include specialized resource tools
         import os
-        self._include_specialized: bool = os.getenv("HACS_INCLUDE_SPECIALIZED_TOOLS", "1").lower() not in {"0", "false"}
+
+        self._include_specialized: bool = os.getenv(
+            "HACS_INCLUDE_SPECIALIZED_TOOLS", "1"
+        ).lower() not in {"0", "false"}
 
         # Pre-defined category mappings for new 4-domain structure
         self._category_patterns = {
             "modeling": [
-                "pin_resource", "compose_bundle", "validate_resource",
-                "diff_resources", "validate_bundle",
+                "pin_resource",
+                "compose_bundle",
+                "validate_resource",
+                "diff_resources",
+                "validate_bundle",
                 # Legacy mappings for backward compatibility
-                "instantiate_hacs_resource", "validate_hacs_resource",
-                "create_resource_bundle", "add_bundle_entry", "validate_resource_bundle"
+                "instantiate_hacs_resource",
+                "validate_hacs_resource",
+                "create_resource_bundle",
+                "add_bundle_entry",
+                "validate_resource_bundle",
             ],
             "extraction": [
-                "synthesize_mapping_spec", "extract_variables", "apply_mapping_spec",
+                "synthesize_mapping_spec",
+                "extract_variables",
+                "apply_mapping_spec",
                 "summarize_context",
                 # Legacy mappings for backward compatibility
-                "register_prompt_template", "register_extraction_schema",
-                "generate_stack_template_from_markdown", "instantiate_stack_template"
+                "register_prompt_template",
+                "register_extraction_schema",
+                "generate_stack_template_from_markdown",
+                "instantiate_stack_template",
             ],
             "database": [
-                "save_resource", "read_resource", "update_resource", "delete_resource",
-                "register_model_version", "search_knowledge_items", "search_memories",
-                "run_migrations", "get_db_status",
+                "save_resource",
+                "read_resource",
+                "update_resource",
+                "delete_resource",
+                "register_model_version",
+                "search_knowledge_items",
+                "search_memories",
+                "run_migrations",
+                "get_db_status",
                 # Legacy mappings for backward compatibility
-                "persist_hacs_resource", "read_hacs_resource",
-                "run_database_migration", "check_migration_status",
-                "test_database_connection", "index_evidence", "check_evidence"
+                "persist_hacs_resource",
+                "read_hacs_resource",
+                "run_database_migration",
+                "check_migration_status",
+                "test_database_connection",
+                "index_evidence",
+                "check_evidence",
             ],
             "agents": [
-                "write_scratchpad", "read_scratchpad", "create_todo", "list_todos",
-                "complete_todo", "store_memory", "retrieve_memories", "inject_preferences",
-                "select_tools_for_task", "summarize_state", "prune_state",
+                "write_scratchpad",
+                "read_scratchpad",
+                "create_todo",
+                "list_todos",
+                "complete_todo",
+                "store_memory",
+                "retrieve_memories",
+                "inject_preferences",
+                "select_tools_for_task",
+                "summarize_state",
+                "prune_state",
                 # Legacy mappings for backward compatibility
-                "check_memory", "set_actor_preference", "list_actor_preferences"
-            ]
+                "check_memory",
+                "set_actor_preference",
+                "list_actor_preferences",
+            ],
         }
 
-    def register_tool(self,
-                     name: str = None,
-                     version: str = "1.0.0",
-                     description: str = "",
-                     domain: str = "general",
-                     author: str = "",
-                     dependencies: List[str] = None,
-                     tags: List[str] = None,
-                     status: VersionStatus = VersionStatus.ACTIVE,
-                     migration_notes: str = "",
-                     breaking_changes: List[str] = None,
-                     args_model: Any = None):
+    def register_tool(
+        self,
+        name: str = None,
+        version: str = "1.0.0",
+        description: str = "",
+        domain: str = "general",
+        author: str = "",
+        dependencies: List[str] = None,
+        tags: List[str] = None,
+        status: VersionStatus = VersionStatus.ACTIVE,
+        migration_notes: str = "",
+        breaking_changes: List[str] = None,
+        args_model: Any = None,
+    ):
         """
         Decorator to register a tool as a plugin.
 
@@ -125,6 +179,7 @@ class HACSToolRegistry:
             migration_notes: Migration guidance for this version
             breaking_changes: List of breaking changes in this version
         """
+
         def decorator(func: Callable) -> Callable:
             tool_name = name or func.__name__
 
@@ -142,12 +197,13 @@ class HACSToolRegistry:
                 requires_db=self._check_requires_db(func),
                 requires_vector_store=self._check_requires_vector_store(func),
                 is_async=asyncio.iscoroutinefunction(func),
-                status="published"
+                status="published",
             )
 
             # Auto-detect Pydantic input model from function signature (single-model param)
             try:
                 import inspect
+
                 try:
                     from pydantic import BaseModel as _PydanticBaseModel  # type: ignore
                 except Exception:
@@ -156,9 +212,19 @@ class HACSToolRegistry:
                     sig = inspect.signature(func)
                     # Exclude typical non-user params
                     excluded = {"self", "args", "kwargs"}
-                    params = [p for p in sig.parameters.values() if p.name not in excluded]
-                    if len(params) == 1 and params[0].annotation and isinstance(getattr(params[0].annotation, "__mro__", []), tuple):
-                        if _PydanticBaseModel in getattr(params[0].annotation, "__mro__", []):  # type: ignore
+                    params = [
+                        p for p in sig.parameters.values() if p.name not in excluded
+                    ]
+                    if (
+                        len(params) == 1
+                        and params[0].annotation
+                        and isinstance(
+                            getattr(params[0].annotation, "__mro__", []), tuple
+                        )
+                    ):
+                        if _PydanticBaseModel in getattr(
+                            params[0].annotation, "__mro__", []
+                        ):  # type: ignore
                             model = params[0].annotation
                             # Attach schema to plugin and function
                             try:
@@ -170,7 +236,7 @@ class HACSToolRegistry:
                 pass
 
             self._register_tool_definition(plugin)
-            
+
             # Attach args schema if present or provided
             try:
                 model = args_model or getattr(func, "_tool_args", None)
@@ -186,12 +252,13 @@ class HACSToolRegistry:
             # Register version information
             try:
                 from .versioning import register_tool_version
+
                 register_tool_version(
                     tool_name=tool_name,
                     version=version,
                     status=status,
                     migration_notes=migration_notes,
-                    breaking_changes=breaking_changes or []
+                    breaking_changes=breaking_changes or [],
                 )
             except Exception as e:
                 logger.warning(f"Failed to register version info for {tool_name}: {e}")
@@ -200,7 +267,9 @@ class HACSToolRegistry:
             func._hacs_plugin = plugin
             func._hacs_registered = True
 
-            logger.debug(f"Registered plugin: {tool_name} v{version} (domain: {domain})")
+            logger.debug(
+                f"Registered plugin: {tool_name} v{version} (domain: {domain})"
+            )
             return func
 
         return decorator
@@ -237,7 +306,7 @@ class HACSToolRegistry:
         discovered_count = 0
 
         # Get package path
-        if hasattr(package, '__path__'):
+        if hasattr(package, "__path__"):
             package_path = package.__path__
         else:
             logger.warning(f"Package {package_name} has no __path__ attribute")
@@ -246,26 +315,25 @@ class HACSToolRegistry:
         # Walk through all modules in package
         # Blocklist generic domains and removed legacy domains
         blocked_substrings = {
-            'hacs_tools.domains.fhir_integration',
-            'hacs_tools.domains.development_tools',
-            'hacs_tools.domains.healthcare_analytics',
+            "hacs_tools.domains.fhir_integration",
+            "hacs_tools.domains.development_tools",
+            "hacs_tools.domains.healthcare_analytics",
             # Legacy domains that have been removed/consolidated into 4 core domains
-            'hacs_tools.domains.admin_operations',
-            'hacs_tools.domains.bundle_tools',
-            'hacs_tools.domains.evidence_tools',
-            'hacs_tools.domains.memory_operations',
-            'hacs_tools.domains.modeling_tools',
-            'hacs_tools.domains.persistence_tools',
-            'hacs_tools.domains.preferences_tools',
-            'hacs_tools.domains.resource_management',
-            'hacs_tools.domains.schema_discovery',
-            'hacs_tools.domains.vector_search',
-            'hacs_tools.domains.workflow_tools',
+            "hacs_tools.domains.admin_operations",
+            "hacs_tools.domains.bundle_tools",
+            "hacs_tools.domains.evidence_tools",
+            "hacs_tools.domains.memory_operations",
+            "hacs_tools.domains.modeling_tools",
+            "hacs_tools.domains.persistence_tools",
+            "hacs_tools.domains.preferences_tools",
+            "hacs_tools.domains.resource_management",
+            "hacs_tools.domains.schema_discovery",
+            "hacs_tools.domains.vector_search",
+            "hacs_tools.domains.workflow_tools",
         }
 
         for importer, modname, ispkg in pkgutil.walk_packages(
-            package_path,
-            package_name + "."
+            package_path, package_name + "."
         ):
             # Skip blocked modules (cleanup of generic domains)
             if any(b in modname for b in blocked_substrings):
@@ -284,23 +352,26 @@ class HACSToolRegistry:
         discovered_count = 0
 
         for attr_name in dir(module):
-            if attr_name.startswith('_'):
+            if attr_name.startswith("_"):
                 continue
 
             attr = getattr(module, attr_name)
 
             # Only register functions explicitly decorated as HACS tools
-            if hasattr(attr, '_hacs_registered') and hasattr(attr, '_hacs_plugin'):
+            if hasattr(attr, "_hacs_registered") and hasattr(attr, "_hacs_plugin"):
                 try:
-                    plugin: ToolDefinition = getattr(attr, '_hacs_plugin')
+                    plugin: ToolDefinition = getattr(attr, "_hacs_plugin")
                     # Decide registration based on allowlist and specialized toggle
                     if plugin:
-                        is_specialized = (
-                            plugin.domain == 'resource' or
-                            any(str(tag).startswith('resource:') for tag in (plugin.tags or []))
+                        is_specialized = plugin.domain == "resource" or any(
+                            str(tag).startswith("resource:")
+                            for tag in (plugin.tags or [])
                         )
                         # Always include specialized resource tools
-                        if not is_specialized and plugin.name not in self._public_allowlist:
+                        if (
+                            not is_specialized
+                            and plugin.name not in self._public_allowlist
+                        ):
                             continue
                     # Ensure function reference is set
                     if plugin and not plugin.function:
@@ -316,11 +387,11 @@ class HACSToolRegistry:
     def _is_potential_tool(self, func: Callable, name: str) -> bool:
         """Check if a function is potentially a HACS tool."""
         # Skip non-callable objects (strings, modules, classes, etc.)
-        if not callable(func) and not hasattr(func, 'func'):
+        if not callable(func) and not hasattr(func, "func"):
             return False
 
         # Skip constants and description strings
-        if isinstance(func, str) or name.endswith('_DESCRIPTION'):
+        if isinstance(func, str) or name.endswith("_DESCRIPTION"):
             return False
 
         # Skip modules and classes
@@ -328,21 +399,21 @@ class HACSToolRegistry:
             return False
 
         # Check for LangChain tool markers
-        if hasattr(func, '_is_tool'):  # LangChain tool marker
+        if hasattr(func, "_is_tool"):  # LangChain tool marker
             return True
 
         # Check if it's a LangChain StructuredTool object
-        if hasattr(func, 'name') and hasattr(func, 'func'):
+        if hasattr(func, "name") and hasattr(func, "func"):
             return True
 
         # Check if it has langchain tool attributes
-        if hasattr(func, 'description') and hasattr(func, 'args_schema'):
+        if hasattr(func, "description") and hasattr(func, "args_schema"):
             return True
 
         # Check function signature for HACS patterns
         try:
             # Handle both regular functions and LangChain tools
-            actual_func = getattr(func, 'func', func)
+            actual_func = getattr(func, "func", func)
             if callable(actual_func):
                 sig = inspect.signature(actual_func)
                 if "actor_name" in sig.parameters:
@@ -353,15 +424,42 @@ class HACSToolRegistry:
         # Check function name patterns for actual callable functions
         if callable(func):
             tool_keywords = [
-                'create', 'get', 'update', 'delete', 'search', 'analyze',
-                'execute', 'validate', 'convert', 'process', 'generate',
-                'discover', 'extract', 'transform', 'deploy', 'run',
-                'register', 'instantiate', 'optimize', 'compare',
+                "create",
+                "get",
+                "update",
+                "delete",
+                "search",
+                "analyze",
+                "execute",
+                "validate",
+                "convert",
+                "process",
+                "generate",
+                "discover",
+                "extract",
+                "transform",
+                "deploy",
+                "run",
+                "register",
+                "instantiate",
+                "optimize",
+                "compare",
                 # Additional modeling keywords for granular tools
-                'list', 'describe', 'pick', 'project', 'reference', 'add',
-                'invoke', 'plan', 'suggest', 'bundle',
+                "list",
+                "describe",
+                "pick",
+                "project",
+                "reference",
+                "add",
+                "invoke",
+                "plan",
+                "suggest",
+                "bundle",
                 # High-level task tools
-                'summarize', 'annotate', 'map', 'enrich'
+                "summarize",
+                "annotate",
+                "map",
+                "enrich",
             ]
 
             return any(keyword in name.lower() for keyword in tool_keywords)
@@ -370,30 +468,30 @@ class HACSToolRegistry:
 
     def _infer_domain_from_module(self, module_name: str) -> str:
         """Infer domain from module name."""
-        module_parts = module_name.split('.')
+        module_parts = module_name.split(".")
 
         # Look for domain indicators in module path - new 4-domain structure
         domain_mappings = {
-            'modeling': 'modeling',
-            'extraction': 'extraction', 
-            'database': 'database',
-            'agents': 'agents',
-            'terminology': 'terminology',
-            'resource_tools': 'resource',
+            "modeling": "modeling",
+            "extraction": "extraction",
+            "database": "database",
+            "agents": "agents",
+            "terminology": "terminology",
+            "resource_tools": "resource",
             # Legacy domain mappings for backward compatibility
-            'resource_management': 'modeling',
-            'clinical_workflow': 'modeling',
-            'clinical_workflows': 'modeling',
-            'bundle_tools': 'modeling',
-            'workflow_tools': 'modeling',
-            'modeling_tools': 'modeling',
-            'schema_discovery': 'extraction',
-            'evidence_tools': 'database',
-            'persistence_tools': 'database',
-            'admin_operations': 'database',
-            'memory_operation': 'agents',
-            'memory_operations': 'agents',
-            'preferences_tools': 'agents',
+            "resource_management": "modeling",
+            "clinical_workflow": "modeling",
+            "clinical_workflows": "modeling",
+            "bundle_tools": "modeling",
+            "workflow_tools": "modeling",
+            "modeling_tools": "modeling",
+            "schema_discovery": "extraction",
+            "evidence_tools": "database",
+            "persistence_tools": "database",
+            "admin_operations": "database",
+            "memory_operation": "agents",
+            "memory_operations": "agents",
+            "preferences_tools": "agents",
         }
 
         for part in module_parts:
@@ -403,11 +501,13 @@ class HACSToolRegistry:
 
         return "general"
 
-    def _extract_tags_from_function(self, func: Callable, name: str, domain: str) -> List[str]:
+    def _extract_tags_from_function(
+        self, func: Callable, name: str, domain: str
+    ) -> List[str]:
         """Extract tags from a function."""
         # Extract tags from function name and domain
         tags = []
-        name_parts = name.split('_')
+        name_parts = name.split("_")
         tags.extend(name_parts)
         # High-signal domain tags for loadout
         tags.append(domain)
@@ -417,16 +517,43 @@ class HACSToolRegistry:
         # Add fine-grained tags for database tools to distinguish records vs definitions
         if domain == "database":
             lower_name = name.lower()
-            if any(k in lower_name for k in ["save_record", "read_record", "update_record", "delete_record"]):
+            if any(
+                k in lower_name
+                for k in [
+                    "save_record",
+                    "read_record",
+                    "update_record",
+                    "delete_record",
+                ]
+            ):
                 tags.append("records")
-            if any(k in lower_name for k in ["register_resource_definition", "list_resource_definitions", "get_resource_definition", "update_resource_definition_status"]):
+            if any(
+                k in lower_name
+                for k in [
+                    "register_resource_definition",
+                    "list_resource_definitions",
+                    "get_resource_definition",
+                    "update_resource_definition_status",
+                ]
+            ):
                 tags.append("definitions")
 
         # Add resource-specific tags if tool name indicates a resource
         resource_indicators = [
-            "patient", "observation", "document", "condition", "medication",
-            "medicationrequest", "diagnosticreport", "servicerequest", "event",
-            "appointment", "careplan", "careteam", "goal", "nutritionorder"
+            "patient",
+            "observation",
+            "document",
+            "condition",
+            "medication",
+            "medicationrequest",
+            "diagnosticreport",
+            "servicerequest",
+            "event",
+            "appointment",
+            "careplan",
+            "careteam",
+            "goal",
+            "nutritionorder",
         ]
         lname = name.lower()
         for r in resource_indicators:
@@ -439,7 +566,7 @@ class HACSToolRegistry:
     def _check_requires_actor(self, func: Callable) -> bool:
         """Check if function requires actor parameter."""
         try:
-            if hasattr(func, 'func'):
+            if hasattr(func, "func"):
                 actual_func = func.func
             else:
                 actual_func = func
@@ -451,7 +578,7 @@ class HACSToolRegistry:
     def _check_requires_db(self, func: Callable) -> bool:
         """Check if function requires database parameter."""
         try:
-            if hasattr(func, 'func'):
+            if hasattr(func, "func"):
                 actual_func = func.func
             else:
                 actual_func = func
@@ -463,7 +590,7 @@ class HACSToolRegistry:
     def _check_requires_vector_store(self, func: Callable) -> bool:
         """Check if function requires vector store parameter."""
         try:
-            if hasattr(func, 'func'):
+            if hasattr(func, "func"):
                 actual_func = func.func
             else:
                 actual_func = func
@@ -480,19 +607,60 @@ class HACSToolRegistry:
 
         # Fallback pattern matching for new 4-domain structure
         name_lower = tool_name.lower()
-        if any(term in name_lower for term in ["instantiate", "compose", "validate", "diff", "bundle"]):
+        if any(
+            term in name_lower
+            for term in ["instantiate", "compose", "validate", "diff", "bundle"]
+        ):
             return "modeling"
-        elif any(term in name_lower for term in ["extract", "synthesize", "mapping", "summarize", "apply"]):
+        elif any(
+            term in name_lower
+            for term in ["extract", "synthesize", "mapping", "summarize", "apply"]
+        ):
             return "extraction"
-        elif any(term in name_lower for term in ["save", "read", "update", "delete", "search", "migration", "database", "db"]):
+        elif any(
+            term in name_lower
+            for term in [
+                "save",
+                "read",
+                "update",
+                "delete",
+                "search",
+                "migration",
+                "database",
+                "db",
+            ]
+        ):
             return "database"
-        elif any(term in name_lower for term in ["scratchpad", "todo", "memory", "preference", "tool", "state", "agent"]):
+        elif any(
+            term in name_lower
+            for term in [
+                "scratchpad",
+                "todo",
+                "memory",
+                "preference",
+                "tool",
+                "state",
+                "agent",
+            ]
+        ):
             return "agents"
-        elif any(term in name_lower for term in [
-            "umls", "cui", "crosswalk", "concept", "code", "valueset", "value_set", "conceptmap", "concept_map", "normalize"
-        ]):
+        elif any(
+            term in name_lower
+            for term in [
+                "umls",
+                "cui",
+                "crosswalk",
+                "concept",
+                "code",
+                "valueset",
+                "value_set",
+                "conceptmap",
+                "concept_map",
+                "normalize",
+            ]
+        ):
             return "terminology"
-        
+
         # Legacy fallbacks for backward compatibility
         elif any(term in name_lower for term in ["create", "get", "resource"]):
             return "modeling"  # Map legacy resource management to modeling
@@ -545,8 +713,10 @@ class HACSToolRegistry:
 
         total_discovered = self.discover_plugins(base_packages)
         self._initialized = True
-        
-        logger.info(f"Auto-discovery complete: {total_discovered} total tools registered")
+
+        logger.info(
+            f"Auto-discovery complete: {total_discovered} total tools registered"
+        )
         return total_discovered
 
     def get_tool(self, name: str) -> Optional[ToolDefinition]:
@@ -599,7 +769,7 @@ class HACSToolRegistry:
         requires_db: bool = None,
         requires_vector_store: bool = None,
         is_async: bool = None,
-        framework: str = None
+        framework: str = None,
     ) -> List[ToolDefinition]:
         """
         Advanced tool search with multiple filter criteria.
@@ -624,10 +794,13 @@ class HACSToolRegistry:
         if query:
             query_lower = query.lower()
             results = [
-                tool for tool in results
-                if (query_lower in tool.name.lower() or
-                    query_lower in tool.description.lower() or
-                    any(query_lower in tag.lower() for tag in tool.tags))
+                tool
+                for tool in results
+                if (
+                    query_lower in tool.name.lower()
+                    or query_lower in tool.description.lower()
+                    or any(query_lower in tag.lower() for tag in tool.tags)
+                )
             ]
 
         # Category filter
@@ -641,19 +814,24 @@ class HACSToolRegistry:
         # Tags filter (AND operation - tool must have ALL specified tags)
         if tags:
             results = [
-                tool for tool in results
-                if all(tag in tool.tags for tag in tags)
+                tool for tool in results if all(tag in tool.tags for tag in tags)
             ]
 
         # Capability filters
         if requires_actor is not None:
-            results = [tool for tool in results if tool.requires_actor == requires_actor]
+            results = [
+                tool for tool in results if tool.requires_actor == requires_actor
+            ]
 
         if requires_db is not None:
             results = [tool for tool in results if tool.requires_db == requires_db]
 
         if requires_vector_store is not None:
-            results = [tool for tool in results if tool.requires_vector_store == requires_vector_store]
+            results = [
+                tool
+                for tool in results
+                if tool.requires_vector_store == requires_vector_store
+            ]
 
         if is_async is not None:
             results = [tool for tool in results if tool.is_async == is_async]
@@ -669,21 +847,23 @@ class HACSToolRegistry:
         stats = {
             "total_tools": len(self._tools),
             "categories": {
-                category: len(tools)
-                for category, tools in self._categories.items()
+                category: len(tools) for category, tools in self._categories.items()
             },
-            "domains": {
-                domain: len(tools)
-                for domain, tools in self._domains.items()
-            },
+            "domains": {domain: len(tools) for domain, tools in self._domains.items()},
             "capabilities": {
-                "requires_actor": len([t for t in self._tools.values() if t.requires_actor]),
+                "requires_actor": len(
+                    [t for t in self._tools.values() if t.requires_actor]
+                ),
                 "requires_db": len([t for t in self._tools.values() if t.requires_db]),
-                "requires_vector_store": len([t for t in self._tools.values() if t.requires_vector_store]),
+                "requires_vector_store": len(
+                    [t for t in self._tools.values() if t.requires_vector_store]
+                ),
                 "is_async": len([t for t in self._tools.values() if t.is_async]),
             },
             "framework_support": {
-                "langchain": len([t for t in self._tools.values() if t.supports_langchain]),
+                "langchain": len(
+                    [t for t in self._tools.values() if t.supports_langchain]
+                ),
                 "mcp": len([t for t in self._tools.values() if t.supports_mcp]),
             },
         }
@@ -696,9 +876,9 @@ class HACSToolRegistry:
                 "total_tools": len(self._tools),
                 "categories": list(self._categories.keys()),
                 "domains": list(self._domains.keys()),
-                "generated_at": str(datetime.now())
+                "generated_at": str(datetime.now()),
             },
-            "tools": []
+            "tools": [],
         }
 
         for tool in self._tools.values():
@@ -721,7 +901,7 @@ class HACSToolRegistry:
                     "langchain": tool.supports_langchain,
                     "mcp": tool.supports_mcp,
                 },
-                "status": tool.status
+                "status": tool.status,
             }
 
             if tool.function:
@@ -756,16 +936,18 @@ def discover_hacs_tools() -> HACSToolRegistry:
 
 
 # Convenience decorator using global registry
-def register_tool(name: str = None,
-                 version: str = "1.0.0",
-                 description: str = "",
-                 domain: str = "general",
-                 author: str = "",
-                 dependencies: List[str] = None,
-                 tags: List[str] = None,
-                 status: VersionStatus = VersionStatus.ACTIVE,
-                 migration_notes: str = "",
-                 breaking_changes: List[str] = None):
+def register_tool(
+    name: str = None,
+    version: str = "1.0.0",
+    description: str = "",
+    domain: str = "general",
+    author: str = "",
+    dependencies: List[str] = None,
+    tags: List[str] = None,
+    status: VersionStatus = VersionStatus.ACTIVE,
+    migration_notes: str = "",
+    breaking_changes: List[str] = None,
+):
     """
     Global tool registration decorator with versioning support.
 
@@ -786,7 +968,7 @@ def register_tool(name: str = None,
         tags=tags,
         status=status,
         migration_notes=migration_notes,
-        breaking_changes=breaking_changes
+        breaking_changes=breaking_changes,
     )
 
 

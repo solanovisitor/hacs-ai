@@ -1,4 +1,3 @@
-import pytest
 from pathlib import Path
 
 
@@ -25,4 +24,3 @@ def pytest_ignore_collect(path):
     if "/examples/hf_ingestion/" in str(p):
         return True
     return False
-

@@ -16,7 +16,6 @@ from typing import Iterable
 from .persistence_integration import get_registry_integration
 from .resource_registry import (
     consume_pending_resource_registrations,
-    get_pending_resource_registrations,
 )
 from .tool_registry import get_global_registry as get_tool_registry
 
@@ -100,5 +99,3 @@ async def register_catalog(persist: bool = True) -> dict:
         logger.error(f"Failed to persist registry catalog: {e}")
 
     return report
-
-

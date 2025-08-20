@@ -10,6 +10,6 @@ from .client import (
 
 __all__ = [
     "AnthropicClient",
-    "create_anthropic_client", 
+    "create_anthropic_client",
     "anthropic_structured_extract",
 ]

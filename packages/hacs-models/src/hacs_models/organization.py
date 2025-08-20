@@ -14,7 +14,7 @@ from pydantic import Field, field_validator
 
 from .base_resource import DomainResource
 from .observation import CodeableConcept
-from .patient import ContactPoint, Address, Identifier
+from .patient import Address, ContactPoint, Identifier
 from .types import ResourceReference
 
 
@@ -27,33 +27,25 @@ class OrganizationContact(DomainResource):
     """
 
     resource_type: Literal["OrganizationContact"] = Field(
-        default="OrganizationContact",
-        description="Resource type identifier"
+        default="OrganizationContact", description="Resource type identifier"
     )
 
     # Purpose of the contact
     purpose: CodeableConcept | None = Field(
-        None,
-        description="The type of contact (billing, admin, hr, payor, etc.)"
+        None, description="The type of contact (billing, admin, hr, payor, etc.)"
     )
 
     # Contact name
-    name: str | None = Field(
-        None,
-        description="Name of an individual to contact",
-        max_length=200
-    )
+    name: str | None = Field(None, description="Name of an individual to contact", max_length=200)
 
     # Contact methods
     telecom: list[ContactPoint] = Field(
-        default_factory=list,
-        description="Contact details (phone, email, etc.) for the contact"
+        default_factory=list, description="Contact details (phone, email, etc.) for the contact"
     )
 
     # Contact address
     address: Address | None = Field(
-        None,
-        description="Visiting or postal addresses for the contact"
+        None, description="Visiting or postal addresses for the contact"
     )
 
 
@@ -68,78 +60,64 @@ class Organization(DomainResource):
     """
 
     resource_type: Literal["Organization"] = Field(
-        default="Organization",
-        description="Resource type identifier"
+        default="Organization", description="Resource type identifier"
     )
 
     # Business identifiers for the organization
     identifier: list[Identifier] = Field(
-        default_factory=list,
-        description="Identifies this organization across multiple systems"
+        default_factory=list, description="Identifies this organization across multiple systems"
     )
 
     # Whether this organization's record is in active use
     active: bool | None = Field(
-        None,
-        description="Whether the organization's record is still in active use"
+        None, description="Whether the organization's record is still in active use"
     )
 
     # Type of organization
     type: list[CodeableConcept] = Field(
-        default_factory=list,
-        description="Kind of organization (hospital, clinic, dept, etc.)"
+        default_factory=list, description="Kind of organization (hospital, clinic, dept, etc.)"
     )
 
     # Name used for the organization
-    name: str | None = Field(
-        None,
-        description="Name used for the organization",
-        max_length=200
-    )
+    name: str | None = Field(None, description="Name used for the organization", max_length=200)
 
     # Alternative names (aliases)
     alias: list[str] = Field(
-        default_factory=list,
-        description="Alternative names the organization is known as"
+        default_factory=list, description="Alternative names the organization is known as"
     )
 
     # Description of the organization
     description: str | None = Field(
-        None,
-        description="Additional details about the organization that could be displayed"
+        None, description="Additional details about the organization that could be displayed"
     )
 
     # Contact information
     telecom: list[ContactPoint] = Field(
-        default_factory=list,
-        description="Contact details for the organization"
+        default_factory=list, description="Contact details for the organization"
     )
 
     # Addresses for the organization
     address: list[Address] = Field(
-        default_factory=list,
-        description="Address(es) for the organization"
+        default_factory=list, description="Address(es) for the organization"
     )
 
     # Organization hierarchy
     part_of: ResourceReference | None = Field(
-        None,
-        description="The organization this organization forms a part of"
+        None, description="The organization this organization forms a part of"
     )
 
     # Specific contacts for various purposes
     contact: list[OrganizationContact] = Field(
-        default_factory=list,
-        description="Contact for the organization for a certain purpose"
+        default_factory=list, description="Contact for the organization for a certain purpose"
     )
 
     # Technical endpoints providing access to services
     endpoint: list[ResourceReference] = Field(
         default_factory=list,
-        description="Technical endpoints providing access to services operated for the organization"
+        description="Technical endpoints providing access to services operated for the organization",
     )
 
-    @field_validator('name')
+    @field_validator("name")
     @classmethod
     def validate_name(cls, v):
         """Validate organization name."""
@@ -174,7 +152,7 @@ class Organization(DomainResource):
 
         # Look for work address first
         for addr in self.address:
-            if hasattr(addr, 'use') and addr.use == "work":
+            if hasattr(addr, "use") and addr.use == "work":
                 return addr
 
         # Return first address
@@ -188,13 +166,17 @@ class Organization(DomainResource):
 
         # Look for work phone first
         for contact in self.telecom:
-            if (hasattr(contact, 'system') and contact.system == "phone" and
-                hasattr(contact, 'use') and contact.use == "work"):
+            if (
+                hasattr(contact, "system")
+                and contact.system == "phone"
+                and hasattr(contact, "use")
+                and contact.use == "work"
+            ):
                 return contact
 
         # Look for any work contact
         for contact in self.telecom:
-            if hasattr(contact, 'use') and contact.use == "work":
+            if hasattr(contact, "use") and contact.use == "work":
                 return contact
 
         # Return first contact
@@ -205,11 +187,11 @@ class Organization(DomainResource):
         """Get list of organization type descriptions."""
         types = []
         for org_type in self.type:
-            if hasattr(org_type, 'text') and org_type.text:
+            if hasattr(org_type, "text") and org_type.text:
                 types.append(org_type.text)
-            elif hasattr(org_type, 'coding') and org_type.coding:
+            elif hasattr(org_type, "coding") and org_type.coding:
                 for coding in org_type.coding:
-                    if hasattr(coding, 'display') and coding.display:
+                    if hasattr(coding, "display") and coding.display:
                         types.append(coding.display)
                         break
         return types
@@ -217,7 +199,7 @@ class Organization(DomainResource):
     @property
     def is_healthcare_provider(self) -> bool:
         """Check if this is a healthcare provider organization."""
-        healthcare_keywords = ['hospital', 'clinic', 'medical', 'health', 'care', 'practice']
+        healthcare_keywords = ["hospital", "clinic", "medical", "health", "care", "practice"]
         org_types = [t.lower() for t in self.organization_types]
         name_lower = self.name.lower() if self.name else ""
 
@@ -240,19 +222,10 @@ class Organization(DomainResource):
         return org_type
 
     def add_contact_info(
-        self,
-        system: str,
-        value: str,
-        use: str = "work",
-        **kwargs
+        self, system: str, value: str, use: str = "work", **kwargs
     ) -> ContactPoint:
         """Add contact information to this organization."""
-        contact = ContactPoint(
-            system=system,
-            value=value,
-            use=use,
-            **kwargs
-        )
+        contact = ContactPoint(system=system, value=value, use=use, **kwargs)
         self.telecom.append(contact)
         return contact
 
@@ -261,12 +234,11 @@ class Organization(DomainResource):
         name: str,
         purpose: str | None = None,
         phone: str | None = None,
-        email: str | None = None
+        email: str | None = None,
     ) -> OrganizationContact:
         """Add a contact person for this organization."""
         contact = OrganizationContact(
-            name=name,
-            purpose=CodeableConcept(text=purpose) if purpose else None
+            name=name, purpose=CodeableConcept(text=purpose) if purpose else None
         )
 
         if phone:
@@ -281,7 +253,7 @@ class Organization(DomainResource):
         """Get contacts by purpose (e.g., 'billing', 'admin', 'emergency')."""
         matching = []
         for contact in self.contact:
-            if contact.purpose and hasattr(contact.purpose, 'text'):
+            if contact.purpose and hasattr(contact.purpose, "text"):
                 if purpose.lower() in contact.purpose.text.lower():
                     matching.append(contact)
         return matching
@@ -289,18 +261,12 @@ class Organization(DomainResource):
 
 # Convenience functions for common organization types
 
+
 def create_hospital(
-    name: str,
-    npi: str | None = None,
-    phone: str | None = None,
-    **kwargs
+    name: str, npi: str | None = None, phone: str | None = None, **kwargs
 ) -> Organization:
     """Create a hospital organization."""
-    hospital = Organization(
-        name=name,
-        active=True,
-        **kwargs
-    )
+    hospital = Organization(name=name, active=True, **kwargs)
 
     # Add hospital type
     hospital.add_type("Hospital")
@@ -319,17 +285,10 @@ def create_hospital(
 
 
 def create_clinic(
-    name: str,
-    specialty: str | None = None,
-    npi: str | None = None,
-    **kwargs
+    name: str, specialty: str | None = None, npi: str | None = None, **kwargs
 ) -> Organization:
     """Create a clinic organization."""
-    clinic = Organization(
-        name=name,
-        active=True,
-        **kwargs
-    )
+    clinic = Organization(name=name, active=True, **kwargs)
 
     # Add clinic type
     if specialty:
@@ -350,15 +309,10 @@ def create_department(
     name: str,
     parent_organization: ResourceReference | None = None,
     department_type: str = "Department",
-    **kwargs
+    **kwargs,
 ) -> Organization:
     """Create a department organization."""
-    department = Organization(
-        name=name,
-        active=True,
-        part_of=parent_organization,
-        **kwargs
-    )
+    department = Organization(name=name, active=True, part_of=parent_organization, **kwargs)
 
     # Add department type
     department.add_type(department_type)
@@ -366,17 +320,9 @@ def create_department(
     return department
 
 
-def create_insurance_organization(
-    name: str,
-    payer_id: str | None = None,
-    **kwargs
-) -> Organization:
+def create_insurance_organization(name: str, payer_id: str | None = None, **kwargs) -> Organization:
     """Create an insurance/payer organization."""
-    insurer = Organization(
-        name=name,
-        active=True,
-        **kwargs
-    )
+    insurer = Organization(name=name, active=True, **kwargs)
 
     # Add insurance type
     insurer.add_type("Insurance Company")
@@ -384,34 +330,23 @@ def create_insurance_organization(
 
     # Add payer identifier if provided
     if payer_id:
-        insurer.identifier.append(
-            Identifier(value=payer_id, type_code="PAYOR")
-        )
+        insurer.identifier.append(Identifier(value=payer_id, type_code="PAYOR"))
 
     return insurer
 
 
 def create_pharmacy(
-    name: str,
-    ncpdp: str | None = None,
-    npi: str | None = None,
-    **kwargs
+    name: str, ncpdp: str | None = None, npi: str | None = None, **kwargs
 ) -> Organization:
     """Create a pharmacy organization."""
-    pharmacy = Organization(
-        name=name,
-        active=True,
-        **kwargs
-    )
+    pharmacy = Organization(name=name, active=True, **kwargs)
 
     # Add pharmacy type
     pharmacy.add_type("Pharmacy")
 
     # Add NCPDP identifier if provided
     if ncpdp:
-        pharmacy.identifier.append(
-            Identifier(value=ncpdp, type_code="NCPDP")
-        )
+        pharmacy.identifier.append(Identifier(value=ncpdp, type_code="NCPDP"))
 
     # Add NPI identifier if provided
     if npi:

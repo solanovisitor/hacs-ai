@@ -12,9 +12,8 @@ SOLID Compliance:
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
-from ...core.base import EntityId
 from ...core.exceptions import InfrastructureException
 
 logger = logging.getLogger(__name__)
@@ -40,7 +39,9 @@ class LangChainAdapter:
             self._initialized = True
             self.logger.info("LangChain adapter initialized")
 
-    async def convert_to_langchain_tool(self, tool_definition: Dict[str, Any]) -> Dict[str, Any]:
+    async def convert_to_langchain_tool(
+        self, tool_definition: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Convert HACS tool definition to LangChain tool format."""
         try:
             # Placeholder implementation
@@ -48,10 +49,12 @@ class LangChainAdapter:
                 "name": tool_definition.get("name", "unknown"),
                 "description": tool_definition.get("description", ""),
                 "parameters": tool_definition.get("parameters", {}),
-                "function": tool_definition.get("function")
+                "function": tool_definition.get("function"),
             }
 
-            self.logger.debug(f"Converted tool to LangChain format: {langchain_tool['name']}")
+            self.logger.debug(
+                f"Converted tool to LangChain format: {langchain_tool['name']}"
+            )
             return langchain_tool
 
         except Exception as e:
@@ -65,10 +68,12 @@ class LangChainAdapter:
             agent = {
                 "config": agent_config,
                 "type": "langchain_agent",
-                "status": "created"
+                "status": "created",
             }
 
-            self.logger.info(f"Created LangChain agent: {agent_config.get('name', 'unknown')}")
+            self.logger.info(
+                f"Created LangChain agent: {agent_config.get('name', 'unknown')}"
+            )
             return agent
 
         except Exception as e:

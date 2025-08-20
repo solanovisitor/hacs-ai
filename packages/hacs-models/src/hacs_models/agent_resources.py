@@ -6,8 +6,9 @@ Agent-facing HACS resources for tasks and working memory.
 Canonical, concise names with compatibility aliases for legacy imports.
 """
 
-from typing import Any, Dict, List, Optional, Literal
 from datetime import datetime
+from typing import Any, Literal
+
 from pydantic import Field, model_validator
 
 from .base_resource import BaseResource
@@ -23,17 +24,19 @@ class AgentTodo(BaseResource):
     priority: str = Field(default="medium", description="Priority level")
     clinical_urgency: str = Field(default="routine", description="Clinical urgency")
 
-    assigned_actor: Optional[str] = Field(default=None, description="Responsible agent/user")
-    patient_id: Optional[str] = Field(default=None, description="Associated patient ID")
-    encounter_id: Optional[str] = Field(default=None, description="Associated encounter ID")
+    assigned_actor: str | None = Field(default=None, description="Responsible agent/user")
+    patient_id: str | None = Field(default=None, description="Associated patient ID")
+    encounter_id: str | None = Field(default=None, description="Associated encounter ID")
 
-    estimated_duration_minutes: Optional[int] = Field(default=None)
-    required_permissions: List[str] = Field(default_factory=list)
-    clinical_context: Dict[str, Any] = Field(default_factory=dict)
+    estimated_duration_minutes: int | None = Field(default=None)
+    required_permissions: list[str] = Field(default_factory=list)
+    clinical_context: dict[str, Any] = Field(default_factory=dict)
 
-    due_date: Optional[datetime] = Field(default=None)
-    completed_at: Optional[datetime] = Field(default=None)
-    notes: Optional[str] = Field(default=None, description="Additional notes (<=1000 chars)", max_length=1000)
+    due_date: datetime | None = Field(default=None)
+    completed_at: datetime | None = Field(default=None)
+    notes: str | None = Field(
+        default=None, description="Additional notes (<=1000 chars)", max_length=1000
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -42,7 +45,7 @@ class AgentTodo(BaseResource):
             for k in ("status", "priority", "clinical_urgency"):
                 v = values.get(k)
                 if hasattr(v, "value"):
-                    values[k] = getattr(v, "value")
+                    values[k] = v.value
         return values
 
 
@@ -55,10 +58,10 @@ class ScratchpadEntry(BaseResource):
     content: str = Field(description="Entry content")
     agent_id: str = Field(description="ID of the creating agent")
 
-    context_reference: Optional[str] = Field(default=None, description="Related resource reference")
-    confidence_score: Optional[float] = Field(default=None, ge=0.0, le=1.0)
-    tags: List[str] = Field(default_factory=list)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    context_reference: str | None = Field(default=None, description="Related resource reference")
+    confidence_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    tags: list[str] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class AgentTask(BaseResource):
@@ -73,17 +76,17 @@ class AgentTask(BaseResource):
     status: str = Field(default="pending", description="Task status")
     priority: str = Field(default="medium", description="Task priority")
 
-    assigned_agent: Optional[str] = Field(default=None, description="Assigned agent/user")
-    input_parameters: Dict[str, Any] = Field(default_factory=dict)
-    expected_output: Optional[Dict[str, Any]] = Field(default=None)
-    execution_context: Dict[str, Any] = Field(default_factory=dict)
-    dependencies: List[str] = Field(default_factory=list)
+    assigned_agent: str | None = Field(default=None, description="Assigned agent/user")
+    input_parameters: dict[str, Any] = Field(default_factory=dict)
+    expected_output: dict[str, Any] | None = Field(default=None)
+    execution_context: dict[str, Any] = Field(default_factory=dict)
+    dependencies: list[str] = Field(default_factory=list)
 
-    estimated_duration_minutes: Optional[int] = Field(default=None)
+    estimated_duration_minutes: int | None = Field(default=None)
     max_retries: int = Field(default=3)
 
-    started_at: Optional[datetime] = Field(default=None)
-    completed_at: Optional[datetime] = Field(default=None)
+    started_at: datetime | None = Field(default=None)
+    completed_at: datetime | None = Field(default=None)
 
     @model_validator(mode="before")
     @classmethod
@@ -92,7 +95,7 @@ class AgentTask(BaseResource):
             for k in ("status", "priority"):
                 v = values.get(k)
                 if hasattr(v, "value"):
-                    values[k] = getattr(v, "value")
+                    values[k] = v.value
         return values
 
 
@@ -102,5 +105,3 @@ class AgentTask(BaseResource):
 
 ScratchpadTodo = AgentTodo
 AgentScratchpadEntry = ScratchpadEntry
-
-

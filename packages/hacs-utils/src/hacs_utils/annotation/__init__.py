@@ -26,5 +26,3 @@ __all__ = [
     "to_openai_messages",
     "to_anthropic_messages",
 ]
-
-

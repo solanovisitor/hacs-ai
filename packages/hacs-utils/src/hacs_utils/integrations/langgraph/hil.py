@@ -17,9 +17,7 @@ class HACSResourceAction(BaseModel):
     action: Literal["create", "read", "update", "delete", "search"] = Field(
         description="Type of CRUD operation to perform"
     )
-    resource_type: str = Field(
-        description="Type of HACS resource (e.g., 'Patient', 'Observation')"
-    )
+    resource_type: str = Field(description="Type of HACS resource (e.g., 'Patient', 'Observation')")
     resource_id: Optional[str] = Field(
         default=None, description="Resource ID for read/update/delete operations"
     )
@@ -29,12 +27,8 @@ class HACSResourceAction(BaseModel):
     search_filters: Optional[Dict[str, Any]] = Field(
         default=None, description="Search filters for search operations"
     )
-    reason: str = Field(
-        description="Human-readable reason for this action"
-    )
-    impact_assessment: str = Field(
-        description="Assessment of what this action will affect"
-    )
+    reason: str = Field(description="Human-readable reason for this action")
+    impact_assessment: str = Field(description="Assessment of what this action will affect")
 
 
 class HACSUserConfirmation(BaseModel):
@@ -62,14 +56,11 @@ class HACSHumanInput(BaseModel):
     options: Optional[List[str]] = Field(
         default=None, description="Available options for multiple choice questions"
     )
-    required: bool = Field(
-        default=True, description="Whether this input is required to continue"
-    )
+    required: bool = Field(default=True, description="Whether this input is required to continue")
 
 
 def request_resource_confirmation(
-    action: HACSResourceAction,
-    additional_context: Optional[Dict[str, Any]] = None
+    action: HACSResourceAction, additional_context: Optional[Dict[str, Any]] = None
 ) -> HACSUserConfirmation:
     """
     Request human confirmation for a sensitive HACS resource operation.
@@ -118,9 +109,9 @@ You can also provide feedback or request modifications.
     # Parse the response
     if isinstance(response, str):
         response_lower = response.lower().strip()
-        if response_lower in ['yes', 'y', 'approve', 'confirmed', 'proceed']:
+        if response_lower in ["yes", "y", "approve", "confirmed", "proceed"]:
             return HACSUserConfirmation(approved=True)
-        elif response_lower in ['no', 'n', 'deny', 'cancel', 'abort']:
+        elif response_lower in ["no", "n", "deny", "cancel", "abort"]:
             return HACSUserConfirmation(approved=False)
         else:
             # Treat as feedback
@@ -138,7 +129,7 @@ def request_human_clarification(
     question: str,
     context: Optional[Dict[str, Any]] = None,
     options: Optional[List[str]] = None,
-    required: bool = True
+    required: bool = True,
 ) -> str:
     """
     Request clarification from a human user during agent execution.
@@ -174,7 +165,7 @@ def request_data_input(
     field_type: str,
     description: str,
     required: bool = True,
-    validation_rules: Optional[List[str]] = None
+    validation_rules: Optional[List[str]] = None,
 ) -> Any:
     """
     Request specific data input from a human user.
@@ -207,27 +198,26 @@ def request_data_input(
     response = interrupt(prompt)
 
     # Type conversion based on field_type
-    if field_type.lower() in ['int', 'integer', 'number']:
+    if field_type.lower() in ["int", "integer", "number"]:
         try:
             return int(response)
         except (ValueError, TypeError):
             return response
-    elif field_type.lower() in ['float', 'decimal']:
+    elif field_type.lower() in ["float", "decimal"]:
         try:
             return float(response)
         except (ValueError, TypeError):
             return response
-    elif field_type.lower() in ['bool', 'boolean']:
+    elif field_type.lower() in ["bool", "boolean"]:
         if isinstance(response, str):
-            return response.lower() in ['true', 'yes', 'y', '1', 'on']
+            return response.lower() in ["true", "yes", "y", "1", "on"]
         return bool(response)
 
     return str(response) if response is not None else ""
 
 
 def create_approval_workflow_node(
-    action: HACSResourceAction,
-    context: Optional[Dict[str, Any]] = None
+    action: HACSResourceAction, context: Optional[Dict[str, Any]] = None
 ):
     """
     Create a LangGraph node function for resource approval workflow.
@@ -242,15 +232,13 @@ def create_approval_workflow_node(
     Returns:
         A function that can be used as a LangGraph node
     """
+
     def approval_node(state):
         """LangGraph node for human approval of HACS resource operations."""
         print("---🏥 HACS Resource Approval Required---")
 
         # Store the action in state for later reference
-        approval_state = {
-            "pending_action": action.model_dump(),
-            "approval_context": context
-        }
+        approval_state = {"pending_action": action.model_dump(), "approval_context": context}
 
         # Request confirmation
         confirmation = request_resource_confirmation(action, context)
@@ -262,7 +250,7 @@ def create_approval_workflow_node(
                 "approval_result": "approved",
                 "approved_action": action.model_dump(),
                 "user_feedback": confirmation.feedback,
-                **approval_state
+                **approval_state,
             }
         else:
             print("❌ Action denied by user")
@@ -272,17 +260,16 @@ def create_approval_workflow_node(
                 "user_feedback": confirmation.feedback,
                 "modified_action": (
                     confirmation.modified_action.model_dump()
-                    if confirmation.modified_action else None
+                    if confirmation.modified_action
+                    else None
                 ),
-                **approval_state
+                **approval_state,
             }
 
     return approval_node
 
 
-def create_human_input_node(
-    input_request: HACSHumanInput
-):
+def create_human_input_node(input_request: HACSHumanInput):
     """
     Create a LangGraph node function for general human input.
 
@@ -292,6 +279,7 @@ def create_human_input_node(
     Returns:
         A function that can be used as a LangGraph node
     """
+
     def human_input_node(state):
         """LangGraph node for requesting human input."""
         print(f"---❓ Human Input Required: {input_request.input_type}---")
@@ -301,7 +289,7 @@ def create_human_input_node(
                 input_request.prompt,
                 input_request.context,
                 input_request.options,
-                input_request.required
+                input_request.required,
             )
             return {"human_response": response, "input_type": "confirmation"}
 
@@ -310,7 +298,7 @@ def create_human_input_node(
                 input_request.prompt,
                 input_request.context,
                 input_request.options,
-                input_request.required
+                input_request.required,
             )
             return {"human_response": response, "input_type": "clarification"}
 
@@ -322,7 +310,7 @@ def create_human_input_node(
                 field_info.get("field_type", "string"),
                 input_request.prompt,
                 input_request.required,
-                field_info.get("validation_rules")
+                field_info.get("validation_rules"),
             )
             return {"human_input": response, "input_type": "data_input"}
 
@@ -331,7 +319,7 @@ def create_human_input_node(
                 input_request.prompt,
                 input_request.context,
                 input_request.options,
-                input_request.required
+                input_request.required,
             )
             return {"human_decision": response, "input_type": "decision"}
 
@@ -345,6 +333,7 @@ def _format_resource_data(data: Dict[str, Any]) -> str:
 
     formatted = "```json\n"
     import json
+
     formatted += json.dumps(data, indent=2, default=str)
     formatted += "\n```"
     return formatted
@@ -373,9 +362,11 @@ def create_crud_interrupt_routing(state) -> str:
     sensitive_resources = ["patient", "medication", "diagnosis"]
 
     # Require approval for high-risk actions or sensitive resources
-    if (action_type in high_risk_actions or
-        resource_type in sensitive_resources or
-        pending_action.get("requires_approval", False)):
+    if (
+        action_type in high_risk_actions
+        or resource_type in sensitive_resources
+        or pending_action.get("requires_approval", False)
+    ):
         return "human_approval"
 
     return "execute_directly"
@@ -394,7 +385,6 @@ def resume_with_approval(approved: bool = True, feedback: str = "") -> Command:
     """
     return Command(
         resume=HACSUserConfirmation(
-            approved=approved,
-            feedback=feedback if feedback else None
+            approved=approved, feedback=feedback if feedback else None
         ).model_dump()
     )

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Iterator, Sequence
+from typing import Iterator, Sequence
 
 from .data import FormatType
 
@@ -16,7 +16,9 @@ class BaseLanguageModel:
     def __init__(self, *, format_type: FormatType = FormatType.JSON) -> None:
         self.format_type = format_type
 
-    def infer(self, batch_prompts: Sequence[str], **kwargs) -> Iterator[Sequence[ScoredOutput]]:  # pragma: no cover
+    def infer(
+        self, batch_prompts: Sequence[str], **kwargs
+    ) -> Iterator[Sequence[ScoredOutput]]:  # pragma: no cover
         raise NotImplementedError
 
 
@@ -86,5 +88,3 @@ class AnthropicLanguageModel(BaseLanguageModel):
                         parts.append(getattr(block, "text", ""))
                 content = "".join(parts)
                 yield [ScoredOutput(score=None, output=content)]
-
-

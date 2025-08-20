@@ -15,7 +15,7 @@ from pydantic import Field, field_validator
 
 from .base_resource import DomainResource
 from .observation import CodeableConcept
-from .patient import HumanName, ContactPoint, Address, Identifier
+from .patient import Address, ContactPoint, HumanName, Identifier
 from .types import (
     Gender,
     ResourceReference,
@@ -32,36 +32,29 @@ class PractitionerQualification(DomainResource):
     """
 
     resource_type: Literal["PractitionerQualification"] = Field(
-        default="PractitionerQualification",
-        description="Resource type identifier"
+        default="PractitionerQualification", description="Resource type identifier"
     )
 
     # Business identifiers for the qualification
     identifier: list[Identifier] = Field(
-        default_factory=list,
-        description="External identifier for the qualification"
+        default_factory=list, description="External identifier for the qualification"
     )
 
     # Coded representation of the qualification
-    code: CodeableConcept = Field(
-        description="Coded representation of the qualification"
-    )
+    code: CodeableConcept = Field(description="Coded representation of the qualification")
 
     # Period during which the qualification is valid
     period_start: TimestampStr | None = Field(
-        None,
-        description="Period start when the qualification is/was valid"
+        None, description="Period start when the qualification is/was valid"
     )
 
     period_end: TimestampStr | None = Field(
-        None,
-        description="Period end when the qualification is/was valid"
+        None, description="Period end when the qualification is/was valid"
     )
 
     # Organization that regulates and issues the qualification
     issuer: ResourceReference | None = Field(
-        None,
-        description="Organization that regulates and issues the qualification"
+        None, description="Organization that regulates and issues the qualification"
     )
 
 
@@ -74,71 +67,61 @@ class Practitioner(DomainResource):
     """
 
     resource_type: Literal["Practitioner"] = Field(
-        default="Practitioner",
-        description="Resource type identifier"
+        default="Practitioner", description="Resource type identifier"
     )
 
     # Business identifiers for the practitioner
     identifier: list[Identifier] = Field(
-        default_factory=list,
-        description="External identifiers for this practitioner"
+        default_factory=list, description="External identifiers for this practitioner"
     )
 
     # Whether this practitioner's record is in active use
     active: bool | None = Field(
-        None,
-        description="Whether this practitioner's record is in active use"
+        None, description="Whether this practitioner's record is in active use"
     )
 
     # Practitioner name(s)
     name: list[HumanName] = Field(
-        default_factory=list,
-        description="The name(s) associated with the practitioner"
+        default_factory=list, description="The name(s) associated with the practitioner"
     )
 
     # Contact details for the practitioner
     telecom: list[ContactPoint] = Field(
-        default_factory=list,
-        description="Contact details that are available outside of a role"
+        default_factory=list, description="Contact details that are available outside of a role"
     )
 
     # Address(es) of the practitioner
     address: list[Address] = Field(
         default_factory=list,
-        description="Address(es) of the practitioner that are not role specific"
+        description="Address(es) of the practitioner that are not role specific",
     )
 
     # Administrative gender
     gender: Gender | None = Field(
-        None,
-        description="Administrative Gender - male | female | other | unknown"
+        None, description="Administrative Gender - male | female | other | unknown"
     )
 
     # Date of birth
-    birth_date: date | None = Field(
-        None,
-        description="The date of birth for the practitioner"
-    )
+    birth_date: date | None = Field(None, description="The date of birth for the practitioner")
 
     # Image of the practitioner
     photo: list[str] = Field(
-        default_factory=list,
-        description="Image of the practitioner (base64 encoded or URL)"
+        default_factory=list, description="Image of the practitioner (base64 encoded or URL)"
     )
 
     # Qualifications, certifications, accreditations, licenses, training
     qualification: list[PractitionerQualification] = Field(
         default_factory=list,
-        description="Certification, licenses, or training pertaining to the provision of care"
+        description="Certification, licenses, or training pertaining to the provision of care",
     )
 
     # Communication languages
     communication: list[CodeableConcept] = Field(
         default_factory=list,
-        description="A language the practitioner can use in patient communication"
+        description="A language the practitioner can use in patient communication",
     )
 
-    @field_validator('active')
+    @field_validator("active")
     @classmethod
     def validate_active_status(cls, v):
         """Validate active status is reasonable."""
@@ -158,12 +141,12 @@ class Practitioner(DomainResource):
 
         # Look for official name first
         for name in self.name:
-            if hasattr(name, 'use') and name.use == "official":
+            if hasattr(name, "use") and name.use == "official":
                 return name
 
         # Fall back to usual name
         for name in self.name:
-            if hasattr(name, 'use') and name.use == "usual":
+            if hasattr(name, "use") and name.use == "usual":
                 return name
 
         # Return first name if no specific use
@@ -173,19 +156,19 @@ class Practitioner(DomainResource):
     def display_name(self) -> str:
         """Get a display name for the practitioner."""
         primary = self.primary_name
-        if primary and hasattr(primary, 'text') and primary.text:
+        if primary and hasattr(primary, "text") and primary.text:
             return primary.text
 
         if primary:
             # Build name from parts
             parts = []
-            if hasattr(primary, 'prefix') and primary.prefix:
+            if hasattr(primary, "prefix") and primary.prefix:
                 parts.extend(primary.prefix)
-            if hasattr(primary, 'given') and primary.given:
+            if hasattr(primary, "given") and primary.given:
                 parts.extend(primary.given)
-            if hasattr(primary, 'family') and primary.family:
+            if hasattr(primary, "family") and primary.family:
                 parts.append(primary.family)
-            if hasattr(primary, 'suffix') and primary.suffix:
+            if hasattr(primary, "suffix") and primary.suffix:
                 parts.extend(primary.suffix)
 
             if parts:
@@ -201,13 +184,17 @@ class Practitioner(DomainResource):
 
         # Look for work phone first
         for contact in self.telecom:
-            if (hasattr(contact, 'system') and contact.system == "phone" and
-                hasattr(contact, 'use') and contact.use == "work"):
+            if (
+                hasattr(contact, "system")
+                and contact.system == "phone"
+                and hasattr(contact, "use")
+                and contact.use == "work"
+            ):
                 return contact
 
         # Look for any work contact
         for contact in self.telecom:
-            if hasattr(contact, 'use') and contact.use == "work":
+            if hasattr(contact, "use") and contact.use == "work":
                 return contact
 
         # Return first contact
@@ -223,11 +210,11 @@ class Practitioner(DomainResource):
         """Get specialty codes from qualifications."""
         specialties = []
         for qual in self.qualification:
-            if qual.code and hasattr(qual.code, 'coding'):
+            if qual.code and hasattr(qual.code, "coding"):
                 # Check if this is a specialty qualification
                 if qual.code.coding:
                     for coding in qual.code.coding:
-                        if hasattr(coding, 'system') and 'specialty' in str(coding.system).lower():
+                        if hasattr(coding, "system") and "specialty" in str(coding.system).lower():
                             specialties.append(qual.code)
                             break
         return specialties
@@ -237,32 +224,16 @@ class Practitioner(DomainResource):
         family: str | None = None,
         given: list[str] | None = None,
         use: str = "usual",
-        **kwargs
+        **kwargs,
     ) -> HumanName:
         """Add a name to this practitioner."""
-        name = HumanName(
-            family=family,
-            given=given or [],
-            use=use,
-            **kwargs
-        )
+        name = HumanName(family=family, given=given or [], use=use, **kwargs)
         self.name.append(name)
         return name
 
-    def add_contact(
-        self,
-        system: str,
-        value: str,
-        use: str = "work",
-        **kwargs
-    ) -> ContactPoint:
+    def add_contact(self, system: str, value: str, use: str = "work", **kwargs) -> ContactPoint:
         """Add a contact point to this practitioner."""
-        contact = ContactPoint(
-            system=system,
-            value=value,
-            use=use,
-            **kwargs
-        )
+        contact = ContactPoint(system=system, value=value, use=use, **kwargs)
         self.telecom.append(contact)
         return contact
 
@@ -271,28 +242,30 @@ class Practitioner(DomainResource):
         code: CodeableConcept,
         issuer: ResourceReference | None = None,
         period_start: TimestampStr | None = None,
-        period_end: TimestampStr | None = None
+        period_end: TimestampStr | None = None,
     ) -> PractitionerQualification:
         """Add a qualification to this practitioner."""
         qualification = PractitionerQualification(
-            code=code,
-            issuer=issuer,
-            period_start=period_start,
-            period_end=period_end
+            code=code, issuer=issuer, period_start=period_start, period_end=period_end
         )
         self.qualification.append(qualification)
         return qualification
 
-    def get_qualifications_by_type(self, qualification_type: str) -> list[PractitionerQualification]:
+    def get_qualifications_by_type(
+        self, qualification_type: str
+    ) -> list[PractitionerQualification]:
         """Get qualifications by type (e.g., 'license', 'certification', 'degree')."""
         matching = []
         for qual in self.qualification:
-            if qual.code and hasattr(qual.code, 'text'):
+            if qual.code and hasattr(qual.code, "text"):
                 if qualification_type.lower() in qual.code.text.lower():
                     matching.append(qual)
-            elif qual.code and hasattr(qual.code, 'coding'):
+            elif qual.code and hasattr(qual.code, "coding"):
                 for coding in qual.code.coding:
-                    if hasattr(coding, 'display') and qualification_type.lower() in coding.display.lower():
+                    if (
+                        hasattr(coding, "display")
+                        and qualification_type.lower() in coding.display.lower()
+                    ):
                         matching.append(qual)
                         break
         return matching
@@ -300,25 +273,19 @@ class Practitioner(DomainResource):
 
 # Convenience functions for common practitioner types
 
+
 def create_physician(
     family_name: str,
     given_names: list[str],
     specialty: str | None = None,
     license_number: str | None = None,
-    **kwargs
+    **kwargs,
 ) -> Practitioner:
     """Create a physician practitioner."""
-    practitioner = Practitioner(
-        active=True,
-        **kwargs
-    )
+    practitioner = Practitioner(active=True, **kwargs)
 
     # Add name
-    practitioner.add_name(
-        family=family_name,
-        given=given_names,
-        use="official"
-    )
+    practitioner.add_name(family=family_name, given=given_names, use="official")
 
     # Add specialty if provided
     if specialty:
@@ -332,10 +299,8 @@ def create_physician(
             code=CodeableConcept(text="Medical License"),
         )
         # Add license number as identifier
-        if hasattr(practitioner, 'identifier'):
-            practitioner.identifier.append(
-                Identifier(value=license_number, type_code="LIC")
-            )
+        if hasattr(practitioner, "identifier"):
+            practitioner.identifier.append(Identifier(value=license_number, type_code="LIC"))
 
     return practitioner
 
@@ -345,20 +310,13 @@ def create_nurse(
     given_names: list[str],
     license_number: str | None = None,
     certification: str | None = None,
-    **kwargs
+    **kwargs,
 ) -> Practitioner:
     """Create a nurse practitioner."""
-    practitioner = Practitioner(
-        active=True,
-        **kwargs
-    )
+    practitioner = Practitioner(active=True, **kwargs)
 
     # Add name
-    practitioner.add_name(
-        family=family_name,
-        given=given_names,
-        use="official"
-    )
+    practitioner.add_name(family=family_name, given=given_names, use="official")
 
     # Add nursing license
     practitioner.add_qualification(
@@ -366,10 +324,8 @@ def create_nurse(
     )
 
     # Add license number as identifier
-    if license_number and hasattr(practitioner, 'identifier'):
-        practitioner.identifier.append(
-            Identifier(value=license_number, type_code="LIC")
-        )
+    if license_number and hasattr(practitioner, "identifier"):
+        practitioner.identifier.append(Identifier(value=license_number, type_code="LIC"))
 
     # Add certification if provided
     if certification:
@@ -385,20 +341,13 @@ def create_therapist(
     given_names: list[str],
     therapy_type: str,
     license_number: str | None = None,
-    **kwargs
+    **kwargs,
 ) -> Practitioner:
     """Create a therapist practitioner."""
-    practitioner = Practitioner(
-        active=True,
-        **kwargs
-    )
+    practitioner = Practitioner(active=True, **kwargs)
 
     # Add name
-    practitioner.add_name(
-        family=family_name,
-        given=given_names,
-        use="official"
-    )
+    practitioner.add_name(family=family_name, given=given_names, use="official")
 
     # Add therapy qualification
     practitioner.add_qualification(
@@ -406,9 +355,7 @@ def create_therapist(
     )
 
     # Add license number as identifier
-    if license_number and hasattr(practitioner, 'identifier'):
-        practitioner.identifier.append(
-            Identifier(value=license_number, type_code="LIC")
-        )
+    if license_number and hasattr(practitioner, "identifier"):
+        practitioner.identifier.append(Identifier(value=license_number, type_code="LIC"))
 
     return practitioner

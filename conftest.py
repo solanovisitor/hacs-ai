@@ -41,5 +41,3 @@ def pytest_ignore_collect(path):
 
     # Everything else is skipped during collection
     return True
-
-

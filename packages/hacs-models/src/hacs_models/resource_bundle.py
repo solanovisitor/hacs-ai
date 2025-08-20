@@ -2,11 +2,15 @@
 
 Minimal yet usable bundle types for grouping related HACS resources.
 """
-from typing import Literal, Optional, List, Any, Dict
-from pydantic import Field, field_validator, model_validator
+
+from typing import Any, Literal
+
+from pydantic import Field, model_validator
+
 from .base_resource import BaseResource
-from .types import BundleType, BundleStatus
-from .workflow import WorkflowBindingType, WorkflowBinding, LinkRelation
+from .types import BundleStatus, BundleType
+from .workflow import LinkRelation, WorkflowBinding, WorkflowBindingType
+
 
 # Minimal types for workflow bindings and links used by tests
 class Link(BaseResource):
@@ -18,49 +22,59 @@ class Link(BaseResource):
 class BundleEntry(BaseResource):
     resource_type: Literal["BundleEntry"] = Field(default="BundleEntry")
 
-    title: Optional[str] = Field(default=None, description="Entry title")
-    tags: List[str] = Field(default_factory=list, description="Entry tags")
+    title: str | None = Field(default=None, description="Entry title")
+    tags: list[str] = Field(default_factory=list, description="Entry tags")
     priority: int = Field(default=0, description="Ordering priority")
     # The actual contained resource (FHIR Bundle.entry.resource)
-    resource: Optional[Any] = Field(default=None, description="The actual resource contained in this entry")
+    resource: Any | None = Field(
+        default=None, description="The actual resource contained in this entry"
+    )
     # Optional reference ID for linking
-    contained_resource_id: Optional[str] = Field(default=None, description="ID of the contained resource")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Arbitrary entry metadata")
+    contained_resource_id: str | None = Field(
+        default=None, description="ID of the contained resource"
+    )
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Arbitrary entry metadata")
 
 
 class ResourceBundle(BaseResource):
     resource_type: Literal["ResourceBundle"] = Field(default="ResourceBundle")
-    title: Optional[str] = Field(default=None, description="Bundle title")
+    title: str | None = Field(default=None, description="Bundle title")
     bundle_type: BundleType | None = Field(default=None)
-    entries: List[BundleEntry] = Field(default_factory=list, description="Bundle entries")
+    entries: list[BundleEntry] = Field(default_factory=list, description="Bundle entries")
     status: BundleStatus = Field(default=BundleStatus.DRAFT, description="Bundle lifecycle status")
     # Optional metadata used by tests and utilities
-    version: Optional[str] = None
-    description: Optional[str] = None
-    publisher: Optional[str] = None
-    keywords: List[str] = Field(default_factory=list)
-    categories: List[str] = Field(default_factory=list)
-    total: Optional[int] = None
-    links: List[Link] = Field(default_factory=list)
-    workflow_bindings: List[Any] = Field(default_factory=list)
+    version: str | None = None
+    description: str | None = None
+    publisher: str | None = None
+    keywords: list[str] = Field(default_factory=list)
+    categories: list[str] = Field(default_factory=list)
+    total: int | None = None
+    links: list[Link] = Field(default_factory=list)
+    workflow_bindings: list[Any] = Field(default_factory=list)
+
     class UseCase(BaseResource):
         resource_type: Literal["UseCase"] = Field(default="UseCase")
         name: str
         description: str
-        examples: List[str] = Field(default_factory=list)
-        prerequisites: List[str] = Field(default_factory=list)
-        outcomes: List[str] = Field(default_factory=list)
-        tags: List[str] = Field(default_factory=list)
+        examples: list[str] = Field(default_factory=list)
+        prerequisites: list[str] = Field(default_factory=list)
+        outcomes: list[str] = Field(default_factory=list)
+        tags: list[str] = Field(default_factory=list)
         model_config = {"extra": "allow"}
 
-    use_cases: List[UseCase] = Field(default_factory=list)
-    updates: List[Any] = Field(default_factory=list)
-    quality_score: Optional[float] = None
-    maturity_level: Optional[str] = None
-    experimental: Optional[bool] = None
+    use_cases: list[UseCase] = Field(default_factory=list)
+    updates: list[Any] = Field(default_factory=list)
+    quality_score: float | None = None
+    maturity_level: str | None = None
+    experimental: bool | None = None
 
-
-    def add_entry(self, resource: BaseResource, title: Optional[str] = None, tags: Optional[List[str]] = None, priority: int = 0) -> None:
+    def add_entry(
+        self,
+        resource: BaseResource,
+        title: str | None = None,
+        tags: list[str] | None = None,
+        priority: int = 0,
+    ) -> None:
         entry = BundleEntry(
             resource_type="BundleEntry",
             title=title,
@@ -72,11 +86,18 @@ class ResourceBundle(BaseResource):
         self.entries.append(entry)
 
     # Compatibility helpers used by tests (no-op/simple implementations)
-    def add_resource(self, resource: BaseResource, title: Optional[str] = None, tags: Optional[List[str]] = None, priority: int = 0, metadata: Optional[Dict[str, Any]] = None) -> None:
+    def add_resource(
+        self,
+        resource: BaseResource,
+        title: str | None = None,
+        tags: list[str] | None = None,
+        priority: int = 0,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
         self.add_entry(resource, title=title, tags=tags, priority=priority)
         if metadata:
             if not hasattr(self.entries[-1], "metadata"):
-                setattr(self.entries[-1], "metadata", {})
+                self.entries[-1].metadata = {}
             self.entries[-1].metadata.update(metadata)
 
     def add_link(self, relation: str, url: str) -> None:
@@ -84,14 +105,29 @@ class ResourceBundle(BaseResource):
 
     # Factory function compatibility
     @staticmethod
-    def create_resource_stack(stack_name: str, version: str, description: Optional[str] = None, resources: Optional[List[BaseResource]] = None, publisher: Optional[str] = None) -> "ResourceBundle":
-        bundle = ResourceBundle(title=stack_name, bundle_type=BundleType.STACK, version=version, description=description, publisher=publisher, status=BundleStatus.ACTIVE)
-        for res in (resources or []):
+    def create_resource_stack(
+        stack_name: str,
+        version: str,
+        description: str | None = None,
+        resources: list[BaseResource] | None = None,
+        publisher: str | None = None,
+    ) -> "ResourceBundle":
+        bundle = ResourceBundle(
+            title=stack_name,
+            bundle_type=BundleType.STACK,
+            version=version,
+            description=description,
+            publisher=publisher,
+            status=BundleStatus.ACTIVE,
+        )
+        for res in resources or []:
             bundle.add_resource(res)
         return bundle
 
     @staticmethod
-    def create_search_results_bundle(resources: List[BaseResource], total: int, search_url: str) -> "ResourceBundle":
+    def create_search_results_bundle(
+        resources: list[BaseResource], total: int, search_url: str
+    ) -> "ResourceBundle":
         bundle = ResourceBundle(bundle_type=BundleType.SEARCHSET, version="1.0.0", total=total)
         for res in resources:
             bundle.add_resource(res)
@@ -100,39 +136,83 @@ class ResourceBundle(BaseResource):
         return bundle
 
     @staticmethod
-    def create_workflow_template_bundle(template_name: str, version: str, workflow_id: str, template_resources: List[BaseResource], description: Optional[str] = None) -> "ResourceBundle":
-        bundle = ResourceBundle(title=template_name, bundle_type=BundleType.TEMPLATE, version=version, description=description)
+    def create_workflow_template_bundle(
+        template_name: str,
+        version: str,
+        workflow_id: str,
+        template_resources: list[BaseResource],
+        description: str | None = None,
+    ) -> "ResourceBundle":
+        bundle = ResourceBundle(
+            title=template_name,
+            bundle_type=BundleType.TEMPLATE,
+            version=version,
+            description=description,
+        )
         for res in template_resources:
             bundle.add_resource(res)
         bundle.add_workflow_binding(workflow_id, WorkflowBindingType.OUTPUT_TEMPLATE)
         return bundle
 
-    def get_resources_by_type(self, resource_type: str) -> List[BaseResource]:
-        return [e.resource for e in self.entries if getattr(e.resource, "resource_type", None) == resource_type]
+    def get_resources_by_type(self, resource_type: str) -> list[BaseResource]:
+        return [
+            e.resource
+            for e in self.entries
+            if getattr(e.resource, "resource_type", None) == resource_type
+        ]
 
-    def get_resources_by_tag(self, tag: str) -> List[BaseResource]:
+    def get_resources_by_tag(self, tag: str) -> list[BaseResource]:
         return [e.resource for e in self.entries if tag in (e.tags or [])]
 
-    def add_workflow_binding(self, workflow_id: str, binding_type: Any, workflow_name: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None, priority: int = 0, description: Optional[str] = None) -> None:
-        self.workflow_bindings.append(WorkflowBinding(
-            workflow_id=workflow_id,
-            binding_type=binding_type,
-            parameters=parameters or {},
-            priority=priority,
-            description=description,
-            workflow_name=workflow_name,
-        ))
+    def add_workflow_binding(
+        self,
+        workflow_id: str,
+        binding_type: Any,
+        workflow_name: str | None = None,
+        parameters: dict[str, Any] | None = None,
+        priority: int = 0,
+        description: str | None = None,
+    ) -> None:
+        self.workflow_bindings.append(
+            WorkflowBinding(
+                workflow_id=workflow_id,
+                binding_type=binding_type,
+                parameters=parameters or {},
+                priority=priority,
+                description=description,
+                workflow_name=workflow_name,
+            )
+        )
 
-    def get_workflow_bindings_by_type(self, binding_type: Any) -> List[Any]:
-        return [wb for wb in self.workflow_bindings if getattr(wb, "binding_type", None) == binding_type]
+    def get_workflow_bindings_by_type(self, binding_type: Any) -> list[Any]:
+        return [
+            wb for wb in self.workflow_bindings if getattr(wb, "binding_type", None) == binding_type
+        ]
 
-    def add_use_case(self, name: str, description: str, examples: Optional[List[str]] = None, prerequisites: Optional[List[str]] = None, outcomes: Optional[List[str]] = None, tags: Optional[List[str]] = None) -> None:
-        self.use_cases.append(self.UseCase(name=name, description=description, examples=examples or [], prerequisites=prerequisites or [], outcomes=outcomes or [], tags=tags or []))
+    def add_use_case(
+        self,
+        name: str,
+        description: str,
+        examples: list[str] | None = None,
+        prerequisites: list[str] | None = None,
+        outcomes: list[str] | None = None,
+        tags: list[str] | None = None,
+    ) -> None:
+        self.use_cases.append(
+            self.UseCase(
+                name=name,
+                description=description,
+                examples=examples or [],
+                prerequisites=prerequisites or [],
+                outcomes=outcomes or [],
+                tags=tags or [],
+            )
+        )
 
     # Legacy alias no longer needed; UseCase defined above
 
-    def validate_bundle_integrity(self) -> Dict[str, Any]:
-        issues: List[str] = []
+    def validate_bundle_integrity(self) -> dict[str, Any]:
+        issues: list[str] = []
         ids = [getattr(e.resource, "id", None) for e in self.entries if e.resource is not None]
         if len(ids) != len(set(ids)):
             issues.append("Duplicate resource IDs found in bundle")
@@ -165,15 +245,36 @@ class ResourceBundle(BaseResource):
             raise ValueError("Workflow bindings must have unique workflow_ids")
         return self
 
-    def add_update_record(self, version: str, summary: str, author: Optional[str] = None, details: Optional[str] = None, breaking_changes: bool = False, migration_notes: Optional[str] = None) -> None:
-        self.updates.append(type("_Update", (), {"version": version, "summary": summary, "author": author, "details": details, "breaking_changes": breaking_changes, "migration_notes": migration_notes})())
+    def add_update_record(
+        self,
+        version: str,
+        summary: str,
+        author: str | None = None,
+        details: str | None = None,
+        breaking_changes: bool = False,
+        migration_notes: str | None = None,
+    ) -> None:
+        self.updates.append(
+            type(
+                "_Update",
+                (),
+                {
+                    "version": version,
+                    "summary": summary,
+                    "author": author,
+                    "details": details,
+                    "breaking_changes": breaking_changes,
+                    "migration_notes": migration_notes,
+                },
+            )()
+        )
 
     # Provide a class alias for tests importing BundleUpdate
     class BundleUpdate(BaseResource):  # pragma: no cover
         resource_type: Literal["BundleUpdate"] = Field(default="BundleUpdate")
         version: str
         summary: str
-        author: Optional[str] = None
-        details: Optional[str] = None
+        author: str | None = None
+        details: str | None = None
         breaking_changes: bool = False
-        migration_notes: Optional[str] = None
+        migration_notes: str | None = None

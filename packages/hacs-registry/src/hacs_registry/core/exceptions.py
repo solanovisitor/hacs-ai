@@ -17,7 +17,6 @@ Exception Categories:
     🔐 Permission Exceptions - Access control violations
 """
 
-from abc import ABC
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone
 
@@ -36,7 +35,7 @@ class RegistryException(Exception):
         message: str,
         error_code: Optional[str] = None,
         details: Optional[Dict[str, Any]] = None,
-        inner_exception: Optional[Exception] = None
+        inner_exception: Optional[Exception] = None,
     ):
         super().__init__(message)
         self.message = message
@@ -53,7 +52,9 @@ class RegistryException(Exception):
             "message": self.message,
             "details": self.details,
             "timestamp": self.timestamp.isoformat(),
-            "inner_exception": str(self.inner_exception) if self.inner_exception else None
+            "inner_exception": str(self.inner_exception)
+            if self.inner_exception
+            else None,
         }
 
     def __str__(self) -> str:
@@ -61,6 +62,7 @@ class RegistryException(Exception):
 
 
 # Domain Layer Exceptions (Business Logic Violations)
+
 
 class DomainException(RegistryException):
     """Base class for domain layer exceptions."""
@@ -73,7 +75,13 @@ class DomainException(RegistryException):
 class ResourceException(DomainException):
     """Base class for resource-related exceptions."""
 
-    def __init__(self, message: str, resource_id: Optional[str] = None, resource_type: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        message: str,
+        resource_id: Optional[str] = None,
+        resource_type: Optional[str] = None,
+        **kwargs,
+    ):
         super().__init__(message, domain_object="Resource", **kwargs)
         self.resource_id = resource_id
         self.resource_type = resource_type
@@ -109,8 +117,8 @@ class ResourceVersionConflictError(ResourceException):
             resource_id=resource_id,
             details={
                 "expected_version": expected_version,
-                "actual_version": actual_version
-            }
+                "actual_version": actual_version,
+            },
         )
 
 
@@ -124,15 +132,21 @@ class ResourceLifecycleError(ResourceException):
             resource_id=resource_id,
             details={
                 "current_state": current_state,
-                "attempted_action": attempted_action
-            }
+                "attempted_action": attempted_action,
+            },
         )
 
 
 class AgentException(DomainException):
     """Base class for agent-related exceptions."""
 
-    def __init__(self, message: str, agent_id: Optional[str] = None, agent_type: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        message: str,
+        agent_id: Optional[str] = None,
+        agent_type: Optional[str] = None,
+        **kwargs,
+    ):
         super().__init__(message, domain_object="Agent", **kwargs)
         self.agent_id = agent_id
         self.agent_type = agent_type
@@ -152,11 +166,11 @@ class AgentConfigurationError(AgentException):
     """Agent configuration is invalid."""
 
     def __init__(self, agent_id: str, config_errors: List[str]):
-        message = f"Agent '{agent_id}' has invalid configuration: {'; '.join(config_errors)}"
+        message = (
+            f"Agent '{agent_id}' has invalid configuration: {'; '.join(config_errors)}"
+        )
         super().__init__(
-            message,
-            agent_id=agent_id,
-            details={"config_errors": config_errors}
+            message, agent_id=agent_id, details={"config_errors": config_errors}
         )
 
 
@@ -168,10 +182,7 @@ class AgentDeploymentError(AgentException):
         super().__init__(
             message,
             agent_id=agent_id,
-            details={
-                "environment": environment,
-                "reason": reason
-            }
+            details={"environment": environment, "reason": reason},
         )
 
 
@@ -200,11 +211,12 @@ class ToolExecutionError(ToolException):
             message,
             tool_name=tool_name,
             details={"execution_error": execution_error},
-            **kwargs
+            **kwargs,
         )
 
 
 # Infrastructure Layer Exceptions (External System Failures)
+
 
 class InfrastructureException(RegistryException):
     """Base class for infrastructure layer exceptions."""
@@ -225,7 +237,11 @@ class PersistenceException(InfrastructureException):
 class DatabaseConnectionError(PersistenceException):
     """Database connection failed."""
 
-    def __init__(self, database_url: Optional[str] = None, inner_exception: Optional[Exception] = None):
+    def __init__(
+        self,
+        database_url: Optional[str] = None,
+        inner_exception: Optional[Exception] = None,
+    ):
         message = "Failed to connect to database"
         if database_url:
             message += f" at {database_url}"
@@ -233,7 +249,7 @@ class DatabaseConnectionError(PersistenceException):
             message,
             operation="connect",
             inner_exception=inner_exception,
-            details={"database_url": database_url}
+            details={"database_url": database_url},
         )
 
 
@@ -243,9 +259,7 @@ class DatabaseTimeoutError(PersistenceException):
     def __init__(self, operation: str, timeout_seconds: float):
         message = f"Database {operation} timed out after {timeout_seconds} seconds"
         super().__init__(
-            message,
-            operation=operation,
-            details={"timeout_seconds": timeout_seconds}
+            message, operation=operation, details={"timeout_seconds": timeout_seconds}
         )
 
 
@@ -265,7 +279,7 @@ class LangChainIntegrationError(IntegrationException):
         super().__init__(
             message,
             service_name="LangChain",
-            details={"operation": operation, "error_details": error_details}
+            details={"operation": operation, "error_details": error_details},
         )
 
 
@@ -277,7 +291,7 @@ class MCPIntegrationError(IntegrationException):
         super().__init__(
             message,
             service_name="MCP",
-            details={"operation": operation, "error_details": error_details}
+            details={"operation": operation, "error_details": error_details},
         )
 
 
@@ -289,16 +303,19 @@ class EventPublishingError(InfrastructureException):
         super().__init__(
             message,
             component="EventBus",
-            details={"event_type": event_type, "error_details": error_details}
+            details={"event_type": event_type, "error_details": error_details},
         )
 
 
 # Validation Layer Exceptions (Data Validation Errors)
 
+
 class ValidationException(RegistryException):
     """Base class for validation exceptions."""
 
-    def __init__(self, message: str, validation_errors: Optional[List[str]] = None, **kwargs):
+    def __init__(
+        self, message: str, validation_errors: Optional[List[str]] = None, **kwargs
+    ):
         super().__init__(message, **kwargs)
         self.validation_errors = validation_errors or []
 
@@ -311,14 +328,16 @@ class SchemaValidationError(ValidationException):
         super().__init__(
             message,
             validation_errors=validation_errors,
-            details={"schema_name": schema_name}
+            details={"schema_name": schema_name},
         )
 
 
 class BusinessRuleViolationError(ValidationException):
     """Business rule validation failed."""
 
-    def __init__(self, rule_name: str, rule_description: str, entity_id: Optional[str] = None):
+    def __init__(
+        self, rule_name: str, rule_description: str, entity_id: Optional[str] = None
+    ):
         message = f"Business rule violation: {rule_description}"
         if entity_id:
             message += f" (entity: {entity_id})"
@@ -327,30 +346,34 @@ class BusinessRuleViolationError(ValidationException):
             details={
                 "rule_name": rule_name,
                 "rule_description": rule_description,
-                "entity_id": entity_id
-            }
+                "entity_id": entity_id,
+            },
         )
 
 
 class ComplianceViolationError(ValidationException):
     """Healthcare compliance rule violated."""
 
-    def __init__(self, compliance_rule: str, violation_details: str, severity: str = "error"):
+    def __init__(
+        self, compliance_rule: str, violation_details: str, severity: str = "error"
+    ):
         message = f"Compliance violation ({compliance_rule}): {violation_details}"
         super().__init__(
             message,
             details={
                 "compliance_rule": compliance_rule,
                 "violation_details": violation_details,
-                "severity": severity
-            }
+                "severity": severity,
+            },
         )
 
 
 class TypeSafetyError(ValidationException):
     """Type safety validation failed."""
 
-    def __init__(self, expected_type: str, actual_type: str, field_name: Optional[str] = None):
+    def __init__(
+        self, expected_type: str, actual_type: str, field_name: Optional[str] = None
+    ):
         message = f"Type safety violation: expected {expected_type}, got {actual_type}"
         if field_name:
             message += f" for field '{field_name}'"
@@ -359,17 +382,24 @@ class TypeSafetyError(ValidationException):
             details={
                 "expected_type": expected_type,
                 "actual_type": actual_type,
-                "field_name": field_name
-            }
+                "field_name": field_name,
+            },
         )
 
 
 # Permission Layer Exceptions (Access Control Violations)
 
+
 class PermissionException(RegistryException):
     """Base class for permission-related exceptions."""
 
-    def __init__(self, message: str, actor_id: Optional[str] = None, resource_id: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        message: str,
+        actor_id: Optional[str] = None,
+        resource_id: Optional[str] = None,
+        **kwargs,
+    ):
         super().__init__(message, **kwargs)
         self.actor_id = actor_id
         self.resource_id = resource_id
@@ -379,29 +409,38 @@ class AccessDeniedError(PermissionException):
     """Access denied to resource."""
 
     def __init__(self, actor_id: str, resource_id: str, required_permission: str):
-        message = f"Access denied: {actor_id} lacks '{required_permission}' for {resource_id}"
+        message = (
+            f"Access denied: {actor_id} lacks '{required_permission}' for {resource_id}"
+        )
         super().__init__(
             message,
             actor_id=actor_id,
             resource_id=resource_id,
-            details={"required_permission": required_permission}
+            details={"required_permission": required_permission},
         )
 
 
 class InsufficientPermissionsError(PermissionException):
     """Actor has insufficient permissions."""
 
-    def __init__(self, actor_id: str, required_permissions: List[str], actual_permissions: List[str]):
+    def __init__(
+        self,
+        actor_id: str,
+        required_permissions: List[str],
+        actual_permissions: List[str],
+    ):
         missing_permissions = set(required_permissions) - set(actual_permissions)
-        message = f"Actor {actor_id} missing permissions: {', '.join(missing_permissions)}"
+        message = (
+            f"Actor {actor_id} missing permissions: {', '.join(missing_permissions)}"
+        )
         super().__init__(
             message,
             actor_id=actor_id,
             details={
                 "required_permissions": required_permissions,
                 "actual_permissions": actual_permissions,
-                "missing_permissions": list(missing_permissions)
-            }
+                "missing_permissions": list(missing_permissions),
+            },
         )
 
 
@@ -415,8 +454,8 @@ class PermissionExpiredError(PermissionException):
             actor_id=actor_id,
             details={
                 "permission_id": permission_id,
-                "expired_at": expired_at.isoformat()
-            }
+                "expired_at": expired_at.isoformat(),
+            },
         )
 
 
@@ -429,7 +468,7 @@ class EmergencyAccessRequiredError(PermissionException):
             message,
             actor_id=actor_id,
             resource_id=resource_id,
-            details={"reason": reason}
+            details={"reason": reason},
         )
 
 
@@ -437,15 +476,18 @@ class SupervisionRequiredError(PermissionException):
     """Supervision is required for this operation."""
 
     def __init__(self, actor_id: str, required_supervisor_role: str):
-        message = f"Actor {actor_id} requires supervision from {required_supervisor_role}"
+        message = (
+            f"Actor {actor_id} requires supervision from {required_supervisor_role}"
+        )
         super().__init__(
             message,
             actor_id=actor_id,
-            details={"required_supervisor_role": required_supervisor_role}
+            details={"required_supervisor_role": required_supervisor_role},
         )
 
 
 # Audit and Compliance Exceptions
+
 
 class AuditException(InfrastructureException):
     """Audit-related operation failed."""
@@ -463,10 +505,7 @@ class AuditTrailCorruptedError(AuditException):
         super().__init__(
             message,
             audit_operation="integrity_check",
-            details={
-                "entity_id": entity_id,
-                "corruption_details": corruption_details
-            }
+            details={"entity_id": entity_id, "corruption_details": corruption_details},
         )
 
 
@@ -478,14 +517,12 @@ class ComplianceReportError(AuditException):
         super().__init__(
             message,
             audit_operation="compliance_report",
-            details={
-                "report_type": report_type,
-                "error_details": error_details
-            }
+            details={"report_type": report_type, "error_details": error_details},
         )
 
 
 # Configuration and Initialization Exceptions
+
 
 class ConfigurationError(RegistryException):
     """Configuration error."""
@@ -493,11 +530,7 @@ class ConfigurationError(RegistryException):
     def __init__(self, config_key: str, error_details: str):
         message = f"Configuration error for '{config_key}': {error_details}"
         super().__init__(
-            message,
-            details={
-                "config_key": config_key,
-                "error_details": error_details
-            }
+            message, details={"config_key": config_key, "error_details": error_details}
         )
 
 
@@ -508,15 +541,13 @@ class InitializationError(RegistryException):
         message = f"Failed to initialize {component_name}: {error_details}"
         super().__init__(
             message,
-            details={
-                "component_name": component_name,
-                "error_details": error_details
-            },
-            **kwargs
+            details={"component_name": component_name, "error_details": error_details},
+            **kwargs,
         )
 
 
 # Exception Utilities
+
 
 class ExceptionHandler:
     """
@@ -534,7 +565,7 @@ class ExceptionHandler:
             DatabaseTimeoutError,
             DatabaseConnectionError,
             IntegrationException,
-            EventPublishingError
+            EventPublishingError,
         )
         return isinstance(exception, retryable_types)
 
@@ -546,29 +577,28 @@ class ExceptionHandler:
             AccessDeniedError,
             InsufficientPermissionsError,
             EmergencyAccessRequiredError,
-            SupervisionRequiredError
+            SupervisionRequiredError,
         )
         return isinstance(exception, security_types)
 
     @staticmethod
     def get_error_severity(exception: Exception) -> str:
         """Get the severity level of an exception."""
-        if isinstance(exception, (
-            EmergencyAccessRequiredError,
-            ComplianceViolationError,
-            AuditTrailCorruptedError
-        )):
+        if isinstance(
+            exception,
+            (
+                EmergencyAccessRequiredError,
+                ComplianceViolationError,
+                AuditTrailCorruptedError,
+            ),
+        ):
             return "critical"
-        elif isinstance(exception, (
-            PermissionException,
-            ResourceLifecycleError,
-            AgentDeploymentError
-        )):
+        elif isinstance(
+            exception,
+            (PermissionException, ResourceLifecycleError, AgentDeploymentError),
+        ):
             return "high"
-        elif isinstance(exception, (
-            ValidationException,
-            ConfigurationError
-        )):
+        elif isinstance(exception, (ValidationException, ConfigurationError)):
             return "medium"
         else:
             return "low"
@@ -580,12 +610,13 @@ class ExceptionHandler:
             PermissionException,
             ComplianceViolationError,
             AuditException,
-            EmergencyAccessRequiredError
+            EmergencyAccessRequiredError,
         )
         return isinstance(exception, audit_types)
 
 
 # Exception Context Manager for Consistent Error Handling
+
 
 class ExceptionContext:
     """
@@ -609,14 +640,16 @@ class ExceptionContext:
         if exc_type is not None:
             if self.logger:
                 severity = ExceptionHandler.get_error_severity(exc_val)
-                self.logger.error(f"{self.operation} failed in {self.component}: {exc_val} (severity: {severity})")
+                self.logger.error(
+                    f"{self.operation} failed in {self.component}: {exc_val} (severity: {severity})"
+                )
 
             # Re-raise with additional context if it's not already a RegistryException
             if not isinstance(exc_val, RegistryException):
                 raise InfrastructureException(
                     f"{self.operation} failed in {self.component}",
                     component=self.component,
-                    inner_exception=exc_val
+                    inner_exception=exc_val,
                 ) from exc_val
 
         return False  # Don't suppress the exception

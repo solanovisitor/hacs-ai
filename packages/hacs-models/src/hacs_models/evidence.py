@@ -6,9 +6,9 @@ literature references (papers, guidelines), while preserving backwards
 compatibility with prior fields used by tools.
 """
 
-from enum import Enum
-from typing import Any, List, Literal, Optional
 from datetime import date
+from enum import Enum
+from typing import Any, Literal
 
 from pydantic import Field, computed_field, field_validator
 
@@ -39,14 +39,14 @@ class EvidenceLevel(str, Enum):
 class EvidenceAuthor(BaseResource):
     resource_type: Literal["EvidenceAuthor"] = Field(default="EvidenceAuthor")
     full_name: str = Field(description="Author full name")
-    affiliation: Optional[str] = Field(default=None, description="Author affiliation")
+    affiliation: str | None = Field(default=None, description="Author affiliation")
 
 
 class PublicationVenue(BaseResource):
     resource_type: Literal["PublicationVenue"] = Field(default="PublicationVenue")
     name: str = Field(description="Journal or venue name")
-    issn: Optional[str] = Field(default=None, description="ISSN identifier")
-    publisher: Optional[str] = Field(default=None, description="Publisher name")
+    issn: str | None = Field(default=None, description="ISSN identifier")
+    publisher: str | None = Field(default=None, description="Publisher name")
 
 
 class Evidence(BaseResource):
@@ -61,46 +61,62 @@ class Evidence(BaseResource):
     resource_type: Literal["Evidence"] = Field(default="Evidence")
 
     # Core bibliographic fields (FHIR Citation inspired)
-    title: Optional[str] = Field(default=None, description="Title of the cited artifact")
-    abstract: Optional[str] = Field(default=None, description="Abstract or summary of the artifact")
-    authors: List[EvidenceAuthor] = Field(default_factory=list, description="List of authors")
-    journal: Optional[PublicationVenue] = Field(default=None, description="Publication venue")
-    publication_year: Optional[int] = Field(default=None, description="Year of publication")
-    publication_date: Optional[date | str] = Field(default=None, description="Date of publication (date or templated string)")
-    doi: Optional[str] = Field(default=None, description="Digital Object Identifier")
-    pmid: Optional[str] = Field(default=None, description="PubMed ID")
-    url: Optional[str] = Field(default=None, description="URL to the artifact")
-    language: Optional[str] = Field(default=None, description="Language (BCP-47, e.g., en, pt-BR)")
-    volume: Optional[str] = Field(default=None, description="Journal volume")
-    issue: Optional[str] = Field(default=None, description="Journal issue")
-    pages: Optional[str] = Field(default=None, description="Page range")
-    keywords: List[str] = Field(default_factory=list, description="Keywords/MeSH terms")
+    title: str | None = Field(default=None, description="Title of the cited artifact")
+    abstract: str | None = Field(default=None, description="Abstract or summary of the artifact")
+    authors: list[EvidenceAuthor] = Field(default_factory=list, description="List of authors")
+    journal: PublicationVenue | None = Field(default=None, description="Publication venue")
+    publication_year: int | None = Field(default=None, description="Year of publication")
+    publication_date: date | str | None = Field(
+        default=None, description="Date of publication (date or templated string)"
+    )
+    doi: str | None = Field(default=None, description="Digital Object Identifier")
+    pmid: str | None = Field(default=None, description="PubMed ID")
+    url: str | None = Field(default=None, description="URL to the artifact")
+    language: str | None = Field(default=None, description="Language (BCP-47, e.g., en, pt-BR)")
+    volume: str | None = Field(default=None, description="Journal volume")
+    issue: str | None = Field(default=None, description="Journal issue")
+    pages: str | None = Field(default=None, description="Page range")
+    keywords: list[str] = Field(default_factory=list, description="Keywords/MeSH terms")
 
     # Evidence grading and type
-    evidence_level: Optional[EvidenceLevel] = Field(default=None, description="Evidence level (e.g., GRADE)")
-    evidence_type: EvidenceType = Field(default=EvidenceType.RESEARCH_PAPER, description="Type of evidence")
+    evidence_level: EvidenceLevel | None = Field(
+        default=None, description="Evidence level (e.g., GRADE)"
+    )
+    evidence_type: EvidenceType = Field(
+        default=EvidenceType.RESEARCH_PAPER, description="Type of evidence"
+    )
 
     # Legacy fields (kept for compatibility with tools and tests)
-    citation: Optional[str] = Field(default=None, description="Formatted citation string")
-    content: Optional[str] = Field(default=None, description="Legacy field for content or findings")
+    citation: str | None = Field(default=None, description="Formatted citation string")
+    content: str | None = Field(default=None, description="Legacy field for content or findings")
 
     # Quality and provenance
-    confidence_score: float = Field(default=0.8, ge=0.0, le=1.0, description="Confidence score (0.0-1.0)")
-    quality_score: float = Field(default=0.8, ge=0.0, le=1.0, description="Quality assessment score (0.0-1.0)")
-    vector_id: Optional[str] = Field(default=None, description="Vector embedding reference for RAG")
-    provenance: dict[str, Any] = Field(default_factory=dict, description="Provenance info (source, collected_by, etc.)")
-    linked_resources: list[str] = Field(default_factory=list, description="Linked HACS resources (ids)")
+    confidence_score: float = Field(
+        default=0.8, ge=0.0, le=1.0, description="Confidence score (0.0-1.0)"
+    )
+    quality_score: float = Field(
+        default=0.8, ge=0.0, le=1.0, description="Quality assessment score (0.0-1.0)"
+    )
+    vector_id: str | None = Field(default=None, description="Vector embedding reference for RAG")
+    provenance: dict[str, Any] = Field(
+        default_factory=dict, description="Provenance info (source, collected_by, etc.)"
+    )
+    linked_resources: list[str] = Field(
+        default_factory=list, description="Linked HACS resources (ids)"
+    )
     tags: list[str] = Field(default_factory=list, description="Categorization tags")
-    review_status: Literal["pending", "reviewed", "approved", "rejected"] = Field(default="pending", description="Review status")
+    review_status: Literal["pending", "reviewed", "approved", "rejected"] = Field(
+        default="pending", description="Review status"
+    )
 
     @field_validator("title")
     @classmethod
-    def _validate_title(cls, v: Optional[str]) -> Optional[str]:
+    def _validate_title(cls, v: str | None) -> str | None:
         return v.strip() if isinstance(v, str) else v
 
     @field_validator("citation")
     @classmethod
-    def _validate_citation(cls, v: Optional[str]) -> Optional[str]:
+    def _validate_citation(cls, v: str | None) -> str | None:
         if v is None:
             return None
         s = v.strip()
@@ -166,7 +182,9 @@ class Evidence(BaseResource):
             return True
         return False
 
-    def update_review_status(self, status: Literal["pending", "reviewed", "approved", "rejected"]) -> None:
+    def update_review_status(
+        self, status: Literal["pending", "reviewed", "approved", "rejected"]
+    ) -> None:
         self.review_status = status
         self.update_timestamp()
 
@@ -177,7 +195,7 @@ class Evidence(BaseResource):
         """Generate a simple formatted citation string from fields if `citation` is not provided."""
         if self.citation:
             return self.citation
-        parts: List[str] = []
+        parts: list[str] = []
         if self.authors:
             parts.append(", ".join(a.full_name for a in self.authors if a.full_name))
         if self.publication_year:
@@ -196,6 +214,5 @@ class Evidence(BaseResource):
 
     @field_validator("publication_year")
     @classmethod
-    def _ensure_year(cls, v: Optional[int], info):
+    def _ensure_year(cls, v: int | None, info):
         return v
-

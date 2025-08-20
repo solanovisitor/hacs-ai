@@ -13,9 +13,8 @@ SOLID Compliance:
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
-from ...core.base import EntityId
 from ...core.exceptions import InfrastructureException
 
 logger = logging.getLogger(__name__)
@@ -78,7 +77,9 @@ class GenericFrameworkAdapter(FrameworkAdapter):
         """Initialize the generic framework adapter."""
         if not self._initialized:
             self._initialized = True
-            self.logger.info(f"Generic framework adapter initialized: {self.framework_name}")
+            self.logger.info(
+                f"Generic framework adapter initialized: {self.framework_name}"
+            )
 
     async def convert_resource(self, resource: Dict[str, Any]) -> Dict[str, Any]:
         """Convert HACS resource to generic format."""
@@ -88,14 +89,16 @@ class GenericFrameworkAdapter(FrameworkAdapter):
                 "source": "hacs",
                 "framework": self.framework_name,
                 "resource": resource,
-                "converted_at": "2024-01-01T00:00:00Z"  # Placeholder timestamp
+                "converted_at": "2024-01-01T00:00:00Z",  # Placeholder timestamp
             }
 
             self.logger.debug(f"Converted resource for {self.framework_name}")
             return converted
 
         except Exception as e:
-            self.logger.error(f"Failed to convert resource for {self.framework_name}: {e}")
+            self.logger.error(
+                f"Failed to convert resource for {self.framework_name}: {e}"
+            )
             raise InfrastructureException(f"Resource conversion failed: {e}")
 
     async def create_integration(self, config: Dict[str, Any]) -> Any:
@@ -105,14 +108,16 @@ class GenericFrameworkAdapter(FrameworkAdapter):
                 "framework": self.framework_name,
                 "config": config,
                 "status": "created",
-                "type": "generic"
+                "type": "generic",
             }
 
             self.logger.info(f"Created integration for {self.framework_name}")
             return integration
 
         except Exception as e:
-            self.logger.error(f"Failed to create integration for {self.framework_name}: {e}")
+            self.logger.error(
+                f"Failed to create integration for {self.framework_name}: {e}"
+            )
             raise InfrastructureException(f"Integration creation failed: {e}")
 
     async def cleanup(self) -> None:

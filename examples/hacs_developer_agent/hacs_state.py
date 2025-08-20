@@ -4,15 +4,15 @@ HACS Agent State - DeepAgents Pattern
 Simplified state management for HACS agents following the DeepAgents pattern.
 """
 
+from typing import Annotated, Any, Dict, List, Literal, NotRequired
+
 from langgraph.prebuilt.chat_agent_executor import AgentState
-from typing import NotRequired, Annotated, Dict, Any, List
-from typing import Literal
 from typing_extensions import TypedDict
 
 
 class HACSAdminTask(TypedDict):
     """Admin task to track for HACS operations."""
-    
+
     content: str
     status: Literal["pending", "in_progress", "completed"]
     priority: Literal["low", "normal", "high", "critical"]
@@ -21,7 +21,7 @@ class HACSAdminTask(TypedDict):
 
 class HACSSystemStatus(TypedDict):
     """HACS system status tracking."""
-    
+
     database_connected: bool
     migration_status: str
     vector_store_available: bool
@@ -57,7 +57,9 @@ class HACSAgentState(AgentState):
     # Core deep agent fields
     todos: NotRequired[List[Dict[str, Any]]]
 
-    def files_reducer(left: Dict[str, str] | None, right: Dict[str, str] | None) -> Dict[str, str] | None:
+    def files_reducer(
+        left: Dict[str, str] | None, right: Dict[str, str] | None
+    ) -> Dict[str, str] | None:
         if left is None:
             return right
         if right is None:

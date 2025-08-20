@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 
 try:
     from hacs_models import MessageDefinition, MessageRole
+
     _has_hacs_models = True
 except Exception:  # pragma: no cover
     MessageDefinition = object  # type: ignore
@@ -67,11 +68,15 @@ def _to_openai_message(m: Union[ChatMessage, "MessageDefinition"]) -> Dict[str, 
     return openai_msg
 
 
-def to_openai_messages(messages: List[Union[ChatMessage, "MessageDefinition"]]) -> List[Dict[str, Any]]:
+def to_openai_messages(
+    messages: List[Union[ChatMessage, "MessageDefinition"]],
+) -> List[Dict[str, Any]]:
     return [_to_openai_message(m) for m in messages]
 
 
-def to_langchain_messages(messages: List[Union[ChatMessage, "MessageDefinition"]]):  # pragma: no cover
+def to_langchain_messages(
+    messages: List[Union[ChatMessage, "MessageDefinition"]],
+):  # pragma: no cover
     """Minimal LC-compatible dicts. Prefer framework-native converters in agents."""
     out: List[Dict[str, Any]] = []
     for m in messages:
@@ -80,12 +85,18 @@ def to_langchain_messages(messages: List[Union[ChatMessage, "MessageDefinition"]
         name = getattr(m, "name", None)
         if hasattr(role, "value"):
             role = getattr(role, "value")
-        d = {k: v for k, v in {"role": role or "user", "content": content, "name": name}.items() if v is not None}
+        d = {
+            k: v
+            for k, v in {"role": role or "user", "content": content, "name": name}.items()
+            if v is not None
+        }
         out.append(d)
     return out
 
 
-def to_anthropic_messages(messages: List[Union[ChatMessage, "MessageDefinition"]]) -> List[Dict[str, Any]]:
+def to_anthropic_messages(
+    messages: List[Union[ChatMessage, "MessageDefinition"]],
+) -> List[Dict[str, Any]]:
     # Anthropics expects list of {role, content}
     # roles: "user" or "assistant"; map others to nearest
     mapped = []
@@ -99,7 +110,11 @@ def to_anthropic_messages(messages: List[Union[ChatMessage, "MessageDefinition"]
             mapped.append({"role": "user", "content": content})
             continue
         # Map tool/function/agent/observer to closest role
-        eff_role = role if role in ("user", "assistant") else ("user" if role in ("human", "tool", "function") else "assistant")
+        eff_role = (
+            role
+            if role in ("user", "assistant")
+            else ("user" if role in ("human", "tool", "function") else "assistant")
+        )
         # Anthropic content can be string or a list of content blocks; keep simple here
         mapped.append({"role": eff_role or "user", "content": content})
     return mapped
@@ -108,6 +123,7 @@ def to_anthropic_messages(messages: List[Union[ChatMessage, "MessageDefinition"]
 # ----------------------------------------------------------------------------
 # Deserializers (provider -> HACS)
 # ----------------------------------------------------------------------------
+
 
 def openai_to_hacs_messages(messages: List[Dict[str, Any]]) -> List["MessageDefinition"]:
     if not _has_hacs_models:  # pragma: no cover
@@ -145,5 +161,3 @@ def anthropic_to_hacs_messages(messages: List[Dict[str, Any]]) -> List["MessageD
         )
         out.append(md)
     return out
-
-

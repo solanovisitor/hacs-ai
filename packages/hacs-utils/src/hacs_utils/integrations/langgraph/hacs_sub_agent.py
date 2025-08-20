@@ -46,9 +46,7 @@ class HACSSubAgent(TypedDict):
     tools: NotRequired[List[str]]
 
 
-def _create_task_tool(
-    tools, instructions: str, subagents: List[HACSSubAgent], model, state_schema
-):
+def _create_task_tool(tools, instructions: str, subagents: List[HACSSubAgent], model, state_schema):
     """Create task delegation tool for HACS subagents."""
 
     # Create main agent
@@ -140,14 +138,15 @@ def _create_task_tool(
         except Exception as e:
             error_message = f"❌ Task delegation to {subagent_type} failed: {str(e)}"
             return Command(
-                update={
-                    "messages": [ToolMessage(error_message, tool_call_id=tool_call_id)]
-                }
+                update={"messages": [ToolMessage(error_message, tool_call_id=tool_call_id)]}
             )
 
     return task
 
 
-__all__ = ["HACSSubAgent", "_create_task_tool", "TASK_DESCRIPTION_PREFIX", "TASK_DESCRIPTION_SUFFIX"]
-
-
+__all__ = [
+    "HACSSubAgent",
+    "_create_task_tool",
+    "TASK_DESCRIPTION_PREFIX",
+    "TASK_DESCRIPTION_SUFFIX",
+]

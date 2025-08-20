@@ -48,7 +48,6 @@ __all__ = [
     "ResourceTag",
     "ResourceCategory",
     "ResourceStatus",
-
     # Resource Services
     "ResourceService",
     "ResourceValidationService",

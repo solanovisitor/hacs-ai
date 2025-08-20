@@ -29,5 +29,3 @@ def test_schema_discovery_core_models():
             failures.append(f"{rt}: success={res.success}, fields={res.field_count}")
 
     assert not failures, f"Schema discovery failed: {failures}"
-
-

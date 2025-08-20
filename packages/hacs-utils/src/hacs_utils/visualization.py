@@ -22,12 +22,11 @@ Usage
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Sequence, Callable
+from typing import Any, Dict, Optional, Sequence
 
 import html
 import json
 import textwrap
-import uuid
 
 try:
     import yaml  # type: ignore
@@ -38,6 +37,7 @@ try:
     from IPython import get_ipython  # type: ignore
     from IPython.display import HTML  # type: ignore
 except Exception:  # pragma: no cover - optional dependency
+
     def get_ipython():  # type: ignore
         return None
 
@@ -82,7 +82,9 @@ def _to_html(obj: Any) -> str:
         return ""
 
 
-def visualize_resource(resource: Any, *, title: Optional[str] = None, show_json: bool = True) -> Any:
+def visualize_resource(
+    resource: Any, *, title: Optional[str] = None, show_json: bool = True
+) -> Any:
     """Render a HACS resource (pydantic model or dict) as a compact HTML card (datatype-driven)."""
     if resource is None:
         raise ValueError("resource is required")
@@ -92,7 +94,14 @@ def visualize_resource(resource: Any, *, title: Optional[str] = None, show_json:
     try:
         data = resource.model_dump(mode="json")  # type: ignore[attr-defined]
         # Use resource_type if available, otherwise use class name, fallback to "Resource"
-        rtype = getattr(resource, "resource_type", data.get("resource_type", resource.__class__.__name__ if hasattr(resource, "__class__") else "Resource"))
+        rtype = getattr(
+            resource,
+            "resource_type",
+            data.get(
+                "resource_type",
+                resource.__class__.__name__ if hasattr(resource, "__class__") else "Resource",
+            ),
+        )
         rid = getattr(resource, "id", data.get("id", ""))
     except Exception:
         try:
@@ -100,7 +109,13 @@ def visualize_resource(resource: Any, *, title: Optional[str] = None, show_json:
         except Exception:
             data = json.loads(json.dumps(resource, default=str))
         # Use resource_type, type, or infer from data structure
-        rtype = data.get("resource_type", data.get("type", resource.__class__.__name__ if hasattr(resource, "__class__") else "Resource"))
+        rtype = data.get(
+            "resource_type",
+            data.get(
+                "type",
+                resource.__class__.__name__ if hasattr(resource, "__class__") else "Resource",
+            ),
+        )
         rid = data.get("id", "")
 
     header = title or rtype
@@ -113,7 +128,11 @@ def visualize_resource(resource: Any, *, title: Optional[str] = None, show_json:
             display = obj.get("display") if isinstance(obj, dict) else getattr(obj, "display", None)
             core = f"{system}|{code}" if system and code else (code or display or str(obj))
             core = html.escape(str(core))
-            return f"{core} <span class=\"hacs-chip\">{html.escape(str(display))}</span>" if display and core != display else core
+            return (
+                f'{core} <span class="hacs-chip">{html.escape(str(display))}</span>'
+                if display and core != display
+                else core
+            )
         except Exception:
             return html.escape(str(obj))
 
@@ -156,9 +175,9 @@ def visualize_resource(resource: Any, *, title: Optional[str] = None, show_json:
                 ref = getattr(obj, "reference", None)
                 disp = getattr(obj, "display", None)
             if ref and disp:
-                return f"<a href=\"{html.escape(str(ref))}\">{html.escape(str(disp))}</a>"
+                return f'<a href="{html.escape(str(ref))}">{html.escape(str(disp))}</a>'
             if ref:
-                return f"<a href=\"{html.escape(str(ref))}\">{html.escape(str(ref))}</a>"
+                return f'<a href="{html.escape(str(ref))}">{html.escape(str(ref))}</a>'
             return html.escape(str(disp)) if disp else ""
         except Exception:
             return html.escape(str(obj))
@@ -192,7 +211,7 @@ def visualize_resource(resource: Any, *, title: Optional[str] = None, show_json:
             if not v:
                 return "[]"
             items = [rh_value(x) for x in v[:3]]
-            suffix = "" if len(v) <= 3 else f" <span class=\"hacs-chip\">+{len(v)-3} more</span>"
+            suffix = "" if len(v) <= 3 else f' <span class="hacs-chip">+{len(v) - 3} more</span>'
             return ", ".join([i for i in items if i]) + suffix
         if isinstance(v, dict):
             if is_qty(v):
@@ -213,28 +232,60 @@ def visualize_resource(resource: Any, *, title: Optional[str] = None, show_json:
 
     # Build key-value rows using datatype-driven rendering
     rows_html: list[str] = []
+
     def add_row(label: str, value: Any):
         rendered = rh_value(value)
         if rendered:
-            rows_html.append(f'<div class="hacs-k">{html.escape(label)}</div><div class="hacs-v">{rendered}</div>')
+            rows_html.append(
+                f'<div class="hacs-k">{html.escape(label)}</div><div class="hacs-v">{rendered}</div>'
+            )
 
     add_row("resource_type", rtype)
     add_row("id", rid)
 
     preferred_keys = [
-        "status", "code", "value_quantity", "value_codeable_concept", "value_string",
-        "subject", "subject_ref", "encounter", "encounter_ref",
-        "occurrence_datetime", "effective_datetime", "effective_date_time", "issued", "date",
-        "medication_codeable_concept", "medication_reference", "dosage_instruction",
-        "location", "performer", "based_on", "result",
+        "status",
+        "code",
+        "value_quantity",
+        "value_codeable_concept",
+        "value_string",
+        "subject",
+        "subject_ref",
+        "encounter",
+        "encounter_ref",
+        "occurrence_datetime",
+        "effective_datetime",
+        "effective_date_time",
+        "issued",
+        "date",
+        "medication_codeable_concept",
+        "medication_reference",
+        "dosage_instruction",
+        "location",
+        "performer",
+        "based_on",
+        "result",
     ]
     seen = set()
     for k in preferred_keys:
         if k in data and k not in seen:
             seen.add(k)
-            add_row(k.replace("_", ".") if k in ("value_quantity", "value_codeable_concept") else k, data[k])
+            add_row(
+                k.replace("_", ".") if k in ("value_quantity", "value_codeable_concept") else k,
+                data[k],
+            )
 
-    extra_keys = ["name", "full_name", "gender", "birth_date", "phone", "email", "address_text", "priority", "intent"]
+    extra_keys = [
+        "name",
+        "full_name",
+        "gender",
+        "birth_date",
+        "phone",
+        "email",
+        "address_text",
+        "priority",
+        "intent",
+    ]
     for k in extra_keys:
         if k in data and k not in seen:
             seen.add(k)
@@ -249,12 +300,12 @@ def visualize_resource(resource: Any, *, title: Optional[str] = None, show_json:
         else ""
     )
 
-    pill = f'<span class="hacs-pill">{_to_html(rid)}</span>' if rid else ''
+    pill = f'<span class="hacs-pill">{_to_html(rid)}</span>' if rid else ""
     html_card = f"""
     <div class="hacs-card">
       <div class="hacs-panel">
         <div class="hacs-title">{_to_html(header)} {pill}</div>
-        <div class="hacs-kv">{''.join(rows_html)}</div>
+        <div class="hacs-kv">{"".join(rows_html)}</div>
         {json_block}
       </div>
     </div>
@@ -334,7 +385,9 @@ def visualize_annotations(
         if typ == 1:  # start
             e = valid[idx]
             color = classes.get(getattr(e, "extraction_class", "entity"), "#fff59d")
-            parts.append(f'<span style="background:{color}; border-radius:3px; padding:1px 2px;" data-idx="{idx}">')
+            parts.append(
+                f'<span style="background:{color}; border-radius:3px; padding:1px 2px;" data-idx="{idx}">'
+            )
         else:  # end
             parts.append("</span>")
         cur = pos
@@ -344,7 +397,8 @@ def visualize_annotations(
     legend = ""
     if show_legend and classes:
         chips = " ".join(
-            f'<span class="hacs-chip" style="background:{c}; color:#000">{html.escape(k)}</span>' for k, c in classes.items()
+            f'<span class="hacs-chip" style="background:{c}; color:#000">{html.escape(k)}</span>'
+            for k, c in classes.items()
         )
         legend = f'<div class="hacs-legend">Legend: {chips}</div>'
 
@@ -352,7 +406,7 @@ def visualize_annotations(
     <div class="hacs-card">
       <div class="hacs-panel">
         {legend}
-        <div class="hacs-json" style="white-space:pre-wrap; line-height:1.6;">{''.join(parts)}</div>
+        <div class="hacs-json" style="white-space:pre-wrap; line-height:1.6;">{"".join(parts)}</div>
       </div>
     </div>
     """
@@ -367,7 +421,9 @@ def _is_coding(obj: Any) -> bool:
     if isinstance(obj, dict):
         return "code" in obj and ("system" in obj or "display" in obj)
     try:
-        return getattr(obj, "resource_type", "") == "Coding" or (hasattr(obj, "code") and (hasattr(obj, "system") or hasattr(obj, "display")))
+        return getattr(obj, "resource_type", "") == "Coding" or (
+            hasattr(obj, "code") and (hasattr(obj, "system") or hasattr(obj, "display"))
+        )
     except Exception:
         return False
 
@@ -376,7 +432,11 @@ def _is_codeable_concept(obj: Any) -> bool:
     if isinstance(obj, dict):
         return "coding" in obj or "text" in obj
     try:
-        return getattr(obj, "resource_type", "") == "CodeableConcept" or hasattr(obj, "coding") or hasattr(obj, "text")
+        return (
+            getattr(obj, "resource_type", "") == "CodeableConcept"
+            or hasattr(obj, "coding")
+            or hasattr(obj, "text")
+        )
     except Exception:
         return False
 
@@ -385,7 +445,11 @@ def _is_quantity(obj: Any) -> bool:
     if isinstance(obj, dict):
         return "value" in obj and ("unit" in obj or "code" in obj)
     try:
-        return getattr(obj, "resource_type", "") == "Quantity" or hasattr(obj, "value") and (hasattr(obj, "unit") or hasattr(obj, "code"))
+        return (
+            getattr(obj, "resource_type", "") == "Quantity"
+            or hasattr(obj, "value")
+            and (hasattr(obj, "unit") or hasattr(obj, "code"))
+        )
     except Exception:
         return False
 
@@ -394,7 +458,11 @@ def _is_reference(obj: Any) -> bool:
     if isinstance(obj, dict):
         return "reference" in obj or "display" in obj or "type" in obj
     # Pydantic Reference-like
-    return hasattr(obj, "reference") or hasattr(obj, "display") or getattr(obj, "resource_type", "") == "Reference"
+    return (
+        hasattr(obj, "reference")
+        or hasattr(obj, "display")
+        or getattr(obj, "resource_type", "") == "Reference"
+    )
 
 
 def _render_md_coding(obj: Any) -> str:
@@ -476,7 +544,7 @@ def _render_md_value(value: Any) -> str:
                 return "[]"
             # Render first 3 items compactly
             items = [_render_md_value(v) for v in value[:3]]
-            suffix = "" if len(value) <= 3 else f" (+{len(value)-3} more)"
+            suffix = "" if len(value) <= 3 else f" (+{len(value) - 3} more)"
             return ", ".join([i for i in items if i]) + suffix
         if isinstance(value, dict):
             # Try to detect known datatypes first
@@ -499,23 +567,38 @@ def _render_md_value(value: Any) -> str:
         return str(value)
 
 
-def resource_to_markdown(resource: Any, *, title: Optional[str] = None, include_json: bool = True) -> str:
+def resource_to_markdown(
+    resource: Any, *, title: Optional[str] = None, include_json: bool = True
+) -> str:
     """Return a Markdown string rendering of a HACS resource.
 
     Produces a compact key-value table plus optional JSON code block.
     """
     if resource is None:
         raise ValueError("resource is required")
+
     # Helpers for reference and date formatting
     def _format_reference(value: Any) -> Any:
         if isinstance(value, dict):
-            return value.get("reference") or value.get("id") or value.get("display") or json.dumps(value)
+            return (
+                value.get("reference")
+                or value.get("id")
+                or value.get("display")
+                or json.dumps(value)
+            )
         return value
 
     try:
         data = resource.model_dump(mode="json")  # type: ignore[attr-defined]
         # Use resource_type if available, otherwise use class name, fallback to "Resource"
-        rtype = getattr(resource, "resource_type", data.get("resource_type", resource.__class__.__name__ if hasattr(resource, "__class__") else "Resource"))
+        rtype = getattr(
+            resource,
+            "resource_type",
+            data.get(
+                "resource_type",
+                resource.__class__.__name__ if hasattr(resource, "__class__") else "Resource",
+            ),
+        )
         rid = getattr(resource, "id", data.get("id", ""))
     except Exception:
         try:
@@ -523,11 +606,18 @@ def resource_to_markdown(resource: Any, *, title: Optional[str] = None, include_
         except Exception:
             data = json.loads(json.dumps(resource, default=str))
         # Use resource_type, type, or infer from data structure
-        rtype = data.get("resource_type", data.get("type", resource.__class__.__name__ if hasattr(resource, "__class__") else "Resource"))
+        rtype = data.get(
+            "resource_type",
+            data.get(
+                "type",
+                resource.__class__.__name__ if hasattr(resource, "__class__") else "Resource",
+            ),
+        )
         rid = data.get("id", "")
 
     header = title or rtype
     rows = []
+
     def kv(k: str, v: Any):
         if v not in (None, "", [], {}):
             rows.append(f"| {k} | {v} |")
@@ -544,12 +634,22 @@ def resource_to_markdown(resource: Any, *, title: Optional[str] = None, include_
         "value_quantity",
         "value_codeable_concept",
         "value_string",
-        "subject", "subject_ref",
-        "encounter", "encounter_ref",
-        "occurrence_datetime", "effective_datetime", "effective_date_time", "issued", "date",
-        "medication_codeable_concept", "medication_reference",
+        "subject",
+        "subject_ref",
+        "encounter",
+        "encounter_ref",
+        "occurrence_datetime",
+        "effective_datetime",
+        "effective_date_time",
+        "issued",
+        "date",
+        "medication_codeable_concept",
+        "medication_reference",
         "dosage_instruction",
-        "location", "performer", "based_on", "result",
+        "location",
+        "performer",
+        "based_on",
+        "result",
     ]
 
     seen = set()
@@ -559,11 +659,25 @@ def resource_to_markdown(resource: Any, *, title: Optional[str] = None, include_
             rendered = _render_md_value(data[key])
             if rendered:
                 # Normalize key labels like code/value
-                label = key.replace("_", ".") if key in ("value_quantity", "value_codeable_concept") else key
+                label = (
+                    key.replace("_", ".")
+                    if key in ("value_quantity", "value_codeable_concept")
+                    else key
+                )
                 kv(label, rendered)
 
     # Include a few additional simple scalar fields (demographics/contact) generically
-    extra_keys = ["name", "full_name", "gender", "birth_date", "phone", "email", "address_text", "priority", "intent"]
+    extra_keys = [
+        "name",
+        "full_name",
+        "gender",
+        "birth_date",
+        "phone",
+        "email",
+        "address_text",
+        "priority",
+        "intent",
+    ]
     for key in extra_keys:
         if key in data and key not in seen:
             seen.add(key)
@@ -628,6 +742,7 @@ def _resolve_model_class(obj: Any) -> Any:
     if isinstance(obj, str):
         try:
             from hacs_models import get_model_registry  # type: ignore
+
             return get_model_registry().get(obj)
         except Exception:
             return None
@@ -665,6 +780,7 @@ def _guess_original_class(subset_cls: Any) -> Any:
     if resource_type_name:
         try:
             from hacs_models import get_model_registry  # type: ignore
+
             return get_model_registry().get(resource_type_name)
         except Exception:
             return None
@@ -697,7 +813,9 @@ def get_specs_markdown(
         allowed_fields = None
 
     # Resolve original class when subset lacks descriptive schema
-    original_cls = cls if hasattr(cls, "get_descriptive_schema") else _guess_original_class(cls) or cls
+    original_cls = (
+        cls if hasattr(cls, "get_descriptive_schema") else _guess_original_class(cls) or cls
+    )
 
     # Build documentation section (scope, boundaries, relationships, etc.)
     lines: list[str] = []
@@ -755,7 +873,7 @@ def get_specs_markdown(
         get_desc = getattr(original_cls, "get_descriptive_schema", None)
         if callable(get_desc):
             ds = get_desc() or {}
-            schema_fields = (ds.get("fields") or ds.get("properties") or {})
+            schema_fields = ds.get("fields") or ds.get("properties") or {}
     except Exception:
         schema_fields = {}
 
@@ -785,7 +903,11 @@ def get_specs_markdown(
                     if examples:
                         example_str = examples[0] if isinstance(examples, list) else examples
                         if example_str:
-                            fdesc = f"{fdesc} (e.g., {example_str})" if fdesc else f"e.g., {example_str}"
+                            fdesc = (
+                                f"{fdesc} (e.g., {example_str})"
+                                if fdesc
+                                else f"e.g., {example_str}"
+                            )
             except Exception:
                 try:
                     ftype = str(finfo)
@@ -822,6 +944,7 @@ def _specs_dict_to_markdown(
         lines.append("")
 
     docs = specs.get("documentation") or {}
+
     def _append_block(header: str, content: Any):
         if content:
             lines.extend([f"**{header}**", "", str(content), ""])
@@ -867,7 +990,11 @@ def _specs_dict_to_markdown(
                     if examples:
                         example_str = examples[0] if isinstance(examples, list) else examples
                         if example_str:
-                            fdesc = f"{fdesc} (e.g., {example_str})" if fdesc else f"e.g., {example_str}"
+                            fdesc = (
+                                f"{fdesc} (e.g., {example_str})"
+                                if fdesc
+                                else f"e.g., {example_str}"
+                            )
             except Exception:
                 try:
                     ftype = str(finfo)
@@ -878,6 +1005,7 @@ def _specs_dict_to_markdown(
         lines.append("")
 
     return "\n".join(lines) if lines else "_No documentation available_"
+
 
 def _resource_to_dict(resource: Any) -> Dict[str, Any]:
     try:
@@ -925,62 +1053,66 @@ def resource_to_schema_markdown(resource: Any) -> str:
     try:
         cls = resource.__class__ if not isinstance(resource, type) else resource
         schema: Dict[str, Any] = {}
-        
+
         # Try descriptive schema first (HACS-specific)
         get_desc = getattr(cls, "get_descriptive_schema", None)
         if callable(get_desc):
             schema = get_desc()
         elif hasattr(cls, "model_json_schema"):
             schema = cls.model_json_schema()  # type: ignore[attr-defined]
-        
+
         if not schema:
             return "_No schema available_"
-        
+
         lines = []
         title = schema.get("title", getattr(cls, "__name__", "Resource"))
         lines.append(f"#### {title} Schema")
         lines.append("")
-        
+
         desc = schema.get("description")
         if desc:
             lines.append(desc)
             lines.append("")
-        
+
         # Properties table
         properties = schema.get("properties") or schema.get("fields", {})
         if properties:
             lines.append("| Field | Type | Description |")
             lines.append("|---|---|---|")
-            
+
             for field_name, field_info in properties.items():
                 if isinstance(field_info, dict):
                     field_type = field_info.get("type", "")
                     field_desc = field_info.get("description", "")
                     examples = field_info.get("examples")
                     if examples:
-                        field_desc += f" (e.g., {examples[0] if isinstance(examples, list) else examples})"
+                        field_desc += (
+                            f" (e.g., {examples[0] if isinstance(examples, list) else examples})"
+                        )
                 else:
                     field_type = str(field_info)
                     field_desc = ""
-                
+
                 lines.append(f"| {field_name} | {field_type} | {field_desc} |")
             lines.append("")
-        
+
         # Required fields
         required = schema.get("required", [])
         if required:
             lines.append(f"**Required fields:** {', '.join(required)}")
             lines.append("")
-        
+
         return "\n".join(lines)
-        
+
     except Exception as e:
         return f"_Schema error: {e}_"
 
 
-def resource_to_html_widget(resource: Any, *, title: Optional[str] = None, default_view: str = "rendered") -> str:
+def resource_to_html_widget(
+    resource: Any, *, title: Optional[str] = None, default_view: str = "rendered"
+) -> str:
     """Return Markdown with Material tabs to switch Rendered/JSON/YAML/Schema.
-    
+
     Uses pymdownx.tabbed extension for native MkDocs Material tabs.
     """
     # Let resource_to_markdown use the resource_type as title if no specific title provided
@@ -991,19 +1123,19 @@ def resource_to_html_widget(resource: Any, *, title: Optional[str] = None, defau
 
     # Use Material's native tabbed content (pymdownx.tabbed)
     # Ensure proper indentation for nested content
-    rendered_lines = rendered_md.split('\n')
-    rendered_indented = '\n'.join('    ' + line if line.strip() else '' for line in rendered_lines)
-    
-    schema_lines = schema_md.split('\n')
-    schema_indented = '\n'.join('    ' + line if line.strip() else '' for line in schema_lines)
-    
+    rendered_lines = rendered_md.split("\n")
+    rendered_indented = "\n".join("    " + line if line.strip() else "" for line in rendered_lines)
+
+    schema_lines = schema_md.split("\n")
+    schema_indented = "\n".join("    " + line if line.strip() else "" for line in schema_lines)
+
     # Indent JSON and YAML code blocks properly for tabs
-    json_lines = json_str.split('\n')
-    json_indented = '\n'.join('    ' + line for line in json_lines)
-    
-    yaml_lines = yaml_str.split('\n')
-    yaml_indented = '\n'.join('    ' + line for line in yaml_lines)
-    
+    json_lines = json_str.split("\n")
+    json_indented = "\n".join("    " + line for line in json_lines)
+
+    yaml_lines = yaml_str.split("\n")
+    yaml_indented = "\n".join("    " + line for line in yaml_lines)
+
     tabs_md = f"""=== "Rendered"
 
 {rendered_indented}
@@ -1026,7 +1158,10 @@ def resource_to_html_widget(resource: Any, *, title: Optional[str] = None, defau
 """
     return tabs_md
 
-def resource_list_to_markdown(resources: Sequence[Any], *, title: Optional[str] = None, include_json: bool = False) -> str:
+
+def resource_list_to_markdown(
+    resources: Sequence[Any], *, title: Optional[str] = None, include_json: bool = False
+) -> str:
     """Render a list of HACS resources as a compact Markdown section.
 
     - Shows one compact table per resource using resource_to_markdown
@@ -1064,7 +1199,9 @@ def document_summary_markdown(
     if annotated_document is None or getattr(annotated_document, "text", None) is None:
         raise ValueError("annotated_document with text is required")
 
-    doc_id = getattr(annotated_document, "document_id", getattr(annotated_document, "id", "document"))
+    doc_id = getattr(
+        annotated_document, "document_id", getattr(annotated_document, "id", "document")
+    )
     text: str = annotated_document.text
     lines: list[str] = []
 
@@ -1090,6 +1227,7 @@ def document_summary_markdown(
 
     return "\n".join(lines)
 
+
 def to_markdown(
     obj: Any,
     *,
@@ -1112,6 +1250,7 @@ def to_markdown(
     # 1) Sequence of resources (avoid str/bytes/dict which are also Sequences)
     try:
         from collections.abc import Sequence as _Seq  # local import
+
         if isinstance(obj, _Seq) and not isinstance(obj, (str, bytes, dict)):
             return resource_list_to_markdown(obj, title=title, include_json=include_json)
     except Exception:
@@ -1124,7 +1263,12 @@ def to_markdown(
     # 3) Document-like (has text)
     try:
         if hasattr(obj, "text"):
-            return document_summary_markdown(obj, resources=resources, show_annotations=show_annotations, context_chars=context_chars)
+            return document_summary_markdown(
+                obj,
+                resources=resources,
+                show_annotations=show_annotations,
+                context_chars=context_chars,
+            )
     except Exception:
         pass
 
@@ -1139,6 +1283,7 @@ def to_markdown(
 
     # 5) Fallback: render as single resource
     return resource_to_markdown(obj, title=title, include_json=include_json)
+
 
 __all__ = [
     "visualize_resource",
@@ -1156,5 +1301,3 @@ __all__ = [
     "resource_to_schema_markdown",
     "to_markdown",
 ]
-
-

@@ -14,10 +14,10 @@ Architecture:
 import logging
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Type, Union, get_type_hints, Tuple
+from typing import Any, Dict, List, Optional, Type, Tuple
 from dataclasses import dataclass, field
 
-from pydantic import Field, BaseModel
+from pydantic import Field
 
 # Import base resource from hacs_models (consolidated location)
 try:
@@ -29,29 +29,37 @@ except ImportError:
 try:
     from hacs_models import (
         # Clinical Resources
-        Patient, Observation, Condition, Procedure, Medication, MedicationRequest,
-        AllergyIntolerance, FamilyMemberHistory, Goal, RiskAssessment,
-
+        Patient,
+        Observation,
+        Condition,
+        Procedure,
+        Medication,
+        MedicationRequest,
+        AllergyIntolerance,
+        FamilyMemberHistory,
+        Goal,
+        RiskAssessment,
         # Workflow Resources
-        ActivityDefinition, PlanDefinition, Task, Appointment,
-
+        ActivityDefinition,
+        PlanDefinition,
+        Task,
+        Appointment,
         # Communication Resources
-        AgentMessage, # Document, Library,  # Some may not exist yet
-
+        AgentMessage,  # Document, Library,  # Some may not exist yet
         # Administrative Resources
-        Organization, Encounter,
-
+        Organization,
+        Encounter,
         # Evidence and Guidance
         # EvidenceVariable, GuidanceResponse,  # Some may not exist yet
-
         # Context and Memory
         # ContextSummary, Memory,
-        ResourceBundle
+        ResourceBundle,
     )
 except ImportError:
     # Fallback to available models only
     try:
         from hacs_models import Patient, Observation, Encounter, AgentMessage
+
         # Mock the missing ones for now
         Condition = Procedure = Medication = MedicationRequest = None
         AllergyIntolerance = FamilyMemberHistory = Goal = RiskAssessment = None
@@ -77,6 +85,7 @@ logger = logging.getLogger(__name__)
 
 class ResourceStatus(str, Enum):
     """Lifecycle status of a registered resource."""
+
     DRAFT = "draft"
     REVIEW = "review"
     PUBLISHED = "published"
@@ -86,6 +95,7 @@ class ResourceStatus(str, Enum):
 
 class ResourceCategory(str, Enum):
     """Categories for organizing registered resources."""
+
     # Core clinical categories
     CLINICAL = "clinical"
     DIAGNOSTIC = "diagnostic"
@@ -110,6 +120,7 @@ class ResourceCategory(str, Enum):
 @dataclass
 class ResourceMetadata:
     """Metadata for a registered resource."""
+
     name: str
     version: str
     description: str
@@ -134,7 +145,9 @@ class RegisteredResource(BaseResource):
     lifecycle management, and metadata.
     """
 
-    resource_type: str = Field(default="RegisteredResource", description="Registry wrapper type")
+    resource_type: str = Field(
+        default="RegisteredResource", description="Registry wrapper type"
+    )
 
     # Registry metadata
     registry_id: str = Field(description="Unique registry identifier")
@@ -143,21 +156,18 @@ class RegisteredResource(BaseResource):
     # Reference to the actual hacs-core resource
     resource_class: str = Field(description="Name of the hacs-core resource class")
     resource_instance: Optional[Dict[str, Any]] = Field(
-        default=None,
-        description="Serialized instance of the hacs-core resource"
+        default=None, description="Serialized instance of the hacs-core resource"
     )
 
     # Validation and schema information
     schema_version: str = Field(description="Schema version compatibility")
     validation_rules: List[str] = Field(
-        default_factory=list,
-        description="Additional validation rules"
+        default_factory=list, description="Additional validation rules"
     )
 
     # Lifecycle management
     lifecycle_history: List[Dict[str, Any]] = Field(
-        default_factory=list,
-        description="History of status changes"
+        default_factory=list, description="History of status changes"
     )
 
     def update_status(self, new_status: ResourceStatus, reason: str = ""):
@@ -172,12 +182,14 @@ class RegisteredResource(BaseResource):
             self.metadata.deprecated_at = datetime.now(timezone.utc)
 
         # Record history
-        self.lifecycle_history.append({
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "from_status": old_status,
-            "to_status": new_status,
-            "reason": reason
-        })
+        self.lifecycle_history.append(
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "from_status": old_status,
+                "to_status": new_status,
+                "reason": reason,
+            }
+        )
 
     def get_resource_class(self) -> Optional[Type[BaseResource]]:
         """Get the actual hacs-core resource class."""
@@ -254,7 +266,7 @@ class HACSResourceRegistry:
         resource_class: Type[BaseResource],
         metadata: ResourceMetadata,
         instance_data: Optional[Dict[str, Any]] = None,
-        actor_id: Optional[str] = None
+        actor_id: Optional[str] = None,
     ) -> RegisteredResource:
         """
         Register a hacs-core resource with the registry.
@@ -272,9 +284,16 @@ class HACSResourceRegistry:
         if actor_id:
             try:
                 from .iam_registry import get_global_iam_registry, AccessLevel
+
                 iam = get_global_iam_registry()
-                if not iam.check_access(actor_id, f"resource_registry:{resource_class.__name__}", AccessLevel.WRITE):
-                    raise PermissionError(f"Actor {actor_id} not authorized to register {resource_class.__name__}")
+                if not iam.check_access(
+                    actor_id,
+                    f"resource_registry:{resource_class.__name__}",
+                    AccessLevel.WRITE,
+                ):
+                    raise PermissionError(
+                        f"Actor {actor_id} not authorized to register {resource_class.__name__}"
+                    )
             except ImportError:
                 # IAM not available, proceed without check
                 pass
@@ -285,7 +304,7 @@ class HACSResourceRegistry:
             metadata=metadata,
             resource_class=resource_class.__name__,
             resource_instance=instance_data,
-            schema_version="1.0.0"  # Could be derived from resource class
+            schema_version="1.0.0",  # Could be derived from resource class
         )
 
         # Store in registry
@@ -307,6 +326,7 @@ class HACSResourceRegistry:
             try:
                 # Fire-and-forget persistence; do not block registration
                 import asyncio
+
                 coro = self._persistence_service.save_registered_resource(registered)
                 try:
                     loop = asyncio.get_running_loop()
@@ -328,7 +348,7 @@ class HACSResourceRegistry:
         self,
         category: Optional[ResourceCategory] = None,
         resource_class: Optional[str] = None,
-        status: Optional[ResourceStatus] = None
+        status: Optional[ResourceStatus] = None,
     ) -> List[RegisteredResource]:
         """List registered resources with optional filtering."""
         resources = []
@@ -351,7 +371,7 @@ class HACSResourceRegistry:
         self,
         name_pattern: Optional[str] = None,
         tags: Optional[List[str]] = None,
-        use_case: Optional[str] = None
+        use_case: Optional[str] = None,
     ) -> List[RegisteredResource]:
         """Find resources by name, tags, or use case."""
         results = []
@@ -359,7 +379,10 @@ class HACSResourceRegistry:
         for resource in self._resources.values():
             match = True
 
-            if name_pattern and name_pattern.lower() not in resource.metadata.name.lower():
+            if (
+                name_pattern
+                and name_pattern.lower() not in resource.metadata.name.lower()
+            ):
                 match = False
 
             if tags and not any(tag in resource.metadata.tags for tag in tags):
@@ -374,10 +397,7 @@ class HACSResourceRegistry:
         return results
 
     def update_resource_status(
-        self,
-        registry_id: str,
-        new_status: ResourceStatus,
-        reason: str = ""
+        self, registry_id: str, new_status: ResourceStatus, reason: str = ""
     ) -> bool:
         """Update the status of a registered resource."""
         resource = self._resources.get(registry_id)
@@ -394,9 +414,7 @@ class HACSResourceRegistry:
                 cat.value: len(ids) for cat, ids in self._by_category.items()
             },
             "by_status": {},
-            "by_class": {
-                cls: len(ids) for cls, ids in self._by_class.items()
-            }
+            "by_class": {cls: len(ids) for cls, ids in self._by_class.items()},
         }
 
         # Count by status
@@ -422,7 +440,9 @@ class HACSResourceRegistry:
             status=ResourceStatus.PUBLISHED,
             tags=["cardiologia", "template", "consulta"],
         )
-        registered = self.register_resource(ResourceBundle, metadata, instance_data=bundle.model_dump())
+        registered = self.register_resource(
+            ResourceBundle, metadata, instance_data=bundle.model_dump()
+        )
         return registered
 
 
@@ -445,7 +465,7 @@ def register_hacs_resource(
     description: str,
     category: ResourceCategory,
     actor_id: Optional[str] = None,
-    **metadata_kwargs
+    **metadata_kwargs,
 ) -> RegisteredResource:
     """
     Convenience function to register a hacs-core resource.
@@ -467,11 +487,13 @@ def register_hacs_resource(
         version=version,
         description=description,
         category=category,
-        **metadata_kwargs
+        **metadata_kwargs,
     )
 
     registry = get_global_registry()
-    return registry.register_resource(resource_class, metadata, instance_data=None, actor_id=actor_id)
+    return registry.register_resource(
+        resource_class, metadata, instance_data=None, actor_id=actor_id
+    )
 
 
 # Pre-register common hacs-core resources
@@ -490,8 +512,8 @@ def _register_core_resources():
                         version="1.0.0",
                         description=description,
                         category=category,
-                        tags=tags
-                    )
+                        tags=tags,
+                    ),
                 )
                 logger.info(f"Registered resource: {name}")
             except Exception as e:
@@ -499,18 +521,27 @@ def _register_core_resources():
 
     # Clinical resources
     register_if_available(
-        Patient, "Patient", "FHIR-compatible patient resource",
-        ResourceCategory.CLINICAL, ["fhir", "patient", "demographics"]
+        Patient,
+        "Patient",
+        "FHIR-compatible patient resource",
+        ResourceCategory.CLINICAL,
+        ["fhir", "patient", "demographics"],
     )
 
     register_if_available(
-        Observation, "Observation", "Clinical observations and measurements",
-        ResourceCategory.CLINICAL, ["fhir", "observation", "measurement"]
+        Observation,
+        "Observation",
+        "Clinical observations and measurements",
+        ResourceCategory.CLINICAL,
+        ["fhir", "observation", "measurement"],
     )
 
     register_if_available(
-        Encounter, "Encounter", "Healthcare encounter/visit",
-        ResourceCategory.CLINICAL, ["fhir", "encounter", "visit"]
+        Encounter,
+        "Encounter",
+        "Healthcare encounter/visit",
+        ResourceCategory.CLINICAL,
+        ["fhir", "encounter", "visit"],
     )
 
     # NEW - Phase 1 critical resources (safety-critical)
@@ -518,18 +549,27 @@ def _register_core_resources():
         from hacs_models import AllergyIntolerance, ServiceRequest, DiagnosticReport
 
         register_if_available(
-            AllergyIntolerance, "AllergyIntolerance", "Patient allergy and intolerance information (safety-critical)",
-            ResourceCategory.SAFETY, ["fhir", "allergy", "safety", "patient-safety"]
+            AllergyIntolerance,
+            "AllergyIntolerance",
+            "Patient allergy and intolerance information (safety-critical)",
+            ResourceCategory.SAFETY,
+            ["fhir", "allergy", "safety", "patient-safety"],
         )
 
         register_if_available(
-            ServiceRequest, "ServiceRequest", "Request for healthcare services (care coordination)",
-            ResourceCategory.WORKFLOW, ["fhir", "service-request", "care-coordination", "ordering"]
+            ServiceRequest,
+            "ServiceRequest",
+            "Request for healthcare services (care coordination)",
+            ResourceCategory.WORKFLOW,
+            ["fhir", "service-request", "care-coordination", "ordering"],
         )
 
         register_if_available(
-            DiagnosticReport, "DiagnosticReport", "Diagnostic test results and reports (clinical decisions)",
-            ResourceCategory.DIAGNOSTIC, ["fhir", "diagnostic", "report", "clinical-decisions"]
+            DiagnosticReport,
+            "DiagnosticReport",
+            "Diagnostic test results and reports (clinical decisions)",
+            ResourceCategory.DIAGNOSTIC,
+            ["fhir", "diagnostic", "report", "clinical-decisions"],
         )
     except ImportError:
         logger.warning("Phase 1 critical resources not available for registration")
@@ -539,32 +579,47 @@ def _register_core_resources():
         from hacs_models import Practitioner, Organization
 
         register_if_available(
-            Practitioner, "Practitioner", "Healthcare provider information (care team management)",
-            ResourceCategory.CLINICAL, ["fhir", "practitioner", "provider", "care-team"]
+            Practitioner,
+            "Practitioner",
+            "Healthcare provider information (care team management)",
+            ResourceCategory.CLINICAL,
+            ["fhir", "practitioner", "provider", "care-team"],
         )
 
         register_if_available(
-            Organization, "Organization", "Healthcare facility and organizational information",
-            ResourceCategory.ADMINISTRATIVE, ["fhir", "organization", "facility", "institution"]
+            Organization,
+            "Organization",
+            "Healthcare facility and organizational information",
+            ResourceCategory.ADMINISTRATIVE,
+            ["fhir", "organization", "facility", "institution"],
         )
     except ImportError:
         logger.warning("Phase 2 care team resources not available for registration")
 
     # Workflow resources (only if available)
     register_if_available(
-        WorkflowDefinition, "WorkflowDefinition", "Clinical workflow definition",
-        ResourceCategory.WORKFLOW, ["workflow", "clinical", "process"]
+        WorkflowDefinition,
+        "WorkflowDefinition",
+        "Clinical workflow definition",
+        ResourceCategory.WORKFLOW,
+        ["workflow", "clinical", "process"],
     )
 
     register_if_available(
-        ActivityDefinition, "ActivityDefinition", "Definition of activities in workflows",
-        ResourceCategory.WORKFLOW, ["workflow", "activity", "process"]
+        ActivityDefinition,
+        "ActivityDefinition",
+        "Definition of activities in workflows",
+        ResourceCategory.WORKFLOW,
+        ["workflow", "activity", "process"],
     )
 
     # Communication resources
     register_if_available(
-        AgentMessage, "AgentMessage", "Messages for agent communication",
-        ResourceCategory.COMMUNICATION, ["agent", "message", "communication"]
+        AgentMessage,
+        "AgentMessage",
+        "Messages for agent communication",
+        ResourceCategory.COMMUNICATION,
+        ["agent", "message", "communication"],
     )
 
 
@@ -573,13 +628,13 @@ _register_core_resources()
 
 
 __all__ = [
-    'ResourceStatus',
-    'ResourceCategory',
-    'ResourceMetadata',
-    'RegisteredResource',
-    'HACSResourceRegistry',
-    'get_global_registry',
-    'register_hacs_resource',
+    "ResourceStatus",
+    "ResourceCategory",
+    "ResourceMetadata",
+    "RegisteredResource",
+    "HACSResourceRegistry",
+    "get_global_registry",
+    "register_hacs_resource",
 ]
 
 # ---------------------------------------------
@@ -587,7 +642,9 @@ __all__ = [
 # ---------------------------------------------
 
 # Pending queue for decorator-registered resources (deferred until migrations or explicit commit)
-_pending_resource_registrations: List[Tuple[Type[BaseResource], ResourceMetadata, Optional[Dict[str, Any]], Optional[str]]] = []
+_pending_resource_registrations: List[
+    Tuple[Type[BaseResource], ResourceMetadata, Optional[Dict[str, Any]], Optional[str]]
+] = []
 
 
 def register_resource(
@@ -622,25 +679,36 @@ def register_resource(
             tags=tags or [],
             **metadata_kwargs,
         )
-        _pending_resource_registrations.append((resource_class, meta, instance_data, actor_id))
+        _pending_resource_registrations.append(
+            (resource_class, meta, instance_data, actor_id)
+        )
         return resource_class
 
     return _decorator
 
 
-def get_pending_resource_registrations() -> List[Tuple[Type[BaseResource], ResourceMetadata, Optional[Dict[str, Any]], Optional[str]]]:
+def get_pending_resource_registrations() -> List[
+    Tuple[Type[BaseResource], ResourceMetadata, Optional[Dict[str, Any]], Optional[str]]
+]:
     """Inspect the current pending decorator-based registrations."""
     return list(_pending_resource_registrations)
 
 
-def consume_pending_resource_registrations(clear: bool = True) -> List[RegisteredResource]:
+def consume_pending_resource_registrations(
+    clear: bool = True,
+) -> List[RegisteredResource]:
     """Register pending decorator-based resources into the in-memory registry.
 
     Returns the list of RegisteredResource wrappers created.
     """
     registry = get_global_registry()
     results: List[RegisteredResource] = []
-    for resource_class, metadata, instance_data, actor_id in _pending_resource_registrations:
+    for (
+        resource_class,
+        metadata,
+        instance_data,
+        actor_id,
+    ) in _pending_resource_registrations:
         try:
             registered = registry.register_resource(
                 resource_class,

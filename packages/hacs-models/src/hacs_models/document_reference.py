@@ -7,6 +7,7 @@ with minimal required fields and safe defaults.
 """
 
 from typing import Literal
+
 from pydantic import Field
 
 from .base_resource import DomainResource
@@ -29,22 +30,36 @@ class DocumentReference(DomainResource):
     resource_type: Literal["DocumentReference"] = Field(default="DocumentReference")
 
     status: str = Field(default="current", description="current | superseded | entered-in-error")
-    doc_status: str | None = Field(default="final", description="preliminary | final | amended | entered-in-error")
+    doc_status: str | None = Field(
+        default="final", description="preliminary | final | amended | entered-in-error"
+    )
 
-    type_text: str | None = Field(default=None, description="Kind of document (LOINC text if available)")
-    category_text: str | None = Field(default=None, description="High-level categorization of document")
+    type_text: str | None = Field(
+        default=None, description="Kind of document (LOINC text if available)"
+    )
+    category_text: str | None = Field(
+        default=None, description="High-level categorization of document"
+    )
 
-    subject_ref: str | None = Field(default=None, description="Reference to the subject (e.g., Patient/xyz)")
-    author_ref: list[str] = Field(default_factory=list, description="Author references (e.g., Practitioner/xyz)")
-    custodian_ref: str | None = Field(default=None, description="Organization maintaining the document")
+    subject_ref: str | None = Field(
+        default=None, description="Reference to the subject (e.g., Patient/xyz)"
+    )
+    author_ref: list[str] = Field(
+        default_factory=list, description="Author references (e.g., Practitioner/xyz)"
+    )
+    custodian_ref: str | None = Field(
+        default=None, description="Organization maintaining the document"
+    )
 
-    date: str | None = Field(default=None, description="When this document reference was created (ISO 8601)")
+    date: str | None = Field(
+        default=None, description="When this document reference was created (ISO 8601)"
+    )
     description: str | None = Field(default=None, description="Human-readable description")
 
     attachment_url: str | None = Field(default=None, description="Where to access the document")
-    attachment_content_type: str | None = Field(default=None, description="MIME type of the document")
+    attachment_content_type: str | None = Field(
+        default=None, description="MIME type of the document"
+    )
 
     # Simple author/title fields for convenience
     title: str | None = Field(default=None, description="Document title")
-
-

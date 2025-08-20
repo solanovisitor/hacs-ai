@@ -6,11 +6,12 @@ or diagnostic procedures. Lightweight with safe defaults.
 """
 
 from typing import Literal
+
 from pydantic import Field
 
 from .base_resource import DomainResource
 from .observation import CodeableConcept
-from .types import ServiceRequestStatus, ServiceRequestIntent, ServiceRequestPriority
+from .types import ServiceRequestIntent, ServiceRequestPriority, ServiceRequestStatus
 
 
 class ServiceRequest(DomainResource):
@@ -26,6 +27,7 @@ class ServiceRequest(DomainResource):
     reason_text: str | None = Field(default=None, description="Free-text reason")
     note: list[str] = Field(default_factory=list, description="Additional notes")
 
+
 """
 ServiceRequest model for HACS.
 
@@ -36,7 +38,6 @@ FHIR R4 Specification:
 https://hl7.org/fhir/R4/servicerequest.html
 """
 
-from datetime import datetime
 from typing import Literal
 
 from pydantic import Field, field_validator
@@ -61,45 +62,36 @@ class ServiceRequest(DomainResource):
     """
 
     resource_type: Literal["ServiceRequest"] = Field(
-        default="ServiceRequest",
-        description="Resource type identifier"
+        default="ServiceRequest", description="Resource type identifier"
     )
 
     # Business identifiers
     identifier: list[str] = Field(
-        default_factory=list,
-        description="External identifiers for this item"
+        default_factory=list, description="External identifiers for this item"
     )
 
     # Canonical URL for instantiated protocol
     instantiates_canonical: list[str] = Field(
-        default_factory=list,
-        description="Instantiates FHIR protocol or definition"
+        default_factory=list, description="Instantiates FHIR protocol or definition"
     )
 
     # URL for instantiated protocol
     instantiates_uri: list[str] = Field(
-        default_factory=list,
-        description="Instantiates external protocol or definition"
+        default_factory=list, description="Instantiates external protocol or definition"
     )
 
     # Based on reference
     based_on: list[ResourceReference] = Field(
-        default_factory=list,
-        description="What request fulfills"
+        default_factory=list, description="What request fulfills"
     )
 
     # Replaces reference
     replaces: list[ResourceReference] = Field(
-        default_factory=list,
-        description="What request replaces"
+        default_factory=list, description="What request replaces"
     )
 
     # Requisition/grouper id
-    requisition: str | None = Field(
-        None,
-        description="Composite Request ID"
-    )
+    requisition: str | None = Field(None, description="Composite Request ID")
 
     # Status of the request
     status: ServiceRequestStatus = Field(
@@ -113,51 +105,35 @@ class ServiceRequest(DomainResource):
 
     # Classification of service
     category: list[CodeableConcept] = Field(
-        default_factory=list,
-        description="Classification of service"
+        default_factory=list, description="Classification of service"
     )
 
     # Priority of the request
     priority: ServiceRequestPriority | None = Field(
-        None,
-        description="Routine | urgent | asap | stat"
+        None, description="Routine | urgent | asap | stat"
     )
 
     # True if service/procedure should not be performed
     do_not_perform: bool | None = Field(
-        None,
-        description="True if service/procedure should not be performed"
+        None, description="True if service/procedure should not be performed"
     )
 
     # What is being requested/ordered
-    code: CodeableConcept | None = Field(
-        None,
-        description="What is being requested/ordered"
-    )
+    code: CodeableConcept | None = Field(None, description="What is being requested/ordered")
 
     # Order details
     order_detail: list[CodeableConcept] = Field(
-        default_factory=list,
-        description="Additional order information"
+        default_factory=list, description="Additional order information"
     )
 
     # Service quantity
-    quantity_quantity: Quantity | None = Field(
-        None,
-        description="Service amount as quantity"
-    )
+    quantity_quantity: Quantity | None = Field(None, description="Service amount as quantity")
 
     # Service ratio
-    quantity_ratio: str | None = Field(
-        None,
-        description="Service amount as ratio"
-    )
+    quantity_ratio: str | None = Field(None, description="Service amount as ratio")
 
     # Service range
-    quantity_range: str | None = Field(
-        None,
-        description="Service amount as range"
-    )
+    quantity_range: str | None = Field(None, description="Service amount as range")
 
     # Individual or entity the service is ordered for
     subject: ResourceReference = Field(
@@ -166,143 +142,101 @@ class ServiceRequest(DomainResource):
 
     # Encounter in which the request was created
     encounter: ResourceReference | None = Field(
-        None,
-        description="Encounter in which the request was created"
+        None, description="Encounter in which the request was created"
     )
 
     # When service should occur
-    occurrence_datetime: TimestampStr | None = Field(
-        None,
-        description="When service should occur"
-    )
+    occurrence_datetime: TimestampStr | None = Field(None, description="When service should occur")
 
     # When service should occur (period)
-    occurrence_period: str | None = Field(
-        None,
-        description="When service should occur (period)"
-    )
+    occurrence_period: str | None = Field(None, description="When service should occur (period)")
 
     # When service should occur (timing)
-    occurrence_timing: str | None = Field(
-        None,
-        description="When service should occur (timing)"
-    )
+    occurrence_timing: str | None = Field(None, description="When service should occur (timing)")
 
     # If request is calling patient back for additional procedure
-    as_needed_boolean: bool | None = Field(
-        None,
-        description="Preconditions for service"
-    )
+    as_needed_boolean: bool | None = Field(None, description="Preconditions for service")
 
     # Preconditions for service
     as_needed_codeable_concept: CodeableConcept | None = Field(
-        None,
-        description="Preconditions for service"
+        None, description="Preconditions for service"
     )
 
     # Date request signed
-    authored_on: TimestampStr | None = Field(
-        None,
-        description="Date request signed"
-    )
+    authored_on: TimestampStr | None = Field(None, description="Date request signed")
 
     # Who/what is requesting service
-    requester: ResourceReference | None = Field(
-        None,
-        description="Who/what is requesting service"
-    )
+    requester: ResourceReference | None = Field(None, description="Who/what is requesting service")
 
     # Performer role
-    performer_type: CodeableConcept | None = Field(
-        None,
-        description="Performer role"
-    )
+    performer_type: CodeableConcept | None = Field(None, description="Performer role")
 
     # Requested performer
     performer: list[ResourceReference] = Field(
-        default_factory=list,
-        description="Requested performer"
+        default_factory=list, description="Requested performer"
     )
 
     # Requested location
     location_code: list[CodeableConcept] = Field(
-        default_factory=list,
-        description="Requested location"
+        default_factory=list, description="Requested location"
     )
 
     # Requested location reference
     location_reference: list[ResourceReference] = Field(
-        default_factory=list,
-        description="Requested location reference"
+        default_factory=list, description="Requested location reference"
     )
 
     # Explanation/Justification for procedure or service
     reason_code: list[CodeableConcept] = Field(
-        default_factory=list,
-        description="Explanation/Justification for procedure or service"
+        default_factory=list, description="Explanation/Justification for procedure or service"
     )
 
     # Explanation/Justification for service or service
     reason_reference: list[ResourceReference] = Field(
-        default_factory=list,
-        description="Explanation/Justification for service or service"
+        default_factory=list, description="Explanation/Justification for service or service"
     )
 
     # Associated insurance coverage
     insurance: list[ResourceReference] = Field(
-        default_factory=list,
-        description="Associated insurance coverage"
+        default_factory=list, description="Associated insurance coverage"
     )
 
     # Additional clinical information
     supporting_info: list[ResourceReference] = Field(
-        default_factory=list,
-        description="Additional clinical information"
+        default_factory=list, description="Additional clinical information"
     )
 
     # Specimen collection details
-    specimen: list[ResourceReference] = Field(
-        default_factory=list,
-        description="Procedure Samples"
-    )
+    specimen: list[ResourceReference] = Field(default_factory=list, description="Procedure Samples")
 
     # Location on Body
-    body_site: list[CodeableConcept] = Field(
-        default_factory=list,
-        description="Location on Body"
-    )
+    body_site: list[CodeableConcept] = Field(default_factory=list, description="Location on Body")
 
     # Comments
-    note: list[str] = Field(
-        default_factory=list,
-        description="Comments"
-    )
+    note: list[str] = Field(default_factory=list, description="Comments")
 
     # Patient or consumer-oriented instructions
     patient_instruction: str | None = Field(
-        None,
-        description="Patient or consumer-oriented instructions"
+        None, description="Patient or consumer-oriented instructions"
     )
 
     # What request fulfills
     relevant_history: list[ResourceReference] = Field(
-        default_factory=list,
-        description="Request provenance"
+        default_factory=list, description="Request provenance"
     )
 
-    @field_validator('subject')
+    @field_validator("subject")
     @classmethod
     def validate_subject_reference(cls, v):
         """Validate subject reference format."""
-        if v and not any(v.startswith(prefix) for prefix in [
-            'Patient/', 'Group/', 'Location/', 'Device/', 'urn:uuid:'
-        ]):
-            raise ValueError(
-                "Subject reference must start with valid resource type or 'urn:uuid:'"
-            )
+        if v and not any(
+            v.startswith(prefix)
+            for prefix in ["Patient/", "Group/", "Location/", "Device/", "urn:uuid:"]
+        ):
+            raise ValueError("Subject reference must start with valid resource type or 'urn:uuid:'")
         return v
 
-    @field_validator('status')
+    @field_validator("status")
     @classmethod
     def validate_status_required(cls, v):
         """Ensure status is provided."""
@@ -310,7 +244,7 @@ class ServiceRequest(DomainResource):
             raise ValueError("Status is required for ServiceRequest")
         return v
 
-    @field_validator('intent')
+    @field_validator("intent")
     @classmethod
     def validate_intent_required(cls, v):
         """Ensure intent is provided."""
@@ -339,17 +273,17 @@ class ServiceRequest(DomainResource):
         return self.priority in [
             ServiceRequestPriority.URGENT,
             ServiceRequestPriority.ASAP,
-            ServiceRequestPriority.STAT
+            ServiceRequestPriority.STAT,
         ]
 
     def get_display_name(self) -> str:
         """Get a human-readable display name for the service request."""
-        if self.code and hasattr(self.code, 'text') and self.code.text:
+        if self.code and hasattr(self.code, "text") and self.code.text:
             return self.code.text
-        elif self.code and hasattr(self.code, 'coding') and self.code.coding:
+        elif self.code and hasattr(self.code, "coding") and self.code.coding:
             # Try to get display from first coding
             first_coding = self.code.coding[0] if self.code.coding else None
-            if first_coding and hasattr(first_coding, 'display'):
+            if first_coding and hasattr(first_coding, "display"):
                 return first_coding.display
         return f"Service Request {self.id or 'Unknown'}"
 
@@ -366,13 +300,14 @@ class ServiceRequest(DomainResource):
 
 # Convenience functions for common service request types
 
+
 def create_lab_request(
     subject_ref: ResourceReference,
     test_code: CodeableConcept,
     status: ServiceRequestStatus = ServiceRequestStatus.DRAFT,
     intent: ServiceRequestIntent = ServiceRequestIntent.ORDER,
     priority: ServiceRequestPriority = ServiceRequestPriority.ROUTINE,
-    **kwargs
+    **kwargs,
 ) -> ServiceRequest:
     """Create a laboratory test service request."""
     return ServiceRequest(
@@ -382,7 +317,7 @@ def create_lab_request(
         priority=priority,
         code=test_code,
         category=[CodeableConcept(text="Laboratory")],
-        **kwargs
+        **kwargs,
     )
 
 
@@ -392,7 +327,7 @@ def create_imaging_request(
     status: ServiceRequestStatus = ServiceRequestStatus.DRAFT,
     intent: ServiceRequestIntent = ServiceRequestIntent.ORDER,
     priority: ServiceRequestPriority = ServiceRequestPriority.ROUTINE,
-    **kwargs
+    **kwargs,
 ) -> ServiceRequest:
     """Create an imaging service request."""
     return ServiceRequest(
@@ -402,7 +337,7 @@ def create_imaging_request(
         priority=priority,
         code=imaging_code,
         category=[CodeableConcept(text="Imaging")],
-        **kwargs
+        **kwargs,
     )
 
 
@@ -412,7 +347,7 @@ def create_referral_request(
     status: ServiceRequestStatus = ServiceRequestStatus.ACTIVE,
     intent: ServiceRequestIntent = ServiceRequestIntent.ORDER,
     priority: ServiceRequestPriority = ServiceRequestPriority.ROUTINE,
-    **kwargs
+    **kwargs,
 ) -> ServiceRequest:
     """Create a specialist referral service request."""
     return ServiceRequest(
@@ -422,5 +357,5 @@ def create_referral_request(
         priority=priority,
         code=specialty_code,
         category=[CodeableConcept(text="Referral")],
-        **kwargs
+        **kwargs,
     )

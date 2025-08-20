@@ -17,7 +17,7 @@ from .metrics_collector import MetricsCollector
 from .compliance_monitor import ComplianceMonitor
 
 __all__ = [
-    'AuditLogger',
-    'MetricsCollector',
-    'ComplianceMonitor',
+    "AuditLogger",
+    "MetricsCollector",
+    "ComplianceMonitor",
 ]

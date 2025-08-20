@@ -13,20 +13,21 @@ Domain Focus:
 """
 
 import logging
-import os
 from typing import Dict, List, Any, Optional, Union
-from datetime import datetime
 
-from hacs_models import HACSResult, BaseResource
-from hacs_core import Actor
+from hacs_models import HACSResult
 from hacs_models import (
-    get_model_registry, MappingSpec, OutputSpec, SourceBinding, 
-    ResourceBundle, Patient, Document
+    get_model_registry,
+    MappingSpec,
+    OutputSpec,
+    SourceBinding,
+    ResourceBundle,
+    Patient,
 )
 from hacs_models.utils import set_nested_field
 from hacs_utils.structured import (
-    generate_structured_output, generate_chunked_extractions,
-    generate_structured_list, extract
+    generate_structured_output,
+    extract,
 )
 # Tool domain: extraction - Structured data extraction and resource creation
 
@@ -42,11 +43,11 @@ def suggest_mapping(
 ) -> HACSResult:
     """
     Generate a MappingSpec that defines how to extract variables and map them to HACS resources.
-    
+
     Args:
         instruction_md: Markdown instruction describing the mapping requirements
         resource_hints: Optional list of resource types to prioritize (e.g., ["Patient", "Document"])
-        
+
     Returns:
         HACSResult with the synthesized MappingSpec
     """
@@ -54,17 +55,22 @@ def suggest_mapping(
         # Get available resource types
         model_registry = get_model_registry()
         available_types = list(model_registry.keys())
-        
+
         # Use hints or default to common clinical types
         if resource_hints:
             target_types = [t for t in resource_hints if t in available_types]
         else:
             target_types = [
-                "Patient", "Document", "Condition", "Observation", 
-                "MedicationRequest", "Procedure", "Encounter"
+                "Patient",
+                "Document",
+                "Condition",
+                "Observation",
+                "MedicationRequest",
+                "Procedure",
+                "Encounter",
             ]
             target_types = [t for t in target_types if t in available_types]
-        
+
         # Build composite instruction context
         blocks: List[str] = []
         if instruction:
@@ -96,25 +102,25 @@ Generate a MappingSpec with:
 
 Respond with valid JSON for the MappingSpec.
 """
-        
+
         # Try to use LLM if available
         try:
             result = generate_structured_output(
                 prompt=extraction_prompt or base_prompt,
                 response_model=MappingSpec,
                 llm_provider="openai",
-                format_type="json"
+                format_type="json",
             )
-            
+
             if result.success and result.data:
                 return HACSResult(
                     success=True,
                     message="Successfully synthesized MappingSpec using LLM",
-                    data={"mapping_spec": result.data.model_dump()}
+                    data={"mapping_spec": result.data.model_dump()},
                 )
         except Exception as llm_error:
             logger.warning(f"LLM synthesis failed: {llm_error}")
-        
+
         # Fallback: create a conservative default mapping
         default_mapping = MappingSpec(
             variables=["patient_name", "document_title", "clinical_note"],
@@ -122,40 +128,30 @@ Respond with valid JSON for the MappingSpec.
                 "patient": OutputSpec(
                     resource_type="Patient",
                     source_bindings=[
-                        SourceBinding(
-                            target_field="name.0.text",
-                            source_variable="patient_name"
-                        )
-                    ]
+                        SourceBinding(target_field="name.0.text", source_variable="patient_name")
+                    ],
                 ),
                 "document": OutputSpec(
-                    resource_type="Document", 
+                    resource_type="Document",
                     source_bindings=[
-                        SourceBinding(
-                            target_field="title",
-                            source_variable="document_title"
-                        ),
+                        SourceBinding(target_field="title", source_variable="document_title"),
                         SourceBinding(
                             target_field="content.0.attachment.data",
-                            source_variable="clinical_note"
-                        )
-                    ]
-                )
-            }
+                            source_variable="clinical_note",
+                        ),
+                    ],
+                ),
+            },
         )
-        
+
         return HACSResult(
             success=True,
             message="Created default MappingSpec (LLM synthesis not available)",
-            data={"mapping_spec": default_mapping.model_dump()}
+            data={"mapping_spec": default_mapping.model_dump()},
         )
-        
+
     except Exception as e:
-        return HACSResult(
-            success=False,
-            message="Failed to synthesize MappingSpec",
-            error=str(e)
-        )
+        return HACSResult(success=False, message="Failed to synthesize MappingSpec", error=str(e))
 
 
 def extract_values(
@@ -169,13 +165,13 @@ def extract_values(
 ) -> HACSResult:
     """
     Extract specified variables from input text using structured generation.
-    
+
     Args:
         text: Input text to extract variables from
         variables: List of variable names to extract
         chunking: Optional chunking config with max_chars, overlap
         provider: LLM provider to use ("openai", "anthropic")
-        
+
     Returns:
         HACSResult with extracted variables and optional grounding information
     """
@@ -197,7 +193,11 @@ def extract_values(
         # If an explicit extraction_prompt is provided, prefer using generate_extractions
         if extraction_prompt:
             try:
-                schema = {"type": "object", "properties": {v: {"type": "string"} for v in variables}, "required": variables}
+                schema = {
+                    "type": "object",
+                    "properties": {v: {"type": "string"} for v in variables},
+                    "required": variables,
+                }
                 result = await extract(
                     llm_provider=provider,
                     prompt=extraction_prompt,
@@ -206,55 +206,61 @@ def extract_values(
                     use_descriptive_schema=True,
                 )
                 if result.success:
-                    return HACSResult(success=True, message="Extracted using custom prompt", data={"variables": result.data})
+                    return HACSResult(
+                        success=True,
+                        message="Extracted using custom prompt",
+                        data={"variables": result.data},
+                    )
             except Exception as e:
                 logger.warning(f"Prompted extraction failed, falling back: {e}")
 
         # Check for chunking requirements
         use_chunking = chunking and len(text_input) > chunking.get("max_chars", 4000)
-        
+
         if use_chunking:
             # Use chunked extraction with grounding
             chunk_config = {
                 "max_chars": chunking.get("max_chars", 4000),
-                "overlap": chunking.get("overlap", 200)
+                "overlap": chunking.get("overlap", 200),
             }
-            
+
             extraction_schema = {
                 "type": "object",
                 "properties": {var: {"type": "string"} for var in variables},
-                "required": variables
+                "required": variables,
             }
-            
+
             result = await extract(
                 llm_provider=provider,
                 prompt=extraction_prompt or extraction_prompt_default,
                 output_model=Extraction,  # Use Extraction for grounded mentions
                 many=True,
                 use_descriptive_schema=True,
-                chunking_policy=ChunkingPolicy(max_chars=chunk_config["max_chars"], chunk_overlap=chunk_config["overlap"]),
+                chunking_policy=ChunkingPolicy(
+                    max_chars=chunk_config["max_chars"], chunk_overlap=chunk_config["overlap"]
+                ),
                 source_text=text_input,
             )
-            
+
             if result.success:
                 # Merge extractions from chunks
                 merged_variables = {}
                 grounded_extractions = result.data.get("extractions", [])
-                
+
                 for extraction in grounded_extractions:
                     for var, value in extraction.get("extracted_data", {}).items():
                         if var in variables and value:
                             merged_variables[var] = value
-                
+
                 return HACSResult(
                     success=True,
                     message=f"Extracted {len(merged_variables)} variables from {len(grounded_extractions)} chunks",
                     data={
                         "variables": merged_variables,
-                        "grounded_extractions": grounded_extractions
-                    }
+                        "grounded_extractions": grounded_extractions,
+                    },
                 )
-        
+
         else:
             # Simple single-pass extraction
             extraction_prompt_default = f"""
@@ -267,13 +273,13 @@ Text:
 Respond with a JSON object containing the extracted variables.
 If a variable cannot be found, use an empty string or reasonable default.
 """
-            
+
             extraction_schema = {
-                "type": "object", 
+                "type": "object",
                 "properties": {var: {"type": "string"} for var in variables},
-                "required": variables
+                "required": variables,
             }
-            
+
             result = await extract(
                 llm_provider=provider,
                 prompt=extraction_prompt or extraction_prompt_default,
@@ -281,85 +287,84 @@ If a variable cannot be found, use an empty string or reasonable default.
                 many=True,
                 use_descriptive_schema=True,
             )
-            
+
             if result.success:
                 return HACSResult(
                     success=True,
                     message=f"Extracted {len(variables)} variables",
-                    data={"variables": result.data, "grounded_extractions": []}
+                    data={"variables": result.data, "grounded_extractions": []},
                 )
-        
+
         # No-LLM fallback for essential variables
         fallback_variables = {}
         text_lower = text_input.lower()
-        
+
         for var in variables:
             if var == "patient_name":
                 # Simple regex for names
                 import re
-                name_match = re.search(r'patient:?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)', text_input, re.IGNORECASE)
+
+                name_match = re.search(
+                    r"patient:?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)", text_input, re.IGNORECASE
+                )
                 fallback_variables[var] = name_match.group(1) if name_match else "Anonymous Patient"
             elif var == "document_title":
                 # Use first line or extract from headers
-                lines = text_input.strip().split('\n')
+                lines = text_input.strip().split("\n")
                 fallback_variables[var] = lines[0][:100] if lines else "Clinical Document"
             elif var == "clinical_note":
                 # Use the text content
                 fallback_variables[var] = text_input[:1000] if text_input else ""
             else:
                 fallback_variables[var] = ""
-        
+
         return HACSResult(
             success=True,
             message=f"Used fallback extraction for {len(variables)} variables",
-            data={"variables": fallback_variables, "grounded_extractions": []}
+            data={"variables": fallback_variables, "grounded_extractions": []},
         )
-        
+
     except Exception as e:
-        return HACSResult(
-            success=False,
-            message="Failed to extract variables",
-            error=str(e)
-        )
+        return HACSResult(success=False, message="Failed to extract variables", error=str(e))
 
 
 def apply_mapping(mapping_spec: Dict[str, Any], variables: Dict[str, Any]) -> HACSResult:
     """
     Apply a MappingSpec to extracted variables to create resources and assemble a bundle.
-    
+
     Args:
         mapping_spec: Dictionary representation of MappingSpec
         variables: Dictionary of extracted variable values
-        
+
     Returns:
         HACSResult with created resources and ResourceBundle
     """
     try:
         # Parse mapping spec
         mapping = MappingSpec(**mapping_spec)
-        
+
         # Create resources according to mapping
         resources = {}
         model_registry = get_model_registry()
-        
+
         for layer_name, output_spec in mapping.layers.items():
             resource_type = output_spec.resource_type
             resource_class = model_registry.get(resource_type)
-            
+
             if not resource_class:
                 logger.warning(f"Unknown resource type: {resource_type}")
                 continue
-            
+
             # Start with base resource structure
             resource_data = {"resource_type": resource_type}
-            
+
             # Apply source bindings
             for binding in output_spec.source_bindings:
                 source_value = variables.get(binding.source_variable)
                 if source_value:
                     # Use set_nested_field to handle dot notation
                     set_nested_field(resource_data, binding.target_field, source_value)
-            
+
             # Create resource instance
             try:
                 resource = resource_class(**resource_data)
@@ -367,102 +372,98 @@ def apply_mapping(mapping_spec: Dict[str, Any], variables: Dict[str, Any]) -> HA
             except Exception as e:
                 logger.warning(f"Failed to create {resource_type}: {e}")
                 continue
-        
+
         # Ensure we have at least one resource for bundle creation
         if not resources:
             # Create fallback Patient resource
-            patient = Patient(
-                name=[{"text": variables.get("patient_name", "Anonymous Patient")}]
-            )
+            patient = Patient(name=[{"text": variables.get("patient_name", "Anonymous Patient")}])
             resources["patient"] = patient
-        
+
         # Create ResourceBundle with entries
         bundle_entries = []
         for layer_name, resource in resources.items():
             from hacs_models import BundleEntry
+
             entry = BundleEntry(
                 resource=resource.model_dump(),
                 title=f"{resource.resource_type} - {layer_name}",
-                tags=[resource.resource_type.lower(), layer_name]
+                tags=[resource.resource_type.lower(), layer_name],
             )
             bundle_entries.append(entry)
-        
+
         bundle = ResourceBundle(
             bundle_type="DOCUMENT",
             entries=bundle_entries,
             title=variables.get("document_title", "Generated Resource Bundle"),
-            description=f"Bundle created from mapping spec with {len(resources)} resources"
+            description=f"Bundle created from mapping spec with {len(resources)} resources",
         )
-        
+
         return HACSResult(
             success=True,
             message=f"Successfully applied mapping spec to create {len(resources)} resources",
             data={
                 "resources": {k: v.model_dump() for k, v in resources.items()},
-                "bundle": bundle.model_dump()
-            }
+                "bundle": bundle.model_dump(),
+            },
         )
-        
+
     except Exception as e:
-        return HACSResult(
-            success=False,
-            message="Failed to apply mapping spec",
-            error=str(e)
-        )
+        return HACSResult(success=False, message="Failed to apply mapping spec", error=str(e))
 
 
 def summarize_context(
-    content: Union[str, List[Dict[str, Any]]], 
+    content: Union[str, List[Dict[str, Any]]],
     strategy: str = "recursive",
     target_tokens: int = 1000,
-    provider: str = "openai"
+    provider: str = "openai",
 ) -> HACSResult:
     """
     Summarize context content using various strategies for token efficiency.
-    
+
     Args:
         content: Content to summarize (string or list of messages/objects)
         strategy: Summarization strategy ("recursive", "window", "key_points")
         target_tokens: Target token count for summary
         provider: LLM provider to use
-        
+
     Returns:
         HACSResult with summary and retained references
     """
     try:
         # Convert content to text if needed
         if isinstance(content, list):
-            text_content = "\n".join([
-                str(item.get("content", item)) if isinstance(item, dict) else str(item)
-                for item in content
-            ])
+            text_content = "\n".join(
+                [
+                    str(item.get("content", item)) if isinstance(item, dict) else str(item)
+                    for item in content
+                ]
+            )
         else:
             text_content = str(content)
-        
+
         # Estimate current token count (rough approximation)
         current_tokens = len(text_content.split()) * 1.3  # rough token estimate
-        
+
         if current_tokens <= target_tokens:
             return HACSResult(
                 success=True,
                 message="Content already within target token limit",
-                data={"summary": text_content, "retained_refs": []}
+                data={"summary": text_content, "retained_refs": []},
             )
-        
+
         # Build summarization prompt based on strategy
         if strategy == "recursive":
             # Split into chunks and summarize progressively
             chunk_size = len(text_content) // 3
             chunks = [
-                text_content[i:i+chunk_size] 
-                for i in range(0, len(text_content), chunk_size)
+                text_content[i : i + chunk_size] for i in range(0, len(text_content), chunk_size)
             ]
-            
+
             summaries = []
             for i, chunk in enumerate(chunks):
                 if len(chunk.strip()) == 0:
                     continue
-                    
+
                 summary_prompt = f"""
 Summarize the following content, preserving key clinical information and action items:
 
@@ -470,31 +471,33 @@ Summarize the following content, preserving key clinical information and action 
 
 Provide a concise summary in approximately {target_tokens // len(chunks)} words.
 """
-                
+
                 try:
                     result = generate_structured_output(
                         prompt=summary_prompt,
                         response_model={"type": "string"},
-                        llm_provider=provider
+                        llm_provider=provider,
                     )
                     if result.success:
                         summaries.append(result.data)
                 except Exception:
                     # Fallback to simple truncation
-                    summaries.append(chunk[:target_tokens//len(chunks)*4])  # rough chars per token
-            
+                    summaries.append(
+                        chunk[: target_tokens // len(chunks) * 4]
+                    )  # rough chars per token
+
             final_summary = "\n\n".join(summaries)
-            
+
         elif strategy == "window":
             # Keep beginning and end, summarize middle
             keep_chars = target_tokens * 2  # rough char estimate
             if len(text_content) <= keep_chars * 2:
                 final_summary = text_content
             else:
-                beginning = text_content[:keep_chars//2]
-                ending = text_content[-keep_chars//2:]
+                beginning = text_content[: keep_chars // 2]
+                ending = text_content[-keep_chars // 2 :]
                 final_summary = f"{beginning}\n\n[... content summarized ...]\n\n{ending}"
-                
+
         else:  # key_points
             # Extract key points
             summary_prompt = f"""
@@ -510,32 +513,31 @@ Focus on:
 
 Target length: approximately {target_tokens} words.
 """
-            
+
             try:
                 result = generate_structured_output(
-                    prompt=summary_prompt,
-                    response_model={"type": "string"},
-                    llm_provider=provider
+                    prompt=summary_prompt, response_model={"type": "string"}, llm_provider=provider
                 )
-                final_summary = result.data if result.success else text_content[:target_tokens*4]
+                final_summary = result.data if result.success else text_content[: target_tokens * 4]
             except Exception:
                 # Fallback: simple truncation with ellipsis
-                final_summary = text_content[:target_tokens*4] + "..."
-        
+                final_summary = text_content[: target_tokens * 4] + "..."
+
         # Extract retained references (IDs, names, etc.)
         retained_refs = []
         import re
+
         # Look for common ID patterns and resource references
         id_patterns = [
-            r'\b[A-Za-z]+\-[0-9a-f\-]{8,}\b',  # Resource IDs
-            r'\bpatient[_\s]*(?:id|name):\s*([^\n,]+)',  # Patient references
-            r'\bresource[_\s]*(?:id|type):\s*([^\n,]+)'   # Resource references
+            r"\b[A-Za-z]+\-[0-9a-f\-]{8,}\b",  # Resource IDs
+            r"\bpatient[_\s]*(?:id|name):\s*([^\n,]+)",  # Patient references
+            r"\bresource[_\s]*(?:id|type):\s*([^\n,]+)",  # Resource references
         ]
-        
+
         for pattern in id_patterns:
             matches = re.findall(pattern, text_content, re.IGNORECASE)
             retained_refs.extend(matches)
-        
+
         return HACSResult(
             success=True,
             message=f"Summarized content using {strategy} strategy",
@@ -543,20 +545,18 @@ Target length: approximately {target_tokens} words.
                 "summary": final_summary,
                 "retained_refs": list(set(retained_refs)),
                 "strategy_used": strategy,
-                "compression_ratio": len(final_summary) / len(text_content) if text_content else 1
-            }
+                "compression_ratio": len(final_summary) / len(text_content) if text_content else 1,
+            },
         )
-        
+
     except Exception as e:
-        return HACSResult(
-            success=False,
-            message="Failed to summarize context",
-            error=str(e)
-        )
+        return HACSResult(success=False, message="Failed to summarize context", error=str(e))
 
 
 # Backward-compatible wrappers (deprecated names)
-def synthesize_mapping_spec(instruction_md: str, resource_hints: Optional[List[str]] = None) -> HACSResult:
+def synthesize_mapping_spec(
+    instruction_md: str, resource_hints: Optional[List[str]] = None
+) -> HACSResult:
     return suggest_mapping(instruction=instruction_md, resource_hints=resource_hints)
 
 
@@ -572,7 +572,7 @@ def apply_mapping_spec(mapping_spec: Dict[str, Any], variables: Dict[str, Any]) 
 __all__ = [
     "suggest_mapping",
     "extract_values",
-    "apply_mapping", 
+    "apply_mapping",
     "summarize_context",
     # Legacy aliases
     "synthesize_mapping_spec",

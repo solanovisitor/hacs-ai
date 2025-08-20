@@ -63,5 +63,3 @@ def test_resource_management_create_minimals():
         },
     )
     assert r5.success, r5.message
-
-

@@ -3,7 +3,6 @@ Test suite for Workflow and related components.
 """
 
 import pytest
-from datetime import datetime, timezone
 
 from hacs_models import (
     # Base Patterns
@@ -44,7 +43,7 @@ class TestWorkflowPatterns:
             title="Test Workflow Definition",
             status=WorkflowStatus.ACTIVE,
             version="1.0.0",
-            description="A test workflow definition"
+            description="A test workflow definition",
         )
 
         assert definition.name == "TestDefinition"
@@ -59,7 +58,7 @@ class TestWorkflowPatterns:
             status=WorkflowStatus.ACTIVE,
             intent=RequestIntent.ORDER,
             subject="patient-001",
-            priority=RequestPriority.URGENT
+            priority=RequestPriority.URGENT,
         )
 
         assert request.status == WorkflowStatus.ACTIVE
@@ -70,10 +69,7 @@ class TestWorkflowPatterns:
 
     def test_workflow_event_creation(self):
         """Test WorkflowEvent base pattern."""
-        event = WorkflowEvent(
-            status=EventStatus.COMPLETED,
-            subject="patient-001"
-        )
+        event = WorkflowEvent(status=EventStatus.COMPLETED, subject="patient-001")
 
         assert event.status == EventStatus.COMPLETED
         assert event.subject == "patient-001"
@@ -91,7 +87,7 @@ class TestTask:
             description="Process clinical document",
             status=TaskStatus.REQUESTED,
             intent=TaskIntent.ORDER,
-            subject="patient-001"
+            subject="patient-001",
         )
 
         assert task.code == "process-document"
@@ -107,7 +103,7 @@ class TestTask:
             code="validate-document",
             status=TaskStatus.REQUESTED,
             intent=TaskIntent.ORDER,
-            subject="patient-001"
+            subject="patient-001",
         )
 
         # Add inputs
@@ -132,7 +128,7 @@ class TestTask:
             code="process-data",
             status=TaskStatus.IN_PROGRESS,
             intent=TaskIntent.ORDER,
-            subject="patient-001"
+            subject="patient-001",
         )
 
         # Complete the task
@@ -149,7 +145,7 @@ class TestTask:
             code="process-data",
             status=TaskStatus.IN_PROGRESS,
             intent=TaskIntent.ORDER,
-            subject="patient-001"
+            subject="patient-001",
         )
 
         # Fail the task
@@ -161,15 +157,17 @@ class TestTask:
 
     def test_task_chaining(self):
         """Test task method chaining."""
-        task = (Task(
-            code="complex-task",
-            status=TaskStatus.REQUESTED,
-            intent=TaskIntent.ORDER,
-            subject="patient-001"
+        task = (
+            Task(
+                code="complex-task",
+                status=TaskStatus.REQUESTED,
+                intent=TaskIntent.ORDER,
+                subject="patient-001",
+            )
+            .add_input("param1", "value1")
+            .add_input("param2", 42, "integer")
+            .add_output("result", "string")
         )
-        .add_input("param1", "value1")
-        .add_input("param2", 42, "integer")
-        .add_output("result", "string"))
 
         assert len(task.input) == 2
         assert len(task.output) == 1
@@ -188,7 +186,7 @@ class TestActivityDefinition:
             status=WorkflowStatus.ACTIVE,
             kind=ActivityDefinitionKind.TASK,
             description="Validate clinical document against standards",
-            purpose="Ensure document quality and compliance"
+            purpose="Ensure document quality and compliance",
         )
 
         assert activity.name == "DocumentValidation"
@@ -202,22 +200,19 @@ class TestActivityDefinition:
         activity = ActivityDefinition(
             name="ReviewProcess",
             status=WorkflowStatus.ACTIVE,
-            kind=ActivityDefinitionKind.TASK
+            kind=ActivityDefinitionKind.TASK,
         )
 
         # Add participants
         participant1 = WorkflowParticipant(
-            name="Dr. Smith",
-            role="reviewer",
-            actor_type="Person",
-            required=True
+            name="Dr. Smith", role="reviewer", actor_type="Person", required=True
         )
 
         participant2 = WorkflowParticipant(
             name="System Validator",
             role="validator",
             actor_type="Device",
-            required=False
+            required=False,
         )
 
         activity.participant = [participant1, participant2]
@@ -235,13 +230,10 @@ class TestActivityDefinition:
             status=WorkflowStatus.ACTIVE,
             kind=ActivityDefinitionKind.TASK,
             code="process-data",
-            description="Process and validate clinical data"
+            description="Process and validate clinical data",
         )
 
-        task = activity.create_task(
-            subject="patient-001",
-            requester="physician-001"
-        )
+        task = activity.create_task(subject="patient-001", requester="physician-001")
 
         assert task.code == "process-data"
         assert task.description == "Process and validate clinical data"
@@ -262,7 +254,7 @@ class TestPlanDefinition:
             title="Clinical Document Workflow",
             status=WorkflowStatus.ACTIVE,
             description="Complete workflow for clinical document processing",
-            type="workflow-definition"
+            type="workflow-definition",
         )
 
         assert plan.name == "ClinicalWorkflow"
@@ -273,10 +265,7 @@ class TestPlanDefinition:
 
     def test_plan_definition_goals(self):
         """Test plan definition goals management."""
-        plan = PlanDefinition(
-            name="QualityWorkflow",
-            status=WorkflowStatus.ACTIVE
-        )
+        plan = PlanDefinition(name="QualityWorkflow", status=WorkflowStatus.ACTIVE)
 
         plan.add_goal("Ensure data quality", "quality", "high")
         plan.add_goal("Maintain compliance", "compliance", "medium")
@@ -288,49 +277,44 @@ class TestPlanDefinition:
 
     def test_plan_definition_actions(self):
         """Test plan definition actions management."""
-        plan = PlanDefinition(
-            name="ProcessingWorkflow",
-            status=WorkflowStatus.ACTIVE
-        )
+        plan = PlanDefinition(name="ProcessingWorkflow", status=WorkflowStatus.ACTIVE)
 
         plan.add_action(
             title="Validate Input",
             code="validate",
             description="Validate input data",
-            definition_canonical="ActivityDefinition/input-validation"
+            definition_canonical="ActivityDefinition/input-validation",
         )
 
         plan.add_action(
             title="Process Data",
             code="process",
             description="Process validated data",
-            definition_canonical="ActivityDefinition/data-processing"
+            definition_canonical="ActivityDefinition/data-processing",
         )
 
         assert len(plan.action) == 2
         assert plan.action[0].title == "Validate Input"
         assert plan.action[0].code == "validate"
-        assert plan.action[1].definition_canonical == "ActivityDefinition/data-processing"
+        assert (
+            plan.action[1].definition_canonical == "ActivityDefinition/data-processing"
+        )
 
     def test_nested_plan_actions(self):
         """Test nested actions in plan definitions."""
         action = PlanDefinitionAction(
             title="Main Process",
             code="main-process",
-            description="Main processing workflow"
+            description="Main processing workflow",
         )
 
         # Add nested actions
         sub_action1 = PlanDefinitionAction(
-            title="Sub Process 1",
-            code="sub-1",
-            description="First sub-process"
+            title="Sub Process 1", code="sub-1", description="First sub-process"
         )
 
         sub_action2 = PlanDefinitionAction(
-            title="Sub Process 2",
-            code="sub-2",
-            description="Second sub-process"
+            title="Sub Process 2", code="sub-2", description="Second sub-process"
         )
 
         action.action = [sub_action1, sub_action2]
@@ -350,7 +334,7 @@ class TestServiceRequest:
             status=WorkflowStatus.ACTIVE,
             intent=RequestIntent.ORDER,
             subject="patient-001",
-            requester="physician-001"
+            requester="physician-001",
         )
 
         assert request.code == "document-analysis"
@@ -366,7 +350,7 @@ class TestServiceRequest:
             code="lab-analysis",
             status=WorkflowStatus.ACTIVE,
             intent=RequestIntent.ORDER,
-            subject="patient-001"
+            subject="patient-001",
         )
 
         request.order_detail = ["urgent", "fasting-required"]
@@ -388,7 +372,7 @@ class TestWorkflowExecution:
         execution = WorkflowExecution(
             workflow_definition="PlanDefinition/clinical-workflow",
             subject="patient-001",
-            total_steps=5
+            total_steps=5,
         )
 
         assert execution.workflow_definition == "PlanDefinition/clinical-workflow"
@@ -403,7 +387,7 @@ class TestWorkflowExecution:
         execution = WorkflowExecution(
             workflow_definition="PlanDefinition/test-workflow",
             subject="patient-001",
-            total_steps=3
+            total_steps=3,
         )
 
         # Start execution
@@ -429,8 +413,7 @@ class TestWorkflowExecution:
     def test_workflow_execution_failure(self):
         """Test workflow execution failure handling."""
         execution = WorkflowExecution(
-            workflow_definition="PlanDefinition/test-workflow",
-            subject="patient-001"
+            workflow_definition="PlanDefinition/test-workflow", subject="patient-001"
         )
 
         execution.start_execution()
@@ -443,8 +426,7 @@ class TestWorkflowExecution:
     def test_workflow_task_management(self):
         """Test workflow task management."""
         execution = WorkflowExecution(
-            workflow_definition="PlanDefinition/task-workflow",
-            subject="patient-001"
+            workflow_definition="PlanDefinition/task-workflow", subject="patient-001"
         )
 
         # Add tasks
@@ -468,7 +450,7 @@ class TestFactoryFunctions:
             description="Validate patient data",
             subject="patient-001",
             requester="system",
-            priority=RequestPriority.URGENT
+            priority=RequestPriority.URGENT,
         )
 
         assert task.code == "validate-data"
@@ -508,7 +490,7 @@ class TestFactoryFunctions:
         execution = create_clinical_workflow_execution(
             workflow_definition="PlanDefinition/clinical-workflow",
             subject="patient-001",
-            input_parameters=input_params
+            input_parameters=input_params,
         )
 
         assert execution.workflow_definition == "PlanDefinition/clinical-workflow"
@@ -531,20 +513,17 @@ class TestWorkflowIntegration:
             status=WorkflowStatus.ACTIVE,
             kind=ActivityDefinitionKind.TASK,
             code="review-document",
-            description="Review clinical document for accuracy"
+            description="Review clinical document for accuracy",
         )
 
         # Create Task from ActivityDefinition
-        task = activity.create_task(
-            subject="patient-001",
-            requester="physician-001"
-        )
+        task = activity.create_task(subject="patient-001", requester="physician-001")
 
         # Create WorkflowExecution and add Task
         execution = WorkflowExecution(
             workflow_definition="PlanDefinition/review-workflow",
             subject="patient-001",
-            total_steps=1
+            total_steps=1,
         )
 
         execution.start_execution()
@@ -565,7 +544,7 @@ class TestWorkflowIntegration:
             name="QualityAssurance",
             title="Quality Assurance Workflow",
             status=WorkflowStatus.ACTIVE,
-            description="Complete quality assurance process"
+            description="Complete quality assurance process",
         )
 
         plan.add_goal("Ensure data quality")
@@ -577,7 +556,7 @@ class TestWorkflowIntegration:
         execution = WorkflowExecution(
             workflow_definition=f"PlanDefinition/{plan.id}",
             subject="patient-001",
-            total_steps=len(plan.action)
+            total_steps=len(plan.action),
         )
 
         execution.start_execution({"quality_threshold": 0.95})
@@ -591,26 +570,20 @@ class TestWorkflowIntegration:
         execution = WorkflowExecution(
             workflow_definition="PlanDefinition/parallel-workflow",
             subject="patient-001",
-            total_steps=2
+            total_steps=2,
         )
 
         # Create multiple tasks for parallel execution
         task1 = create_simple_task(
-            "validate-structure",
-            "Validate document structure",
-            "patient-001"
+            "validate-structure", "Validate document structure", "patient-001"
         )
 
         task2 = create_simple_task(
-            "validate-content",
-            "Validate document content",
-            "patient-001"
+            "validate-content", "Validate document content", "patient-001"
         )
 
         task3 = create_simple_task(
-            "generate-summary",
-            "Generate document summary",
-            "patient-001"
+            "generate-summary", "Generate document summary", "patient-001"
         )
 
         execution.start_execution()
@@ -643,7 +616,7 @@ class TestWorkflowValidation:
             Task(
                 # Missing required fields
                 status=TaskStatus.REQUESTED,
-                intent=TaskIntent.ORDER
+                intent=TaskIntent.ORDER,
                 # Missing subject
             )
 
@@ -653,7 +626,7 @@ class TestWorkflowValidation:
             code="test-task",
             status=TaskStatus.DRAFT,
             intent=TaskIntent.PROPOSAL,
-            subject="patient-001"
+            subject="patient-001",
         )
 
         # Valid transitions
@@ -667,8 +640,7 @@ class TestWorkflowValidation:
     def test_execution_error_handling(self):
         """Test workflow execution error handling."""
         execution = WorkflowExecution(
-            workflow_definition="PlanDefinition/error-test",
-            subject="patient-001"
+            workflow_definition="PlanDefinition/error-test", subject="patient-001"
         )
 
         execution.start_execution()
@@ -694,14 +666,11 @@ class TestWorkflowRelationships:
             code="lab-test",
             status=WorkflowStatus.ACTIVE,
             intent=RequestIntent.ORDER,
-            subject="patient-001"
+            subject="patient-001",
         )
 
         # Create a WorkflowEvent based on the request
-        event = WorkflowEvent(
-            status=EventStatus.COMPLETED,
-            subject="patient-001"
-        )
+        event = WorkflowEvent(status=EventStatus.COMPLETED, subject="patient-001")
 
         # Link event to request
         event.based_on.append(f"ServiceRequest/{request.id}")
@@ -715,7 +684,7 @@ class TestWorkflowRelationships:
         definition = ActivityDefinition(
             name="TestActivity",
             status=WorkflowStatus.ACTIVE,
-            kind=ActivityDefinitionKind.TASK
+            kind=ActivityDefinitionKind.TASK,
         )
 
         # Create Task that instantiates the definition
@@ -723,7 +692,7 @@ class TestWorkflowRelationships:
             code="test-task",
             status=TaskStatus.REQUESTED,
             intent=TaskIntent.ORDER,
-            subject="patient-001"
+            subject="patient-001",
         )
 
         task.instantiates_canonical.append(f"ActivityDefinition/{definition.id}")
@@ -737,7 +706,7 @@ class TestWorkflowRelationships:
             code="parent-process",
             status=TaskStatus.IN_PROGRESS,
             intent=TaskIntent.ORDER,
-            subject="patient-001"
+            subject="patient-001",
         )
 
         # Create child tasks
@@ -745,14 +714,14 @@ class TestWorkflowRelationships:
             code="sub-process-1",
             status=TaskStatus.REQUESTED,
             intent=TaskIntent.ORDER,
-            subject="patient-001"
+            subject="patient-001",
         )
 
         child_task2 = Task(
             code="sub-process-2",
             status=TaskStatus.REQUESTED,
             intent=TaskIntent.ORDER,
-            subject="patient-001"
+            subject="patient-001",
         )
 
         # Establish relationships

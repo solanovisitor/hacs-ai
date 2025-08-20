@@ -6,7 +6,7 @@ pytestmark = pytest.mark.llm
 
 def test_openai_native_structured_fallback():
     """Test native OpenAI structured output as fallback to LangChain.
-    
+
     Uses our hacs_utils.integrations.openai.client.OpenAIClient with responses_parse.
     Nightly only to de-risk LangChain changes without blocking PR CI.
     """
@@ -25,7 +25,7 @@ def test_openai_native_structured_fallback():
     client = OpenAIClient(
         model=os.getenv("HACS_LLM_MODEL", "gpt-5-mini-2025-08-07"),
         timeout=20,
-        max_retries=1
+        max_retries=1,
     )
 
     note = "Jane Doe (1985-03-20), female."
@@ -33,9 +33,7 @@ def test_openai_native_structured_fallback():
 
     # Use native responses_parse (OpenAI structured outputs)
     instance = client.responses_parse(
-        prompt=prompt,
-        response_model=PatientInfo,
-        temperature=0
+        prompt=prompt, response_model=PatientInfo, temperature=0
     )
 
     # Basic validations

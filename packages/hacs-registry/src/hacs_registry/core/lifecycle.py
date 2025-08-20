@@ -25,7 +25,7 @@ from enum import Enum
 from typing import Dict, Any, List, Optional, Callable, Set
 from dataclasses import dataclass, field
 
-from .base import Entity, EntityId, DomainEvent, EventPublisher
+from .base import Entity, EntityId, EventPublisher
 from .events import RegistryEvent
 
 logger = logging.getLogger(__name__)
@@ -155,7 +155,7 @@ class LifecycleStateChangedEvent(RegistryEvent):
     def __init__(self, entity_id: EntityId, transition: LifecycleTransition, **kwargs):
         super().__init__(entity_id, **kwargs)
         self.transition = transition
-        self.entity_type = kwargs.get('entity_type', 'unknown')
+        self.entity_type = kwargs.get("entity_type", "unknown")
 
     @property
     def event_type(self) -> str:
@@ -209,14 +209,20 @@ class LifecycleManager(ABC):
         """Get the state transition history for an entity."""
         return self._state_history.get(entity_id, []).copy()
 
-    async def initialize_entity(self, entity: Entity, initial_state: LifecycleState = LifecycleState.DRAFT):
+    async def initialize_entity(
+        self, entity: Entity, initial_state: LifecycleState = LifecycleState.DRAFT
+    ):
         """Initialize lifecycle tracking for an entity."""
         self._current_states[entity.id] = initial_state
         self._state_history[entity.id] = []
 
-        self.logger.info(f"Initialized {self.entity_type} {entity.id} in state {initial_state}")
+        self.logger.info(
+            f"Initialized {self.entity_type} {entity.id} in state {initial_state}"
+        )
 
-    async def can_transition(self, entity: Entity, action: LifecycleAction, actor_id: Optional[str] = None) -> bool:
+    async def can_transition(
+        self, entity: Entity, action: LifecycleAction, actor_id: Optional[str] = None
+    ) -> bool:
         """Check if an entity can perform the given action."""
         current_state = self.get_current_state(entity.id)
         if not current_state:
@@ -229,6 +235,7 @@ class LifecycleManager(ABC):
                 if actor_id:
                     try:
                         from ..iam_registry import get_global_iam_registry, AccessLevel
+
                         iam = get_global_iam_registry()
                         resource_id = f"{self.entity_type.lower()}:{entity.id}"
                         required = AccessLevel.WRITE
@@ -246,7 +253,7 @@ class LifecycleManager(ABC):
         action: LifecycleAction,
         actor_id: Optional[str] = None,
         reason: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> bool:
         """Attempt to transition an entity's lifecycle state."""
 
@@ -264,7 +271,9 @@ class LifecycleManager(ABC):
                 break
 
         if not applicable_rule:
-            self.logger.warning(f"No rule allows {action} from {current_state} for {entity.id}")
+            self.logger.warning(
+                f"No rule allows {action} from {current_state} for {entity.id}"
+            )
             return False
 
         # Create transition
@@ -274,7 +283,7 @@ class LifecycleManager(ABC):
             action=action,
             actor_id=actor_id,
             reason=reason,
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
 
         # Update state
@@ -289,14 +298,13 @@ class LifecycleManager(ABC):
         # Publish event
         if self.event_publisher:
             event = LifecycleStateChangedEvent(
-                entity.id,
-                transition,
-                entity_type=self.entity_type,
-                actor_id=actor_id
+                entity.id, transition, entity_type=self.entity_type, actor_id=actor_id
             )
             await self.event_publisher.publish(event)
 
-        self.logger.info(f"{self.entity_type} {entity.id} transitioned: {current_state} → {applicable_rule.to_state}")
+        self.logger.info(
+            f"{self.entity_type} {entity.id} transitioned: {current_state} → {applicable_rule.to_state}"
+        )
         return True
 
     async def get_available_actions(self, entity: Entity) -> List[LifecycleAction]:
@@ -328,8 +336,9 @@ class LifecycleManager(ABC):
             # Find rules with timeouts for current state
             for rules in self._rules.values():
                 for rule in rules:
-                    if (rule.to_state == current_state and
-                        rule.is_expired(last_transition.timestamp)):
+                    if rule.to_state == current_state and rule.is_expired(
+                        last_transition.timestamp
+                    ):
                         expired_entities.append(entity_id)
                         break
 
@@ -352,73 +361,87 @@ class ResourceLifecycleManager(LifecycleManager):
         """Initialize healthcare resource lifecycle rules."""
 
         # Draft → Review
-        self.add_rule(LifecycleRule(
-            name="submit_for_review",
-            description="Submit draft resource for review",
-            from_states={LifecycleState.DRAFT},
-            to_state=LifecycleState.REVIEW,
-            action=LifecycleAction.SUBMIT
-        ))
+        self.add_rule(
+            LifecycleRule(
+                name="submit_for_review",
+                description="Submit draft resource for review",
+                from_states={LifecycleState.DRAFT},
+                to_state=LifecycleState.REVIEW,
+                action=LifecycleAction.SUBMIT,
+            )
+        )
 
         # Review → Approved/Rejected
-        self.add_rule(LifecycleRule(
-            name="approve_resource",
-            description="Approve resource after review",
-            from_states={LifecycleState.REVIEW},
-            to_state=LifecycleState.APPROVED,
-            action=LifecycleAction.APPROVE,
-            required_permissions=["resource.approve"]
-        ))
+        self.add_rule(
+            LifecycleRule(
+                name="approve_resource",
+                description="Approve resource after review",
+                from_states={LifecycleState.REVIEW},
+                to_state=LifecycleState.APPROVED,
+                action=LifecycleAction.APPROVE,
+                required_permissions=["resource.approve"],
+            )
+        )
 
-        self.add_rule(LifecycleRule(
-            name="reject_resource",
-            description="Reject resource after review",
-            from_states={LifecycleState.REVIEW},
-            to_state=LifecycleState.REJECTED,
-            action=LifecycleAction.REJECT,
-            required_permissions=["resource.approve"]
-        ))
+        self.add_rule(
+            LifecycleRule(
+                name="reject_resource",
+                description="Reject resource after review",
+                from_states={LifecycleState.REVIEW},
+                to_state=LifecycleState.REJECTED,
+                action=LifecycleAction.REJECT,
+                required_permissions=["resource.approve"],
+            )
+        )
 
         # Approved → Published
-        self.add_rule(LifecycleRule(
-            name="publish_resource",
-            description="Publish approved resource",
-            from_states={LifecycleState.APPROVED},
-            to_state=LifecycleState.PUBLISHED,
-            action=LifecycleAction.PUBLISH,
-            required_permissions=["resource.publish"]
-        ))
+        self.add_rule(
+            LifecycleRule(
+                name="publish_resource",
+                description="Publish approved resource",
+                from_states={LifecycleState.APPROVED},
+                to_state=LifecycleState.PUBLISHED,
+                action=LifecycleAction.PUBLISH,
+                required_permissions=["resource.publish"],
+            )
+        )
 
         # Published → Deprecated
-        self.add_rule(LifecycleRule(
-            name="deprecate_resource",
-            description="Deprecate published resource",
-            from_states={LifecycleState.PUBLISHED},
-            to_state=LifecycleState.DEPRECATED,
-            action=LifecycleAction.DEPRECATE,
-            required_permissions=["resource.deprecate"]
-        ))
+        self.add_rule(
+            LifecycleRule(
+                name="deprecate_resource",
+                description="Deprecate published resource",
+                from_states={LifecycleState.PUBLISHED},
+                to_state=LifecycleState.DEPRECATED,
+                action=LifecycleAction.DEPRECATE,
+                required_permissions=["resource.deprecate"],
+            )
+        )
 
         # Deprecated → Retired
-        self.add_rule(LifecycleRule(
-            name="retire_resource",
-            description="Retire deprecated resource",
-            from_states={LifecycleState.DEPRECATED},
-            to_state=LifecycleState.RETIRED,
-            action=LifecycleAction.RETIRE,
-            required_permissions=["resource.retire"],
-            timeout_hours=24 * 30  # 30 days grace period
-        ))
+        self.add_rule(
+            LifecycleRule(
+                name="retire_resource",
+                description="Retire deprecated resource",
+                from_states={LifecycleState.DEPRECATED},
+                to_state=LifecycleState.RETIRED,
+                action=LifecycleAction.RETIRE,
+                required_permissions=["resource.retire"],
+                timeout_hours=24 * 30,  # 30 days grace period
+            )
+        )
 
         # Emergency transitions
-        self.add_rule(LifecycleRule(
-            name="emergency_suspend",
-            description="Emergency suspension of resource",
-            from_states={LifecycleState.PUBLISHED, LifecycleState.DEPRECATED},
-            to_state=LifecycleState.SUSPENDED,
-            action=LifecycleAction.SUSPEND,
-            required_permissions=["resource.emergency"]
-        ))
+        self.add_rule(
+            LifecycleRule(
+                name="emergency_suspend",
+                description="Emergency suspension of resource",
+                from_states={LifecycleState.PUBLISHED, LifecycleState.DEPRECATED},
+                to_state=LifecycleState.SUSPENDED,
+                action=LifecycleAction.SUSPEND,
+                required_permissions=["resource.emergency"],
+            )
+        )
 
 
 class AgentLifecycleManager(LifecycleManager):
@@ -437,53 +460,63 @@ class AgentLifecycleManager(LifecycleManager):
         """Initialize AI agent lifecycle rules."""
 
         # Draft → Testing
-        self.add_rule(LifecycleRule(
-            name="start_testing",
-            description="Start agent testing phase",
-            from_states={LifecycleState.DRAFT},
-            to_state=LifecycleState.TESTING,
-            action=LifecycleAction.TEST
-        ))
+        self.add_rule(
+            LifecycleRule(
+                name="start_testing",
+                description="Start agent testing phase",
+                from_states={LifecycleState.DRAFT},
+                to_state=LifecycleState.TESTING,
+                action=LifecycleAction.TEST,
+            )
+        )
 
         # Testing → Staging
-        self.add_rule(LifecycleRule(
-            name="promote_to_staging",
-            description="Promote agent to staging environment",
-            from_states={LifecycleState.TESTING},
-            to_state=LifecycleState.STAGING,
-            action=LifecycleAction.PROMOTE,
-            required_permissions=["agent.promote"]
-        ))
+        self.add_rule(
+            LifecycleRule(
+                name="promote_to_staging",
+                description="Promote agent to staging environment",
+                from_states={LifecycleState.TESTING},
+                to_state=LifecycleState.STAGING,
+                action=LifecycleAction.PROMOTE,
+                required_permissions=["agent.promote"],
+            )
+        )
 
         # Staging → Production
-        self.add_rule(LifecycleRule(
-            name="deploy_to_production",
-            description="Deploy agent to production",
-            from_states={LifecycleState.STAGING},
-            to_state=LifecycleState.DEPLOYED,
-            action=LifecycleAction.DEPLOY,
-            required_permissions=["agent.deploy"]
-        ))
+        self.add_rule(
+            LifecycleRule(
+                name="deploy_to_production",
+                description="Deploy agent to production",
+                from_states={LifecycleState.STAGING},
+                to_state=LifecycleState.DEPLOYED,
+                action=LifecycleAction.DEPLOY,
+                required_permissions=["agent.deploy"],
+            )
+        )
 
         # Production → Retired
-        self.add_rule(LifecycleRule(
-            name="retire_agent",
-            description="Retire production agent",
-            from_states={LifecycleState.DEPLOYED},
-            to_state=LifecycleState.RETIRED,
-            action=LifecycleAction.RETIRE,
-            required_permissions=["agent.retire"]
-        ))
+        self.add_rule(
+            LifecycleRule(
+                name="retire_agent",
+                description="Retire production agent",
+                from_states={LifecycleState.DEPLOYED},
+                to_state=LifecycleState.RETIRED,
+                action=LifecycleAction.RETIRE,
+                required_permissions=["agent.retire"],
+            )
+        )
 
         # Emergency suspension
-        self.add_rule(LifecycleRule(
-            name="emergency_suspend_agent",
-            description="Emergency suspension of agent",
-            from_states={LifecycleState.DEPLOYED, LifecycleState.STAGING},
-            to_state=LifecycleState.SUSPENDED,
-            action=LifecycleAction.SUSPEND,
-            required_permissions=["agent.emergency"]
-        ))
+        self.add_rule(
+            LifecycleRule(
+                name="emergency_suspend_agent",
+                description="Emergency suspension of agent",
+                from_states={LifecycleState.DEPLOYED, LifecycleState.STAGING},
+                to_state=LifecycleState.SUSPENDED,
+                action=LifecycleAction.SUSPEND,
+                required_permissions=["agent.emergency"],
+            )
+        )
 
 
 class IAMLifecycleManager(LifecycleManager):
@@ -502,47 +535,60 @@ class IAMLifecycleManager(LifecycleManager):
         """Initialize IAM lifecycle rules."""
 
         # Pending → Active
-        self.add_rule(LifecycleRule(
-            name="activate_permission",
-            description="Activate pending permission",
-            from_states={LifecycleState.PENDING},
-            to_state=LifecycleState.ACTIVE,
-            action=LifecycleAction.APPROVE,
-            required_permissions=["iam.approve"]
-        ))
+        self.add_rule(
+            LifecycleRule(
+                name="activate_permission",
+                description="Activate pending permission",
+                from_states={LifecycleState.PENDING},
+                to_state=LifecycleState.ACTIVE,
+                action=LifecycleAction.APPROVE,
+                required_permissions=["iam.approve"],
+            )
+        )
 
         # Active → Suspended
-        self.add_rule(LifecycleRule(
-            name="suspend_permission",
-            description="Suspend active permission",
-            from_states={LifecycleState.ACTIVE},
-            to_state=LifecycleState.SUSPENDED,
-            action=LifecycleAction.SUSPEND,
-            required_permissions=["iam.suspend"]
-        ))
+        self.add_rule(
+            LifecycleRule(
+                name="suspend_permission",
+                description="Suspend active permission",
+                from_states={LifecycleState.ACTIVE},
+                to_state=LifecycleState.SUSPENDED,
+                action=LifecycleAction.SUSPEND,
+                required_permissions=["iam.suspend"],
+            )
+        )
 
         # Suspended → Active (restore)
-        self.add_rule(LifecycleRule(
-            name="restore_permission",
-            description="Restore suspended permission",
-            from_states={LifecycleState.SUSPENDED},
-            to_state=LifecycleState.ACTIVE,
-            action=LifecycleAction.RESTORE,
-            required_permissions=["iam.restore"]
-        ))
+        self.add_rule(
+            LifecycleRule(
+                name="restore_permission",
+                description="Restore suspended permission",
+                from_states={LifecycleState.SUSPENDED},
+                to_state=LifecycleState.ACTIVE,
+                action=LifecycleAction.RESTORE,
+                required_permissions=["iam.restore"],
+            )
+        )
 
         # Any → Retired (revoke)
-        self.add_rule(LifecycleRule(
-            name="revoke_permission",
-            description="Revoke permission permanently",
-            from_states={LifecycleState.ACTIVE, LifecycleState.SUSPENDED, LifecycleState.PENDING},
-            to_state=LifecycleState.RETIRED,
-            action=LifecycleAction.RETIRE,
-            required_permissions=["iam.revoke"]
-        ))
+        self.add_rule(
+            LifecycleRule(
+                name="revoke_permission",
+                description="Revoke permission permanently",
+                from_states={
+                    LifecycleState.ACTIVE,
+                    LifecycleState.SUSPENDED,
+                    LifecycleState.PENDING,
+                },
+                to_state=LifecycleState.RETIRED,
+                action=LifecycleAction.RETIRE,
+                required_permissions=["iam.revoke"],
+            )
+        )
 
 
 # Factory for creating lifecycle managers
+
 
 class LifecycleManagerFactory:
     """
@@ -561,7 +607,9 @@ class LifecycleManagerFactory:
     }
 
     @classmethod
-    def create(cls, entity_type: str, event_publisher: Optional[EventPublisher] = None) -> LifecycleManager:
+    def create(
+        cls, entity_type: str, event_publisher: Optional[EventPublisher] = None
+    ) -> LifecycleManager:
         """Create a lifecycle manager for the given entity type."""
         if entity_type not in cls._managers:
             raise ValueError(f"No lifecycle manager for entity type: {entity_type}")

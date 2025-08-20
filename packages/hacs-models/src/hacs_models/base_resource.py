@@ -22,10 +22,10 @@ Design Principles:
     - Zero external dependencies beyond Pydantic
 """
 
-import uuid
-from datetime import datetime, timezone
-from typing import Any, ClassVar, Type, TypeVar, Optional, Dict, List
 import inspect
+import uuid
+from datetime import UTC, datetime
+from typing import Any, ClassVar, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
@@ -39,6 +39,7 @@ try:
         Validatable,
         Versioned,
     )
+
     _has_protocols = True
 except ImportError:
     # Create dummy protocols for standalone usage
@@ -81,8 +82,9 @@ except ImportError:
         def status(self) -> str: ...
         def get_patient_id(self) -> str | None: ...
 
+
 # Type variable for generic base resource operations
-T = TypeVar('T', bound='BaseResource')
+T = TypeVar("T", bound="BaseResource")
 
 
 class BaseResource(BaseModel):
@@ -128,18 +130,15 @@ class BaseResource(BaseModel):
     # Pydantic v2 configuration for optimal performance and validation
     model_config = ConfigDict(
         # Core validation settings
-        validate_assignment=True,           # Validate on field assignment
-        validate_default=True,             # Validate default values
-        use_enum_values=True,              # Serialize enums as values
-
+        validate_assignment=True,  # Validate on field assignment
+        validate_default=True,  # Validate default values
+        use_enum_values=True,  # Serialize enums as values
         # Performance optimizations
-        extra="forbid",                    # Strict field validation (world-class quality)
-        frozen=False,                      # Allow field updates for timestamps
-        str_strip_whitespace=True,         # Auto-strip whitespace
-
+        extra="forbid",  # Strict field validation (world-class quality)
+        frozen=False,  # Allow field updates for timestamps
+        str_strip_whitespace=True,  # Auto-strip whitespace
         # Developer experience
-        arbitrary_types_allowed=False,     # Strict type checking
-
+        arbitrary_types_allowed=False,  # Strict type checking
         # JSON Schema generation
         json_schema_extra={
             "examples": [
@@ -170,12 +169,12 @@ class BaseResource(BaseModel):
 
     # Timestamped protocol
     created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="ISO 8601 timestamp when this resource was created",
     )
 
     updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="ISO 8601 timestamp when this resource was last updated",
     )
 
@@ -249,14 +248,14 @@ class BaseResource(BaseModel):
     _fhir_version: ClassVar[str | None] = None  # Override in FHIR resources
 
     # Optional documentation metadata (class-level), for agent discovery and registry overrides
-    _doc_scope_usage: ClassVar[Optional[str]] = None
-    _doc_boundaries: ClassVar[Optional[str]] = None
-    _doc_relationships: ClassVar[List[str]] = []
-    _doc_references: ClassVar[List[str]] = []
-    _doc_tools: ClassVar[List[str]] = []
-    _doc_examples: ClassVar[List[Dict[str, Any]]] = []
+    _doc_scope_usage: ClassVar[str | None] = None
+    _doc_boundaries: ClassVar[str | None] = None
+    _doc_relationships: ClassVar[list[str]] = []
+    _doc_references: ClassVar[list[str]] = []
+    _doc_tools: ClassVar[list[str]] = []
+    _doc_examples: ClassVar[list[dict[str, Any]]] = []
     # Canonical defaults used for extraction prompts and fallbacks
-    _canonical_defaults: ClassVar[Dict[str, Any]] = {}
+    _canonical_defaults: ClassVar[dict[str, Any]] = {}
 
     def model_post_init(self, __context: Any) -> None:
         """
@@ -277,7 +276,7 @@ class BaseResource(BaseModel):
 
     def update_timestamp(self) -> None:
         """Update the updated_at timestamp to current time."""
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     # Serializable protocol methods
     def to_dict(self) -> dict[str, Any]:
@@ -285,7 +284,7 @@ class BaseResource(BaseModel):
         return self.model_dump()
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> 'BaseResource':
+    def from_dict(cls, data: dict[str, Any]) -> "BaseResource":
         """Create object from dictionary representation."""
         return cls(**data)
 
@@ -323,7 +322,7 @@ class BaseResource(BaseModel):
         return self.updated_at > other.updated_at
 
     @classmethod
-    def pick(cls: Type[T], *fields: str) -> Type[T]:
+    def pick(cls: type[T], *fields: str) -> type[T]:
         """
         Create a subset Pydantic model containing only specified fields.
 
@@ -334,7 +333,8 @@ class BaseResource(BaseModel):
         Returns a new Pydantic model class suitable for schema generation and validation
         of lightweight payloads (e.g., prompts, APIs).
         """
-        from pydantic import Field as PydField, ConfigDict as PydConfig
+        from pydantic import ConfigDict as PydConfig
+        from pydantic import Field as PydField
 
         essential_fields = {"id", "resource_type", "created_at", "updated_at"}
         selected_fields = set(fields) | essential_fields
@@ -351,11 +351,16 @@ class BaseResource(BaseModel):
             default: Any
             try:
                 if getattr(f, "default_factory", None) is not None:
-                    default = PydField(default_factory=f.default_factory, description=getattr(f, "description", None))
+                    default = PydField(
+                        default_factory=f.default_factory,
+                        description=getattr(f, "description", None),
+                    )
                 elif getattr(f, "is_required", False):
                     # Auto-generate id for subsets; keep resource_type default if present
                     if name == "id":
-                        default = PydField(default=None, description=getattr(f, "description", None))
+                        default = PydField(
+                            default=None, description=getattr(f, "description", None)
+                        )
                     else:
                         default = ...
                 else:
@@ -390,7 +395,7 @@ class BaseResource(BaseModel):
         if self.created_at is None:
             return None
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         delta = now - self.created_at
         return delta.total_seconds() / 86400  # Convert seconds to days
 
@@ -421,21 +426,22 @@ class BaseResource(BaseModel):
         fields: dict[str, Any] = {}
         try:
             for name, field in getattr(cls, "model_fields", {}).items():
-                info: Dict[str, Any] = {
+                info: dict[str, Any] = {
                     "type": str(getattr(field, "annotation", "")),
                     "description": getattr(field, "description", None),
                     "examples": getattr(field, "examples", None),
                 }
                 # Enums / Literals → list allowed values
                 try:
-                    from typing import get_origin, get_args
                     from enum import Enum
+                    from typing import get_args, get_origin
+
                     ann = getattr(field, "annotation", None)
                     if ann is not None:
                         if get_origin(ann) is Literal:  # type: ignore[name-defined]
                             info["enum_values"] = list(get_args(ann))
                         elif isinstance(ann, type) and issubclass(ann, Enum):
-                            info["enum_values"] = [getattr(e, 'value', e) for e in list(ann)]
+                            info["enum_values"] = [getattr(e, "value", e) for e in list(ann)]
                 except Exception:
                     pass
                 fields[name] = info
@@ -455,7 +461,7 @@ class BaseResource(BaseModel):
         }
 
     @classmethod
-    def get_specifications(cls, language: Optional[str] = None) -> Dict[str, Any]:
+    def get_specifications(cls, language: str | None = None) -> dict[str, Any]:
         """
         Return a structured definition for agents and registries, including docs and field schema.
         Language parameter reserved for future localization via registry overrides.
@@ -476,7 +482,7 @@ class BaseResource(BaseModel):
 
     # --- Canonical defaults and extraction examples ---
     @classmethod
-    def get_canonical_defaults(cls) -> Dict[str, Any]:
+    def get_canonical_defaults(cls) -> dict[str, Any]:
         """Return canonical defaults for extraction and fallback seeding."""
         try:
             return dict(cls._canonical_defaults or {})
@@ -484,15 +490,17 @@ class BaseResource(BaseModel):
             return {}
 
     @classmethod
-    def get_extraction_examples(cls) -> Dict[str, Any]:
+    def get_extraction_examples(cls) -> dict[str, Any]:
         """Return minimal extraction examples: object and array forms.
 
         The object form is a minimal JSON-like dict using canonical defaults
         and resource_type; the array form is a single-element list.
         """
-        example_obj: Dict[str, Any] = {"resource_type": getattr(cls, "__name__", "Resource")}
+        example_obj: dict[str, Any] = {"resource_type": getattr(cls, "__name__", "Resource")}
         try:
-            example_obj.update({k: v for k, v in cls.get_canonical_defaults().items() if v is not None})
+            example_obj.update(
+                {k: v for k, v in cls.get_canonical_defaults().items() if v is not None}
+            )
         except Exception:
             pass
         return {"object": example_obj, "array": [example_obj]}
@@ -538,7 +546,7 @@ class BaseResource(BaseModel):
                 elif field_name == "resource_type":
                     display_name = "type"
 
-                field_strs.append(f"{display_name}={repr(value)}")
+                field_strs.append(f"{display_name}={value!r}")
 
         # Show max 5 fields to keep repr concise
         fields_display = ", ".join(field_strs[:5])
@@ -680,21 +688,21 @@ class DomainResource(BaseResource):
             Patient ID if found, None otherwise
         """
         # Check for direct patient_id field
-        if hasattr(self, 'patient_id'):
-            return getattr(self, 'patient_id')
+        if hasattr(self, "patient_id"):
+            return self.patient_id
 
         # Check for subject field (common in FHIR resources)
-        if hasattr(self, 'subject'):
-            subject = getattr(self, 'subject')
-            if hasattr(subject, 'id'):
+        if hasattr(self, "subject"):
+            subject = self.subject
+            if hasattr(subject, "id"):
                 return subject.id
             elif isinstance(subject, str):
                 return subject
 
         # Check for patient field
-        if hasattr(self, 'patient'):
-            patient = getattr(self, 'patient')
-            if hasattr(patient, 'id'):
+        if hasattr(self, "patient"):
+            patient = self.patient
+            if hasattr(patient, "id"):
                 return patient.id
             elif isinstance(patient, str):
                 return patient

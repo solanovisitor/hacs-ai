@@ -7,7 +7,6 @@ Concrete framework-specific adapters (e.g., CrewAI) live under
 
 import uuid
 from abc import ABC, abstractmethod
-from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -19,7 +18,9 @@ class AdapterConfig(BaseModel):
     name: str = Field(description="Adapter name")
     version: str = Field(default="1.0.0", description="Adapter version")
     enabled: bool = Field(default=True, description="Whether adapter is enabled")
-    config: dict[str, Any] = Field(default_factory=dict, description="Adapter-specific configuration")
+    config: dict[str, Any] = Field(
+        default_factory=dict, description="Adapter-specific configuration"
+    )
 
 
 class AbstractAdapter(ABC):
@@ -47,11 +48,13 @@ class AbstractAdapter(ABC):
 
 class AdapterNotImplemented(RuntimeError):
     """Raised when an adapter method is not implemented by a subclass."""
+
     pass
 
 
 class AdapterBinding(BaseModel):
     """Generic binding for adapter-managed entities (override per integration)."""
+
     binding_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
@@ -59,4 +62,5 @@ class AdapterBinding(BaseModel):
 
 class AdapterStub:
     """Stub base for adapters. Use concrete integrations under hacs_utils.integrations.*"""
+
     pass

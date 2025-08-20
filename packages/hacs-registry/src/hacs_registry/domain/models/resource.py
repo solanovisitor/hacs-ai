@@ -26,11 +26,12 @@ from hacs_core import BaseResource
 
 from ...core.base import EntityId, AggregateRoot, ValueObject
 from ...core.events import ResourceEvent
-from ...core.exceptions import ResourceException, ValidationException
+from ...core.exceptions import ResourceException
 
 
 class ResourceStatus(str, Enum):
     """Status values for resources in their lifecycle."""
+
     DRAFT = "draft"
     REVIEW = "review"
     APPROVED = "approved"
@@ -42,6 +43,7 @@ class ResourceStatus(str, Enum):
 
 class ResourceCategory(str, Enum):
     """Categories for organizing resources."""
+
     # Core clinical categories
     CLINICAL = "clinical"
     DIAGNOSTIC = "diagnostic"
@@ -83,19 +85,19 @@ class ResourceVersion(ValueObject):
             raise ValueError("Version numbers must be non-negative")
 
     @classmethod
-    def parse(cls, version_string: str) -> 'ResourceVersion':
+    def parse(cls, version_string: str) -> "ResourceVersion":
         """Parse a version string like '1.2.3' or '1.2.3-alpha'."""
         if not version_string:
             raise ValueError("Version string cannot be empty")
 
         # Split pre-release if present
-        if '-' in version_string:
-            version_part, pre_release = version_string.split('-', 1)
+        if "-" in version_string:
+            version_part, pre_release = version_string.split("-", 1)
         else:
             version_part, pre_release = version_string, None
 
         # Parse major.minor.patch
-        parts = version_part.split('.')
+        parts = version_part.split(".")
         if len(parts) != 3:
             raise ValueError("Version must be in format 'major.minor.patch'")
 
@@ -112,12 +114,12 @@ class ResourceVersion(ValueObject):
             return f"{base}-{self.pre_release}"
         return base
 
-    def is_compatible_with(self, other: 'ResourceVersion') -> bool:
+    def is_compatible_with(self, other: "ResourceVersion") -> bool:
         """Check if this version is compatible with another version."""
         # Same major version is compatible
         return self.major == other.major
 
-    def is_newer_than(self, other: 'ResourceVersion') -> bool:
+    def is_newer_than(self, other: "ResourceVersion") -> bool:
         """Check if this version is newer than another version."""
         if self.major != other.major:
             return self.major > other.major
@@ -152,7 +154,7 @@ class ResourceTag(ValueObject):
             raise ValueError("Tag name cannot be empty")
 
         # Normalize tag name
-        object.__setattr__(self, 'name', self.name.strip().lower())
+        object.__setattr__(self, "name", self.name.strip().lower())
 
 
 @dataclass(frozen=True)
@@ -184,21 +186,21 @@ class ResourceMetadata(ValueObject):
 
         # Ensure tags is a set
         if not isinstance(self.tags, set):
-            object.__setattr__(self, 'tags', set(self.tags))
+            object.__setattr__(self, "tags", set(self.tags))
 
-    def add_tag(self, tag: ResourceTag) -> 'ResourceMetadata':
+    def add_tag(self, tag: ResourceTag) -> "ResourceMetadata":
         """Create a new metadata instance with an additional tag."""
         new_tags = self.tags.copy()
         new_tags.add(tag)
         return dataclass.replace(self, tags=new_tags)
 
-    def remove_tag(self, tag: ResourceTag) -> 'ResourceMetadata':
+    def remove_tag(self, tag: ResourceTag) -> "ResourceMetadata":
         """Create a new metadata instance with a tag removed."""
         new_tags = self.tags.copy()
         new_tags.discard(tag)
         return dataclass.replace(self, tags=new_tags)
 
-    def update_version(self, new_version: ResourceVersion) -> 'ResourceMetadata':
+    def update_version(self, new_version: ResourceVersion) -> "ResourceMetadata":
         """Create a new metadata instance with updated version."""
         return dataclass.replace(self, version=new_version)
 
@@ -214,7 +216,13 @@ class ResourceRegisteredEvent(ResourceEvent):
 class ResourceUpdatedEvent(ResourceEvent):
     """Event fired when a resource is updated."""
 
-    def __init__(self, resource_id: EntityId, resource_type: str, changes: Dict[str, Any], **kwargs):
+    def __init__(
+        self,
+        resource_id: EntityId,
+        resource_type: str,
+        changes: Dict[str, Any],
+        **kwargs,
+    ):
         super().__init__(resource_id, resource_type, **kwargs)
         self.changes = changes
 
@@ -226,7 +234,14 @@ class ResourceUpdatedEvent(ResourceEvent):
 class ResourceStatusChangedEvent(ResourceEvent):
     """Event fired when resource status changes."""
 
-    def __init__(self, resource_id: EntityId, resource_type: str, old_status: ResourceStatus, new_status: ResourceStatus, **kwargs):
+    def __init__(
+        self,
+        resource_id: EntityId,
+        resource_type: str,
+        old_status: ResourceStatus,
+        new_status: ResourceStatus,
+        **kwargs,
+    ):
         super().__init__(resource_id, resource_type, **kwargs)
         self.old_status = old_status
         self.new_status = new_status
@@ -256,7 +271,7 @@ class ResourceAggregate(AggregateRoot):
         metadata: ResourceMetadata,
         hacs_resource_class: str,
         instance_data: Optional[Dict[str, Any]] = None,
-        status: ResourceStatus = ResourceStatus.DRAFT
+        status: ResourceStatus = ResourceStatus.DRAFT,
     ):
         super().__init__(id=id)
         self._metadata = metadata
@@ -266,11 +281,13 @@ class ResourceAggregate(AggregateRoot):
         self._validation_errors: List[str] = []
 
         # Publish registration event
-        self.add_domain_event(ResourceRegisteredEvent(
-            resource_id=self.id,
-            resource_type=hacs_resource_class,
-            resource_version=str(metadata.version)
-        ))
+        self.add_domain_event(
+            ResourceRegisteredEvent(
+                resource_id=self.id,
+                resource_type=hacs_resource_class,
+                resource_version=str(metadata.version),
+            )
+        )
 
     @property
     def aggregate_type(self) -> str:
@@ -315,14 +332,16 @@ class ResourceAggregate(AggregateRoot):
             "old_version": str(old_metadata.version),
             "new_version": str(new_metadata.version),
             "description_changed": old_metadata.description != new_metadata.description,
-            "tags_changed": old_metadata.tags != new_metadata.tags
+            "tags_changed": old_metadata.tags != new_metadata.tags,
         }
 
-        self.add_domain_event(ResourceUpdatedEvent(
-            resource_id=self.id,
-            resource_type=self._hacs_resource_class,
-            changes=changes
-        ))
+        self.add_domain_event(
+            ResourceUpdatedEvent(
+                resource_id=self.id,
+                resource_type=self._hacs_resource_class,
+                changes=changes,
+            )
+        )
 
     def update_instance_data(self, new_data: Dict[str, Any]) -> None:
         """Update resource instance data."""
@@ -331,33 +350,41 @@ class ResourceAggregate(AggregateRoot):
         self.update_timestamp()
 
         # Publish update event
-        self.add_domain_event(ResourceUpdatedEvent(
-            resource_id=self.id,
-            resource_type=self._hacs_resource_class,
-            changes={"instance_data_updated": True}
-        ))
+        self.add_domain_event(
+            ResourceUpdatedEvent(
+                resource_id=self.id,
+                resource_type=self._hacs_resource_class,
+                changes={"instance_data_updated": True},
+            )
+        )
 
-    def change_status(self, new_status: ResourceStatus, reason: Optional[str] = None) -> None:
+    def change_status(
+        self, new_status: ResourceStatus, reason: Optional[str] = None
+    ) -> None:
         """Change resource status."""
         if new_status == self._status:
             return  # No change needed
 
         # Validate status transition (simplified - in practice would use lifecycle manager)
         if not self._is_valid_status_transition(self._status, new_status):
-            raise ResourceException(f"Invalid status transition from {self._status} to {new_status}")
+            raise ResourceException(
+                f"Invalid status transition from {self._status} to {new_status}"
+            )
 
         old_status = self._status
         self._status = new_status
         self.update_timestamp()
 
         # Publish status change event
-        self.add_domain_event(ResourceStatusChangedEvent(
-            resource_id=self.id,
-            resource_type=self._hacs_resource_class,
-            old_status=old_status,
-            new_status=new_status,
-            reason=reason
-        ))
+        self.add_domain_event(
+            ResourceStatusChangedEvent(
+                resource_id=self.id,
+                resource_type=self._hacs_resource_class,
+                old_status=old_status,
+                new_status=new_status,
+                reason=reason,
+            )
+        )
 
     def add_validation_error(self, error: str) -> None:
         """Add a validation error."""
@@ -375,9 +402,9 @@ class ResourceAggregate(AggregateRoot):
     def can_be_published(self) -> bool:
         """Check if the resource can be published."""
         return (
-            self.is_valid() and
-            self._status in [ResourceStatus.APPROVED] and
-            self._metadata.version.major > 0
+            self.is_valid()
+            and self._status in [ResourceStatus.APPROVED]
+            and self._metadata.version.major > 0
         )
 
     def get_hacs_resource_instance(self) -> Optional[BaseResource]:
@@ -390,17 +417,26 @@ class ResourceAggregate(AggregateRoot):
             self.add_validation_error(f"Failed to instantiate HACS resource: {e}")
             return None
 
-    def _is_valid_status_transition(self, from_status: ResourceStatus, to_status: ResourceStatus) -> bool:
+    def _is_valid_status_transition(
+        self, from_status: ResourceStatus, to_status: ResourceStatus
+    ) -> bool:
         """Check if a status transition is valid."""
         # Simplified transition rules - in practice would be more complex
         valid_transitions = {
             ResourceStatus.DRAFT: [ResourceStatus.REVIEW, ResourceStatus.SUSPENDED],
             ResourceStatus.REVIEW: [ResourceStatus.APPROVED, ResourceStatus.DRAFT],
             ResourceStatus.APPROVED: [ResourceStatus.PUBLISHED, ResourceStatus.REVIEW],
-            ResourceStatus.PUBLISHED: [ResourceStatus.DEPRECATED, ResourceStatus.SUSPENDED],
+            ResourceStatus.PUBLISHED: [
+                ResourceStatus.DEPRECATED,
+                ResourceStatus.SUSPENDED,
+            ],
             ResourceStatus.DEPRECATED: [ResourceStatus.RETIRED],
-            ResourceStatus.SUSPENDED: [ResourceStatus.DRAFT, ResourceStatus.REVIEW, ResourceStatus.PUBLISHED],
-            ResourceStatus.RETIRED: []  # No transitions from retired
+            ResourceStatus.SUSPENDED: [
+                ResourceStatus.DRAFT,
+                ResourceStatus.REVIEW,
+                ResourceStatus.PUBLISHED,
+            ],
+            ResourceStatus.RETIRED: [],  # No transitions from retired
         }
 
         return to_status in valid_transitions.get(from_status, [])
@@ -414,12 +450,15 @@ class ResourceAggregate(AggregateRoot):
                 "version": str(self._metadata.version),
                 "description": self._metadata.description,
                 "category": self._metadata.category.value,
-                "tags": [{"name": tag.name, "category": tag.category} for tag in self._metadata.tags],
+                "tags": [
+                    {"name": tag.name, "category": tag.category}
+                    for tag in self._metadata.tags
+                ],
                 "author": self._metadata.author,
                 "organization": self._metadata.organization,
                 "license": self._metadata.license,
                 "documentation_url": self._metadata.documentation_url,
-                "created_at": self._metadata.created_at.isoformat()
+                "created_at": self._metadata.created_at.isoformat(),
             },
             "hacs_resource_class": self._hacs_resource_class,
             "instance_data": self._instance_data,
@@ -427,5 +466,5 @@ class ResourceAggregate(AggregateRoot):
             "validation_errors": self._validation_errors,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
-            "version": self.version
+            "version": self.version,
         }

@@ -22,4 +22,6 @@ def test_langchain_adapter_reads_catalog():
     if all_tools:
         name = all_tools[0].name
         t = registry.get_tool(name)
-        assert callable(t) or t is None  # Tool may require framework present; at least call doesn't crash
+        assert (
+            callable(t) or t is None
+        )  # Tool may require framework present; at least call doesn't crash

@@ -8,8 +8,7 @@ MedicationAdministration, DiagnosticReport, etc.) for agent-centric workflows.
 
 from __future__ import annotations
 
-from typing import List, Optional, Literal, Any
-from datetime import datetime
+from typing import Literal
 
 from pydantic import Field, model_validator
 
@@ -20,8 +19,10 @@ from .observation import CodeableConcept
 class EventPerformer(DomainResource):
     resource_type: Literal["EventPerformer"] = Field(default="EventPerformer")
 
-    role: Optional[CodeableConcept] = Field(default=None, description="Role of the performer")
-    actor: Optional[str] = Field(default=None, description="Reference to the performer (Practitioner/Organization)")
+    role: CodeableConcept | None = Field(default=None, description="Role of the performer")
+    actor: str | None = Field(
+        default=None, description="Reference to the performer (Practitioner/Organization)"
+    )
 
 
 class Event(DomainResource):
@@ -35,40 +36,66 @@ class Event(DomainResource):
     resource_type: Literal["Event"] = Field(default="Event", description="Resource type identifier")
 
     # Ordering / provenance
-    instantiates_canonical: List[str] = Field(default_factory=list, description="Instantiates canonical definitions")
-    instantiates_uri: List[str] = Field(default_factory=list, description="Instantiates external definitions by URI")
-    based_on: List[str] = Field(default_factory=list, description="Fulfills orders/proposals (ServiceRequest, etc.)")
-    part_of: List[str] = Field(default_factory=list, description="Part of larger event")
+    instantiates_canonical: list[str] = Field(
+        default_factory=list, description="Instantiates canonical definitions"
+    )
+    instantiates_uri: list[str] = Field(
+        default_factory=list, description="Instantiates external definitions by URI"
+    )
+    based_on: list[str] = Field(
+        default_factory=list, description="Fulfills orders/proposals (ServiceRequest, etc.)"
+    )
+    part_of: list[str] = Field(default_factory=list, description="Part of larger event")
 
     # Status and classification
     status: str = Field(default="in-progress", description="Status of the event")
-    status_reason: Optional[CodeableConcept] = Field(default=None, description="Reason for current status")
-    category: Optional[CodeableConcept] = Field(default=None, description="High-level categorization of the event")
-    code: Optional[CodeableConcept] = Field(default=None, description="What the event is")
+    status_reason: CodeableConcept | None = Field(
+        default=None, description="Reason for current status"
+    )
+    category: CodeableConcept | None = Field(
+        default=None, description="High-level categorization of the event"
+    )
+    code: CodeableConcept | None = Field(default=None, description="What the event is")
 
     # Clinical context
-    subject: Optional[str] = Field(default=None, description="Who/what the event is about (e.g., Patient/123)")
-    focus: Optional[str] = Field(default=None, description="The focus of the event if different from subject")
-    encounter: Optional[str] = Field(default=None, description="Encounter during which the event occurred")
+    subject: str | None = Field(
+        default=None, description="Who/what the event is about (e.g., Patient/123)"
+    )
+    focus: str | None = Field(
+        default=None, description="The focus of the event if different from subject"
+    )
+    encounter: str | None = Field(
+        default=None, description="Encounter during which the event occurred"
+    )
 
     # Occurrence
-    occurrence_date_time: Optional[str] = Field(default=None, description="When the event occurred")
-    occurrence_start: Optional[str] = Field(default=None, description="Start time if an interval")
-    occurrence_end: Optional[str] = Field(default=None, description="End time if an interval")
-    recorded: Optional[str] = Field(default=None, description="When this record was created/recorded")
+    occurrence_date_time: str | None = Field(default=None, description="When the event occurred")
+    occurrence_start: str | None = Field(default=None, description="Start time if an interval")
+    occurrence_end: str | None = Field(default=None, description="End time if an interval")
+    recorded: str | None = Field(
+        default=None, description="When this record was created/recorded"
+    )
 
     # Participants and reasons
-    performer: List[EventPerformer] = Field(default_factory=list, description="Who performed the event")
-    reason_code: List[CodeableConcept] = Field(default_factory=list, description="Why the event happened")
-    reason_reference: List[str] = Field(default_factory=list, description="References to justifications for event")
+    performer: list[EventPerformer] = Field(
+        default_factory=list, description="Who performed the event"
+    )
+    reason_code: list[CodeableConcept] = Field(
+        default_factory=list, description="Why the event happened"
+    )
+    reason_reference: list[str] = Field(
+        default_factory=list, description="References to justifications for event"
+    )
 
     # Other context
-    location: Optional[str] = Field(default=None, description="Where the event occurred")
-    supporting_info: List[str] = Field(default_factory=list, description="Additional supporting information")
-    note: List[str] = Field(default_factory=list, description="Comments about the event")
+    location: str | None = Field(default=None, description="Where the event occurred")
+    supporting_info: list[str] = Field(
+        default_factory=list, description="Additional supporting information"
+    )
+    note: list[str] = Field(default_factory=list, description="Comments about the event")
 
     @model_validator(mode="after")
-    def _validate_occurrence(self) -> "Event":
+    def _validate_occurrence(self) -> Event:
         # Ensure either point-in-time or interval is represented
         if self.occurrence_start and self.occurrence_end:
             # Basic lexical check; ignore detailed datetime validation for flexibility
@@ -83,12 +110,12 @@ class Event(DomainResource):
             self.note.append(n)
             self.update_timestamp()
 
-    def add_performer(self, actor_ref: str, role_text: Optional[str] = None) -> None:
+    def add_performer(self, actor_ref: str, role_text: str | None = None) -> None:
         role = CodeableConcept(text=role_text) if role_text else None
         self.performer.append(EventPerformer(actor=actor_ref, role=role))
         self.update_timestamp()
 
-    def set_status(self, status: str, reason_text: Optional[str] = None) -> None:
+    def set_status(self, status: str, reason_text: str | None = None) -> None:
         self.status = (status or "").strip() or self.status
         if reason_text:
             self.status_reason = CodeableConcept(text=reason_text)
@@ -99,7 +126,9 @@ class Event(DomainResource):
             self.part_of.append(ref)
             self.update_timestamp()
 
-    def schedule(self, when: Optional[str] = None, start: Optional[str] = None, end: Optional[str] = None) -> None:
+    def schedule(
+        self, when: str | None = None, start: str | None = None, end: str | None = None
+    ) -> None:
         if when:
             self.occurrence_date_time = when
             self.occurrence_start = None
@@ -112,9 +141,11 @@ class Event(DomainResource):
 
     def summarize(self) -> str:
         subject = self.subject or "Unknown"
-        code_text = (self.code.text if isinstance(self.code, CodeableConcept) else None) if self.code else None
+        code_text = (
+            (self.code.text if isinstance(self.code, CodeableConcept) else None)
+            if self.code
+            else None
+        )
         status = self.status
         when = self.occurrence_date_time or (self.occurrence_start or "")
         return f"Event[{status}] for {subject}: {code_text or 'unspecified'} at {when or 'unspecified time'}"
-
-

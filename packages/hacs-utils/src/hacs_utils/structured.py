@@ -31,7 +31,8 @@ from .annotation.chunking import select_chunks
 from .annotation.resolver import Resolver
 from .annotation.data import FormatType
 
-T = TypeVar('T', bound=BaseModel)
+T = TypeVar("T", bound=BaseModel)
+
 
 async def extract(
     llm_provider: Any,
@@ -91,7 +92,12 @@ async def extract(
             # Alignment & dedup if extracting citations (Extraction model)
             if output_model.__name__ == "Extraction":  # avoid direct import cycle
                 try:
-                    aligned = resolver.align(per_chunk, ch.chunk_text, char_offset=ch.start_index, case_insensitive=case_insensitive_align)
+                    aligned = resolver.align(
+                        per_chunk,
+                        ch.chunk_text,
+                        char_offset=ch.start_index,
+                        case_insensitive=case_insensitive_align,
+                    )
                 except Exception:
                     aligned = per_chunk
                 for e in aligned:
@@ -117,7 +123,7 @@ async def extract(
                     aggregated.append(e)
 
         if many:
-            return aggregated[: max_items]
+            return aggregated[:max_items]
         # Return first item or fallback
         return aggregated[0] if aggregated else _create_fallback_instance(output_model)
 
@@ -133,7 +139,12 @@ async def extract(
     )
     if provider_parsed is not None:
         # If we have injected fields/instance, merge now and validate
-        return _merge_injected(provider_parsed, output_model, injected_instance=injected_instance, injected_fields=injected_fields)
+        return _merge_injected(
+            provider_parsed,
+            output_model,
+            injected_instance=injected_instance,
+            injected_fields=injected_fields,
+        )
 
     # Try LangChain with_structured_output path if available
     langchain_parsed = await _try_langchain_structured_output(
@@ -146,7 +157,12 @@ async def extract(
         **kwargs,
     )
     if langchain_parsed is not None:
-        return _merge_injected(langchain_parsed, output_model, injected_instance=injected_instance, injected_fields=injected_fields)
+        return _merge_injected(
+            langchain_parsed,
+            output_model,
+            injected_instance=injected_instance,
+            injected_fields=injected_fields,
+        )
 
     # Build prompt (generic text path)
     structured_prompt = _build_structured_prompt(
@@ -163,7 +179,9 @@ async def extract(
     # Apply timeout to provider invoke to avoid indefinite hangs
     provider_timeout = getattr(llm_provider, "timeout", None) or 45
     try:
-        response = await asyncio.wait_for(_maybe_await_invoke(llm_provider, structured_prompt), timeout=provider_timeout)
+        response = await asyncio.wait_for(
+            _maybe_await_invoke(llm_provider, structured_prompt), timeout=provider_timeout
+        )
     except asyncio.TimeoutError:
         # Give one more quick attempt without schema context as a fallback prompt
         response = await _maybe_await_invoke(llm_provider, prompt)
@@ -171,11 +189,21 @@ async def extract(
     if many:
         parsed_list = _try_parse_to_model_list(text, output_model, max_items=max_items)
         if parsed_list is not None:
-            return _merge_injected(parsed_list, output_model, injected_instance=injected_instance, injected_fields=injected_fields)
+            return _merge_injected(
+                parsed_list,
+                output_model,
+                injected_instance=injected_instance,
+                injected_fields=injected_fields,
+            )
     else:
         parsed = _try_parse_to_model(text, output_model)
         if parsed is not None:
-            return _merge_injected(parsed, output_model, injected_instance=injected_instance, injected_fields=injected_fields)
+            return _merge_injected(
+                parsed,
+                output_model,
+                injected_instance=injected_instance,
+                injected_fields=injected_fields,
+            )
 
     # Attempt repair passes
     attempts = 0
@@ -190,23 +218,42 @@ async def extract(
             use_descriptive_schema=use_descriptive_schema,
         )
         try:
-            response = await asyncio.wait_for(_maybe_await_invoke(llm_provider, repair_prompt), timeout=provider_timeout)
+            response = await asyncio.wait_for(
+                _maybe_await_invoke(llm_provider, repair_prompt), timeout=provider_timeout
+            )
         except asyncio.TimeoutError:
             response = await _maybe_await_invoke(llm_provider, repair_prompt)
         text = _to_text(response)
         if many:
             repaired_list = _try_parse_to_model_list(text, output_model, max_items=max_items)
             if repaired_list is not None:
-                return _merge_injected(repaired_list, output_model, injected_instance=injected_instance, injected_fields=injected_fields)
+                return _merge_injected(
+                    repaired_list,
+                    output_model,
+                    injected_instance=injected_instance,
+                    injected_fields=injected_fields,
+                )
         else:
             repaired = _try_parse_to_model(text, output_model)
             if repaired is not None:
-                return _merge_injected(repaired, output_model, injected_instance=injected_instance, injected_fields=injected_fields)
+                return _merge_injected(
+                    repaired,
+                    output_model,
+                    injected_instance=injected_instance,
+                    injected_fields=injected_fields,
+                )
 
     if strict:
         raise ValueError("Failed to parse structured output for provided model")
-    fallback = [_create_fallback_instance(output_model)] if many else _create_fallback_instance(output_model)
-    return _merge_injected(fallback, output_model, injected_instance=injected_instance, injected_fields=injected_fields)
+    fallback = (
+        [_create_fallback_instance(output_model)]
+        if many
+        else _create_fallback_instance(output_model)
+    )
+    return _merge_injected(
+        fallback, output_model, injected_instance=injected_instance, injected_fields=injected_fields
+    )
+
 
 ## Deprecated wrappers removed; use extract(..., many=...) instead.
 
@@ -241,7 +288,9 @@ async def _extract_once_async(
     )
     if provider_parsed is not None:
         res = provider_parsed if isinstance(provider_parsed, list) else [provider_parsed]
-        return _merge_injected(res, output_model, injected_instance=injected_instance, injected_fields=injected_fields)  # type: ignore[arg-type]
+        return _merge_injected(
+            res, output_model, injected_instance=injected_instance, injected_fields=injected_fields
+        )  # type: ignore[arg-type]
 
     langchain_parsed = await _try_langchain_structured_output(
         llm_provider,
@@ -254,7 +303,9 @@ async def _extract_once_async(
     )
     if langchain_parsed is not None:
         res = langchain_parsed if isinstance(langchain_parsed, list) else [langchain_parsed]
-        return _merge_injected(res, output_model, injected_instance=injected_instance, injected_fields=injected_fields)  # type: ignore[arg-type]
+        return _merge_injected(
+            res, output_model, injected_instance=injected_instance, injected_fields=injected_fields
+        )  # type: ignore[arg-type]
 
     structured_prompt = _build_structured_prompt(
         prompt,
@@ -267,13 +318,20 @@ async def _extract_once_async(
     )
     provider_timeout = getattr(llm_provider, "timeout", None) or 45
     try:
-        response = await asyncio.wait_for(_maybe_await_invoke(llm_provider, structured_prompt), timeout=provider_timeout)
+        response = await asyncio.wait_for(
+            _maybe_await_invoke(llm_provider, structured_prompt), timeout=provider_timeout
+        )
     except asyncio.TimeoutError:
         response = await _maybe_await_invoke(llm_provider, structured_prompt)
     text = _to_text(response)
     parsed_list = _try_parse_to_model_list(text, output_model, max_items=max_items)
     if parsed_list is not None:
-        return _merge_injected(parsed_list, output_model, injected_instance=injected_instance, injected_fields=injected_fields)  # type: ignore[arg-type]
+        return _merge_injected(
+            parsed_list,
+            output_model,
+            injected_instance=injected_instance,
+            injected_fields=injected_fields,
+        )  # type: ignore[arg-type]
 
     attempts = 0
     while attempts < max_retries:
@@ -287,18 +345,30 @@ async def _extract_once_async(
             use_descriptive_schema=use_descriptive_schema,
         )
         try:
-            response = await asyncio.wait_for(_maybe_await_invoke(llm_provider, repair_prompt), timeout=provider_timeout)
+            response = await asyncio.wait_for(
+                _maybe_await_invoke(llm_provider, repair_prompt), timeout=provider_timeout
+            )
         except asyncio.TimeoutError:
             response = await _maybe_await_invoke(llm_provider, repair_prompt)
         text = _to_text(response)
         repaired_list = _try_parse_to_model_list(text, output_model, max_items=max_items)
         if repaired_list is not None:
-            return _merge_injected(repaired_list, output_model, injected_instance=injected_instance, injected_fields=injected_fields)  # type: ignore[arg-type]
+            return _merge_injected(
+                repaired_list,
+                output_model,
+                injected_instance=injected_instance,
+                injected_fields=injected_fields,
+            )  # type: ignore[arg-type]
 
     if strict:
         raise ValueError("Failed to parse structured output for provided model")
     fallback_one = _create_fallback_instance(output_model)
-    return _merge_injected([fallback_one], output_model, injected_instance=injected_instance, injected_fields=injected_fields)  # type: ignore[arg-type]
+    return _merge_injected(
+        [fallback_one],
+        output_model,
+        injected_instance=injected_instance,
+        injected_fields=injected_fields,
+    )  # type: ignore[arg-type]
 
 
 # Deprecated sync helpers removed. Use extract() with provider-native structured outputs.
@@ -312,7 +382,10 @@ async def _extract_once_async(
 
 # Deprecated sync helpers removed. Use extract().
 
-def _get_model_schema_example(resource_class: Type[BaseModel], *, use_descriptive_schema: bool = False) -> str:
+
+def _get_model_schema_example(
+    resource_class: Type[BaseModel], *, use_descriptive_schema: bool = False
+) -> str:
     """Get a JSON schema example for the model class."""
     try:
         if use_descriptive_schema:
@@ -340,14 +413,14 @@ def _get_model_schema_example(resource_class: Type[BaseModel], *, use_descriptiv
         def _example_for_field(info: dict[str, Any]) -> Any:
             # Prefer enum/const/default when available
             if isinstance(info, dict):
-                if 'enum' in info and isinstance(info['enum'], list) and info['enum']:
-                    return info['enum'][0]
-                if 'const' in info:
-                    return info['const']
-                if 'default' in info:
-                    return info['default']
+                if "enum" in info and isinstance(info["enum"], list) and info["enum"]:
+                    return info["enum"][0]
+                if "const" in info:
+                    return info["const"]
+                if "default" in info:
+                    return info["default"]
                 # Pydantic may nest type under anyOf/oneOf/allOf; try first option
-                for key in ('anyOf', 'oneOf', 'allOf'):
+                for key in ("anyOf", "oneOf", "allOf"):
                     if key in info and isinstance(info[key], list) and info[key]:
                         inner = info[key][0]
                         try:
@@ -356,28 +429,32 @@ def _get_model_schema_example(resource_class: Type[BaseModel], *, use_descriptiv
                                 return val
                         except Exception:
                             pass
-                ftype = info.get('type', 'string')
-                if ftype == 'string':
-                    return info.get('examples', ['example'])[0] if isinstance(info.get('examples'), list) else f"example_{info.get('title', 'field')}"
-                if ftype == 'integer':
+                ftype = info.get("type", "string")
+                if ftype == "string":
+                    return (
+                        info.get("examples", ["example"])[0]
+                        if isinstance(info.get("examples"), list)
+                        else f"example_{info.get('title', 'field')}"
+                    )
+                if ftype == "integer":
                     return 1
-                if ftype == 'number':
+                if ftype == "number":
                     return 1.0
-                if ftype == 'boolean':
+                if ftype == "boolean":
                     return True
-                if ftype == 'array':
-                    items = info.get('items', {})
+                if ftype == "array":
+                    items = info.get("items", {})
                     try:
                         return [_example_for_field(items)] if items else []
                     except Exception:
                         return []
-                if ftype == 'object':
+                if ftype == "object":
                     return {}
             return None
 
         # Create a simple example based on the schema
         example: dict[str, Any] = {}
-        properties = schema.get('properties', {})
+        properties = schema.get("properties", {})
 
         for field_name, field_info in properties.items():
             # Try to produce better guided examples for enums/const
@@ -394,6 +471,7 @@ def _get_model_schema_example(resource_class: Type[BaseModel], *, use_descriptiv
         except Exception:
             return '{"example": "data"}'
 
+
 def _create_fallback_instance(resource_class: Type[T]) -> T:
     """Create a fallback instance of the model with reasonable defaults."""
     try:
@@ -406,11 +484,11 @@ def _create_fallback_instance(resource_class: Type[T]) -> T:
         except Exception:
             # If that fails, try to create with default values for required fields
             schema = resource_class.model_json_schema()
-            properties = schema.get('properties', {})
-            required = schema.get('required', []) or []
+            properties = schema.get("properties", {})
+            required = schema.get("required", []) or []
 
             # Prefer introspection of Pydantic model fields for better defaults (enums, literals)
-            model_fields: dict[str, Any] = getattr(resource_class, 'model_fields', {}) or {}
+            model_fields: dict[str, Any] = getattr(resource_class, "model_fields", {}) or {}
 
             def _default_for_annotation(ann: Any, field_name: str) -> Any:
                 try:
@@ -425,7 +503,7 @@ def _create_fallback_instance(resource_class: Type[T]) -> T:
                     if isinstance(ann, type) and issubclass(ann, Enum):
                         first = list(ann)[0]
                         # prefer enum value if it's primitive
-                        return getattr(first, 'value', first)
+                        return getattr(first, "value", first)
                     # Basic primitives
                     if ann in (str,):
                         return f"default_{field_name}"
@@ -447,13 +525,15 @@ def _create_fallback_instance(resource_class: Type[T]) -> T:
             defaults: dict[str, Any] = {}
             for field_name in required:
                 # resource_type special-case
-                if field_name == 'resource_type':
-                    defaults[field_name] = schema.get('title') or getattr(resource_class, '__name__', 'Resource')
+                if field_name == "resource_type":
+                    defaults[field_name] = schema.get("title") or getattr(
+                        resource_class, "__name__", "Resource"
+                    )
                     continue
 
                 # Try Pydantic field annotation first
                 field_model = model_fields.get(field_name)
-                ann = getattr(field_model, 'annotation', None)
+                ann = getattr(field_model, "annotation", None)
                 val = _default_for_annotation(ann, field_name)
                 if val is not None:
                     defaults[field_name] = val
@@ -461,29 +541,33 @@ def _create_fallback_instance(resource_class: Type[T]) -> T:
 
                 # Fallback to schema-driven default/enum/const
                 field_info = properties.get(field_name, {})
-                if 'enum' in field_info and isinstance(field_info['enum'], list) and field_info['enum']:
-                    defaults[field_name] = field_info['enum'][0]
+                if (
+                    "enum" in field_info
+                    and isinstance(field_info["enum"], list)
+                    and field_info["enum"]
+                ):
+                    defaults[field_name] = field_info["enum"][0]
                     continue
-                if 'const' in field_info:
-                    defaults[field_name] = field_info['const']
+                if "const" in field_info:
+                    defaults[field_name] = field_info["const"]
                     continue
-                if 'default' in field_info:
-                    defaults[field_name] = field_info['default']
+                if "default" in field_info:
+                    defaults[field_name] = field_info["default"]
                     continue
 
                 # Last-resort by JSON type
-                ftype = field_info.get('type')
-                if ftype == 'string':
+                ftype = field_info.get("type")
+                if ftype == "string":
                     defaults[field_name] = f"default_{field_name}"
-                elif ftype == 'integer':
+                elif ftype == "integer":
                     defaults[field_name] = 0
-                elif ftype == 'number':
+                elif ftype == "number":
                     defaults[field_name] = 0.0
-                elif ftype == 'boolean':
+                elif ftype == "boolean":
                     defaults[field_name] = False
-                elif ftype == 'array':
+                elif ftype == "array":
                     defaults[field_name] = []
-                elif ftype == 'object':
+                elif ftype == "object":
                     defaults[field_name] = {}
                 else:
                     defaults[field_name] = None
@@ -522,7 +606,7 @@ def _build_schema_context(resource_class: Type[BaseModel]) -> str:
         get_desc = getattr(resource_class, "get_descriptive_schema", None)
         if callable(get_desc):
             ds = get_desc() or {}
-            fields = (ds.get("fields") or ds.get("properties") or {})
+            fields = ds.get("fields") or ds.get("properties") or {}
         if not fields and hasattr(resource_class, "model_json_schema"):
             js = resource_class.model_json_schema()
             fields = js.get("properties", {})
@@ -544,7 +628,7 @@ def _build_schema_context(resource_class: Type[BaseModel]) -> str:
                         if get_origin(ann) is Literal:
                             allowed = list(get_args(ann))
                         elif isinstance(ann, type) and issubclass(ann, Enum):
-                            allowed = [getattr(e, 'value', e) for e in list(ann)]
+                            allowed = [getattr(e, "value", e) for e in list(ann)]
                 except Exception:
                     allowed = []
                 if allowed:
@@ -634,7 +718,9 @@ def _try_parse_to_model(response_text: str, output_model: Type[T]) -> T | None:
         return None
 
 
-def _try_parse_to_model_list(response_text: str, output_model: Type[T], *, max_items: int) -> list[T] | None:
+def _try_parse_to_model_list(
+    response_text: str, output_model: Type[T], *, max_items: int
+) -> list[T] | None:
     response_text = _extract_fenced(response_text)
     try:
         data_list = json.loads(response_text)
@@ -665,9 +751,13 @@ def _build_structured_prompt(
     max_items: int | None = None,
     use_descriptive_schema: bool = False,
 ) -> str:
-    schema_example = _get_model_schema_example(output_model, use_descriptive_schema=use_descriptive_schema)
+    schema_example = _get_model_schema_example(
+        output_model, use_descriptive_schema=use_descriptive_schema
+    )
     fmt = "JSON" if format_type == FormatType.JSON else "YAML"
-    fence_open = "```json" if fenced and format_type == FormatType.JSON else ("```yaml" if fenced else "")
+    fence_open = (
+        "```json" if fenced and format_type == FormatType.JSON else ("```yaml" if fenced else "")
+    )
     fence_close = "```" if fenced else ""
     schema_context = _build_schema_context(output_model) if use_descriptive_schema else ""
     if is_array:
@@ -705,9 +795,13 @@ def _build_repair_prompt(
     use_descriptive_schema: bool = False,
 ) -> str:
     fmt = "JSON" if format_type == FormatType.JSON else "YAML"
-    fence_open = "```json" if fenced and format_type == FormatType.JSON else ("```yaml" if fenced else "")
+    fence_open = (
+        "```json" if fenced and format_type == FormatType.JSON else ("```yaml" if fenced else "")
+    )
     fence_close = "```" if fenced else ""
-    schema_example = _get_model_schema_example(output_model, use_descriptive_schema=use_descriptive_schema)
+    schema_example = _get_model_schema_example(
+        output_model, use_descriptive_schema=use_descriptive_schema
+    )
     schema_context = _build_schema_context(output_model) if use_descriptive_schema else ""
     parts: list[str] = [
         "Your previous response was not valid structured output.",
@@ -719,13 +813,15 @@ def _build_repair_prompt(
         parts.append("Schema context:")
         parts.append(schema_context)
         parts.append("")
-    parts.extend([
-        f"Example schema:",
-        f"{fence_open}\n{schema_example}\n{fence_close}",
-        "",
-        f"Previous response:",
-        f"{fence_open}\n{_extract_fenced(previous_output_text)}\n{fence_close}",
-    ])
+    parts.extend(
+        [
+            "Example schema:",
+            f"{fence_open}\n{schema_example}\n{fence_close}",
+            "",
+            "Previous response:",
+            f"{fence_open}\n{_extract_fenced(previous_output_text)}\n{fence_close}",
+        ]
+    )
     return "\n".join(parts)
 
 
@@ -746,7 +842,7 @@ async def _maybe_await_invoke(llm_provider: Any, prompt: str) -> Any:
 def _to_text(response: Any) -> str:
     if response is None:
         return ""
-    if hasattr(response, 'content'):
+    if hasattr(response, "content"):
         return str(response.content)
     return str(response)
 
@@ -829,7 +925,7 @@ def _try_provider_structured_output(
                 try:
                     items = getattr(parsed, "items", None)
                     if isinstance(items, list) and items:
-                        return items[: max_items]
+                        return items[:max_items]
                     return items or []
                 except Exception:
                     return None
@@ -865,7 +961,7 @@ def _try_provider_structured_output(
                 try:
                     items = getattr(parsed, "items", None)
                     if isinstance(items, list) and items:
-                        return items[: max_items]
+                        return items[:max_items]
                     return items or []
                 except Exception:
                     return None
@@ -896,6 +992,12 @@ async def _try_langchain_structured_output(
     Supports both Pydantic models and a list-wrapper when many=True.
     """
     try:
+        # Adapt HACS native clients to LangChain if possible
+        if hasattr(llm_provider, "to_langchain"):
+            try:
+                llm_provider = llm_provider.to_langchain()
+            except Exception:
+                pass
         # Detect a LangChain chat model by presence of with_structured_output
         if not hasattr(llm_provider, "with_structured_output"):
             return None
@@ -924,12 +1026,14 @@ async def _try_langchain_structured_output(
                 # Respect provider timeouts to avoid hanging indefinitely
                 provider_timeout = getattr(llm_provider, "timeout", None) or 45
                 if hasattr(runnable, "ainvoke"):
-                    parsed = await asyncio.wait_for(runnable.ainvoke(enhanced_prompt), timeout=provider_timeout)
+                    parsed = await asyncio.wait_for(
+                        runnable.ainvoke(enhanced_prompt), timeout=provider_timeout
+                    )
                 else:
                     parsed = runnable.invoke(enhanced_prompt)
                 items = getattr(parsed, "items", None)
                 if isinstance(items, list):
-                    return items[: max_items]
+                    return items[:max_items]
                 return items or []
             except Exception:
                 return None
@@ -939,7 +1043,9 @@ async def _try_langchain_structured_output(
             try:
                 provider_timeout = getattr(llm_provider, "timeout", None) or 45
                 if hasattr(runnable, "ainvoke"):
-                    parsed = await asyncio.wait_for(runnable.ainvoke(enhanced_prompt), timeout=provider_timeout)
+                    parsed = await asyncio.wait_for(
+                        runnable.ainvoke(enhanced_prompt), timeout=provider_timeout
+                    )
                 else:
                     parsed = runnable.invoke(enhanced_prompt)
                 return parsed
@@ -951,6 +1057,7 @@ async def _try_langchain_structured_output(
 
 
 # === Extraction-oriented helpers (strategy-compatible) ===
+
 
 def parse_extractions(response_text: str) -> list[ExtractionDC]:
     """Parse a response into a list of Extraction dataclasses.
@@ -1011,13 +1118,19 @@ def parse_extractions(response_text: str) -> list[ExtractionDC]:
     return results
 
 
-def shift_char_intervals(extractions: list[ExtractionDC], *, char_offset: int) -> list[ExtractionDC]:
+def shift_char_intervals(
+    extractions: list[ExtractionDC], *, char_offset: int
+) -> list[ExtractionDC]:
     """Shift char intervals by a fixed offset (e.g., chunk start offset)."""
     if char_offset == 0:
         return extractions
     shifted: list[ExtractionDC] = []
     for e in extractions:
-        if e.char_interval and e.char_interval.start_pos is not None and e.char_interval.end_pos is not None:
+        if (
+            e.char_interval
+            and e.char_interval.start_pos is not None
+            and e.char_interval.end_pos is not None
+        ):
             ci = CharInterval(
                 start_pos=e.char_interval.start_pos + char_offset,
                 end_pos=e.char_interval.end_pos + char_offset,
@@ -1072,24 +1185,35 @@ def generate_extractions(
         elif hasattr(client, "ainvoke") or hasattr(client, "invoke"):
             detected = "generic"  # type: ignore[assignment]
         else:
-            raise ValueError("Unsupported client. Expected anthropic, OpenAI-like, or ainvoke/invoke provider.")
+            raise ValueError(
+                "Unsupported client. Expected anthropic, OpenAI-like, or ainvoke/invoke provider."
+            )
 
     if detected == "anthropic":
         if messages is None:
             msg_list = [{"role": "user", "content": prompt}]  # type: ignore[list-item]
         else:
             msg_list = (
-                to_anthropic_messages(messages) if messages and isinstance(messages[0], ChatMessage) else list(messages)  # type: ignore[arg-type]
+                to_anthropic_messages(messages)
+                if messages and isinstance(messages[0], ChatMessage)
+                else list(messages)  # type: ignore[arg-type]
             )
         if stream:
-            evs = client.messages.create(model=model or "claude-3-7-sonnet-latest", max_tokens=max_tokens, messages=msg_list, stream=True)
+            evs = client.messages.create(
+                model=model or "claude-3-7-sonnet-latest",
+                max_tokens=max_tokens,
+                messages=msg_list,
+                stream=True,
+            )
             buf: list[str] = []
             for ev in evs:
                 delta = getattr(ev, "delta", None)
                 if delta and hasattr(delta, "text") and delta.text:
                     buf.append(delta.text)
             return parse_extractions("".join(buf))
-        msg = client.messages.create(model=model or "claude-3-7-sonnet-latest", max_tokens=max_tokens, messages=msg_list)
+        msg = client.messages.create(
+            model=model or "claude-3-7-sonnet-latest", max_tokens=max_tokens, messages=msg_list
+        )
         return parse_extractions(_to_text(msg))
 
     if detected == "openai":
@@ -1097,7 +1221,9 @@ def generate_extractions(
             msg_list = [{"role": "user", "content": prompt}]  # type: ignore[list-item]
         else:
             msg_list = (
-                to_openai_messages(messages) if messages and isinstance(messages[0], ChatMessage) else list(messages)  # type: ignore[arg-type]
+                to_openai_messages(messages)
+                if messages and isinstance(messages[0], ChatMessage)
+                else list(messages)  # type: ignore[arg-type]
             )
         resp = client.chat(msg_list, **kwargs)
         return parse_extractions(_to_text(resp))
@@ -1106,7 +1232,7 @@ def generate_extractions(
     if prompt is None:
         # flatten messages into a simple prompt
         flat = []
-        for m in (messages or []):
+        for m in messages or []:
             if isinstance(m, ChatMessage):
                 flat.append(f"{m.role}: {m.content}")
             else:
@@ -1178,13 +1304,23 @@ def generate_chunked_extractions(
         )
         # Align to chunk text
         try:
-            aligned = resolver.align(extractions, ch.chunk_text, char_offset=ch.start_index, case_insensitive=case_insensitive_align)
+            aligned = resolver.align(
+                extractions,
+                ch.chunk_text,
+                char_offset=ch.start_index,
+                case_insensitive=case_insensitive_align,
+            )
         except Exception:
             aligned = extractions
 
         # Deduplicate
         for e in aligned:
-            key = (e.extraction_class or "", e.extraction_text or "", getattr(e.char_interval, "start_pos", None), getattr(e.char_interval, "end_pos", None))
+            key = (
+                e.extraction_class or "",
+                e.extraction_text or "",
+                getattr(e.char_interval, "start_pos", None),
+                getattr(e.char_interval, "end_pos", None),
+            )
             if key in seen:
                 continue
             seen.add(key)

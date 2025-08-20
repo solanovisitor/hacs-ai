@@ -17,7 +17,6 @@ modeling, extraction, database, agents
 """
 
 import logging
-from typing import List, Any, Optional
 from functools import wraps
 
 # Import centralized tool loading (single source of truth for both LangChain and LangGraph)
@@ -30,15 +29,18 @@ try:
     from langgraph.types import Command
     from langgraph.prebuilt import InjectedState
     from typing import Annotated
+
     _has_langchain = True
 except ImportError:
     # Fallback for environments without LangChain/LangGraph
     _has_langchain = False
+
     def tool(description=""):
         def decorator(func):
             func.description = description
             func.name = func.__name__
             return func
+
         return decorator
 
     class BaseTool:
@@ -56,15 +58,16 @@ except ImportError:
     def InjectedState(cls):
         return cls
 
-    from typing import Annotated
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
 # === ACTOR AND PERMISSION MANAGEMENT ===
 
+
 class HACSActor:
     """Mock Actor class when HACS Core is not available."""
+
     def __init__(self, actor_id: str = "hacs_agent", role: str = "ai_agent"):
         self.actor_id = actor_id
         self.role = role
@@ -74,38 +77,45 @@ class HACSActor:
         """Mock permission check - always returns True in development."""
         return True
 
+
 def get_hacs_actor():
     """Get HACS Actor with fallback to mock."""
     availability = get_availability()
 
-    if availability['hacs_core']:
+    if availability["hacs_core"]:
         try:
             from hacs_models import Actor
             from hacs_core.config import get_hacs_config
+
             config = get_hacs_config()
             return Actor(
                 actor_id="hacs_agent",
                 role="ai_agent",
-                permissions=["healthcare_admin", "database_admin", "clinical_read"]
+                permissions=["healthcare_admin", "database_admin", "clinical_read"],
             )
         except Exception as e:
             logger.warning(f"Failed to create HACS Actor: {e}")
 
     return HACSActor()
 
+
 def permission_required(resource: str, access_level: str = "read"):
     """Decorator for permission-controlled tool access."""
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             actor = get_hacs_actor()
             availability = get_availability()
 
-            if availability['hacs_registry']:
+            if availability["hacs_registry"]:
                 try:
                     from hacs_registry import get_global_iam_registry, AccessLevel
+
                     iam = get_global_iam_registry()
-                    required_access = AccessLevel.WRITE if access_level == "write" else AccessLevel.READ
+                    required_access = (
+                        AccessLevel.WRITE if access_level == "write" else AccessLevel.READ
+                    )
                     if access_level == "admin":
                         required_access = AccessLevel.ADMIN
 
@@ -119,8 +129,11 @@ def permission_required(resource: str, access_level: str = "read"):
                     return f"❌ Permission denied: {access_level} access to {resource} not allowed"
 
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
+
 
 # NOTE: Tool provisioning is unified via LangChain. Use
 # hacs_utils.integrations.langchain.tools.langchain_tools()

@@ -75,16 +75,19 @@ async def tool_loadout_node(state: Dict[str, Any], config: Any = None) -> Dict[s
     tool_defs: List[Dict[str, Any]] = []
     try:
         from hacs_registry import get_global_tool_registry as get_global_registry
+
         reg = get_global_registry()
         for n in names:
             t = reg.get_tool(n)
             if t is not None:
-                tool_defs.append({
-                    "name": t.name,
-                    "description": t.description,
-                    "category": getattr(t, "category", None),
-                    "domain": getattr(t, "domain", None),
-                })
+                tool_defs.append(
+                    {
+                        "name": t.name,
+                        "description": t.description,
+                        "category": getattr(t, "category", None),
+                        "domain": getattr(t, "domain", None),
+                    }
+                )
     except Exception:
         pass
 
@@ -95,5 +98,3 @@ async def tool_loadout_node(state: Dict[str, Any], config: Any = None) -> Dict[s
 
 
 __all__ = ["tool_loadout_node"]
-
-

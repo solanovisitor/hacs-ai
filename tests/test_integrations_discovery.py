@@ -27,5 +27,3 @@ def test_list_available_integrations_and_info():
     # Availability flags should be consistent
     for name in names:
         assert info.get(name, {}).get("available", False) is True
-
-

@@ -22,6 +22,7 @@ from hacs_core.protocols import (
 # Import the new DI container from hacs-infrastructure
 try:
     from hacs_infrastructure import Container, get_container, Injectable
+
     _INFRASTRUCTURE_AVAILABLE = True
 except ImportError:
     _INFRASTRUCTURE_AVAILABLE = False
@@ -48,7 +49,7 @@ class AdapterNotFoundError(_AdapterNotFoundError):
             "AdapterNotFoundError from hacs_core.container is deprecated. "
             "Import from hacs_core instead: from hacs_core import AdapterNotFoundError",
             DeprecationWarning,
-            stacklevel=2
+            stacklevel=2,
         )
         super().__init__(*args, **kwargs)
 
@@ -65,7 +66,7 @@ class AdapterRegistry:
         warnings.warn(
             "AdapterRegistry is deprecated. Use hacs_infrastructure.Container instead.",
             DeprecationWarning,
-            stacklevel=2
+            stacklevel=2,
         )
         self._adapters: dict[type, BaseAdapter] = {}
         self._factories: dict[type, callable] = {}
@@ -133,9 +134,7 @@ class AdapterRegistry:
             self._adapters[protocol] = adapter
             return adapter
 
-        raise AdapterNotFoundError(
-            f"No adapter registered for protocol {protocol.__name__}"
-        )
+        raise AdapterNotFoundError(f"No adapter registered for protocol {protocol.__name__}")
 
     def get_llm_provider(self, provider: str = "auto") -> LLMProvider:
         """Get an LLM provider adapter.
@@ -247,9 +246,15 @@ class AdapterRegistry:
                     except Exception:
                         pass
                     api_key = cfg.get("api_key") if isinstance(cfg, dict) else None
-                    index_name = cfg.get("index_name", "hacs-vectors") if isinstance(cfg, dict) else "hacs-vectors"
+                    index_name = (
+                        cfg.get("index_name", "hacs-vectors")
+                        if isinstance(cfg, dict)
+                        else "hacs-vectors"
+                    )
                     dimension = cfg.get("dimension", 1536) if isinstance(cfg, dict) else 1536
-                    return create_pinecone_store(api_key=api_key, index_name=index_name, dimension=dimension)
+                    return create_pinecone_store(
+                        api_key=api_key, index_name=index_name, dimension=dimension
+                    )
 
                 self.register_factory(VectorStore, pinecone_factory)
                 logger.info("Pinecone vector store registered")
@@ -268,11 +273,20 @@ class AdapterRegistry:
                         cfg = settings.get_qdrant_config()  # type: ignore[attr-defined]
                     except Exception:
                         pass
-                    collection_name = cfg.get("collection_name", "hacs_vectors") if isinstance(cfg, dict) else "hacs_vectors"
+                    collection_name = (
+                        cfg.get("collection_name", "hacs_vectors")
+                        if isinstance(cfg, dict)
+                        else "hacs_vectors"
+                    )
                     dimension = cfg.get("dimension", 1536) if isinstance(cfg, dict) else 1536
                     url = cfg.get("url") if isinstance(cfg, dict) else None
                     api_key = cfg.get("api_key") if isinstance(cfg, dict) else None
-                    return create_qdrant_store(collection_name=collection_name, dimension=dimension, url=url, api_key=api_key)
+                    return create_qdrant_store(
+                        collection_name=collection_name,
+                        dimension=dimension,
+                        url=url,
+                        api_key=api_key,
+                    )
 
                 self.register_factory(VectorStore, qdrant_factory)
                 logger.info("Qdrant vector store registered")
@@ -285,9 +299,7 @@ class AdapterRegistry:
             try:
                 from hacs_postgres.adapter import create_postgres_adapter
 
-                self.register_factory(
-                    PersistenceProvider, lambda: create_postgres_adapter()
-                )
+                self.register_factory(PersistenceProvider, lambda: create_postgres_adapter())
                 logger.info("PostgreSQL persistence provider registered")
             except ImportError:
                 logger.warning("hacs-postgres package not available")
@@ -305,9 +317,7 @@ class AdapterRegistry:
 
         for protocol, adapter in self._adapters.items():
             try:
-                health_status[f"{protocol.__name__}:{adapter.name}"] = (
-                    adapter.health_check()
-                )
+                health_status[f"{protocol.__name__}:{adapter.name}"] = adapter.health_check()
             except Exception:
                 health_status[f"{protocol.__name__}:{adapter.name}"] = False
 
@@ -337,7 +347,7 @@ def get_registry() -> AdapterRegistry:
     warnings.warn(
         "get_registry() is deprecated. Use hacs_infrastructure.get_container() instead.",
         DeprecationWarning,
-        stacklevel=2
+        stacklevel=2,
     )
     global _registry
     if _registry is None:
@@ -372,7 +382,7 @@ def reset_registry() -> None:
     warnings.warn(
         "reset_registry() is deprecated. Use hacs_infrastructure.reset_container() instead.",
         DeprecationWarning,
-        stacklevel=2
+        stacklevel=2,
     )
     global _registry
     if _registry:
@@ -383,6 +393,7 @@ def reset_registry() -> None:
     if _INFRASTRUCTURE_AVAILABLE:
         try:
             from hacs_infrastructure import reset_container
+
             reset_container()
         except ImportError:
             pass

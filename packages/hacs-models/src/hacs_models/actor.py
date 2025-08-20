@@ -6,7 +6,7 @@ with proper permission management, authentication context, and audit logging.
 Optimized for LLM generation with flexible validation and smart defaults.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Literal
 
@@ -67,9 +67,7 @@ class Actor(BaseResource):
     - Auto-generation of basic permissions based on role
     """
 
-    resource_type: Literal["Actor"] = Field(
-        default="Actor", description="Resource type identifier"
-    )
+    resource_type: Literal["Actor"] = Field(default="Actor", description="Resource type identifier")
 
     name: str = Field(
         description="Display name of the actor",
@@ -123,9 +121,7 @@ class Actor(BaseResource):
         default=SessionStatus.INACTIVE, description="Current session status"
     )
 
-    last_activity: datetime | None = Field(
-        default=None, description="Timestamp of last activity"
-    )
+    last_activity: datetime | None = Field(default=None, description="Timestamp of last activity")
 
     organization: str | None = Field(
         default=None,
@@ -179,9 +175,7 @@ class Actor(BaseResource):
         ],
     )
 
-    is_active: bool = Field(
-        default=True, description="Whether this actor is currently active"
-    )
+    is_active: bool = Field(default=True, description="Whether this actor is currently active")
 
     security_level: Literal["low", "medium", "high", "critical"] = Field(
         default="medium", description="Security clearance level"
@@ -348,7 +342,7 @@ class Actor(BaseResource):
         if expires_at:
             try:
                 expiry = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
-                if datetime.now(timezone.utc) > expiry:
+                if datetime.now(UTC) > expiry:
                     return False
             except (ValueError, TypeError):
                 return False
@@ -502,11 +496,11 @@ class Actor(BaseResource):
         """
         self.session_id = session_id
         self.session_status = SessionStatus.ACTIVE
-        self.last_activity = datetime.now(timezone.utc)
+        self.last_activity = datetime.now(UTC)
 
         # Update auth context with session info - ensure at least session_id is in context
         self.auth_context["session_id"] = session_id
-        self.auth_context["session_started"] = datetime.now(timezone.utc).isoformat()
+        self.auth_context["session_started"] = datetime.now(UTC).isoformat()
 
         for key, value in context.items():
             self.auth_context[key] = value
@@ -526,13 +520,11 @@ class Actor(BaseResource):
         self.session_status = SessionStatus.TERMINATED
         self.update_timestamp()
 
-        self._log_audit_event(
-            "session_ended", {"session_id": old_session_id, "reason": reason}
-        )
+        self._log_audit_event("session_ended", {"session_id": old_session_id, "reason": reason})
 
     def update_activity(self) -> None:
         """Update the last activity timestamp."""
-        self.last_activity = datetime.now(timezone.utc)
+        self.last_activity = datetime.now(UTC)
         self.update_timestamp()
 
     def deactivate(self, reason: str = "administrative") -> None:
@@ -571,7 +563,7 @@ class Actor(BaseResource):
         """
         audit_entry = {
             "action": action,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "actor_id": self.id,
             "details": details,
         }
@@ -596,9 +588,7 @@ class Actor(BaseResource):
             events = [e for e in events if e.get("action") == action_filter]
 
         # Return most recent events first
-        return sorted(events, key=lambda x: x.get("timestamp", ""), reverse=True)[
-            :limit
-        ]
+        return sorted(events, key=lambda x: x.get("timestamp", ""), reverse=True)[:limit]
 
     def is_session_expired(self, timeout_minutes: int = 480) -> bool:
         """
@@ -613,9 +603,7 @@ class Actor(BaseResource):
         if not self.last_activity or self.session_status != SessionStatus.ACTIVE:
             return True
 
-        timeout_threshold = datetime.now(timezone.utc).timestamp() - (
-            timeout_minutes * 60
-        )
+        timeout_threshold = datetime.now(UTC).timestamp() - (timeout_minutes * 60)
         last_activity_timestamp = self.last_activity.timestamp()
 
         return last_activity_timestamp < timeout_threshold
@@ -623,16 +611,16 @@ class Actor(BaseResource):
     def has_active_session(self, timeout_minutes: int | None = None) -> bool:
         """
         Check if the actor has an active session that hasn't expired.
-        
+
         Args:
             timeout_minutes: Session timeout in minutes. If None, uses default (480 minutes = 8 hours).
-        
+
         Returns:
             True if session is active and not expired
         """
         if self.session_status != SessionStatus.ACTIVE:
             return False
-        
+
         return not self.is_session_expired(timeout_minutes or 480)
 
     def __repr__(self) -> str:

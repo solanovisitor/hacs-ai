@@ -14,7 +14,11 @@ def test_openai_connectivity_minimal():
         pytest.skip(f"langchain_openai not available: {e}")
 
     # Minimal request with strict timeout
-    llm = ChatOpenAI(model=os.getenv("HACS_LLM_MODEL", "gpt-5-mini-2025-08-07"), timeout=10, max_retries=1)
+    llm = ChatOpenAI(
+        model=os.getenv("HACS_LLM_MODEL", "gpt-5-mini-2025-08-07"),
+        timeout=10,
+        max_retries=1,
+    )
     # Dry prompt that should return quickly
     resp = llm.invoke([{"role": "user", "content": "Say 'ok'"}])
     text = getattr(resp, "content", "")

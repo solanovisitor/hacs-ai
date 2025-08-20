@@ -12,7 +12,7 @@ SOLID Compliance:
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from ...core.exceptions import InfrastructureException
 
@@ -41,9 +41,7 @@ class ComplianceMonitor:
             self.logger.info("Compliance monitor initialized")
 
     async def check_compliance(
-        self,
-        resource_type: str,
-        resource_data: Dict[str, Any]
+        self, resource_type: str, resource_data: Dict[str, Any]
     ) -> List[str]:
         """Check compliance for a resource."""
         try:
@@ -68,9 +66,7 @@ class ComplianceMonitor:
             raise InfrastructureException(f"Compliance check failed: {e}")
 
     async def add_compliance_rule(
-        self,
-        rule_name: str,
-        rule_config: Dict[str, Any]
+        self, rule_name: str, rule_config: Dict[str, Any]
     ) -> None:
         """Add a new compliance rule."""
         try:

@@ -10,7 +10,7 @@ from .tool_loader import (
     get_all_hacs_tools,
     get_all_hacs_tools_sync,
     load_hacs_tools,
-    load_hacs_tools_sync
+    load_hacs_tools_sync,
 )
 
 __all__ = [
@@ -18,5 +18,5 @@ __all__ = [
     "get_all_hacs_tools",
     "get_all_hacs_tools_sync",
     "load_hacs_tools",
-    "load_hacs_tools_sync"
+    "load_hacs_tools_sync",
 ]

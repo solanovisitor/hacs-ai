@@ -33,6 +33,7 @@ try:
     from hacs_core import ValidationSeverity, ValidationCategory
 except ImportError:
     from enum import Enum
+
     class ValidationSeverity(str, Enum):
         ERROR = "error"
         WARNING = "warning"
@@ -47,6 +48,7 @@ except ImportError:
         HEALTHCARE_COMPLIANCE = "healthcare_compliance"
         BUSINESS_RULES = "business_rules"
 
+
 # Import domain types
 try:
     from hacs_utils import HealthcareDomain, AgentRole
@@ -55,15 +57,15 @@ except ImportError:
         from hacs_core import HealthcareDomain, AgentRole
     except ImportError:
         from enum import Enum
+
         class HealthcareDomain(str, Enum):
             GENERAL = "general"
 
         class AgentRole(str, Enum):
             ASSISTANT = "assistant"
 
-from .agent_registry import (
-    AgentConfiguration
-)
+
+from .agent_registry import AgentConfiguration
 
 logger = logging.getLogger(__name__)
 
@@ -72,10 +74,12 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ValidationRule:
     """Simplified validation rule."""
+
     name: str
     description: str
     severity: str = "error"
     active: bool = True
+
 
 @dataclass
 class ValidationResult:
@@ -100,6 +104,7 @@ class ValidationResult:
     # Metadata
     timestamp: datetime = field(default_factory=datetime.now)
     validator_name: str = ""
+
 
 @dataclass
 class ValidationReport:
@@ -126,21 +131,27 @@ class ValidationReport:
     timestamp: datetime = field(default_factory=datetime.now)
     validation_duration: float = 0.0
 
+
 class BaseValidator(ABC):
     """Abstract base class for all validators."""
 
-    def __init__(self, name: str, category: ValidationCategory = ValidationCategory.TYPE_SAFETY):
+    def __init__(
+        self, name: str, category: ValidationCategory = ValidationCategory.TYPE_SAFETY
+    ):
         self.name = name
         self.category = category
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @abstractmethod
-    def validate(self, target: Any, context: Dict[str, Any] = None) -> List[ValidationResult]:
+    def validate(
+        self, target: Any, context: Dict[str, Any] = None
+    ) -> List[ValidationResult]:
         """Perform validation and return results."""
         pass
 
-    def create_result(self, is_valid: bool, severity: ValidationSeverity,
-                     message: str, **kwargs) -> ValidationResult:
+    def create_result(
+        self, is_valid: bool, severity: ValidationSeverity, message: str, **kwargs
+    ) -> ValidationResult:
         """Helper to create validation results."""
         return ValidationResult(
             is_valid=is_valid,
@@ -149,8 +160,9 @@ class BaseValidator(ABC):
             rule_name=self.name,
             message=message,
             validator_name=self.__class__.__name__,
-            **kwargs
+            **kwargs,
         )
+
 
 class TypeSafetyValidator(BaseValidator):
     """Validator for type safety and Pydantic model validation."""
@@ -158,7 +170,9 @@ class TypeSafetyValidator(BaseValidator):
     def __init__(self):
         super().__init__("type_safety", ValidationCategory.TYPE_SAFETY)
 
-    def validate(self, target: Any, context: Dict[str, Any] = None) -> List[ValidationResult]:
+    def validate(
+        self, target: Any, context: Dict[str, Any] = None
+    ) -> List[ValidationResult]:
         """Validate type safety."""
         results = []
 
@@ -169,37 +183,50 @@ class TypeSafetyValidator(BaseValidator):
                 try:
                     # Trigger validation by creating a copy
                     target.model_validate(target.model_dump())
-                    results.append(self.create_result(
-                        True, ValidationSeverity.INFO,
-                        f"Resource {target.resource_type} passed type validation",
-                        resource_type=target.resource_type,
-                        resource_id=getattr(target, 'id', None)
-                    ))
+                    results.append(
+                        self.create_result(
+                            True,
+                            ValidationSeverity.INFO,
+                            f"Resource {target.resource_type} passed type validation",
+                            resource_type=target.resource_type,
+                            resource_id=getattr(target, "id", None),
+                        )
+                    )
                 except ValidationError as e:
                     for error in e.errors():
-                        results.append(self.create_result(
-                            False, ValidationSeverity.ERROR,
-                            f"Type validation failed: {error['msg']}",
-                            details={'error': error},
-                            field_path='.'.join(str(loc) for loc in error['loc']),
-                            resource_type=target.resource_type,
-                            resource_id=getattr(target, 'id', None)
-                        ))
+                        results.append(
+                            self.create_result(
+                                False,
+                                ValidationSeverity.ERROR,
+                                f"Type validation failed: {error['msg']}",
+                                details={"error": error},
+                                field_path=".".join(str(loc) for loc in error["loc"]),
+                                resource_type=target.resource_type,
+                                resource_id=getattr(target, "id", None),
+                            )
+                        )
             else:
                 # Generic type checking
-                results.append(self.create_result(
-                    True, ValidationSeverity.INFO,
-                    f"Object of type {type(target).__name__} processed"
-                ))
+                results.append(
+                    self.create_result(
+                        True,
+                        ValidationSeverity.INFO,
+                        f"Object of type {type(target).__name__} processed",
+                    )
+                )
 
         except Exception as e:
-            results.append(self.create_result(
-                False, ValidationSeverity.CRITICAL,
-                f"Type safety validation failed with exception: {str(e)}",
-                details={'exception': str(e)}
-            ))
+            results.append(
+                self.create_result(
+                    False,
+                    ValidationSeverity.CRITICAL,
+                    f"Type safety validation failed with exception: {str(e)}",
+                    details={"exception": str(e)},
+                )
+            )
 
         return results
+
 
 class ConfigurationValidator(BaseValidator):
     """Validator for integration configurations."""
@@ -207,7 +234,9 @@ class ConfigurationValidator(BaseValidator):
     def __init__(self):
         super().__init__("configuration_validation", ValidationCategory.CONFIGURATION)
 
-    def validate(self, target: Any, context: Dict[str, Any] = None) -> List[ValidationResult]:
+    def validate(
+        self, target: Any, context: Dict[str, Any] = None
+    ) -> List[ValidationResult]:
         """Validate configuration completeness and consistency."""
         results = []
 
@@ -216,55 +245,79 @@ class ConfigurationValidator(BaseValidator):
         # Note: In the new architecture, only AgentConfiguration is validated here
         # Other configurations are managed through the resource registry
         else:
-            results.append(self.create_result(
-                True, ValidationSeverity.INFO,
-                f"No specific validation rules for {type(target).__name__}"
-            ))
+            results.append(
+                self.create_result(
+                    True,
+                    ValidationSeverity.INFO,
+                    f"No specific validation rules for {type(target).__name__}",
+                )
+            )
 
         return results
 
-    def _validate_agent_config(self, config: AgentConfiguration) -> List[ValidationResult]:
+    def _validate_agent_config(
+        self, config: AgentConfiguration
+    ) -> List[ValidationResult]:
         """Validate agent configuration."""
         results = []
 
         # Check required fields
         if not config.agent_name:
-            results.append(self.create_result(
-                False, ValidationSeverity.ERROR,
-                "Agent name is required",
-                resource_type="AgentConfiguration",
-                field_path="agent_name"
-            ))
+            results.append(
+                self.create_result(
+                    False,
+                    ValidationSeverity.ERROR,
+                    "Agent name is required",
+                    resource_type="AgentConfiguration",
+                    field_path="agent_name",
+                )
+            )
 
         if not config.agent_version:
-            results.append(self.create_result(
-                False, ValidationSeverity.ERROR,
-                "Agent version is required",
-                resource_type="AgentConfiguration",
-                field_path="agent_version"
-            ))
+            results.append(
+                self.create_result(
+                    False,
+                    ValidationSeverity.ERROR,
+                    "Agent version is required",
+                    resource_type="AgentConfiguration",
+                    field_path="agent_version",
+                )
+            )
 
         # Validate domain and role compatibility
-        if config.domain == HealthcareDomain.EMERGENCY and config.role == AgentRole.CLINICAL_RESEARCHER:
-            results.append(self.create_result(
-                False, ValidationSeverity.WARNING,
-                "Clinical researcher role may not be optimal for emergency domain",
-                resource_type="AgentConfiguration",
-                suggestions=["Consider using TRIAGE_SPECIALIST or CLINICAL_ASSISTANT role"]
-            ))
+        if (
+            config.domain == HealthcareDomain.EMERGENCY
+            and config.role == AgentRole.CLINICAL_RESEARCHER
+        ):
+            results.append(
+                self.create_result(
+                    False,
+                    ValidationSeverity.WARNING,
+                    "Clinical researcher role may not be optimal for emergency domain",
+                    resource_type="AgentConfiguration",
+                    suggestions=[
+                        "Consider using TRIAGE_SPECIALIST or CLINICAL_ASSISTANT role"
+                    ],
+                )
+            )
 
         return results
 
     # Note: In the new architecture, validation focuses on AgentConfiguration
     # Resource-specific validation is handled by the resource registry
 
+
 class HealthcareComplianceValidator(BaseValidator):
     """Validator for healthcare-specific compliance rules."""
 
     def __init__(self):
-        super().__init__("healthcare_compliance", ValidationCategory.HEALTHCARE_COMPLIANCE)
+        super().__init__(
+            "healthcare_compliance", ValidationCategory.HEALTHCARE_COMPLIANCE
+        )
 
-    def validate(self, target: Any, context: Dict[str, Any] = None) -> List[ValidationResult]:
+    def validate(
+        self, target: Any, context: Dict[str, Any] = None
+    ) -> List[ValidationResult]:
         """Validate healthcare compliance."""
         results = []
 
@@ -279,59 +332,75 @@ class HealthcareComplianceValidator(BaseValidator):
 
         return results
 
-    def _check_hipaa_compliance(self, target: Any, context: Dict[str, Any] = None) -> List[ValidationResult]:
+    def _check_hipaa_compliance(
+        self, target: Any, context: Dict[str, Any] = None
+    ) -> List[ValidationResult]:
         """Check HIPAA compliance requirements."""
         results = []
 
         if isinstance(target, AgentConfiguration):
             # Check for audit logging
             if not target.enable_monitoring:
-                results.append(self.create_result(
-                    False, ValidationSeverity.ERROR,
-                    "HIPAA compliance requires audit logging - enable monitoring",
-                    resource_type="AgentConfiguration",
-                    field_path="enable_monitoring",
-                    suggestions=["Enable monitoring for HIPAA compliance"]
-                ))
+                results.append(
+                    self.create_result(
+                        False,
+                        ValidationSeverity.ERROR,
+                        "HIPAA compliance requires audit logging - enable monitoring",
+                        resource_type="AgentConfiguration",
+                        field_path="enable_monitoring",
+                        suggestions=["Enable monitoring for HIPAA compliance"],
+                    )
+                )
 
         return results
 
-    def _check_clinical_safety(self, target: Any, context: Dict[str, Any] = None) -> List[ValidationResult]:
+    def _check_clinical_safety(
+        self, target: Any, context: Dict[str, Any] = None
+    ) -> List[ValidationResult]:
         """Check clinical safety requirements."""
         results = []
 
         if isinstance(target, PromptConfiguration):
             # Check for disclaimer
             if "disclaimer" not in target.safety_instructions.lower():
-                results.append(self.create_result(
-                    False, ValidationSeverity.WARNING,
-                    "Clinical safety: Consider adding medical disclaimer to prompts",
-                    resource_type="PromptConfiguration",
-                    suggestions=["Add medical disclaimer to safety instructions"]
-                ))
+                results.append(
+                    self.create_result(
+                        False,
+                        ValidationSeverity.WARNING,
+                        "Clinical safety: Consider adding medical disclaimer to prompts",
+                        resource_type="PromptConfiguration",
+                        suggestions=["Add medical disclaimer to safety instructions"],
+                    )
+                )
 
         return results
 
-    def _check_data_quality(self, target: Any, context: Dict[str, Any] = None) -> List[ValidationResult]:
+    def _check_data_quality(
+        self, target: Any, context: Dict[str, Any] = None
+    ) -> List[ValidationResult]:
         """Check data quality requirements."""
         results = []
 
         # Generic data quality checks
-        if hasattr(target, 'model_dump'):
+        if hasattr(target, "model_dump"):
             data = target.model_dump()
 
             # Check for empty critical fields
-            critical_fields = ['id', 'resource_type', 'created_at']
+            critical_fields = ["id", "resource_type", "created_at"]
             for field in critical_fields:
                 if field in data and not data[field]:
-                    results.append(self.create_result(
-                        False, ValidationSeverity.WARNING,
-                        f"Critical field '{field}' is empty",
-                        field_path=field,
-                        suggestions=[f"Ensure {field} is properly populated"]
-                    ))
+                    results.append(
+                        self.create_result(
+                            False,
+                            ValidationSeverity.WARNING,
+                            f"Critical field '{field}' is empty",
+                            field_path=field,
+                            suggestions=[f"Ensure {field} is properly populated"],
+                        )
+                    )
 
         return results
+
 
 class CustomRuleValidator(BaseValidator):
     """Validator that executes custom validation rules from the registry."""
@@ -344,12 +413,14 @@ class CustomRuleValidator(BaseValidator):
         """Register a custom validation function."""
         self.custom_functions[name] = func
 
-    def validate(self, target: Any, context: Dict[str, Any] = None) -> List[ValidationResult]:
+    def validate(
+        self, target: Any, context: Dict[str, Any] = None
+    ) -> List[ValidationResult]:
         """Execute custom validation rules."""
         results = []
 
         # Get custom rules from context
-        custom_rules = context.get('custom_rules', []) if context else []
+        custom_rules = context.get("custom_rules", []) if context else []
 
         for rule in custom_rules:
             if isinstance(rule, ValidationRule):
@@ -357,52 +428,70 @@ class CustomRuleValidator(BaseValidator):
 
         return results
 
-    def _execute_custom_rule(self, rule: ValidationRule, target: Any,
-                           context: Dict[str, Any] = None) -> List[ValidationResult]:
+    def _execute_custom_rule(
+        self, rule: ValidationRule, target: Any, context: Dict[str, Any] = None
+    ) -> List[ValidationResult]:
         """Execute a specific custom validation rule."""
         results = []
 
         try:
             # Check if rule applies to target
-            target_type = getattr(target, 'resource_type', type(target).__name__)
+            target_type = getattr(target, "resource_type", type(target).__name__)
             if target_type not in rule.target_resource_types:
                 return results
 
             # Get validation function
             func = self.custom_functions.get(rule.validation_function)
             if not func:
-                results.append(self.create_result(
-                    False, ValidationSeverity.ERROR,
-                    f"Custom validation function '{rule.validation_function}' not found",
-                    details={'rule_name': rule.rule_name}
-                ))
+                results.append(
+                    self.create_result(
+                        False,
+                        ValidationSeverity.ERROR,
+                        f"Custom validation function '{rule.validation_function}' not found",
+                        details={"rule_name": rule.rule_name},
+                    )
+                )
                 return results
 
             # Execute validation function
             is_valid = func(target, rule.validation_parameters, context)
 
-            severity = ValidationSeverity.ERROR if rule.severity == "error" else ValidationSeverity.WARNING
+            severity = (
+                ValidationSeverity.ERROR
+                if rule.severity == "error"
+                else ValidationSeverity.WARNING
+            )
 
             if is_valid:
-                results.append(self.create_result(
-                    True, ValidationSeverity.INFO,
-                    f"Custom rule '{rule.rule_name}' passed"
-                ))
+                results.append(
+                    self.create_result(
+                        True,
+                        ValidationSeverity.INFO,
+                        f"Custom rule '{rule.rule_name}' passed",
+                    )
+                )
             else:
-                results.append(self.create_result(
-                    False, severity,
-                    rule.error_message_template,
-                    details={'rule_name': rule.rule_name}
-                ))
+                results.append(
+                    self.create_result(
+                        False,
+                        severity,
+                        rule.error_message_template,
+                        details={"rule_name": rule.rule_name},
+                    )
+                )
 
         except Exception as e:
-            results.append(self.create_result(
-                False, ValidationSeverity.CRITICAL,
-                f"Custom rule '{rule.rule_name}' failed with exception: {str(e)}",
-                details={'exception': str(e), 'rule_name': rule.rule_name}
-            ))
+            results.append(
+                self.create_result(
+                    False,
+                    ValidationSeverity.CRITICAL,
+                    f"Custom rule '{rule.rule_name}' failed with exception: {str(e)}",
+                    details={"exception": str(e), "rule_name": rule.rule_name},
+                )
+            )
 
         return results
+
 
 class ValidationEngine:
     """Main validation engine that orchestrates all validators."""
@@ -420,8 +509,12 @@ class ValidationEngine:
         """Add a custom validator to the engine."""
         self.validators.append(validator)
 
-    def validate(self, target: Any, context: Dict[str, Any] = None,
-                categories: List[ValidationCategory] = None) -> ValidationReport:
+    def validate(
+        self,
+        target: Any,
+        context: Dict[str, Any] = None,
+        categories: List[ValidationCategory] = None,
+    ) -> ValidationReport:
         """Performvalidation."""
         start_time = datetime.now()
 
@@ -459,14 +552,16 @@ class ValidationEngine:
 
             except Exception as e:
                 self.logger.error(f"Validator {validator.name} failed: {e}")
-                report.results.append(ValidationResult(
-                    is_valid=False,
-                    severity=ValidationSeverity.CRITICAL,
-                    category=validator.category,
-                    rule_name=validator.name,
-                    message=f"Validator failed with exception: {str(e)}",
-                    validator_name=validator.__class__.__name__
-                ))
+                report.results.append(
+                    ValidationResult(
+                        is_valid=False,
+                        severity=ValidationSeverity.CRITICAL,
+                        category=validator.category,
+                        rule_name=validator.name,
+                        message=f"Validator failed with exception: {str(e)}",
+                        validator_name=validator.__class__.__name__,
+                    )
+                )
                 report.failed_checks += 1
                 report.critical_count += 1
                 report.is_valid = False
@@ -477,7 +572,9 @@ class ValidationEngine:
 
         return report
 
-    def validate_configuration_set(self, configurations: Dict[str, Any]) -> ValidationReport:
+    def validate_configuration_set(
+        self, configurations: Dict[str, Any]
+    ) -> ValidationReport:
         """Validate a complete set of configurations."""
         combined_report = ValidationReport()
 
@@ -496,7 +593,7 @@ class ValidationEngine:
             # Add context to results
             for result in individual_report.results:
                 result.details = result.details or {}
-                result.details['configuration_name'] = config_name
+                result.details["configuration_name"] = config_name
                 combined_report.results.append(result)
 
             if not individual_report.is_valid:
@@ -504,19 +601,23 @@ class ValidationEngine:
 
         return combined_report
 
+
 # Convenience functions
 def validate_agent_config(config: AgentConfiguration) -> ValidationReport:
     """Validate an agent configuration."""
     engine = ValidationEngine()
     return engine.validate(config)
 
+
 def validate_all_configs(**configs) -> ValidationReport:
     """Validate multiple configurations together."""
     engine = ValidationEngine()
     return engine.validate_configuration_set(configs)
 
-def create_custom_validator(name: str, category: ValidationCategory,
-                          validation_func: Callable) -> BaseValidator:
+
+def create_custom_validator(
+    name: str, category: ValidationCategory, validation_func: Callable
+) -> BaseValidator:
     """Create a custom validator from a function."""
 
     class CustomValidator(BaseValidator):
@@ -524,36 +625,42 @@ def create_custom_validator(name: str, category: ValidationCategory,
             super().__init__(name, category)
             self.validation_func = validation_func
 
-        def validate(self, target: Any, context: Dict[str, Any] = None) -> List[ValidationResult]:
+        def validate(
+            self, target: Any, context: Dict[str, Any] = None
+        ) -> List[ValidationResult]:
             try:
                 is_valid, message = self.validation_func(target, context)
-                severity = ValidationSeverity.INFO if is_valid else ValidationSeverity.ERROR
+                severity = (
+                    ValidationSeverity.INFO if is_valid else ValidationSeverity.ERROR
+                )
                 return [self.create_result(is_valid, severity, message)]
             except Exception as e:
-                return [self.create_result(
-                    False, ValidationSeverity.CRITICAL,
-                    f"Custom validator failed: {str(e)}"
-                )]
+                return [
+                    self.create_result(
+                        False,
+                        ValidationSeverity.CRITICAL,
+                        f"Custom validator failed: {str(e)}",
+                    )
+                ]
 
     return CustomValidator()
 
+
 __all__ = [
     # Core validation classes
-    'ValidationSeverity',
-    'ValidationCategory',
-    'ValidationResult',
-    'ValidationReport',
-    'ValidationEngine',
-
+    "ValidationSeverity",
+    "ValidationCategory",
+    "ValidationResult",
+    "ValidationReport",
+    "ValidationEngine",
     # Validators
-    'BaseValidator',
-    'TypeSafetyValidator',
-    'ConfigurationValidator',
-    'HealthcareComplianceValidator',
-    'CustomRuleValidator',
-
+    "BaseValidator",
+    "TypeSafetyValidator",
+    "ConfigurationValidator",
+    "HealthcareComplianceValidator",
+    "CustomRuleValidator",
     # Convenience functions
-    'validate_agent_config',
-    'validate_all_configs',
-    'create_custom_validator',
+    "validate_agent_config",
+    "validate_all_configs",
+    "create_custom_validator",
 ]

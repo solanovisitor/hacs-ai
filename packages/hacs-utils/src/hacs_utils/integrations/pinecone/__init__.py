@@ -30,11 +30,12 @@ if _has_pinecone:
     except Exception as e:
         # Handle package conflicts at store level
         import warnings
+
         if "pinecone-client" in str(e):
             warnings.warn(
                 "Pinecone package conflict detected. Please uninstall 'pinecone-client' "
                 "and install 'pinecone' instead. Vector storage will be disabled.",
-                UserWarning
+                UserWarning,
             )
         # Graceful degradation when store import fails
         PineconeVectorStore = None
@@ -68,6 +69,7 @@ else:
     def create_test_pinecone_store(*args, **kwargs):
         """Create test PineconeVectorStore instance if available."""
         raise ImportError("Pinecone not available. Install with: pip install pinecone")
+
 
 __version__ = "0.2.0"
 __all__ = [

@@ -1,21 +1,20 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Literal
-from pydantic import BaseModel, Field, ConfigDict, model_validator
-from enum import Enum
-from uuid import uuid4
-import re
 from datetime import datetime
+from enum import Enum
+from typing import Any, Literal
+from uuid import uuid4
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .base_resource import BaseResource
-from .types import DocumentStatus, DocumentType, ConfidentialityLevel
 from .composition import (
     Composition as _Composition,
-    CompositionAuthor as _CompositionAuthor,
-    CompositionAttester as _CompositionAttester,
-    CompositionSection as _CompositionSection,
+)
+from .composition import (
     CompositionEncounter as _CompositionEncounter,
 )
+from .types import DocumentStatus, DocumentType
 
 
 class PromptTemplateResource(BaseResource):
@@ -24,13 +23,11 @@ class PromptTemplateResource(BaseResource):
     Stores the raw template text and metadata needed to render prompts.
     """
 
-    resource_type: Literal["PromptTemplateResource"] = Field(
-        default="PromptTemplateResource"
-    )
+    resource_type: Literal["PromptTemplateResource"] = Field(default="PromptTemplateResource")
     name: str = Field(description="Template name")
     version: str = Field(default="1.0.0", description="Template version")
     template_text: str = Field(description="Template text with variables")
-    variables: List[str] = Field(
+    variables: list[str] = Field(
         default_factory=list, description="Variable names used by the template"
     )
     format: Literal["json", "yaml"] = Field(default="json")
@@ -42,12 +39,10 @@ class PromptTemplateResource(BaseResource):
 class ExtractionSchemaResource(BaseResource):
     """Registry-registered schema describing the LLM structured output."""
 
-    resource_type: Literal["ExtractionSchemaResource"] = Field(
-        default="ExtractionSchemaResource"
-    )
+    resource_type: Literal["ExtractionSchemaResource"] = Field(default="ExtractionSchemaResource")
     name: str = Field(description="Schema name")
     version: str = Field(default="1.0.0", description="Schema version")
-    response_schema: Dict[str, Any] = Field(
+    response_schema: dict[str, Any] = Field(
         description="JSON Schema describing expected LLM output"
     )
 
@@ -56,7 +51,7 @@ class TransformSpec(BaseModel):
     """Declarative transform to apply to a source value before assignment."""
 
     id: str = Field(description="Transform identifier")
-    params: Dict[str, Any] = Field(default_factory=dict)
+    params: dict[str, Any] = Field(default_factory=dict)
 
 
 class SourceBinding(BaseModel):
@@ -67,9 +62,9 @@ class SourceBinding(BaseModel):
     - var: variable name coming from the prompt/template variables
     """
 
-    from_: Optional[str] = Field(default=None, alias="from")
-    var: Optional[str] = None
-    transform: Optional[TransformSpec] = None
+    from_: str | None = Field(default=None, alias="from")
+    var: str | None = None
+    transform: TransformSpec | None = None
     required: bool = Field(default=False)
 
 
@@ -79,16 +74,14 @@ class OutputSpec(BaseModel):
     resource: str = Field(
         description="Target resource name (e.g., Patient, Observation, StackTemplate)"
     )
-    operation: Literal["create", "update", "upsert", "instantiate"] = Field(
-        default="create"
-    )
-    match: Dict[str, Any] | None = Field(
+    operation: Literal["create", "update", "upsert", "instantiate"] = Field(default="create")
+    match: dict[str, Any] | None = Field(
         default=None, description="Criteria to identify existing resource for update/upsert"
     )
-    fields: Dict[str, SourceBinding] = Field(
+    fields: dict[str, SourceBinding] = Field(
         default_factory=dict, description="Target field path -> binding"
     )
-    links: Dict[str, str] = Field(
+    links: dict[str, str] = Field(
         default_factory=dict,
         description=(
             "Late-binding references to previously created outputs,"
@@ -100,7 +93,7 @@ class OutputSpec(BaseModel):
 class MappingSpec(BaseModel):
     """Declarative mapping from LLM output to HACS resources or StackTemplate vars."""
 
-    outputs: List[OutputSpec] = Field(default_factory=list)
+    outputs: list[OutputSpec] = Field(default_factory=list)
 
 
 class ChunkingPolicy(BaseModel):
@@ -119,7 +112,9 @@ class ChunkingPolicy(BaseModel):
     chunk_overlap: int = Field(default=0)
     sentence_aware: bool = Field(default=True)
     fenced_output: bool = Field(default=True)
-    encoding_name: Optional[str] = Field(default=None, description="tiktoken encoding name for token-based splitters")
+    encoding_name: str | None = Field(
+        default=None, description="tiktoken encoding name for token-based splitters"
+    )
 
 
 class ModelConfig(BaseModel):
@@ -128,7 +123,7 @@ class ModelConfig(BaseModel):
     provider: Literal["openai", "anthropic", "auto"] = Field(default="auto")
     model: str = Field(default="gpt-5")
     temperature: float = Field(default=0.3)
-    max_tokens: Optional[int] = None
+    max_tokens: int | None = None
 
 
 class PersistencePolicy(BaseModel):
@@ -136,7 +131,7 @@ class PersistencePolicy(BaseModel):
 
     save: bool = Field(default=False)
     as_bundle: bool = Field(default=True, description="Persist as ResourceBundle")
-    database_url: Optional[str] = None
+    database_url: str | None = None
 
 
 class AnnotationWorkflowResource(BaseResource):
@@ -160,10 +155,9 @@ class AnnotationWorkflowResource(BaseResource):
     llm_config: ModelConfig = Field(default_factory=ModelConfig)
     mapping_spec: MappingSpec = Field(default_factory=MappingSpec)
     persistence_policy: PersistencePolicy = Field(default_factory=PersistencePolicy)
-    stack_template_ref: Optional[str] = Field(
+    stack_template_ref: str | None = Field(
         default=None, description="Optional reference to a StackTemplate (name:version)"
     )
-
 
 
 class TextChunk(BaseModel):
@@ -176,11 +170,15 @@ class TextChunk(BaseModel):
     resource_type: Literal["TextChunk"] = Field(default="TextChunk")
     start_pos: int = Field(description="Start character position (inclusive)")
     end_pos: int = Field(description="End character position (exclusive)")
-    document_id: Optional[str] = Field(default=None, description="Source document ID")
-    additional_context: Optional[str] = Field(default=None, description="Optional prompt context")
-    token_start_idx: Optional[int] = Field(default=None, description="Start token index if tokenization used")
-    token_end_idx: Optional[int] = Field(default=None, description="End token index (exclusive) if tokenization used")
-    chunk_index: Optional[int] = Field(default=None, description="Sequential chunk index")
+    document_id: str | None = Field(default=None, description="Source document ID")
+    additional_context: str | None = Field(default=None, description="Optional prompt context")
+    token_start_idx: int | None = Field(
+        default=None, description="Start token index if tokenization used"
+    )
+    token_end_idx: int | None = Field(
+        default=None, description="End token index (exclusive) if tokenization used"
+    )
+    chunk_index: int | None = Field(default=None, description="Sequential chunk index")
 
 
 class AlignmentStatus(str, Enum):
@@ -191,19 +189,19 @@ class AlignmentStatus(str, Enum):
 
 
 class CharInterval(BaseModel):
-    start_pos: Optional[int] = None
-    end_pos: Optional[int] = None
+    start_pos: int | None = None
+    end_pos: int | None = None
 
 
 class Extraction(BaseModel):
     extraction_class: str
     extraction_text: str
-    char_interval: Optional[CharInterval] = None
-    alignment_status: Optional[AlignmentStatus] = None
-    extraction_index: Optional[int] = None
-    group_index: Optional[int] = None
-    description: Optional[str] = None
-    attributes: Optional[Dict[str, Any]] = None
+    char_interval: CharInterval | None = None
+    alignment_status: AlignmentStatus | None = None
+    extraction_index: int | None = None
+    group_index: int | None = None
+    description: str | None = None
+    attributes: dict[str, Any] | None = None
 
 
 class FormatType(str, Enum):
@@ -215,18 +213,30 @@ class Document(_Composition):
     model_config = ConfigDict(use_enum_values=False, validate_assignment=True)
     resource_type: Literal["Document"] = Field(default="Document")
     text: str = Field(default="")
-    additional_context: Optional[str] = None
+    additional_context: str | None = None
     document_id: str = Field(default_factory=lambda: f"doc_{uuid4().hex[:8]}")
-    document_identifier: Optional[str] = Field(default_factory=lambda: f"doc-{uuid4().hex[:8]}")
-    langchain_metadata: Dict[str, Any] = Field(default_factory=dict)
+    document_identifier: str | None = Field(default_factory=lambda: f"doc-{uuid4().hex[:8]}")
+    langchain_metadata: dict[str, Any] = Field(default_factory=dict)
     # Accept broader encounter types for compatibility with tests
-    encounter: Optional["_CompositionEncounter | DocumentEncounter"] = None
+    encounter: _CompositionEncounter | DocumentEncounter | None = None
 
     # Minimal helpers expected by tests (no-op implementations where applicable)
-    def add_section(self, title: str, text: str, code: Optional[str] = None, metadata: Optional[Dict[str, Any]] = None) -> None:
+    def add_section(
+        self,
+        title: str,
+        text: str,
+        code: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
         super().add_section(title=title, text=text, code=code, metadata=metadata)
 
-    def add_author(self, name: str, role: Optional[str] = None, organization: Optional[str] = None, specialty: Optional[str] = None) -> None:
+    def add_author(
+        self,
+        name: str,
+        role: str | None = None,
+        organization: str | None = None,
+        specialty: str | None = None,
+    ) -> None:
         super().add_author(name=name, role=role, organization=organization, specialty=specialty)
 
     # Compatibility aliases for tests
@@ -234,15 +244,30 @@ class Document(_Composition):
     def DocumentAuthor(self):  # pragma: no cover
         return getattr(self, "authors", [])
 
-    def add_attester(self, mode: str, party_name: str, party_id: Optional[str] = None, organization: Optional[str] = None, signature: Optional[str] = None) -> None:
-        super().add_attester(mode=mode, party_name=party_name, party_id=party_id, organization=organization, signature=signature)
+    def add_attester(
+        self,
+        mode: str,
+        party_name: str,
+        party_id: str | None = None,
+        organization: str | None = None,
+        signature: str | None = None,
+    ) -> None:
+        super().add_attester(
+            mode=mode,
+            party_name=party_name,
+            party_id=party_id,
+            organization=organization,
+            signature=signature,
+        )
 
     def get_full_text(self) -> str:
         parts = [f"Document: {self.title}" if getattr(self, "title", None) else "Document"]
         if getattr(self, "subject_name", None):
             parts.append(f"Subject: {self.subject_name}")
         if hasattr(self, "authors") and self.authors:
-            parts.append(f"Authors: {', '.join(a.name for a in self.authors if getattr(a, 'name', None))}")
+            parts.append(
+                f"Authors: {', '.join(a.name for a in self.authors if getattr(a, 'name', None))}"
+            )
         if hasattr(self, "sections"):
             for s in self.sections:
                 parts.append(s.title)
@@ -270,11 +295,16 @@ class Document(_Composition):
 
     def get_content_hash(self) -> str:
         import hashlib
-        canonical = (self.title or "") + "\n" + "\n".join([getattr(s, "text", "") for s in getattr(self, "sections", [])])
+
+        canonical = (
+            (self.title or "")
+            + "\n"
+            + "\n".join([getattr(s, "text", "") for s in getattr(self, "sections", [])])
+        )
         return hashlib.md5(canonical.encode()).hexdigest()
 
-    def to_langchain_document(self, **extra_metadata: Any) -> Dict[str, Any]:
-        content_lines: List[str] = []
+    def to_langchain_document(self, **extra_metadata: Any) -> dict[str, Any]:
+        content_lines: list[str] = []
         if self.title:
             content_lines.append(self.title)
         for s in self.sections:
@@ -283,7 +313,7 @@ class Document(_Composition):
             content_lines.append(s.text)
             content_lines.append("")
         page_content = "\n".join([line for line in content_lines if line is not None])
-        metadata: Dict[str, Any] = {
+        metadata: dict[str, Any] = {
             "doc_id": self.id,
             "document_type": self.document_type,
             "subject_id": self.subject_id,
@@ -304,7 +334,7 @@ class Document(_Composition):
         return {"page_content": page_content, "metadata": metadata}
 
     @classmethod
-    def from_langchain_document(cls, lc_doc: Dict[str, Any]) -> "Document":
+    def from_langchain_document(cls, lc_doc: dict[str, Any]) -> Document:
         metadata = lc_doc.get("metadata", {})
         title = metadata.get("title")
         subject_id = metadata.get("subject_id")
@@ -314,42 +344,52 @@ class Document(_Composition):
             document_type = DocumentType(doc_type) if isinstance(doc_type, str) else doc_type
         except Exception:
             document_type = DocumentType.PROGRESS_NOTE
-        doc = cls(document_type=document_type, title=title, subject_id=subject_id, subject_name=subject_name)
+        doc = cls(
+            document_type=document_type,
+            title=title,
+            subject_id=subject_id,
+            subject_name=subject_name,
+        )
         primary_author = metadata.get("primary_author")
         if primary_author:
             doc.add_author(primary_author)
         return doc
 
-    def to_langchain_documents(self, split_by_section: bool = True) -> List[Dict[str, Any]]:
+    def to_langchain_documents(self, split_by_section: bool = True) -> list[dict[str, Any]]:
         if not split_by_section:
             return [self.to_langchain_document()]
-        docs: List[Dict[str, Any]] = []
+        docs: list[dict[str, Any]] = []
         for idx, s in enumerate(self.sections):
-            docs.append({
-                "page_content": f"{s.title}\n\n{s.text}",
-                "metadata": {
-                    "doc_id": self.id,
-                    "title": self.title,
-                    "section_index": idx,
-                    "section_title": s.title,
-                    "is_section": True,
-                },
-            })
+            docs.append(
+                {
+                    "page_content": f"{s.title}\n\n{s.text}",
+                    "metadata": {
+                        "doc_id": self.id,
+                        "title": self.title,
+                        "section_index": idx,
+                        "section_title": s.title,
+                        "is_section": True,
+                    },
+                }
+            )
         return docs
 
     @model_validator(mode="after")
-    def _validate_final_has_sections(self) -> "Document":
+    def _validate_final_has_sections(self) -> Document:
         if self.status == DocumentStatus.FINAL and len(self.sections) == 0:
             # Allow some cases used by tests to construct then populate
             if self.title == "Test":
                 return self
-            if self.document_type in {DocumentType.DISCHARGE_SUMMARY, DocumentType.CLINICAL_SUMMARY}:
+            if self.document_type in {
+                DocumentType.DISCHARGE_SUMMARY,
+                DocumentType.CLINICAL_SUMMARY,
+            }:
                 return self
             raise ValueError("Final documents must contain at least one section")
         return self
 
-    def validate_clinical_content(self) -> Dict[str, Any]:
-        issues: List[str] = []
+    def validate_clinical_content(self) -> dict[str, Any]:
+        issues: list[str] = []
         if not self.authors:
             issues.append("Missing authors")
         if not self.attesters:
@@ -369,27 +409,28 @@ class Document(_Composition):
 # FHIR-aligned minimal composition types (compatibility)
 # ----------------------------------------------------------------------------
 
+
 class DocumentAuthor(BaseModel):
     name: str
-    role: Optional[str] = None
-    organization: Optional[str] = None
-    specialty: Optional[str] = None
+    role: str | None = None
+    organization: str | None = None
+    specialty: str | None = None
 
 
 class DocumentAttester(BaseModel):
     mode: Literal["professional", "legal", "official", "personal"] = "professional"
-    party_name: Optional[str] = None
-    party_id: Optional[str] = None
-    organization: Optional[str] = None
-    signature: Optional[str] = None
+    party_name: str | None = None
+    party_id: str | None = None
+    organization: str | None = None
+    signature: str | None = None
 
 
 class DocumentSection(BaseModel):
     title: str
     text: str
-    code: Optional[str] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    sections: List["DocumentSection"] = Field(default_factory=list)
+    code: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    sections: list[DocumentSection] = Field(default_factory=list)
 
     def get_full_text(self) -> str:
         parts = [self.text]
@@ -402,27 +443,30 @@ class DocumentSection(BaseModel):
         # Count own text + nested text + titles (self and nested)
         own_words = len((self.text or "").split())
         nested_words = sum(len((s.text or "").split()) for s in self.sections)
-        title_words = (1 if (self.title or "").strip() else 0) + sum(1 for s in self.sections if (s.title or "").strip())
+        title_words = (1 if (self.title or "").strip() else 0) + sum(
+            1 for s in self.sections if (s.title or "").strip()
+        )
         return own_words + nested_words + title_words
 
 
 class DocumentEncounter(BaseModel):
-    id: Optional[str] = None
-    type: Optional[str] = None
-    period_start: Optional[datetime] = None
-    location: Optional[str] = None
-    class_code: Optional[str] = None
+    id: str | None = None
+    type: str | None = None
+    period_start: datetime | None = None
+    location: str | None = None
+    class_code: str | None = None
 
 
 # ----------------------------------------------------------------------------
 # Minimal factory helpers for tests
 # ----------------------------------------------------------------------------
 
+
 def create_progress_note(
-    patient_id: Optional[str] = None,
-    patient_name: Optional[str] = None,
-    author: Optional[str] = None,
-    note_type: Optional[str] = None,
+    patient_id: str | None = None,
+    patient_name: str | None = None,
+    author: str | None = None,
+    note_type: str | None = None,
 ) -> Document:
     title = f"{note_type} progress note" if note_type else "Progress Note"
     doc = Document(
@@ -443,10 +487,10 @@ def create_progress_note(
 
 
 def create_discharge_summary(
-    patient_id: Optional[str] = None,
-    patient_name: Optional[str] = None,
-    primary_author: Optional[str] = None,
-    encounter_id: Optional[str] = None,
+    patient_id: str | None = None,
+    patient_name: str | None = None,
+    primary_author: str | None = None,
+    encounter_id: str | None = None,
 ) -> Document:
     doc = Document(
         document_type=DocumentType.DISCHARGE_SUMMARY,
@@ -474,11 +518,11 @@ def create_discharge_summary(
 
 
 def create_consultation_note(
-    patient_id: Optional[str] = None,
-    patient_name: Optional[str] = None,
-    consultant: Optional[str] = None,
-    specialty: Optional[str] = None,
-    referring_physician: Optional[str] = None,
+    patient_id: str | None = None,
+    patient_name: str | None = None,
+    consultant: str | None = None,
+    specialty: str | None = None,
+    referring_physician: str | None = None,
 ) -> Document:
     title = f"Consultation Note - {specialty}" if specialty else "Consultation Note"
     doc = Document(
@@ -506,10 +550,10 @@ def create_consultation_note(
 
 
 def create_clinical_summary(
-    patient_id: Optional[str] = None,
-    patient_name: Optional[str] = None,
-    author: Optional[str] = None,
-    summary_type: Optional[str] = None,
+    patient_id: str | None = None,
+    patient_name: str | None = None,
+    author: str | None = None,
+    summary_type: str | None = None,
 ) -> Document:
     title = f"{summary_type} clinical summary" if summary_type else "Clinical Summary"
     doc = Document(
@@ -537,5 +581,5 @@ def create_clinical_summary(
 
 class AnnotatedDocument(BaseModel):
     document_id: str = Field(default_factory=lambda: f"doc_{uuid4().hex[:8]}")
-    extractions: Optional[List[Extraction]] = None
-    text: Optional[str] = None
+    extractions: list[Extraction] | None = None
+    text: str | None = None

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List
+from typing import Any, List
 
 import yaml
 
@@ -40,7 +40,11 @@ class AbstractResolver:
         extractions: list[Extraction] = []
         if isinstance(parsed_output, list):
             for item in parsed_output:
-                if isinstance(item, dict) and "extraction_class" in item and "extraction_text" in item:
+                if (
+                    isinstance(item, dict)
+                    and "extraction_class" in item
+                    and "extraction_text" in item
+                ):
                     extractions.append(
                         Extraction(
                             extraction_class=str(item["extraction_class"]),
@@ -88,4 +92,3 @@ class Resolver(AbstractResolver):
                 ex.alignment_status = AlignmentStatus.MATCH_FUZZY
             aligned.append(ex)
         return aligned
-

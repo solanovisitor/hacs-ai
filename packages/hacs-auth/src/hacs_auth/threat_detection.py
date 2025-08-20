@@ -1,5 +1,4 @@
-"""
-HACS Threat Detection and Security Monitoring
+"""HACS Threat Detection and Security Monitoring
 
 This module provides real-time threat detection and security monitoring
 capabilities for healthcare AI systems, including anomaly detection,
@@ -18,23 +17,24 @@ License: MIT
 Version: 1.0.0
 """
 
-import time
-import json
 import hashlib
-from datetime import datetime, timezone, timedelta
-from typing import Any, Dict, List, Optional, Set, Tuple
+import json
+import threading
+import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
 from enum import Enum
-import threading
 from pathlib import Path
+from typing import Any
 
-from .security import SecurityLevel, AuditEventType
 from .secure_logging import SecureLogger, get_secure_logger
+from .security import AuditEventType
 
 
 class ThreatLevel(str, Enum):
     """Threat severity levels."""
+
     INFO = "info"
     LOW = "low"
     MEDIUM = "medium"
@@ -44,6 +44,7 @@ class ThreatLevel(str, Enum):
 
 class ThreatType(str, Enum):
     """Types of security threats."""
+
     BRUTE_FORCE = "brute_force"
     ACCOUNT_TAKEOVER = "account_takeover"
     PRIVILEGE_ESCALATION = "privilege_escalation"
@@ -59,31 +60,33 @@ class ThreatType(str, Enum):
 @dataclass
 class SecurityEvent:
     """Security event data structure."""
+
     event_id: str
     timestamp: datetime
     event_type: AuditEventType
-    threat_type: Optional[ThreatType]
+    threat_type: ThreatType | None
     threat_level: ThreatLevel
-    user_id: Optional[str]
-    ip_address: Optional[str]
-    user_agent: Optional[str]
+    user_id: str | None
+    ip_address: str | None
+    user_agent: str | None
     description: str
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
     source: str = "hacs_security"
     resolved: bool = False
-    response_actions: List[str] = field(default_factory=list)
+    response_actions: list[str] = field(default_factory=list)
 
 
 @dataclass
 class UserBehaviorProfile:
     """User behavior profile for anomaly detection."""
+
     user_id: str
-    typical_access_hours: Set[int] = field(default_factory=set)
-    typical_ip_addresses: Set[str] = field(default_factory=set)
-    typical_user_agents: Set[str] = field(default_factory=set)
-    typical_resources: Set[str] = field(default_factory=set)
+    typical_access_hours: set[int] = field(default_factory=set)
+    typical_ip_addresses: set[str] = field(default_factory=set)
+    typical_user_agents: set[str] = field(default_factory=set)
+    typical_resources: set[str] = field(default_factory=set)
     average_session_duration: float = 0.0
-    last_updated: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    last_updated: datetime = field(default_factory=lambda: datetime.now(UTC))
     failed_login_count: int = 0
     successful_login_count: int = 0
 
@@ -91,13 +94,8 @@ class UserBehaviorProfile:
 class ThreatDetectionEngine:
     """Real-time threat detection and security monitoring engine."""
 
-    def __init__(
-        self,
-        storage_path: Optional[Path] = None,
-        logger: Optional[SecureLogger] = None
-    ):
-        """
-        Initialize threat detection engine.
+    def __init__(self, storage_path: Path | None = None, logger: SecureLogger | None = None):
+        """Initialize threat detection engine.
 
         Args:
             storage_path: Path for storing threat data
@@ -109,9 +107,9 @@ class ThreatDetectionEngine:
         self.logger = logger or get_secure_logger("threat_detection")
 
         # Threat detection state
-        self.active_threats: Dict[str, SecurityEvent] = {}
-        self.user_profiles: Dict[str, UserBehaviorProfile] = {}
-        self.ip_reputation: Dict[str, Dict[str, Any]] = {}
+        self.active_threats: dict[str, SecurityEvent] = {}
+        self.user_profiles: dict[str, UserBehaviorProfile] = {}
+        self.ip_reputation: dict[str, dict[str, Any]] = {}
 
         # Event tracking for pattern detection
         self.recent_events: deque = deque(maxlen=10000)  # Last 10k events
@@ -121,10 +119,10 @@ class ThreatDetectionEngine:
         # Detection rules and thresholds
         self.detection_rules = {
             "failed_login_threshold": 5,  # Failed logins per 15 minutes
-            "failed_login_window": 900,   # 15 minutes
+            "failed_login_window": 900,  # 15 minutes
             "rate_limit_threshold": 100,  # Requests per minute
             "unusual_hour_threshold": 0.1,  # Probability threshold for unusual access hours
-            "new_ip_alert": True,         # Alert on new IP addresses
+            "new_ip_alert": True,  # Alert on new IP addresses
             "session_duration_multiplier": 3,  # Alert if session > 3x typical duration
         }
 
@@ -133,7 +131,14 @@ class ThreatDetectionEngine:
             ThreatLevel.LOW: ["log", "monitor"],
             ThreatLevel.MEDIUM: ["log", "monitor", "alert"],
             ThreatLevel.HIGH: ["log", "monitor", "alert", "block_ip"],
-            ThreatLevel.CRITICAL: ["log", "monitor", "alert", "block_ip", "disable_account", "notify_admin"]
+            ThreatLevel.CRITICAL: [
+                "log",
+                "monitor",
+                "alert",
+                "block_ip",
+                "disable_account",
+                "notify_admin",
+            ],
         }
 
         # Load existing data
@@ -149,12 +154,11 @@ class ThreatDetectionEngine:
         self,
         user_id: str,
         success: bool,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        timestamp: Optional[datetime] = None
-    ) -> List[SecurityEvent]:
-        """
-        Analyze authentication event for threats.
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+        timestamp: datetime | None = None,
+    ) -> list[SecurityEvent]:
+        """Analyze authentication event for threats.
 
         Args:
             user_id: User ID attempting authentication
@@ -166,7 +170,7 @@ class ThreatDetectionEngine:
         Returns:
             List of detected security events
         """
-        timestamp = timestamp or datetime.now(timezone.utc)
+        timestamp = timestamp or datetime.now(UTC)
         events = []
 
         # Update user profile
@@ -183,7 +187,10 @@ class ThreatDetectionEngine:
                 ]
 
                 # Check for brute force attack
-                if len(self.failed_logins[ip_address]) >= self.detection_rules["failed_login_threshold"]:
+                if (
+                    len(self.failed_logins[ip_address])
+                    >= self.detection_rules["failed_login_threshold"]
+                ):
                     event = SecurityEvent(
                         event_id=self._generate_event_id(),
                         timestamp=timestamp,
@@ -196,8 +203,8 @@ class ThreatDetectionEngine:
                         description=f"Brute force attack detected from {ip_address}",
                         details={
                             "failed_attempts": len(self.failed_logins[ip_address]),
-                            "time_window": self.detection_rules["failed_login_window"]
-                        }
+                            "time_window": self.detection_rules["failed_login_window"],
+                        },
                     )
                     events.append(event)
                     self._handle_security_event(event)
@@ -218,12 +225,11 @@ class ThreatDetectionEngine:
         user_id: str,
         resource_type: str,
         action: str,
-        ip_address: Optional[str] = None,
-        timestamp: Optional[datetime] = None,
-        additional_data: Optional[Dict[str, Any]] = None
-    ) -> List[SecurityEvent]:
-        """
-        Analyze resource access event for threats.
+        ip_address: str | None = None,
+        timestamp: datetime | None = None,
+        additional_data: dict[str, Any] | None = None,
+    ) -> list[SecurityEvent]:
+        """Analyze resource access event for threats.
 
         Args:
             user_id: User accessing resource
@@ -236,7 +242,7 @@ class ThreatDetectionEngine:
         Returns:
             List of detected security events
         """
-        timestamp = timestamp or datetime.now(timezone.utc)
+        timestamp = timestamp or datetime.now(UTC)
         events = []
         additional_data = additional_data or {}
 
@@ -244,9 +250,7 @@ class ThreatDetectionEngine:
         self.rate_limits[user_id].append(timestamp.timestamp())
         # Clean old entries (1 minute window)
         cutoff = timestamp.timestamp() - 60
-        self.rate_limits[user_id] = [
-            t for t in self.rate_limits[user_id] if t > cutoff
-        ]
+        self.rate_limits[user_id] = [t for t in self.rate_limits[user_id] if t > cutoff]
 
         if len(self.rate_limits[user_id]) > self.detection_rules["rate_limit_threshold"]:
             event = SecurityEvent(
@@ -262,14 +266,18 @@ class ThreatDetectionEngine:
                 details={
                     "requests_per_minute": len(self.rate_limits[user_id]),
                     "resource_type": resource_type,
-                    "action": action
-                }
+                    "action": action,
+                },
             )
             events.append(event)
             self._handle_security_event(event)
 
         # Check for privilege escalation attempts
-        if action in ["admin", "delete", "modify"] and resource_type in ["user", "system", "config"]:
+        if action in ["admin", "delete", "modify"] and resource_type in [
+            "user",
+            "system",
+            "config",
+        ]:
             event = SecurityEvent(
                 event_id=self._generate_event_id(),
                 timestamp=timestamp,
@@ -283,8 +291,8 @@ class ThreatDetectionEngine:
                 details={
                     "resource_type": resource_type,
                     "action": action,
-                    "permissions": additional_data.get("permissions", [])
-                }
+                    "permissions": additional_data.get("permissions", []),
+                },
             )
             events.append(event)
             self._handle_security_event(event)
@@ -301,11 +309,7 @@ class ThreatDetectionEngine:
                 ip_address=ip_address,
                 user_agent=additional_data.get("user_agent"),
                 description=f"Potential data exfiltration detected for user {user_id}",
-                details={
-                    "resource_type": resource_type,
-                    "action": action,
-                    "bulk_operation": True
-                }
+                details={"resource_type": resource_type, "action": action, "bulk_operation": True},
             )
             events.append(event)
             self._handle_security_event(event)
@@ -315,10 +319,10 @@ class ThreatDetectionEngine:
     def _detect_behavioral_anomalies(
         self,
         profile: UserBehaviorProfile,
-        ip_address: Optional[str],
-        user_agent: Optional[str],
-        timestamp: datetime
-    ) -> List[SecurityEvent]:
+        ip_address: str | None,
+        user_agent: str | None,
+        timestamp: datetime,
+    ) -> list[SecurityEvent]:
         """Detect behavioral anomalies based on user profile."""
         events = []
 
@@ -340,14 +344,17 @@ class ThreatDetectionEngine:
                     description=f"Unusual access time for user {profile.user_id}",
                     details={
                         "access_hour": access_hour,
-                        "typical_hours": list(profile.typical_access_hours)
-                    }
+                        "typical_hours": list(profile.typical_access_hours),
+                    },
                 )
                 events.append(event)
 
         # Check for new IP address
         if ip_address and profile.typical_ip_addresses:
-            if ip_address not in profile.typical_ip_addresses and self.detection_rules["new_ip_alert"]:
+            if (
+                ip_address not in profile.typical_ip_addresses
+                and self.detection_rules["new_ip_alert"]
+            ):
                 event = SecurityEvent(
                     event_id=self._generate_event_id(),
                     timestamp=timestamp,
@@ -360,8 +367,8 @@ class ThreatDetectionEngine:
                     description=f"New IP address detected for user {profile.user_id}",
                     details={
                         "new_ip": ip_address,
-                        "typical_ips": list(profile.typical_ip_addresses)
-                    }
+                        "typical_ips": list(profile.typical_ip_addresses),
+                    },
                 )
                 events.append(event)
 
@@ -380,8 +387,8 @@ class ThreatDetectionEngine:
                     description=f"New user agent detected for user {profile.user_id}",
                     details={
                         "new_user_agent": user_agent,
-                        "typical_user_agents": list(profile.typical_user_agents)
-                    }
+                        "typical_user_agents": list(profile.typical_user_agents),
+                    },
                 )
                 events.append(event)
 
@@ -391,9 +398,9 @@ class ThreatDetectionEngine:
         self,
         user_id: str,
         success: bool,
-        ip_address: Optional[str],
-        user_agent: Optional[str],
-        timestamp: datetime
+        ip_address: str | None,
+        user_agent: str | None,
+        timestamp: datetime,
     ) -> None:
         """Update user behavior profile."""
         if user_id not in self.user_profiles:
@@ -435,7 +442,7 @@ class ThreatDetectionEngine:
             session_id="threat_detection",
             threat_level=event.threat_level.value,
             event_id=event.event_id,
-            ip_address=event.ip_address
+            ip_address=event.ip_address,
         )
 
         # Execute response actions based on threat level
@@ -449,7 +456,7 @@ class ThreatDetectionEngine:
             self.logger.warning(
                 f"Security event: {event.description}",
                 user_id=event.user_id,
-                event_id=event.event_id
+                event_id=event.event_id,
             )
 
         elif action == "alert":
@@ -457,7 +464,7 @@ class ThreatDetectionEngine:
                 f"SECURITY ALERT: {event.description}",
                 user_id=event.user_id,
                 event_id=event.event_id,
-                requires_attention=True
+                requires_attention=True,
             )
 
         elif action == "block_ip" and event.ip_address:
@@ -466,12 +473,12 @@ class ThreatDetectionEngine:
                 "status": "blocked",
                 "reason": event.threat_type.value,
                 "blocked_at": event.timestamp.isoformat(),
-                "event_id": event.event_id
+                "event_id": event.event_id,
             }
             self.logger.critical(
                 f"IP address blocked: {event.ip_address}",
                 user_id=event.user_id,
-                event_id=event.event_id
+                event_id=event.event_id,
             )
 
         elif action == "disable_account" and event.user_id:
@@ -479,7 +486,7 @@ class ThreatDetectionEngine:
                 f"Account disabled due to security threat: {event.user_id}",
                 user_id=event.user_id,
                 event_id=event.event_id,
-                account_disabled=True
+                account_disabled=True,
             )
 
         elif action == "notify_admin":
@@ -487,7 +494,7 @@ class ThreatDetectionEngine:
                 f"ADMIN NOTIFICATION: Critical security event - {event.description}",
                 user_id=event.user_id,
                 event_id=event.event_id,
-                notify_admin=True
+                notify_admin=True,
             )
 
         event.response_actions.append(action)
@@ -517,18 +524,18 @@ class ThreatDetectionEngine:
         """Detect threats based on patterns in recent events."""
         # Implementation for advanced pattern detection
         # This could include ML-based anomaly detection in the future
-        pass
 
     def _cleanup_old_data(self) -> None:
         """Clean up old data to prevent memory issues."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         cutoff = now - timedelta(days=30)
 
         # Clean old failed login records
         for ip in list(self.failed_logins.keys()):
             self.failed_logins[ip] = [
-                t for t in self.failed_logins[ip]
-                if datetime.fromtimestamp(t, tz=timezone.utc) > cutoff
+                t
+                for t in self.failed_logins[ip]
+                if datetime.fromtimestamp(t, tz=UTC) > cutoff
             ]
             if not self.failed_logins[ip]:
                 del self.failed_logins[ip]
@@ -536,15 +543,16 @@ class ThreatDetectionEngine:
         # Clean old rate limit records
         for user_id in list(self.rate_limits.keys()):
             self.rate_limits[user_id] = [
-                t for t in self.rate_limits[user_id]
-                if datetime.fromtimestamp(t, tz=timezone.utc) > cutoff
+                t
+                for t in self.rate_limits[user_id]
+                if datetime.fromtimestamp(t, tz=UTC) > cutoff
             ]
             if not self.rate_limits[user_id]:
                 del self.rate_limits[user_id]
 
     def _generate_event_id(self) -> str:
         """Generate unique event ID."""
-        timestamp = datetime.now(timezone.utc).isoformat()
+        timestamp = datetime.now(UTC).isoformat()
         return hashlib.sha256(f"{timestamp}{time.time()}".encode()).hexdigest()[:16]
 
     def _load_user_profiles(self) -> None:
@@ -552,16 +560,26 @@ class ThreatDetectionEngine:
         profiles_file = self.storage_path / "user_profiles.json"
         if profiles_file.exists():
             try:
-                with open(profiles_file, 'r') as f:
+                with open(profiles_file) as f:
                     data = json.load(f)
                     for user_id, profile_data in data.items():
                         profile = UserBehaviorProfile(user_id=user_id)
-                        profile.typical_access_hours = set(profile_data.get("typical_access_hours", []))
-                        profile.typical_ip_addresses = set(profile_data.get("typical_ip_addresses", []))
-                        profile.typical_user_agents = set(profile_data.get("typical_user_agents", []))
-                        profile.average_session_duration = profile_data.get("average_session_duration", 0.0)
+                        profile.typical_access_hours = set(
+                            profile_data.get("typical_access_hours", [])
+                        )
+                        profile.typical_ip_addresses = set(
+                            profile_data.get("typical_ip_addresses", [])
+                        )
+                        profile.typical_user_agents = set(
+                            profile_data.get("typical_user_agents", [])
+                        )
+                        profile.average_session_duration = profile_data.get(
+                            "average_session_duration", 0.0
+                        )
                         profile.failed_login_count = profile_data.get("failed_login_count", 0)
-                        profile.successful_login_count = profile_data.get("successful_login_count", 0)
+                        profile.successful_login_count = profile_data.get(
+                            "successful_login_count", 0
+                        )
                         self.user_profiles[user_id] = profile
             except Exception as e:
                 self.logger.error(f"Failed to load user profiles: {e}")
@@ -579,10 +597,10 @@ class ThreatDetectionEngine:
                     "average_session_duration": profile.average_session_duration,
                     "failed_login_count": profile.failed_login_count,
                     "successful_login_count": profile.successful_login_count,
-                    "last_updated": profile.last_updated.isoformat()
+                    "last_updated": profile.last_updated.isoformat(),
                 }
 
-            with open(profiles_file, 'w') as f:
+            with open(profiles_file, "w") as f:
                 json.dump(data, f, indent=2)
 
         except Exception as e:
@@ -593,7 +611,7 @@ class ThreatDetectionEngine:
         reputation_file = self.storage_path / "ip_reputation.json"
         if reputation_file.exists():
             try:
-                with open(reputation_file, 'r') as f:
+                with open(reputation_file) as f:
                     self.ip_reputation = json.load(f)
             except Exception as e:
                 self.logger.error(f"Failed to load IP reputation: {e}")
@@ -602,7 +620,7 @@ class ThreatDetectionEngine:
         """Save IP reputation data to storage."""
         reputation_file = self.storage_path / "ip_reputation.json"
         try:
-            with open(reputation_file, 'w') as f:
+            with open(reputation_file, "w") as f:
                 json.dump(self.ip_reputation, f, indent=2)
         except Exception as e:
             self.logger.error(f"Failed to save IP reputation: {e}")
@@ -611,7 +629,7 @@ class ThreatDetectionEngine:
         """Check if an IP address is blocked."""
         return self.ip_reputation.get(ip_address, {}).get("status") == "blocked"
 
-    def get_threat_summary(self) -> Dict[str, Any]:
+    def get_threat_summary(self) -> dict[str, Any]:
         """Get summary of current threats and security status."""
         active_count = len(self.active_threats)
         threat_levels = defaultdict(int)
@@ -625,9 +643,11 @@ class ThreatDetectionEngine:
             "active_threats": active_count,
             "threat_levels": dict(threat_levels),
             "threat_types": dict(threat_types),
-            "blocked_ips": len([ip for ip, rep in self.ip_reputation.items() if rep.get("status") == "blocked"]),
+            "blocked_ips": len(
+                [ip for ip, rep in self.ip_reputation.items() if rep.get("status") == "blocked"]
+            ),
             "monitored_users": len(self.user_profiles),
-            "last_updated": datetime.now(timezone.utc).isoformat()
+            "last_updated": datetime.now(UTC).isoformat(),
         }
 
     def shutdown(self) -> None:
@@ -655,9 +675,9 @@ def get_threat_detector() -> ThreatDetectionEngine:
 
 # Export public API
 __all__ = [
-    "ThreatLevel",
-    "ThreatType",
     "SecurityEvent",
     "ThreatDetectionEngine",
+    "ThreatLevel",
+    "ThreatType",
     "get_threat_detector",
 ]

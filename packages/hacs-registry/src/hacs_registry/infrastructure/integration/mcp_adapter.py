@@ -12,9 +12,8 @@ SOLID Compliance:
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
-from ...core.base import EntityId
 from ...core.exceptions import InfrastructureException
 
 logger = logging.getLogger(__name__)
@@ -41,7 +40,9 @@ class MCPAdapter:
             self._initialized = True
             self.logger.info(f"MCP adapter initialized with server: {self.server_url}")
 
-    async def register_tool_with_mcp(self, tool_definition: Dict[str, Any]) -> Dict[str, Any]:
+    async def register_tool_with_mcp(
+        self, tool_definition: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Register HACS tool with MCP server."""
         try:
             # Placeholder implementation
@@ -49,7 +50,7 @@ class MCPAdapter:
                 "name": tool_definition.get("name", "unknown"),
                 "description": tool_definition.get("description", ""),
                 "schema": tool_definition.get("schema", {}),
-                "endpoint": f"{self.server_url}/tools/{tool_definition.get('name')}"
+                "endpoint": f"{self.server_url}/tools/{tool_definition.get('name')}",
             }
 
             self.logger.debug(f"Registered tool with MCP: {mcp_tool['name']}")
@@ -59,7 +60,9 @@ class MCPAdapter:
             self.logger.error(f"Failed to register tool with MCP: {e}")
             raise InfrastructureException(f"MCP tool registration failed: {e}")
 
-    async def invoke_mcp_tool(self, tool_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    async def invoke_mcp_tool(
+        self, tool_name: str, parameters: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Invoke an MCP tool."""
         try:
             # Placeholder implementation
@@ -67,7 +70,7 @@ class MCPAdapter:
                 "tool": tool_name,
                 "parameters": parameters,
                 "result": "placeholder_result",
-                "status": "success"
+                "status": "success",
             }
 
             self.logger.debug(f"Invoked MCP tool: {tool_name}")

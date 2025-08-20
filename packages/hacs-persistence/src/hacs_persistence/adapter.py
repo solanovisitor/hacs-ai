@@ -7,9 +7,8 @@ using psycopg (v3) for high-performance, non-blocking database operations.
 
 import json
 import logging
-from typing import Any, Optional
+from typing import Any
 
-from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 
 from hacs_core import (
@@ -263,7 +262,7 @@ class PostgreSQLAdapter(BaseAdapter, PersistenceProvider):
                             if key.endswith(("_gt", "_gte", "_lt", "_lte")):
                                 field = key.rsplit("_", 1)[0]
                                 op_map = {"_gt": ">", "_gte": ">=", "_lt": "<", "_lte": "<="}
-                                op = op_map[key[len(field):]]
+                                op = op_map[key[len(field) :]]
                                 where_conditions.append(
                                     f"(data->>'{field}')::numeric {op} %({param_key})s"
                                 )
@@ -301,9 +300,7 @@ class PostgreSQLAdapter(BaseAdapter, PersistenceProvider):
                             logger.warning(f"Skipping corrupted resource data: {e}")
                             continue
 
-                    logger.info(
-                        f"Search found {len(resources)} {resource_type.__name__} resources"
-                    )
+                    logger.info(f"Search found {len(resources)} {resource_type.__name__} resources")
                     return resources
         except Exception as e:
             logger.error(f"Failed to search resources: {e}")
@@ -359,7 +356,6 @@ class PostgreSQLAdapter(BaseAdapter, PersistenceProvider):
             logger.error(f"Failed to get database stats: {e}")
             return {"error": str(e), "connection_status": "unhealthy"}
 
-
     @staticmethod
     def _normalize_db_url(url: str) -> str:
         """Ensure required parameters (e.g., sslmode) are present for managed providers.
@@ -370,14 +366,19 @@ class PostgreSQLAdapter(BaseAdapter, PersistenceProvider):
             if not url:
                 return url
             lower = url.lower()
-            if ("supabase.co" in lower or "supabase.net" in lower or "supabase.com" in lower) and "sslmode=" not in lower:
+            if (
+                "supabase.co" in lower or "supabase.net" in lower or "supabase.com" in lower
+            ) and "sslmode=" not in lower:
                 sep = "&" if "?" in url else "?"
                 return f"{url}{sep}sslmode=require"
             return url
         except Exception:
             return url
 
-async def create_postgres_adapter(database_url: Optional[str] = None, schema_name: Optional[str] = None) -> PostgreSQLAdapter:
+
+async def create_postgres_adapter(
+    database_url: str | None = None, schema_name: str | None = None
+) -> PostgreSQLAdapter:
     """Factory function to create and connect a PostgreSQLAdapter.
 
     If parameters are not provided, read from global settings.
@@ -385,9 +386,7 @@ async def create_postgres_adapter(database_url: Optional[str] = None, schema_nam
     if database_url is None or schema_name is None:
         settings = get_settings()
         if not settings.postgres_enabled and database_url is None:
-            raise AdapterNotFoundError(
-                "PostgreSQL is not configured. Please set DATABASE_URL."
-            )
+            raise AdapterNotFoundError("PostgreSQL is not configured. Please set DATABASE_URL.")
         config = settings.get_postgres_config()
         database_url = database_url or config.get("database_url") or config.get("url")
         if not database_url:

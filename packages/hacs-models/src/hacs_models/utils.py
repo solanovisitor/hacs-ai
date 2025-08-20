@@ -16,14 +16,16 @@ def set_nested_field(obj: Any, path: str, value: Any) -> None:
                     cur[part] = value
                 else:
                     try:
-                        if hasattr(cur, "agent_context") and isinstance(value, (str, int, float, bool, dict, list)):
-                            ctx = getattr(cur, "agent_context") or {}
+                        if hasattr(cur, "agent_context") and isinstance(
+                            value, (str, int, float, bool, dict, list)
+                        ):
+                            ctx = cur.agent_context or {}
                             ctx[path] = value
-                            setattr(cur, "agent_context", ctx)
+                            cur.agent_context = ctx
                         elif hasattr(cur, "note") and isinstance(value, str):
-                            notes = list(getattr(cur, "note") or [])
+                            notes = list(cur.note or [])
                             notes.append(value)
-                            setattr(cur, "note", notes)
+                            cur.note = notes
                         else:
                             raise
                     except Exception:
@@ -43,5 +45,3 @@ def set_nested_field(obj: Any, path: str, value: Any) -> None:
                     else:
                         raise
             cur = nxt
-
-

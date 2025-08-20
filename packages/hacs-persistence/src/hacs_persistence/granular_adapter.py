@@ -12,6 +12,9 @@ from typing import Any
 import psycopg2
 import psycopg2.extras
 
+# Import models with compatibility fallbacks
+from hacs_models import AgentMessage, Encounter, Observation, Patient, ScratchpadEntry
+
 from hacs_core import (
     Actor,
     AdapterNotFoundError,
@@ -20,8 +23,7 @@ from hacs_core import (
     PersistenceProvider,
     get_settings,
 )
-# Import models with compatibility fallbacks
-from hacs_models import AgentMessage, Encounter, Observation, Patient, ScratchpadEntry
+
 try:
     # Newer model name
     from hacs_models import MemoryBlock as Memory
@@ -105,9 +107,7 @@ class GranularPostgreSQLAdapter(BaseAdapter, PersistenceProvider):
                 with conn.cursor() as cursor:
                     # Create all tables and indexes
                     self.schema_manager.create_all_tables(cursor)
-                    logger.info(
-                        "Granular HACS resource tables initialized successfully"
-                    )
+                    logger.info("Granular HACS resource tables initialized successfully")
 
         except Exception as e:
             logger.error(f"Failed to initialize granular tables: {e}")
@@ -137,29 +137,19 @@ class GranularPostgreSQLAdapter(BaseAdapter, PersistenceProvider):
         if isinstance(resource, Patient):
             column_data = self.resource_mapper.map_patient_to_columns(resource, actor)
         elif isinstance(resource, Observation):
-            column_data = self.resource_mapper.map_observation_to_columns(
-                resource, actor
-            )
+            column_data = self.resource_mapper.map_observation_to_columns(resource, actor)
         elif isinstance(resource, Encounter):
             column_data = self.resource_mapper.map_encounter_to_columns(resource, actor)
         elif isinstance(resource, AgentMessage):
-            column_data = self.resource_mapper.map_agent_message_to_columns(
-                resource, actor
-            )
+            column_data = self.resource_mapper.map_agent_message_to_columns(resource, actor)
         elif isinstance(resource, Memory):
             column_data = self.resource_mapper.map_memory_to_columns(resource, actor)
         elif (KnowledgeItem is not None) and isinstance(resource, KnowledgeItem):
-            column_data = self.resource_mapper.map_knowledge_item_to_columns(
-                resource, actor
-            )
+            column_data = self.resource_mapper.map_knowledge_item_to_columns(resource, actor)
         elif isinstance(resource, ScratchpadEntry):
-            column_data = self.resource_mapper.map_scratchpad_entry_to_columns(
-                resource, actor
-            )
+            column_data = self.resource_mapper.map_scratchpad_entry_to_columns(resource, actor)
         elif (ContextSummary is not None) and isinstance(resource, ContextSummary):
-            column_data = self.resource_mapper.map_context_summary_to_columns(
-                resource, actor
-            )
+            column_data = self.resource_mapper.map_context_summary_to_columns(resource, actor)
         else:
             raise ValueError(f"Unsupported resource type: {resource.resource_type}")
 
@@ -199,13 +189,9 @@ class GranularPostgreSQLAdapter(BaseAdapter, PersistenceProvider):
         """Read a resource from the appropriate granular table."""
         try:
             with self._get_connection() as conn:
-                with conn.cursor(
-                    cursor_factory=psycopg2.extras.RealDictCursor
-                ) as cursor:
+                with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
                     # Get the appropriate table name
-                    table_name = self.schema_manager.get_table_name(
-                        resource_type.__name__
-                    )
+                    table_name = self.schema_manager.get_table_name(resource_type.__name__)
 
                     select_sql = f"""
                     SELECT * FROM {self.schema_name}.{table_name}
@@ -240,14 +226,10 @@ class GranularPostgreSQLAdapter(BaseAdapter, PersistenceProvider):
             with self._get_connection() as conn:
                 with conn.cursor() as cursor:
                     # Get the appropriate table name
-                    table_name = self.schema_manager.get_table_name(
-                        resource.resource_type
-                    )
+                    table_name = self.schema_manager.get_table_name(resource.resource_type)
 
                     # Map resource to columns
-                    mapper_func = self.resource_mapper.get_resource_mapper(
-                        resource.resource_type
-                    )
+                    mapper_func = self.resource_mapper.get_resource_mapper(resource.resource_type)
                     column_data = mapper_func(resource, actor)
 
                     # Build UPDATE SQL (exclude id and created fields)
@@ -283,17 +265,13 @@ class GranularPostgreSQLAdapter(BaseAdapter, PersistenceProvider):
             logger.error(f"Failed to update resource {resource.id}: {e}")
             raise RuntimeError(f"Database error while updating resource: {e}") from e
 
-    def delete(
-        self, resource_type: type[BaseResource], resource_id: str, actor: Actor
-    ) -> bool:
+    def delete(self, resource_type: type[BaseResource], resource_id: str, actor: Actor) -> bool:
         """Delete a resource from the appropriate granular table."""
         try:
             with self._get_connection() as conn:
                 with conn.cursor() as cursor:
                     # Get the appropriate table name
-                    table_name = self.schema_manager.get_table_name(
-                        resource_type.__name__
-                    )
+                    table_name = self.schema_manager.get_table_name(resource_type.__name__)
 
                     delete_sql = f"""
                     DELETE FROM {self.schema_name}.{table_name}
@@ -328,20 +306,14 @@ class GranularPostgreSQLAdapter(BaseAdapter, PersistenceProvider):
         """Search for resources using granular table columns and advanced filtering."""
         try:
             with self._get_connection() as conn:
-                with conn.cursor(
-                    cursor_factory=psycopg2.extras.RealDictCursor
-                ) as cursor:
+                with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
                     # Get the appropriate table name
-                    table_name = self.schema_manager.get_table_name(
-                        resource_type.__name__
-                    )
+                    table_name = self.schema_manager.get_table_name(resource_type.__name__)
 
                     # Build search conditions using resource mapper
                     if filters:
-                        where_clause, params = (
-                            self.resource_mapper.build_search_conditions(
-                                resource_type.__name__, filters
-                            )
+                        where_clause, params = self.resource_mapper.build_search_conditions(
+                            resource_type.__name__, filters
                         )
                     else:
                         where_clause = "1=1"
@@ -363,19 +335,15 @@ class GranularPostgreSQLAdapter(BaseAdapter, PersistenceProvider):
                     resources = []
                     for result in results:
                         try:
-                            resource_instance = (
-                                self.resource_mapper.map_columns_to_resource(
-                                    resource_type.__name__, dict(result)
-                                )
+                            resource_instance = self.resource_mapper.map_columns_to_resource(
+                                resource_type.__name__, dict(result)
                             )
                             resources.append(resource_instance)
                         except Exception as e:
                             logger.warning(f"Skipping corrupted resource data: {e}")
                             continue
 
-                    logger.info(
-                        f"Search found {len(resources)} {resource_type.__name__} resources"
-                    )
+                    logger.info(f"Search found {len(resources)} {resource_type.__name__} resources")
                     return resources
 
         except Exception as e:
@@ -404,9 +372,7 @@ class GranularPostgreSQLAdapter(BaseAdapter, PersistenceProvider):
         """
         try:
             with self._get_connection() as conn:
-                with conn.cursor(
-                    cursor_factory=psycopg2.extras.RealDictCursor
-                ) as cursor:
+                with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
                     # Get primary table
                     primary_table = self.schema_manager.get_table_name(
                         primary_resource_type.__name__
@@ -418,9 +384,7 @@ class GranularPostgreSQLAdapter(BaseAdapter, PersistenceProvider):
 
                     for join_condition in join_conditions:
                         join_resource_type = join_condition["resource_type"]
-                        join_table = self.schema_manager.get_table_name(
-                            join_resource_type
-                        )
+                        join_table = self.schema_manager.get_table_name(join_resource_type)
                         join_on = join_condition["on"]
                         join_fields = join_condition.get("fields", [])
 
@@ -430,16 +394,12 @@ class GranularPostgreSQLAdapter(BaseAdapter, PersistenceProvider):
 
                         # Add specific fields from joined table
                         for field in join_fields:
-                            select_fields.append(
-                                f"{join_table}.{field} AS {join_table}_{field}"
-                            )
+                            select_fields.append(f"{join_table}.{field} AS {join_table}_{field}")
 
                     # Build WHERE clause
                     if filters:
-                        where_clause, params = (
-                            self.resource_mapper.build_search_conditions(
-                                primary_resource_type.__name__, filters
-                            )
+                        where_clause, params = self.resource_mapper.build_search_conditions(
+                            primary_resource_type.__name__, filters
                         )
                     else:
                         where_clause = "1=1"
@@ -478,9 +438,7 @@ class GranularPostgreSQLAdapter(BaseAdapter, PersistenceProvider):
                 # Get patient's observations
                 from hacs_models import Observation
 
-                observations = self.search(
-                    Observation, actor, filters={"subject": resource_id}
-                )
+                observations = self.search(Observation, actor, filters={"subject": resource_id})
                 relationships["observations"] = [
                     obs.model_dump(mode="json") for obs in observations
                 ]
@@ -488,20 +446,14 @@ class GranularPostgreSQLAdapter(BaseAdapter, PersistenceProvider):
                 # Get patient's encounters
                 from hacs_models import Encounter
 
-                encounters = self.search(
-                    Encounter, actor, filters={"subject": resource_id}
-                )
-                relationships["encounters"] = [
-                    enc.model_dump(mode="json") for enc in encounters
-                ]
+                encounters = self.search(Encounter, actor, filters={"subject": resource_id})
+                relationships["encounters"] = [enc.model_dump(mode="json") for enc in encounters]
 
             elif resource_type.__name__ == "Encounter":
                 # Get encounter's observations
                 from hacs_models import Observation
 
-                observations = self.search(
-                    Observation, actor, filters={"encounter": resource_id}
-                )
+                observations = self.search(Observation, actor, filters={"encounter": resource_id})
                 relationships["observations"] = [
                     obs.model_dump(mode="json") for obs in observations
                 ]
@@ -590,9 +542,7 @@ class GranularPostgreSQLAdapter(BaseAdapter, PersistenceProvider):
                             "count": count,
                             "earliest": earliest.isoformat() if earliest else None,
                             "latest": latest.isoformat() if latest else None,
-                            "last_updated": last_updated.isoformat()
-                            if last_updated
-                            else None,
+                            "last_updated": last_updated.isoformat() if last_updated else None,
                         }
 
                     stats["total_resources"] = total_resources
@@ -608,9 +558,7 @@ def create_granular_postgres_adapter() -> GranularPostgreSQLAdapter:
     settings = get_settings()
 
     if not settings.postgres_enabled:
-        raise AdapterNotFoundError(
-            "PostgreSQL is not configured. Please set DATABASE_URL."
-        )
+        raise AdapterNotFoundError("PostgreSQL is not configured. Please set DATABASE_URL.")
 
     config = settings.get_postgres_config()
 

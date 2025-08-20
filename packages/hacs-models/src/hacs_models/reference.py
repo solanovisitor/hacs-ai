@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Optional
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Reference(BaseModel):
@@ -17,9 +18,13 @@ class Reference(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    reference: Optional[str] = Field(default=None, description="Literal reference string (Type/id or URL)")
-    type: Optional[str] = Field(default=None, description="Type of the referenced resource, e.g., 'Patient'")
-    identifier: Optional[dict[str, Any]] = Field(default=None, description="Logical reference when literal is unknown")
-    display: Optional[str] = Field(default=None, description="Text representation for display")
-
-
+    reference: str | None = Field(
+        default=None, description="Literal reference string (Type/id or URL)"
+    )
+    type: str | None = Field(
+        default=None, description="Type of the referenced resource, e.g., 'Patient'"
+    )
+    identifier: dict[str, Any] | None = Field(
+        default=None, description="Logical reference when literal is unknown"
+    )
+    display: str | None = Field(default=None, description="Text representation for display")

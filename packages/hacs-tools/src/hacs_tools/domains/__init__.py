@@ -5,7 +5,7 @@ This package organizes HACS tools into 4 core domains for healthcare AI agents:
 
 Domain Organization:
     🔧 modeling - Resource instantiation, validation, composition, diffing
-    🔍 extraction - Structured extraction, mapping specs, context summarization  
+    🔍 extraction - Structured extraction, mapping specs, context summarization
     💾 database - Typed/generic CRUD, registry ops, vector search, migrations
     🤖 agents - Scratchpad, todos, memory, preferences, tool loadout, state management
     🧬 terminology (optional) - UMLS-based code search/match helpers (kept separate from modeling)
@@ -97,28 +97,25 @@ except Exception:
 __all__ = [
     # Modeling Domain - Resource definition, composition, validation
     "pin_resource",
-    "compose_bundle", 
+    "compose_bundle",
     "validate_resource",
     "diff_resources",
     "validate_bundle",
-    
     # Extraction Domain - Structured data extraction and mapping
     "synthesize_mapping_spec",
     "extract_variables",
     "apply_mapping_spec",
     "summarize_context",
-    
     # Database Domain - CRUD operations, registry, vector search
     "save_resource",
     "read_resource",
-    "update_resource", 
+    "update_resource",
     "delete_resource",
     "register_model_version",
     "search_knowledge_items",
     "search_memories",
     "run_migrations",
     "get_db_status",
-    
     # Agents Domain - Context engineering for AI agents
     "write_scratchpad",
     "read_scratchpad",
@@ -131,15 +128,12 @@ __all__ = [
     "select_tools_for_task",
     "summarize_state",
     "prune_state",
-
     # Terminology (optional)
     "normalize_code",
     "search_umls",
     "suggest_resource_codings",
     "summarize_codable_concepts",
     "map_terminology",
-    
-    
     # Note: Legacy tool names have been consolidated into the 4 core domains above.
     # Users should migrate to the new domain-specific tool names for better clarity.
 ]

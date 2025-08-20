@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
 import warnings
-from .utils import set_nested_field
+from typing import Any
 
+from pydantic import BaseModel, Field
+
+from .utils import set_nested_field
 
 warnings.warn(
     "StackTemplate/LayerSpec are deprecated. Use Composition + ResourceBundle and MappingSpec/SourceBinding instead.",
@@ -21,8 +22,10 @@ class LayerSpec(BaseModel):
 
     resource_type: str = Field(..., description="HACS resource type (model name)")
     layer_name: str = Field(..., description="Layer/display name")
-    bindings: Dict[str, str] = Field(default_factory=dict, description="field_path -> variable_name")
-    constant_fields: Dict[str, Any] = Field(default_factory=dict, description="Static fields")
+    bindings: dict[str, str] = Field(
+        default_factory=dict, description="field_path -> variable_name"
+    )
+    constant_fields: dict[str, Any] = Field(default_factory=dict, description="Static fields")
 
 
 class StackTemplate(BaseModel):
@@ -33,9 +36,11 @@ class StackTemplate(BaseModel):
 
     name: str
     version: str = "1.0.0"
-    description: Optional[str] = None
-    variables: Dict[str, Any] = Field(default_factory=dict, description="Input variable schema or hints")
-    layers: List[LayerSpec] = Field(default_factory=list)
+    description: str | None = None
+    variables: dict[str, Any] = Field(
+        default_factory=dict, description="Input variable schema or hints"
+    )
+    layers: list[LayerSpec] = Field(default_factory=list)
 
 
 def _set_nested_field(obj: Any, path: str, value: Any) -> None:
@@ -45,9 +50,9 @@ def _set_nested_field(obj: Any, path: str, value: Any) -> None:
 
 def instantiate_stack_template(
     template: StackTemplate,
-    variables: Dict[str, Any],
-    model_registry: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    variables: dict[str, Any],
+    model_registry: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """[DEPRECATED] Instantiate a deprecated StackTemplate into instances.
 
     Returns a mapping of layer_name -> resource_instance. Prefer building a Composition
@@ -61,7 +66,7 @@ def instantiate_stack_template(
     from . import get_model_registry  # late import to avoid cycles
 
     registry = model_registry or get_model_registry()
-    outputs: Dict[str, Any] = {}
+    outputs: dict[str, Any] = {}
     bundle_instance = None
     for layer in template.layers:
         model_cls = registry.get(layer.resource_type)
@@ -69,9 +74,10 @@ def instantiate_stack_template(
             raise ValueError(f"Unknown resource_type: {layer.resource_type}")
 
         # Create minimal instance via registry compatibility (centralized)
-        default_kwargs: Dict[str, Any] = {}
+        default_kwargs: dict[str, Any] = {}
         try:
             from . import validate_model_compatibility  # noqa: F401
+
             # Prefer instantiation with resource_type defaulting inside models
             instance = model_cls(**default_kwargs)
         except Exception:
@@ -96,9 +102,14 @@ def instantiate_stack_template(
     if bundle_instance is not None:
         try:
             from .resource_bundle import ResourceBundle
+
             if isinstance(bundle_instance, ResourceBundle):
                 # Create a new bundle from instances to normalize entries
-                new_bundle = ResourceBundle(title=getattr(template, "name", None), bundle_type=getattr(bundle_instance, "bundle_type", None), version=getattr(template, "version", "1.0.0"))
+                new_bundle = ResourceBundle(
+                    title=getattr(template, "name", None),
+                    bundle_type=getattr(bundle_instance, "bundle_type", None),
+                    version=getattr(template, "version", "1.0.0"),
+                )
                 for lname, res in outputs.items():
                     if res is bundle_instance:
                         continue
@@ -133,7 +144,7 @@ def instantiate_stack_template(
             if rtype == "Observation":
                 if encounter_ref:
                     try:
-                        setattr(res, "encounter", encounter_ref)
+                        res.encounter = encounter_ref
                     except Exception:
                         pass
                 if practitioner_ref:
@@ -141,18 +152,18 @@ def instantiate_stack_template(
                         performers = list(getattr(res, "performer", []) or [])
                         if practitioner_ref not in performers:
                             performers.append(practitioner_ref)
-                        setattr(res, "performer", performers)
+                        res.performer = performers
                     except Exception:
                         pass
                 if patient_ref:
                     try:
-                        setattr(res, "subject", patient_ref)
+                        res.subject = patient_ref
                     except Exception:
                         pass
             elif rtype == "DiagnosticReport":
                 if encounter_ref:
                     try:
-                        setattr(res, "encounter", encounter_ref)
+                        res.encounter = encounter_ref
                     except Exception:
                         pass
                 if organization_ref:
@@ -160,12 +171,12 @@ def instantiate_stack_template(
                         performers = list(getattr(res, "performer", []) or [])
                         if organization_ref not in performers:
                             performers.append(organization_ref)
-                        setattr(res, "performer", performers)
+                        res.performer = performers
                     except Exception:
                         pass
                 if patient_ref:
                     try:
-                        setattr(res, "subject", patient_ref)
+                        res.subject = patient_ref
                     except Exception:
                         pass
             elif rtype == "MedicationRequest":
@@ -173,14 +184,14 @@ def instantiate_stack_template(
                 if patient_ref:
                     try:
                         if not getattr(res, "subject", None):
-                            setattr(res, "subject", patient_ref)
+                            res.subject = patient_ref
                     except Exception:
                         pass
             elif rtype == "Procedure":
                 if patient_ref:
                     try:
                         if not getattr(res, "subject", None):
-                            setattr(res, "subject", patient_ref)
+                            res.subject = patient_ref
                     except Exception:
                         pass
             elif rtype == "DocumentReference":
@@ -189,22 +200,20 @@ def instantiate_stack_template(
                         authors = list(getattr(res, "author_ref", []) or [])
                         if practitioner_ref not in authors:
                             authors.append(practitioner_ref)
-                        setattr(res, "author_ref", authors)
+                        res.author_ref = authors
                     except Exception:
                         pass
                 if organization_ref:
                     try:
-                        setattr(res, "custodian_ref", organization_ref)
+                        res.custodian_ref = organization_ref
                     except Exception:
                         pass
                 if patient_ref:
                     try:
-                        setattr(res, "subject_ref", patient_ref)
+                        res.subject_ref = patient_ref
                     except Exception:
                         pass
     except Exception:
         pass
 
     return outputs
-
-

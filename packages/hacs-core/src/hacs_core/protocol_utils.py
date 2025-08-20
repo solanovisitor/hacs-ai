@@ -11,21 +11,34 @@ These utilities demonstrate how to leverage protocols for:
 - Dependency injection
 """
 
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast, runtime_checkable
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+)
 from datetime import datetime
 
 # Import protocols
 from .protocols import (
-    Identifiable, Timestamped, Versioned, Serializable, Validatable,
-    ClinicalResource, ClinicalValidator, MemoryStore, PersistenceProvider,
-    ActorCapability, ConfigurationProvider, EvidenceProvider
+    Identifiable,
+    Timestamped,
+    Serializable,
+    Validatable,
+    ClinicalResource,
+    ClinicalValidator,
+    MemoryStore,
+    PersistenceProvider,
+    EvidenceProvider,
 )
 
 # Type variables for generic functions
-T = TypeVar('T')
-IdentifiableT = TypeVar('IdentifiableT', bound=Identifiable)
-TimestampedT = TypeVar('TimestampedT', bound=Timestamped)
-ClinicalT = TypeVar('ClinicalT', bound=ClinicalResource)
+T = TypeVar("T")
+IdentifiableT = TypeVar("IdentifiableT", bound=Identifiable)
+TimestampedT = TypeVar("TimestampedT", bound=Timestamped)
+ClinicalT = TypeVar("ClinicalT", bound=ClinicalResource)
 
 
 def ensure_identifiable(obj: Any) -> Identifiable:
@@ -60,7 +73,9 @@ def ensure_clinical_resource(obj: Any) -> ClinicalResource:
         TypeError: If object doesn't implement ClinicalResource
     """
     if not isinstance(obj, ClinicalResource):
-        raise TypeError(f"Object {type(obj)} does not implement ClinicalResource protocol")
+        raise TypeError(
+            f"Object {type(obj)} does not implement ClinicalResource protocol"
+        )
     return obj
 
 
@@ -77,7 +92,9 @@ def extract_ids(resources: List[Identifiable]) -> List[str]:
     return [resource.id for resource in resources]
 
 
-def sort_by_timestamp(resources: List[TimestampedT], descending: bool = True) -> List[TimestampedT]:
+def sort_by_timestamp(
+    resources: List[TimestampedT], descending: bool = True
+) -> List[TimestampedT]:
     """
     Sort timestamped resources by creation time.
 
@@ -88,11 +105,7 @@ def sort_by_timestamp(resources: List[TimestampedT], descending: bool = True) ->
     Returns:
         Sorted list of resources
     """
-    return sorted(
-        resources,
-        key=lambda r: r.created_at,
-        reverse=descending
-    )
+    return sorted(resources, key=lambda r: r.created_at, reverse=descending)
 
 
 def filter_by_patient(resources: List[ClinicalT], patient_id: str) -> List[ClinicalT]:
@@ -107,8 +120,7 @@ def filter_by_patient(resources: List[ClinicalT], patient_id: str) -> List[Clini
         Filtered list of resources
     """
     return [
-        resource for resource in resources
-        if resource.get_patient_id() == patient_id
+        resource for resource in resources if resource.get_patient_id() == patient_id
     ]
 
 
@@ -144,8 +156,7 @@ def serialize_resources(resources: List[Serializable]) -> List[Dict[str, Any]]:
 
 
 def find_newer_resources(
-    resources: List[TimestampedT],
-    since: datetime
+    resources: List[TimestampedT], since: datetime
 ) -> List[TimestampedT]:
     """
     Find resources created after a specific timestamp.
@@ -157,10 +168,7 @@ def find_newer_resources(
     Returns:
         Resources created after the given timestamp
     """
-    return [
-        resource for resource in resources
-        if resource.created_at > since
-    ]
+    return [resource for resource in resources if resource.created_at > since]
 
 
 class ProtocolRegistry:
@@ -259,6 +267,7 @@ def get_providers(protocol: Type[T]) -> List[T]:
 
 # Protocol-based dependency injection helpers
 
+
 def inject_persistence_provider() -> Optional[PersistenceProvider]:
     """Get registered persistence provider."""
     return get_provider(PersistenceProvider)
@@ -284,7 +293,6 @@ __all__ = [
     # Type checking utilities
     "ensure_identifiable",
     "ensure_clinical_resource",
-
     # Collection utilities
     "extract_ids",
     "sort_by_timestamp",
@@ -292,13 +300,11 @@ __all__ = [
     "validate_resources",
     "serialize_resources",
     "find_newer_resources",
-
     # Protocol registry
     "ProtocolRegistry",
     "register_provider",
     "get_provider",
     "get_providers",
-
     # Dependency injection helpers
     "inject_persistence_provider",
     "inject_memory_store",

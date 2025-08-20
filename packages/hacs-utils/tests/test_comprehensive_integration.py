@@ -5,19 +5,20 @@ LangChain adapter is deprecated; tests now validate minimal shim and prefer Lang
 """
 
 import pytest
-import logging
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import Dict, Any
 
 try:
     from hacs_utils.integrations.langchain import (
         get_hacs_tools,
         get_hacs_tools_by_category,
     )
+
     print("✅ Minimal LangChain shim available")
 except ImportError:
     get_hacs_tools = None
     get_hacs_tools_by_category = None
+
 
 # Mock HACS resources for testing
 class MockHACSResource:
@@ -33,13 +34,14 @@ class MockHACSResource:
 
     def model_dump(self) -> Dict[str, Any]:
         return {
-            'id': self.id,
-            'resource_type': self.resource_type,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat(),
-            'name': self.name,
-            'status': self.status
+            "id": self.id,
+            "resource_type": self.resource_type,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "name": self.name,
+            "status": self.status,
         }
+
 
 class TestAdapters:
     def test_minimal_shim(self):
@@ -47,25 +49,31 @@ class TestAdapters:
             pytest.skip("LangChain shim removed")
         assert isinstance(get_hacs_tools(), list)
 
+
 class TestMemoryIntegration:
     def test_placeholder(self):
         assert True
+
 
 class TestChainBuilders:
     def test_placeholder(self):
         assert True
 
+
 class TestVectorStores:
     def test_placeholder(self):
         assert True
+
 
 class TestRetrievers:
     def test_placeholder(self):
         assert True
 
+
 class TestIntegrationWorkflow:
     def test_placeholder(self):
         assert True
+
 
 def run_tests():
     """Run alltests."""
@@ -87,7 +95,7 @@ def run_tests():
         print(f"\n📋 Running {class_name} tests...")
 
         # Run all test methods
-        test_methods = [method for method in dir(test_instance) if method.startswith('test_')]
+        test_methods = [method for method in dir(test_instance) if method.startswith("test_")]
         for method_name in test_methods:
             try:
                 getattr(test_instance, method_name)()
@@ -101,6 +109,7 @@ def run_tests():
     print("   ✅ Structured data approaches throughout")
     print("   ✅ LLM-ready architecture")
     print("   ✅type safety")
+
 
 if __name__ == "__main__":
     run_tests()

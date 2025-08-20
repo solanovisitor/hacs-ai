@@ -1,5 +1,4 @@
-"""
-HACS Authentication - Secure Authentication and Authorization
+"""HACS Authentication - Secure Authentication and Authorization
 
 This package providesauthentication and authorization components
 for healthcare AI agent systems, including JWT token management, OAuth2 support,
@@ -26,21 +25,21 @@ Version: 0.1.0
 """
 
 # Core authentication components
-from .auth_manager import AuthManager, AuthConfig, TokenData, AuthError
 from .actor import Actor, ActorRole, PermissionLevel, SessionStatus
-from .permissions import PermissionManager, PermissionSchema, Permission
-from .session import SessionManager, Session, SessionConfig
+from .audit import AuditEvent, AuditLevel, AuditLogger
+from .auth_manager import AuthConfig, AuthError, AuthManager, TokenData
 from .decorators import require_auth, require_permission, require_role
-from .audit import AuditLogger, AuditEvent, AuditLevel
+from .permissions import Permission, PermissionManager, PermissionSchema
+from .session import Session, SessionConfig, SessionManager
 
 # Tool security integration
-from .tool_security import (
-    ToolSecurityContext, secure_tool_execution, create_secure_actor
-)
+from .tool_security import ToolSecurityContext, create_secure_actor, secure_tool_execution
+
 
 # OAuth2 support (optional)
 try:
-    from .oauth2 import OAuth2Config, OAuth2Manager, OAuth2Error
+    from .oauth2 import OAuth2Config, OAuth2Error, OAuth2Manager
+
     _HAS_OAUTH2 = True
 except ImportError:
     _HAS_OAUTH2 = False
@@ -60,38 +59,31 @@ __all__ = [
     "AuthConfig",
     "TokenData",
     "AuthError",
-
     # Actor and roles
     "Actor",
     "ActorRole",
     "PermissionLevel",
     "SessionStatus",
-
     # Permission management
     "PermissionManager",
     "PermissionSchema",
     "Permission",
-
     # Session management
     "SessionManager",
     "Session",
     "SessionConfig",
-
     # Decorators
     "require_auth",
     "require_permission",
     "require_role",
-
     # Audit logging
     "AuditLogger",
     "AuditEvent",
     "AuditLevel",
-
     # OAuth2 (if available)
     "OAuth2Config",
     "OAuth2Manager",
     "OAuth2Error",
-    
     # Tool security integration
     "ToolSecurityContext",
     "secure_tool_execution",
@@ -107,9 +99,7 @@ PACKAGE_INFO = {
     "license": __license__,
     "python_requires": ">=3.11",
     "dependencies": ["pydantic>=2.11.7", "pyjwt>=2.10.1", "hacs-models>=0.1.0"],
-    "optional_dependencies": {
-        "oauth2": ["authlib>=1.3.0", "httpx>=0.28.0"]
-    },
+    "optional_dependencies": {"oauth2": ["authlib>=1.3.0", "httpx>=0.28.0"]},
     "homepage": "https://github.com/your-org/hacs",
     "documentation": "https://hacs.readthedocs.io/",
     "repository": "https://github.com/your-org/hacs",
@@ -117,8 +107,7 @@ PACKAGE_INFO = {
 
 
 def get_auth_components() -> dict[str, type]:
-    """
-    Get registry of all available authentication components.
+    """Get registry of all available authentication components.
 
     Returns:
         Dictionary mapping component names to component classes
@@ -142,8 +131,7 @@ def get_auth_components() -> dict[str, type]:
 
 
 def validate_auth_setup() -> bool:
-    """
-    Validate that authentication components are properly configured.
+    """Validate that authentication components are properly configured.
 
     Returns:
         True if all components pass validation checks
@@ -158,9 +146,7 @@ def validate_auth_setup() -> bool:
 
         # Test token creation and verification
         test_token = auth_manager.create_access_token(
-            user_id="test-user",
-            role="agent",
-            permissions=["read:patient"]
+            user_id="test-user", role="agent", permissions=["read:patient"]
         )
         token_data = auth_manager.verify_token(test_token)
 
@@ -168,11 +154,7 @@ def validate_auth_setup() -> bool:
             raise ValueError("Token verification failed")
 
         # Test actor creation
-        actor = Actor(
-            name="Test Actor",
-            role=ActorRole.AGENT,
-            permissions=["read:patient"]
-        )
+        actor = Actor(name="Test Actor", role=ActorRole.AGENT, permissions=["read:patient"])
 
         # Start session to enable authentication for permission checking
         actor.start_session("test-session")
@@ -187,8 +169,7 @@ def validate_auth_setup() -> bool:
 
 
 def get_security_info() -> dict[str, str]:
-    """
-    Get information about security features and compliance.
+    """Get information about security features and compliance.
 
     Returns:
         Dictionary with security feature information

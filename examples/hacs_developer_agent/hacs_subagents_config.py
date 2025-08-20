@@ -4,13 +4,14 @@ HACS Subagents Configuration
 Default subagent configurations for HACS healthcare operations.
 """
 
-from hacs_sub_agent import HACSSubAgent
 from typing import List
+
+from hacs_sub_agent import HACSSubAgent
 
 
 def get_default_hacs_subagents() -> List[HACSSubAgent]:
     """Get default HACS healthcare subagents."""
-    
+
     return [
         {
             "name": "database_admin_specialist",
@@ -39,11 +40,10 @@ ANTI-PATTERNS
 - Do not introduce FHIR-specific constraints; keep it HACS-agnostic
 - Do not handcraft schema changes that conflict with HACS migrations
 """,
-            "tools": ["run_database_migration", "check_database_status", "update_system_status"]
+            "tools": ["run_database_migration", "check_database_status", "update_system_status"],
         },
-        
         {
-            "name": "clinical_data_specialist", 
+            "name": "clinical_data_specialist",
             "description": "Specializes in creating and managing HACS resources (Patient, Observation, Condition, etc.) and ensuring data quality",
             "prompt": """You are a HACS Clinical Data Specialist. Manage HACS resources (not FHIR). Use HACS tools to create, validate, and maintain records.
 
@@ -62,9 +62,8 @@ VALIDATION
 SUCCESS
 - Records are persisted, linkable, and readable via HACS tools
 """,
-            "tools": ["create_record", "manage_admin_tasks", "update_system_status"]
+            "tools": ["create_record", "manage_admin_tasks", "update_system_status"],
         },
-        
         {
             "name": "healthcare_operations_specialist",
             "description": "Specializes in HACS system operations, workflow coordination, and process management",
@@ -80,9 +79,8 @@ Focus on:
 2) Calling status/migration/admin tools when required
 3) Logging concise, actionable summaries
 """,
-            "tools": ["manage_admin_tasks", "update_system_status", "check_database_status"]
+            "tools": ["manage_admin_tasks", "update_system_status", "check_database_status"],
         },
-
         # New: Resource Template Creation Specialist
         {
             "name": "resource_template_creator",
@@ -115,11 +113,9 @@ RULES
                 "pick_resource_fields",
                 "plan_bundle_schema",
                 "suggest_bundle_schema",
-                "register_resource_definition"
-            ]
+                "register_resource_definition",
+            ],
         },
-
-
         # New: Resource Bundle Builder Specialist
         {
             "name": "resource_bundle_builder",
@@ -139,14 +135,8 @@ SUCCESS CRITERIA
 - Bundle validates successfully and is persisted
 - Return a final concise JSON summary: {\n  \"persisted\": true|false,\n  \"bundle_id\": string|null,\n  \"entries\": number,\n  \"message\": string\n}
 """,
-            "tools": [
-                "compose_bundle",
-                "add_bundle_entries",
-                "validate_bundle",
-                "save_record"
-            ]
-        }
-        ,
+            "tools": ["compose_bundle", "add_bundle_entries", "validate_bundle", "save_record"],
+        },
         # New: Modeling Planner Specialist
         {
             "name": "modeling_planner",
@@ -177,8 +167,8 @@ Steps:
                 "make_reference",
                 "set_reference",
                 "list_relations",
-                "follow_graph"
-            ]
+                "follow_graph",
+            ],
         },
         # New: Extraction Specialist
         {
@@ -198,8 +188,8 @@ Guidelines:
                 "extract_variables",
                 "apply_mapping",
                 "apply_mapping_spec",
-                "summarize_context"
-            ]
+                "summarize_context",
+            ],
         },
         # New: Memory Context Specialist
         {
@@ -212,8 +202,8 @@ Guidelines:
                 "retrieve_memories",
                 "search_memories",
                 "summarize_state",
-                "prune_state"
-            ]
+                "prune_state",
+            ],
         },
         # New: Preferences Context Specialist
         {
@@ -225,8 +215,8 @@ Guidelines:
                 "save_preference",
                 "read_preferences",
                 "list_preferences",
-                "inject_preferences"
-            ]
+                "inject_preferences",
+            ],
         },
         # New: Evidence Researcher
         {
@@ -234,10 +224,7 @@ Guidelines:
             "description": "Finds relevant clinical evidence using semantic search and summarizes findings.",
             "prompt": """You are a HACS Evidence Researcher. Use semantic evidence search and produce concise, source-linked summaries.
 """,
-            "tools": [
-                "search_evidence",
-                "summarize_context"
-            ]
+            "tools": ["search_evidence", "summarize_context"],
         },
         # New: Event Manager
         {
@@ -250,8 +237,8 @@ Guidelines:
                 "update_event_status_tool",
                 "add_event_performer_tool",
                 "schedule_event_tool",
-                "summarize_event_tool"
-            ]
+                "summarize_event_tool",
+            ],
         },
         # New: Appointment Scheduler
         {
@@ -264,8 +251,8 @@ Guidelines:
                 "reschedule_appointment",
                 "cancel_appointment",
                 "check_appointment_conflicts",
-                "send_appointment_reminders"
-            ]
+                "send_appointment_reminders",
+            ],
         },
         # New: Care Coordinator
         {
@@ -286,7 +273,7 @@ Guidelines:
                 "track_goal_progress",
                 "update_goal_status",
                 "measure_goal_achievement",
-                "link_goal_to_careplan"
-            ]
-        }
+                "link_goal_to_careplan",
+            ],
+        },
     ]

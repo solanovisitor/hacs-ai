@@ -26,26 +26,25 @@ def discover_working_hacs_resources() -> Dict[str, Type[BaseResource]]:
     # Core models that always work
     try:
         from hacs_models import Patient, MemoryBlock, Actor
-        working_resources.update({
-            "Patient": Patient,
-            "MemoryBlock": MemoryBlock,
-            "Actor": Actor
-        })
+
+        working_resources.update(
+            {"Patient": Patient, "MemoryBlock": MemoryBlock, "Actor": Actor}
+        )
     except ImportError:
         pass
 
     # Additional models that work well (from test results)
     reliable_models = [
-        ('activity_definition', 'ActivityDefinition'),
-        ('evidence_variable', 'EvidenceVariable'),
-        ('library', 'Library'),
-        ('organization', 'Organization'),
-        ('plan_definition', 'PlanDefinition')
+        ("activity_definition", "ActivityDefinition"),
+        ("evidence_variable", "EvidenceVariable"),
+        ("library", "Library"),
+        ("organization", "Organization"),
+        ("plan_definition", "PlanDefinition"),
     ]
 
     for module_name, class_name in reliable_models:
         try:
-            module = importlib.import_module(f'hacs_core.models.{module_name}')
+            module = importlib.import_module(f"hacs_core.models.{module_name}")
             if hasattr(module, class_name):
                 resource_class = getattr(module, class_name)
                 if issubclass(resource_class, BaseResource):
@@ -64,43 +63,28 @@ def get_test_data_for_model(resource_class: Type[BaseResource]) -> Dict[str, Any
         "Patient": {
             "full_name": "Test Patient",
             "birth_date": date(1990, 1, 1),
-            "gender": "male"
+            "gender": "male",
         },
         "MemoryBlock": {
             "content": "Test memory content",
             "memory_type": "episodic",
-            "importance_score": 0.8
+            "importance_score": 0.8,
         },
-        "Actor": {
-            "name": "Dr. Test",
-            "role": "physician"
-        },
-        "ActivityDefinition": {
-            "name": "Test Activity",
-            "title": "Test Activity Title"
-        },
+        "Actor": {"name": "Dr. Test", "role": "physician"},
+        "ActivityDefinition": {"name": "Test Activity", "title": "Test Activity Title"},
         "EvidenceVariable": {
             "name": "Test Evidence Variable",
-            "title": "Test Variable Title"
+            "title": "Test Variable Title",
         },
-        "Library": {
-            "name": "Test Library",
-            "title": "Test Library Title"
-        },
-        "Organization": {
-            "name": "Test Hospital",
-            "active": True
-        },
-        "PlanDefinition": {
-            "name": "Test Plan",
-            "title": "Test Plan Title"
-        }
+        "Library": {"name": "Test Library", "title": "Test Library Title"},
+        "Organization": {"name": "Test Hospital", "active": True},
+        "PlanDefinition": {"name": "Test Plan", "title": "Test Plan Title"},
     }
 
-    return test_data.get(resource_name, {
-        "name": f"Test {resource_name}",
-        "title": f"Test {resource_name} Title"
-    })
+    return test_data.get(
+        resource_name,
+        {"name": f"Test {resource_name}", "title": f"Test {resource_name} Title"},
+    )
 
 
 @pytest.mark.unit
@@ -120,7 +104,9 @@ class TestHACSResourceDiscovery:
         resources = discover_working_hacs_resources()
 
         # Should find at least the 3 core resources
-        assert len(resources) >= 3, f"Expected at least 3 resources, found {len(resources)}"
+        assert len(resources) >= 3, (
+            f"Expected at least 3 resources, found {len(resources)}"
+        )
 
         # Core resources should be present
         expected_core = ["Patient", "MemoryBlock", "Actor"]
@@ -132,7 +118,9 @@ class TestHACSResourceDiscovery:
         resources = discover_working_hacs_resources()
 
         for name, resource_class in resources.items():
-            assert issubclass(resource_class, BaseResource), f"{name} should inherit from BaseResource"
+            assert issubclass(resource_class, BaseResource), (
+                f"{name} should inherit from BaseResource"
+            )
 
 
 @pytest.mark.unit
@@ -142,9 +130,7 @@ class TestCoreHACSResources:
     def test_patient_creation(self):
         """Test Patient model creation."""
         patient = Patient(
-            full_name="CI Test Patient",
-            birth_date=date(1985, 6, 15),
-            gender="male"
+            full_name="CI Test Patient", birth_date=date(1985, 6, 15), gender="male"
         )
 
         assert patient.resource_type == "Patient"
@@ -155,9 +141,7 @@ class TestCoreHACSResources:
     def test_memory_creation(self):
         """Test MemoryBlock creation."""
         memory = MemoryBlock(
-            content="Test memory",
-            memory_type="episodic",
-            importance_score=0.8
+            content="Test memory", memory_type="episodic", importance_score=0.8
         )
 
         assert memory.resource_type == "MemoryBlock"
@@ -166,10 +150,7 @@ class TestCoreHACSResources:
 
     def test_actor_creation(self):
         """Test Actor creation."""
-        actor = Actor(
-            name="Dr. Test",
-            role="physician"
-        )
+        actor = Actor(name="Dr. Test", role="physician")
 
         assert actor.resource_type == "Actor"
         assert actor.name == "Dr. Test"
@@ -179,9 +160,7 @@ class TestCoreHACSResources:
         """Test patient gender validation works."""
         for gender in ["male", "female", "other", "unknown"]:
             patient = Patient(
-                full_name="Test Patient",
-                birth_date=date(1990, 1, 1),
-                gender=gender
+                full_name="Test Patient", birth_date=date(1990, 1, 1), gender=gender
             )
             assert patient.gender == gender
 
@@ -189,9 +168,7 @@ class TestCoreHACSResources:
         """Test memory type validation works."""
         for memory_type in ["episodic", "procedural", "executive"]:
             memory = MemoryBlock(
-                content="Test memory",
-                memory_type=memory_type,
-                importance_score=0.5
+                content="Test memory", memory_type=memory_type, importance_score=0.5
             )
             assert memory.memory_type == memory_type
 
@@ -207,8 +184,10 @@ class TestCoreHACSResources:
 class TestWorkingHACSResources:
     """Test additional HACS resources that are known to work."""
 
-    @pytest.mark.parametrize("resource_name,resource_class",
-                             [(name, cls) for name, cls in discover_working_hacs_resources().items()])
+    @pytest.mark.parametrize(
+        "resource_name,resource_class",
+        [(name, cls) for name, cls in discover_working_hacs_resources().items()],
+    )
     def test_working_resource_creation(self, resource_name, resource_class):
         """Test creation of working HACS resources."""
         test_data = get_test_data_for_model(resource_class)
@@ -233,10 +212,10 @@ class TestWorkingHACSResources:
             instance = resource_class(**test_data)
 
             # Test BaseResource methods
-            assert hasattr(instance, 'update_timestamp')
-            assert hasattr(instance, 'is_newer_than')
-            assert hasattr(instance, 'model_dump')
-            assert hasattr(instance, 'model_validate')
+            assert hasattr(instance, "update_timestamp")
+            assert hasattr(instance, "is_newer_than")
+            assert hasattr(instance, "model_dump")
+            assert hasattr(instance, "model_validate")
 
             # Test timestamp functionality
             original_time = instance.updated_at
@@ -251,9 +230,7 @@ class TestHACSResourceSerialization:
     def test_patient_serialization(self):
         """Test Patient serialization."""
         patient = Patient(
-            full_name="Serialize Test",
-            birth_date=date(1990, 1, 1),
-            gender="female"
+            full_name="Serialize Test", birth_date=date(1990, 1, 1), gender="female"
         )
 
         data = patient.model_dump()
@@ -265,9 +242,7 @@ class TestHACSResourceSerialization:
         """Test round-trip serialization for core resources."""
         # Test Patient
         original_patient = Patient(
-            full_name="Round Trip Test",
-            birth_date=date(1985, 5, 15),
-            gender="male"
+            full_name="Round Trip Test", birth_date=date(1985, 5, 15), gender="male"
         )
 
         data = original_patient.model_dump()
@@ -281,10 +256,7 @@ class TestHACSResourceSerialization:
         """Test JSON compatibility."""
         import json
 
-        patient = Patient(
-            full_name="JSON Test",
-            birth_date=date(1990, 1, 1)
-        )
+        patient = Patient(full_name="JSON Test", birth_date=date(1990, 1, 1))
 
         # Should be able to convert to JSON string
         data = patient.model_dump()
@@ -293,8 +265,10 @@ class TestHACSResourceSerialization:
         assert "JSON Test" in json_str
         assert "patient-" in json_str
 
-    @pytest.mark.parametrize("resource_name,resource_class",
-                             [(name, cls) for name, cls in discover_working_hacs_resources().items()][:5])  # Test first 5 for speed
+    @pytest.mark.parametrize(
+        "resource_name,resource_class",
+        [(name, cls) for name, cls in discover_working_hacs_resources().items()][:5],
+    )  # Test first 5 for speed
     def test_working_resources_serialization(self, resource_name, resource_class):
         """Test serialization of working resources."""
         test_data = get_test_data_for_model(resource_class)
@@ -318,15 +292,15 @@ class TestEnvironmentCompatibility:
 
     def test_environment_variables(self):
         """Test environment variable handling."""
-        with patch.dict(os.environ, {
-            'HACS_ORGANIZATION': 'CI Test Org',
-            'DATABASE_URL': 'sqlite:///test.db'
-        }):
-            org = os.getenv('HACS_ORGANIZATION')
-            db_url = os.getenv('DATABASE_URL')
+        with patch.dict(
+            os.environ,
+            {"HACS_ORGANIZATION": "CI Test Org", "DATABASE_URL": "sqlite:///test.db"},
+        ):
+            org = os.getenv("HACS_ORGANIZATION")
+            db_url = os.getenv("DATABASE_URL")
 
-            assert org == 'CI Test Org'
-            assert 'sqlite://' in db_url
+            assert org == "CI Test Org"
+            assert "sqlite://" in db_url
 
     def test_imports_work_in_any_environment(self):
         """Test that core imports work reliably."""
@@ -338,10 +312,13 @@ class TestEnvironmentCompatibility:
 
     def test_resources_work_with_environment_changes(self):
         """Test that resources work with environment changes."""
-        with patch.dict(os.environ, {
-            'HACS_ORGANIZATION': 'Test Healthcare',
-            'DATABASE_URL': 'sqlite:///test.db'
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "HACS_ORGANIZATION": "Test Healthcare",
+                "DATABASE_URL": "sqlite:///test.db",
+            },
+        ):
             # Core resources should still work
             patient = Patient(full_name="Env Test")
             memory = MemoryBlock(content="Env Test", memory_type="episodic")
@@ -363,6 +340,7 @@ class TestValidationAndErrors:
 
         # Should fail without required fields
         from pydantic import ValidationError
+
         with pytest.raises(ValidationError):
             Patient()
 
@@ -374,6 +352,7 @@ class TestValidationAndErrors:
 
         # Invalid gender should fail
         from pydantic import ValidationError
+
         with pytest.raises(ValidationError):
             Patient(full_name="Test", birth_date=date(1990, 1, 1), gender="invalid")
 
@@ -397,12 +376,15 @@ class TestPerformance:
         start = time.time()
 
         # Create multiple instances
-        patients = [Patient(full_name=f"Patient {i}", birth_date=date(1980, 1, 1))
-                   for i in range(30)]
-        memories = [MemoryBlock(content=f"Memory {i}", memory_type="episodic")
-                   for i in range(30)]
-        actors = [Actor(name=f"Dr. {i}", role="physician")
-                 for i in range(30)]
+        patients = [
+            Patient(full_name=f"Patient {i}", birth_date=date(1980, 1, 1))
+            for i in range(30)
+        ]
+        memories = [
+            MemoryBlock(content=f"Memory {i}", memory_type="episodic")
+            for i in range(30)
+        ]
+        actors = [Actor(name=f"Dr. {i}", role="physician") for i in range(30)]
 
         end = time.time()
         duration = end - start
@@ -427,7 +409,7 @@ class TestPerformance:
             birth_date=date(1985, 6, 15),
             gender="female",
             phone="555-0123",
-            email="test@example.com"
+            email="test@example.com",
         )
 
         start = time.time()
@@ -444,4 +426,4 @@ class TestPerformance:
 
 
 if __name__ == "__main__":
-    pytest.main([__file__, "-v"]) 
+    pytest.main([__file__, "-v"])

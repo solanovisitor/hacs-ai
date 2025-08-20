@@ -82,16 +82,16 @@ def inject_preferences(
     if isinstance(message, MessageDefinition):
         msg = message
         if effective_prefs.get("language"):
-            msg.agent_context = (msg.agent_context or {})
+            msg.agent_context = msg.agent_context or {}
             msg.agent_context["preferred_language"] = effective_prefs["language"]
         if effective_prefs.get("response_format"):
-            msg.additional_kwargs = (msg.additional_kwargs or {})
+            msg.additional_kwargs = msg.additional_kwargs or {}
             msg.additional_kwargs["response_format"] = effective_prefs["response_format"]
         if effective_prefs.get("tone"):
-            msg.additional_kwargs = (msg.additional_kwargs or {})
+            msg.additional_kwargs = msg.additional_kwargs or {}
             msg.additional_kwargs["tone"] = effective_prefs["tone"]
         if effective_prefs.get("max_tokens"):
-            msg.response_metadata = (msg.response_metadata or {})
+            msg.response_metadata = msg.response_metadata or {}
             msg.response_metadata["max_tokens_override"] = effective_prefs["max_tokens"]
         return msg
     else:
@@ -141,6 +141,7 @@ async def merge_preferences(
     if db_adapter is not None:
         try:
             from hacs_models import Actor  # lazy import to avoid cycles
+
             # Filters rely on JSON fields in persistence
             db_found = await db_adapter.search(
                 ActorPreference,
@@ -173,5 +174,3 @@ async def merge_preferences(
         session_id=session_id,
     )
     return effective, merged
-
-

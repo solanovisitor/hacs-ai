@@ -26,7 +26,7 @@ from .core_utils import (
     log_llm_request,
     standardize_messages,
     RetryMixin,
-    VersionManager
+    VersionManager,
 )
 from .agent_types import (
     HealthcareDomain,
@@ -36,8 +36,9 @@ from .agent_types import (
     AgentChainStrategy,
     AgentRetrievalStrategy,
     AgentScratchpadEntry,
-    AgentTask
+    AgentTask,
 )
+
 
 # Graceful import handling for optional dependencies
 def _safe_import(module_name: str, class_name: str = None):
@@ -53,9 +54,10 @@ def _safe_import(module_name: str, class_name: str = None):
             warnings.warn(
                 f"Package conflict in {module_name}: {e}. "
                 "Please uninstall 'pinecone-client' and install 'pinecone' instead.",
-                UserWarning
+                UserWarning,
             )
         return None
+
 
 # MCP Server - lazy loading to avoid dependency conflicts
 _has_mcp = None  # Lazy check
@@ -68,28 +70,36 @@ create_openai_embedding = _safe_import("hacs_utils.integrations.openai", "create
 
 # Anthropic Integration
 AnthropicClient = _safe_import("hacs_utils.integrations.anthropic", "AnthropicClient")
-create_anthropic_client = _safe_import("hacs_utils.integrations.anthropic", "create_anthropic_client")
-anthropic_structured_extract = _safe_import("hacs_utils.integrations.anthropic", "anthropic_structured_extract")
+create_anthropic_client = _safe_import(
+    "hacs_utils.integrations.anthropic", "create_anthropic_client"
+)
+anthropic_structured_extract = _safe_import(
+    "hacs_utils.integrations.anthropic", "anthropic_structured_extract"
+)
 
-# Provider selection helpers
-from dotenv import load_dotenv
-import os as _os
+# Provider selection helpers (explicit only; no env-based selection)
+def create_llm(model: str, provider: str | None = None):
+    """Create a LangChain chat model from a model string and optional provider.
 
-
-def create_llm_provider(preferred: str | None = None):
-    """Factory to create an LLM provider by name.
-
-    Names: "langchain", "openai", "anthropic". Defaults to LangChain-compatible
-    provider selection in call sites; this is a convenience for explicit choice.
+    - If provider is "openai"/"anthropic", build the respective LC chat if available.
+    - If provider is None, infer from model name prefix (gpt-*, claude-*).
+    - Returns a LangChain chat model or raises ImportError if SDK missing.
     """
-    load_dotenv()
-    name = (preferred or _os.getenv("HACS_LLM_PROVIDER", "langchain")).lower()
-    if name == "openai" and create_openai_client:
-        return create_openai_client()
-    if name == "anthropic" and create_anthropic_client:
-        return create_anthropic_client()
-    # Default: caller should pass a LangChain Chat model directly
-    return None
+    prov = (provider or ("openai" if model.startswith("gpt-") else ("anthropic" if model.startswith("claude-") else None)))
+    if prov == "openai":
+        try:
+            from langchain_openai import ChatOpenAI  # type: ignore
+        except Exception as e:
+            raise ImportError(f"langchain-openai not available: {e}")
+        return ChatOpenAI(model=model)
+    if prov == "anthropic":
+        try:
+            from langchain_anthropic import ChatAnthropic  # type: ignore
+        except Exception as e:
+            raise ImportError(f"langchain-anthropic not available: {e}")
+        return ChatAnthropic(model=model)
+    raise ValueError("Unsupported provider; specify provider or use a supported model prefix (gpt-/claude-)")
+
 
 # Pinecone Integration
 PineconeVectorStore = _safe_import("hacs_utils.integrations.pinecone", "PineconeVectorStore")
@@ -105,7 +115,9 @@ create_langchain_adapter = None
 
 # LangGraph Integration
 LangGraphWorkflow = _safe_import("hacs_utils.integrations.langgraph", "LangGraphWorkflow")
-create_langgraph_workflow = _safe_import("hacs_utils.integrations.langgraph", "create_langgraph_workflow")
+create_langgraph_workflow = _safe_import(
+    "hacs_utils.integrations.langgraph", "create_langgraph_workflow"
+)
 
 # CrewAI Integration (maintained for backward compatibility) - lazy loading
 _has_crewai = None  # Lazy check
@@ -113,6 +125,7 @@ _has_crewai = None  # Lazy check
 # Structured Output (always available)
 try:
     from .structured import extract
+
     _has_structured = True
 except ImportError:
     extract = None
@@ -140,7 +153,7 @@ from .vector_ops import (
 )
 from .resource_specific import (
     calculate_patient_age,
-    add_patient_identifier, 
+    add_patient_identifier,
     get_patient_identifier_by_type,
     add_patient_care_provider,
     deactivate_patient,
@@ -209,22 +222,26 @@ def list_available_integrations() -> list[str]:
     Returns:
         Dict mapping integration name to availability status
     """
+
     # Lazy check for MCP availability
     def _check_mcp():
         global _has_mcp
         if _has_mcp is None:
             try:
                 from .mcp import HacsMCPServer  # noqa: F401
+
                 _has_mcp = True
             except ImportError:
                 _has_mcp = False
         return _has_mcp
+
     # Lazy check for CrewAI availability
     def _check_crewai():
         global _has_crewai
         if _has_crewai is None:
             try:
                 from .integrations.crewai.adapter import CrewAIAdapter  # noqa: F401
+
                 _has_crewai = True
             except ImportError:
                 _has_crewai = False
@@ -261,49 +278,51 @@ def get_integration_info(integration_name: str = None) -> dict[str, str]:
         "mcp": {
             "description": "Model Context Protocol server for secure agent access",
             "install": "pip install hacs-utils[mcp]",
-            "available": "mcp" in avail_set
+            "available": "mcp" in avail_set,
         },
         "openai": {
             "description": "OpenAI GPT models, embeddings, and structured generation",
             "install": "pip install hacs-utils[openai]",
-            "available": "openai" in avail_set
+            "available": "openai" in avail_set,
         },
         "anthropic": {
             "description": "Anthropic Claude models and chat completion",
             "install": "pip install hacs-utils[anthropic]",
-            "available": "anthropic" in avail_set
+            "available": "anthropic" in avail_set,
         },
         "pinecone": {
             "description": "Pinecone vector database for semantic search",
             "install": "pip install hacs-utils[pinecone]",
-            "available": "pinecone" in avail_set
+            "available": "pinecone" in avail_set,
         },
         "qdrant": {
             "description": "Qdrant vector database for semantic search",
             "install": "pip install hacs-utils[qdrant]",
-            "available": "qdrant" in avail_set
+            "available": "qdrant" in avail_set,
         },
         "langchain": {
             "description": "(Deprecated) LangChain shim removed",
             "install": "",
-            "available": False
+            "available": False,
         },
         "langgraph": {
             "description": "LangGraph stateful multi-agent workflows",
             "install": "pip install hacs-utils[langgraph]",
-            "available": "langgraph" in avail_set
+            "available": "langgraph" in avail_set,
         },
         "crewai": {
             "description": "CrewAI multi-agent orchestration (backward compatibility)",
             "install": "pip install hacs-utils[crewai]",
-            "available": "crewai" in avail_set
-        }
+            "available": "crewai" in avail_set,
+        },
     }
 
     if integration_name is None:
         return info_map
     else:
-        return info_map.get(integration_name, {"error": f"Integration '{integration_name}' not found"})
+        return info_map.get(
+            integration_name, {"error": f"Integration '{integration_name}' not found"}
+        )
 
 
 __version__ = "0.3.0"
@@ -320,7 +339,6 @@ __all__ = [
     "standardize_messages",
     "RetryMixin",
     "VersionManager",
-
     # Agent types
     "HealthcareDomain",
     "AgentRole",
@@ -389,7 +407,7 @@ __all__ = [
     "utils_optimize_vector_collection",
     # Resource-specific utilities
     "calculate_patient_age",
-    "add_patient_identifier", 
+    "add_patient_identifier",
     "get_patient_identifier_by_type",
     "add_patient_care_provider",
     "deactivate_patient",
@@ -465,6 +483,7 @@ def __getattr__(name: str):
                 MCPNotification,
                 MCPError,
             )
+
             globals()["_has_mcp"] = True
 
             # Export all MCP components to globals
@@ -485,8 +504,7 @@ def __getattr__(name: str):
         except ImportError as e:
             globals()["_has_mcp"] = False
             raise AttributeError(
-                f"'{name}' requires MCP dependencies that have conflicts. "
-                f"Import error: {e}"
+                f"'{name}' requires MCP dependencies that have conflicts. Import error: {e}"
             ) from e
 
     if name in crewai_exports:
@@ -499,6 +517,7 @@ def __getattr__(name: str):
                 create_agent_binding as _create_agent_binding,
                 task_to_crew_format as _task_to_crew_format,
             )
+
             globals()["_has_crewai"] = True
 
             # Export all CrewAI components to globals
@@ -518,8 +537,7 @@ def __getattr__(name: str):
         except ImportError as e:
             globals()["_has_crewai"] = False
             raise AttributeError(
-                f"'{name}' requires CrewAI dependencies that have conflicts. "
-                f"Import error: {e}"
+                f"'{name}' requires CrewAI dependencies that have conflicts. Import error: {e}"
             ) from e
 
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

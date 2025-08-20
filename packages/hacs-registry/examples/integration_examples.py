@@ -12,17 +12,15 @@ Version: 0.3.0
 
 import asyncio
 import logging
-from typing import Dict, List, Any, Optional
 
 # Import the integration framework
 from hacs_registry import (
     get_integration_manager,
     FrameworkType,
     ExecutionContext,
-    ToolExecutionResult,
     get_langchain_tools,
     get_mcp_tools,
-    execute_hacs_tool
+    execute_hacs_tool,
 )
 
 logger = logging.getLogger(__name__)
@@ -44,7 +42,7 @@ class HACSIntegrationExamples:
             tool_name="discover_hacs_resources",
             params={"category_filter": "clinical"},
             actor_name="example_clinician",
-            metadata={"example": "basic_execution"}
+            metadata={"example": "basic_execution"},
         )
 
         if result.success:
@@ -88,19 +86,16 @@ class HACSIntegrationExamples:
         tool_executions = [
             {
                 "name": "discover_hacs_resources",
-                "params": {"category_filter": "clinical"}
+                "params": {"category_filter": "clinical"},
             },
             {
                 "name": "get_hacs_resource_schema",
-                "params": {"resource_type": "Patient"}
+                "params": {"resource_type": "Patient"},
             },
             {
                 "name": "create_clinical_template",
-                "params": {
-                    "template_type": "assessment",
-                    "focus_area": "cardiology"
-                }
-            }
+                "params": {"template_type": "assessment", "focus_area": "cardiology"},
+            },
         ]
 
         # Execute tools in batch
@@ -109,20 +104,22 @@ class HACSIntegrationExamples:
             result = await execute_hacs_tool(
                 tool_name=execution["name"],
                 params=execution["params"],
-                actor_name="batch_executor"
+                actor_name="batch_executor",
             )
-            results.append({
-                "tool": execution["name"],
-                "success": result.success,
-                "execution_time": result.execution_time_ms,
-                "error": result.error if not result.success else None
-            })
+            results.append(
+                {
+                    "tool": execution["name"],
+                    "success": result.success,
+                    "execution_time": result.execution_time_ms,
+                    "error": result.error if not result.success else None,
+                }
+            )
 
         # Report results
         successful = sum(1 for r in results if r["success"])
         total_time = sum(r["execution_time"] for r in results)
 
-        print(f"📊 Batch execution completed:")
+        print("📊 Batch execution completed:")
         print(f"   ✅ Successful: {successful}/{len(results)}")
         print(f"   ⏱️ Total time: {total_time:.1f}ms")
 
@@ -158,8 +155,8 @@ class HACSIntegrationExamples:
             metadata={
                 "department": "cardiology",
                 "priority": "high",
-                "use_case": "clinical_research"
-            }
+                "use_case": "clinical_research",
+            },
         )
 
         # Execute tool with rich context
@@ -168,13 +165,13 @@ class HACSIntegrationExamples:
             params={
                 "resource_type": "Patient",
                 "search_criteria": {"department": "cardiology"},
-                "limit": 10
+                "limit": 10,
             },
-            context=context
+            context=context,
         )
 
         if result.success:
-            print(f"✅ Context-aware execution successful")
+            print("✅ Context-aware execution successful")
             print(f"📋 Context metadata: {result.metadata.get('context', {})}")
             print(f"⏱️ Execution time: {result.execution_time_ms:.1f}ms")
         else:
@@ -199,12 +196,12 @@ class HACSIntegrationExamples:
 
         # Show tools by category
         print("\n📋 Tools by Category:")
-        for category, count in stats['registry_stats']['categories'].items():
+        for category, count in stats["registry_stats"]["categories"].items():
             print(f"   {category.replace('_', ' ').title()}: {count} tools")
 
         # Show capabilities distribution
-        capabilities = stats['registry_stats']['capabilities']
-        print(f"\n🎯 Tool Capabilities:")
+        capabilities = stats["registry_stats"]["capabilities"]
+        print("\n🎯 Tool Capabilities:")
         print(f"   👤 Require actor: {capabilities['requires_actor']}")
         print(f"   🗄️ Require database: {capabilities['requires_db']}")
         print(f"   🔍 Require vector store: {capabilities['requires_vector_store']}")
@@ -219,12 +216,10 @@ class HACSIntegrationExamples:
 
         # Search by query
         search_results = self.integration_manager.registry.search_tools(
-            query="clinical",
-            requires_actor=True,
-            framework="langchain"
+            query="clinical", requires_actor=True, framework="langchain"
         )
 
-        print(f"🔍 Search results for 'clinical' tools:")
+        print("🔍 Search results for 'clinical' tools:")
         print(f"   Found {len(search_results)} matching tools")
 
         for tool in search_results[:5]:  # Show first 5
@@ -232,7 +227,9 @@ class HACSIntegrationExamples:
             print(f"     {tool.description[:80]}...")
 
         # Filter by specific criteria
-        memory_tools = self.integration_manager.registry.get_tools_by_category("memory_operations")
+        memory_tools = self.integration_manager.registry.get_tools_by_category(
+            "memory_operations"
+        )
         async_memory_tools = [t for t in memory_tools if t.is_async]
 
         print(f"\n🧠 Memory operations tools: {len(memory_tools)} total")
@@ -251,16 +248,14 @@ class HACSIntegrationExamples:
 
         # Example with invalid tool name
         result = await execute_hacs_tool(
-            tool_name="nonexistent_tool",
-            params={"test": "data"}
+            tool_name="nonexistent_tool", params={"test": "data"}
         )
 
         print(f"❌ Invalid tool test: {result.error}")
 
         # Example with invalid parameters
         result = await execute_hacs_tool(
-            tool_name="discover_hacs_resources",
-            params={"invalid_param": "value"}
+            tool_name="discover_hacs_resources", params={"invalid_param": "value"}
         )
 
         if result.success:
@@ -274,7 +269,7 @@ class HACSIntegrationExamples:
             result = await execute_hacs_tool(
                 tool_name="discover_hacs_resources",
                 params={"category_filter": "clinical"},
-                metadata={"timeout": 30}
+                metadata={"timeout": 30},
             )
             print(f"✅ Timeout handling test completed: {result.success}")
         except Exception as e:
@@ -345,7 +340,7 @@ if __name__ == "__main__":
     # Configure logging
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
     # Run examples

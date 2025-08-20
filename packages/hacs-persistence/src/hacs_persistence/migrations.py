@@ -8,12 +8,12 @@ for HACS using psycopg (v3) for non-blocking operations.
 import asyncio
 import logging
 import os
+import socket as _socket
 import sys
+import urllib.parse as _urlparse
 from typing import Any
 
 import psycopg
-import urllib.parse as _urlparse
-import socket as _socket
 from psycopg.rows import dict_row
 
 logging.basicConfig(level=logging.INFO)
@@ -40,9 +40,11 @@ class HACSDatabaseMigration:
             port = parsed.port or 5432
             user = parsed.username
             password = parsed.password
-            dbname = (parsed.path.lstrip("/") or "postgres")
+            dbname = parsed.path.lstrip("/") or "postgres"
             query = dict(_urlparse.parse_qsl(parsed.query))
-            sslmode = query.get("sslmode") or ("require" if (host and ("supabase.co" in host or "supabase.net" in host)) else None)
+            sslmode = query.get("sslmode") or (
+                "require" if (host and ("supabase.co" in host or "supabase.net" in host)) else None
+            )
 
             # DNS preflight to surface clearer errors
             try:
@@ -128,7 +130,7 @@ class HACSDatabaseMigration:
             "hacs_registry",
             "hacs_agents",
             "hacs_admin",
-            "hacs_audit"
+            "hacs_audit",
         ]
 
         logger.info("Creating database schemas...")
@@ -1354,7 +1356,9 @@ async def get_migration_status(database_url: str = None) -> dict[str, Any]:
             return {"error": "DATABASE_URL not provided"}
 
     try:
-        async with await psycopg.AsyncConnection.connect(database_url, row_factory=dict_row) as conn:
+        async with await psycopg.AsyncConnection.connect(
+            database_url, row_factory=dict_row
+        ) as conn:
             async with conn.cursor() as cursor:
                 # Count tables across all HACS schemas
                 await cursor.execute("""
@@ -1373,7 +1377,9 @@ async def get_migration_status(database_url: str = None) -> dict[str, Any]:
                 total_tables = sum(row["table_count"] for row in schema_tables)
 
                 # Check if pgvector extension exists
-                await cursor.execute("SELECT EXISTS(SELECT 1 FROM pg_extension WHERE extname = 'vector');")
+                await cursor.execute(
+                    "SELECT EXISTS(SELECT 1 FROM pg_extension WHERE extname = 'vector');"
+                )
                 pgvector_enabled = (await cursor.fetchone())["exists"]
 
                 return {
@@ -1381,8 +1387,10 @@ async def get_migration_status(database_url: str = None) -> dict[str, Any]:
                     "total_tables": total_tables,
                     "expected_tables": expected_tables,
                     "pgvector_enabled": pgvector_enabled,
-                    "schema_breakdown": {row["schemaname"]: row["table_count"] for row in schema_tables},
-                    "schemas_created": len(schema_tables)
+                    "schema_breakdown": {
+                        row["schemaname"]: row["table_count"] for row in schema_tables
+                    },
+                    "schemas_created": len(schema_tables),
                 }
     except Exception as e:
         return {"error": str(e)}
@@ -1391,6 +1399,7 @@ async def get_migration_status(database_url: str = None) -> dict[str, Any]:
 if __name__ == "__main__":
     # Command line execution
     import sys
+
     database_url = sys.argv[1] if len(sys.argv) > 1 else None
     success = asyncio.run(run_migration(database_url))
     sys.exit(0 if success else 1)

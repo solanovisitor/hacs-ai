@@ -1,5 +1,4 @@
-"""
-Monitoring and Observability for HACS Infrastructure
+"""Monitoring and Observability for HACS Infrastructure
 
 This module providesmonitoring capabilities including
 health checks, metrics collection, and performance monitoring.
@@ -8,22 +7,25 @@ health checks, metrics collection, and performance monitoring.
 import asyncio
 import threading
 
+
 # Optional psutil dependency
 try:
     import psutil
+
     HAS_PSUTIL = True
 except ImportError:
     HAS_PSUTIL = False
 import time
 from collections import defaultdict, deque
-from datetime import datetime, timezone
-from typing import Any, Callable, Dict, List, Optional, Set
+from collections.abc import Callable
 from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
+from .events import EventBus
 from .protocols import HealthCheckable
-from .events import EventBus, Event, EventPriority
 
 
 @dataclass
@@ -32,7 +34,7 @@ class MetricPoint:
 
     timestamp: float
     value: float
-    tags: Dict[str, str] = field(default_factory=dict)
+    tags: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -42,8 +44,8 @@ class HealthCheckResult:
     service_name: str
     is_healthy: bool
     response_time: float
-    error: Optional[str] = None
-    details: Dict[str, Any] = field(default_factory=dict)
+    error: str | None = None
+    details: dict[str, Any] = field(default_factory=dict)
     timestamp: float = field(default_factory=time.time)
 
 
@@ -72,30 +74,28 @@ class ServiceMetrics(BaseModel):
     # Health metrics
     health_status: str = Field("unknown", description="Health status")
     uptime: float = Field(0.0, description="Uptime in seconds")
-    last_health_check: Optional[datetime] = Field(None, description="Last health check time")
+    last_health_check: datetime | None = Field(None, description="Last health check time")
 
 
 class MetricsCollector:
-    """
-    Collects and aggregates metrics for services and system resources.
+    """Collects and aggregates metrics for services and system resources.
     """
 
     def __init__(self, retention_period: int = 3600):
-        """
-        Initialize metrics collector.
+        """Initialize metrics collector.
 
         Args:
             retention_period: How long to keep metrics in seconds
         """
         self._retention_period = retention_period
-        self._metrics: Dict[str, deque] = defaultdict(lambda: deque(maxlen=10000))
-        self._counters: Dict[str, int] = defaultdict(int)
-        self._gauges: Dict[str, float] = defaultdict(float)
-        self._histograms: Dict[str, List[float]] = defaultdict(list)
+        self._metrics: dict[str, deque] = defaultdict(lambda: deque(maxlen=10000))
+        self._counters: dict[str, int] = defaultdict(int)
+        self._gauges: dict[str, float] = defaultdict(float)
+        self._histograms: dict[str, list[float]] = defaultdict(list)
         self._lock = threading.RLock()
 
         # Background cleanup task
-        self._cleanup_task: Optional[asyncio.Task] = None
+        self._cleanup_task: asyncio.Task | None = None
         self._running = False
 
     async def start(self) -> None:
@@ -119,21 +119,25 @@ class MetricsCollector:
             except asyncio.CancelledError:
                 pass
 
-    def increment_counter(self, name: str, value: int = 1, tags: Optional[Dict[str, str]] = None) -> None:
+    def increment_counter(
+        self, name: str, value: int = 1, tags: dict[str, str] | None = None
+    ) -> None:
         """Increment a counter metric."""
         key = self._build_metric_key(name, tags)
         with self._lock:
             self._counters[key] += value
             self._record_metric_point(name, self._counters[key], tags)
 
-    def set_gauge(self, name: str, value: float, tags: Optional[Dict[str, str]] = None) -> None:
+    def set_gauge(self, name: str, value: float, tags: dict[str, str] | None = None) -> None:
         """Set a gauge metric value."""
         key = self._build_metric_key(name, tags)
         with self._lock:
             self._gauges[key] = value
             self._record_metric_point(name, value, tags)
 
-    def record_histogram(self, name: str, value: float, tags: Optional[Dict[str, str]] = None) -> None:
+    def record_histogram(
+        self, name: str, value: float, tags: dict[str, str] | None = None
+    ) -> None:
         """Record a value in a histogram."""
         key = self._build_metric_key(name, tags)
         with self._lock:
@@ -143,24 +147,28 @@ class MetricsCollector:
                 self._histograms[key] = self._histograms[key][-1000:]
             self._record_metric_point(name, value, tags)
 
-    def record_timing(self, name: str, duration_ms: float, tags: Optional[Dict[str, str]] = None) -> None:
+    def record_timing(
+        self, name: str, duration_ms: float, tags: dict[str, str] | None = None
+    ) -> None:
         """Record timing information."""
         self.record_histogram(f"{name}.duration", duration_ms, tags)
         self.increment_counter(f"{name}.count", 1, tags)
 
-    def get_counter(self, name: str, tags: Optional[Dict[str, str]] = None) -> int:
+    def get_counter(self, name: str, tags: dict[str, str] | None = None) -> int:
         """Get counter value."""
         key = self._build_metric_key(name, tags)
         with self._lock:
             return self._counters.get(key, 0)
 
-    def get_gauge(self, name: str, tags: Optional[Dict[str, str]] = None) -> float:
+    def get_gauge(self, name: str, tags: dict[str, str] | None = None) -> float:
         """Get gauge value."""
         key = self._build_metric_key(name, tags)
         with self._lock:
             return self._gauges.get(key, 0.0)
 
-    def get_histogram_stats(self, name: str, tags: Optional[Dict[str, str]] = None) -> Dict[str, float]:
+    def get_histogram_stats(
+        self, name: str, tags: dict[str, str] | None = None
+    ) -> dict[str, float]:
         """Get histogram statistics."""
         key = self._build_metric_key(name, tags)
         with self._lock:
@@ -184,10 +192,10 @@ class MetricsCollector:
     def get_metric_history(
         self,
         name: str,
-        tags: Optional[Dict[str, str]] = None,
-        start_time: Optional[float] = None,
-        end_time: Optional[float] = None
-    ) -> List[MetricPoint]:
+        tags: dict[str, str] | None = None,
+        start_time: float | None = None,
+        end_time: float | None = None,
+    ) -> list[MetricPoint]:
         """Get metric history within time range."""
         with self._lock:
             points = list(self._metrics[name])
@@ -204,17 +212,19 @@ class MetricsCollector:
 
         return points
 
-    def get_all_metrics(self) -> Dict[str, Any]:
+    def get_all_metrics(self) -> dict[str, Any]:
         """Get all current metric values."""
         with self._lock:
             return {
                 "counters": dict(self._counters),
                 "gauges": dict(self._gauges),
-                "histograms": {k: self.get_histogram_stats(k.split("|")[0], self._parse_tags(k))
-                              for k in self._histograms.keys()}
+                "histograms": {
+                    k: self.get_histogram_stats(k.split("|")[0], self._parse_tags(k))
+                    for k in self._histograms.keys()
+                },
             }
 
-    def _build_metric_key(self, name: str, tags: Optional[Dict[str, str]]) -> str:
+    def _build_metric_key(self, name: str, tags: dict[str, str] | None) -> str:
         """Build metric key with tags."""
         if not tags:
             return name
@@ -222,7 +232,7 @@ class MetricsCollector:
         tag_str = ",".join(f"{k}={v}" for k, v in sorted(tags.items()))
         return f"{name}|{tag_str}"
 
-    def _parse_tags(self, key: str) -> Optional[Dict[str, str]]:
+    def _parse_tags(self, key: str) -> dict[str, str] | None:
         """Parse tags from metric key."""
         if "|" not in key:
             return None
@@ -235,16 +245,12 @@ class MetricsCollector:
                 tags[k] = v
         return tags
 
-    def _record_metric_point(self, name: str, value: float, tags: Optional[Dict[str, str]]) -> None:
+    def _record_metric_point(self, name: str, value: float, tags: dict[str, str] | None) -> None:
         """Record a metric point."""
-        point = MetricPoint(
-            timestamp=time.time(),
-            value=value,
-            tags=tags or {}
-        )
+        point = MetricPoint(timestamp=time.time(), value=value, tags=tags or {})
         self._metrics[name].append(point)
 
-    def _percentile(self, sorted_values: List[float], percentile: float) -> float:
+    def _percentile(self, sorted_values: list[float], percentile: float) -> float:
         """Calculate percentile from sorted values."""
         if not sorted_values:
             return 0.0
@@ -252,11 +258,10 @@ class MetricsCollector:
         index = (percentile / 100.0) * (len(sorted_values) - 1)
         if index.is_integer():
             return sorted_values[int(index)]
-        else:
-            lower_index = int(index)
-            upper_index = lower_index + 1
-            weight = index - lower_index
-            return sorted_values[lower_index] * (1 - weight) + sorted_values[upper_index] * weight
+        lower_index = int(index)
+        upper_index = lower_index + 1
+        weight = index - lower_index
+        return sorted_values[lower_index] * (1 - weight) + sorted_values[upper_index] * weight
 
     async def _cleanup_loop(self) -> None:
         """Background cleanup of old metrics."""
@@ -282,18 +287,16 @@ class MetricsCollector:
 
 
 class HealthMonitor:
-    """
-    Monitors health of services and system resources.
+    """Monitors health of services and system resources.
     """
 
     def __init__(
         self,
-        event_bus: Optional[EventBus] = None,
+        event_bus: EventBus | None = None,
         check_interval: int = 30,
-        failure_threshold: int = 3
+        failure_threshold: int = 3,
     ):
-        """
-        Initialize health monitor.
+        """Initialize health monitor.
 
         Args:
             event_bus: Event bus for publishing health events
@@ -304,12 +307,12 @@ class HealthMonitor:
         self._check_interval = check_interval
         self._failure_threshold = failure_threshold
 
-        self._services: Dict[str, HealthCheckable] = {}
-        self._custom_checks: Dict[str, Callable[[], bool]] = {}
-        self._health_results: Dict[str, HealthCheckResult] = {}
-        self._failure_counts: Dict[str, int] = defaultdict(int)
+        self._services: dict[str, HealthCheckable] = {}
+        self._custom_checks: dict[str, Callable[[], bool]] = {}
+        self._health_results: dict[str, HealthCheckResult] = {}
+        self._failure_counts: dict[str, int] = defaultdict(int)
 
-        self._monitor_task: Optional[asyncio.Task] = None
+        self._monitor_task: asyncio.Task | None = None
         self._running = False
         self._lock = threading.RLock()
 
@@ -368,7 +371,7 @@ class HealthMonitor:
             if service:
                 try:
                     is_healthy = service.health_check()
-                    if hasattr(service, 'get_health_details'):
+                    if hasattr(service, "get_health_details"):
                         details = service.get_health_details()
                 except Exception as e:
                     error = str(e)
@@ -390,7 +393,7 @@ class HealthMonitor:
                 is_healthy=is_healthy,
                 response_time=response_time,
                 error=error,
-                details=details
+                details=details,
             )
 
             # Update failure count
@@ -405,6 +408,7 @@ class HealthMonitor:
             # Publish health event
             if self._event_bus:
                 from .events import create_health_event
+
                 event = create_health_event(service_name, is_healthy, details)
                 self._event_bus.publish(event)
 
@@ -415,7 +419,7 @@ class HealthMonitor:
                 service_name=service_name,
                 is_healthy=False,
                 response_time=(time.time() - start_time) * 1000,
-                error=str(e)
+                error=str(e),
             )
 
             with self._lock:
@@ -424,12 +428,12 @@ class HealthMonitor:
 
             return result
 
-    def get_service_health(self, service_name: str) -> Optional[HealthCheckResult]:
+    def get_service_health(self, service_name: str) -> HealthCheckResult | None:
         """Get last health check result for service."""
         with self._lock:
             return self._health_results.get(service_name)
 
-    def get_all_health_results(self) -> Dict[str, HealthCheckResult]:
+    def get_all_health_results(self) -> dict[str, HealthCheckResult]:
         """Get all health check results."""
         with self._lock:
             return self._health_results.copy()
@@ -440,12 +444,13 @@ class HealthMonitor:
             failure_count = self._failure_counts.get(service_name, 0)
             return failure_count < self._failure_threshold
 
-    def get_health_summary(self) -> Dict[str, Any]:
+    def get_health_summary(self) -> dict[str, Any]:
         """Get overall health summary."""
         with self._lock:
             total_services = len(self._services) + len(self._custom_checks)
             healthy_services = sum(
-                1 for name in set(list(self._services.keys()) + list(self._custom_checks.keys()))
+                1
+                for name in set(list(self._services.keys()) + list(self._custom_checks.keys()))
                 if self.is_service_healthy(name)
             )
 
@@ -455,7 +460,7 @@ class HealthMonitor:
                 "unhealthy_services": total_services - healthy_services,
                 "overall_healthy": healthy_services == total_services,
                 "check_interval": self._check_interval,
-                "failure_threshold": self._failure_threshold
+                "failure_threshold": self._failure_threshold,
             }
 
     async def _monitoring_loop(self) -> None:
@@ -475,32 +480,29 @@ class HealthMonitor:
         services_to_check = []
 
         with self._lock:
-            services_to_check = list(set(list(self._services.keys()) + list(self._custom_checks.keys())))
+            services_to_check = list(
+                set(list(self._services.keys()) + list(self._custom_checks.keys()))
+            )
 
         # Check services concurrently
-        tasks = [
-            self.check_service_health(service_name)
-            for service_name in services_to_check
-        ]
+        tasks = [self.check_service_health(service_name) for service_name in services_to_check]
 
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
 
 
 class PerformanceMonitor:
-    """
-    Monitors system performance metrics.
+    """Monitors system performance metrics.
     """
 
     def __init__(self, metrics_collector: MetricsCollector):
-        """
-        Initialize performance monitor.
+        """Initialize performance monitor.
 
         Args:
             metrics_collector: Metrics collector for recording metrics
         """
         self._metrics = metrics_collector
-        self._monitor_task: Optional[asyncio.Task] = None
+        self._monitor_task: asyncio.Task | None = None
         self._running = False
         self._collection_interval = 10  # seconds
 
@@ -558,7 +560,7 @@ class PerformanceMonitor:
             self._metrics.set_gauge("system.memory.usage_percent", memory.percent)
 
             # Disk metrics
-            disk = psutil.disk_usage('/')
+            disk = psutil.disk_usage("/")
             self._metrics.set_gauge("system.disk.total_bytes", disk.total)
             self._metrics.set_gauge("system.disk.free_bytes", disk.free)
             self._metrics.set_gauge("system.disk.used_bytes", disk.used)

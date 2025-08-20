@@ -16,15 +16,14 @@ Version: 0.3.0
 import sys
 import json
 import logging
-from typing import Dict, Any, List
 from datetime import datetime
 
 # Set up logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
 
 def test_imports():
     """Test that all required modules can be imported."""
@@ -38,11 +37,13 @@ def test_imports():
             HACSToolRegistry,
             validate_tool_inputs,
         )
+
         print("✅ LangChain shim imports successful")
         return True
     except ImportError as e:
         print(f"❌ LangChain integration import failed: {e}")
         return False
+
 
 def test_tool_discovery():
     """Test tool discovery and registry functionality."""
@@ -60,7 +61,7 @@ def test_tool_discovery():
             "resource_management",
             "clinical_workflows",
             "schema_discovery",
-            "development_tools"
+            "development_tools",
         ]
 
         for category in categories:
@@ -72,6 +73,7 @@ def test_tool_discovery():
     except Exception as e:
         print(f"❌ Tool discovery failed: {e}")
         return False
+
 
 def test_individual_tools():
     """Test individual tool functionality."""
@@ -90,7 +92,7 @@ def test_individual_tools():
                 "category_filter": "clinical",
                 "fhir_compliant_only": True,
                 "include_field_details": True,
-                "search_term": "patient"
+                "search_term": "patient",
             }
 
             if validate_tool_inputs("discover_hacs_resources", valid_inputs):
@@ -112,10 +114,10 @@ def test_individual_tools():
                 "resource_data": {
                     "full_name": "John Doe",
                     "birth_date": "1990-01-01",
-                    "gender": "male"
+                    "gender": "male",
                 },
                 "auto_generate_id": True,
-                "validate_fhir": True
+                "validate_fhir": True,
             }
 
             if validate_tool_inputs("create_record", valid_inputs):
@@ -143,6 +145,7 @@ def test_individual_tools():
         print(f"❌ Individual tool testing failed: {e}")
         return False
 
+
 def test_tool_execution():
     """Test actual tool execution (safe operations only)."""
     print("\n⚡ Testing tool execution...")
@@ -154,20 +157,24 @@ def test_tool_execution():
         discovery_tool = get_hacs_tool("discover_hacs_resources")
         if discovery_tool:
             try:
-                result = discovery_tool.invoke({
-                    "category_filter": None,
-                    "fhir_compliant_only": False,
-                    "include_field_details": True,
-                    "search_term": None
-                })
+                result = discovery_tool.invoke(
+                    {
+                        "category_filter": None,
+                        "fhir_compliant_only": False,
+                        "include_field_details": True,
+                        "search_term": None,
+                    }
+                )
                 print("✅ discover_hacs_resources execution successful")
                 print(f"📊 Result type: {type(result)}")
 
                 # Try to extract meaningful info from result
-                if hasattr(result, 'success'):
+                if hasattr(result, "success"):
                     print(f"📊 Success: {result.success}")
-                    if hasattr(result, 'data') and result.data:
-                        print(f"📊 Data keys: {list(result.data.keys()) if isinstance(result.data, dict) else 'Non-dict data'}")
+                    if hasattr(result, "data") and result.data:
+                        print(
+                            f"📊 Data keys: {list(result.data.keys()) if isinstance(result.data, dict) else 'Non-dict data'}"
+                        )
 
             except Exception as e:
                 print(f"❌ discover_hacs_resources execution failed: {e}")
@@ -181,6 +188,7 @@ def test_tool_execution():
     except Exception as e:
         print(f"❌ Tool execution testing failed: {e}")
         return False
+
 
 def test_langchain_compatibility():
     """Test LangChain compatibility features."""
@@ -196,10 +204,10 @@ def test_langchain_compatibility():
 
         # Test a few tools for LangChain interface compliance
         for i, tool in enumerate(tools[:3]):  # Test first 3 tools
-            print(f"🔧 Testing tool {i+1}: {tool.name}")
+            print(f"🔧 Testing tool {i + 1}: {tool.name}")
 
             # Check required attributes
-            required_attrs = ['name', 'description', 'args', 'invoke']
+            required_attrs = ["name", "description", "args", "invoke"]
             for attr in required_attrs:
                 if hasattr(tool, attr):
                     print(f"✅ Has {attr}")
@@ -207,7 +215,7 @@ def test_langchain_compatibility():
                     print(f"❌ Missing {attr}")
 
             # Check if tool has proper schema
-            if hasattr(tool, 'args_schema') and tool.args_schema:
+            if hasattr(tool, "args_schema") and tool.args_schema:
                 print("✅ Has proper args_schema")
             else:
                 print("❌ Missing or invalid args_schema")
@@ -217,6 +225,7 @@ def test_langchain_compatibility():
     except Exception as e:
         print(f"❌ LangChain compatibility testing failed: {e}")
         return False
+
 
 def generate_report():
     """Generate avalidation report."""
@@ -231,15 +240,21 @@ def generate_report():
             "timestamp": datetime.now().isoformat(),
             "total_tools": len(all_tools),
             "tools_by_category": {},
-            "tool_details": []
+            "tool_details": [],
         }
 
         # Get tools by category
         categories = [
-            "resource_management", "clinical_workflows", "schema_discovery",
-            "development_tools", "memory_operations", "vector_search",
-            "fhir_integration", "healthcare_analytics", "ai_integrations",
-            "admin_operations"
+            "resource_management",
+            "clinical_workflows",
+            "schema_discovery",
+            "development_tools",
+            "memory_operations",
+            "vector_search",
+            "fhir_integration",
+            "healthcare_analytics",
+            "ai_integrations",
+            "admin_operations",
         ]
 
         for category in categories:
@@ -250,9 +265,11 @@ def generate_report():
         for tool in all_tools:
             tool_info = {
                 "name": tool.name,
-                "description": tool.description[:100] + "..." if len(tool.description) > 100 else tool.description,
-                "has_args_schema": hasattr(tool, 'args_schema') and tool.args_schema is not None,
-                "args_count": len(tool.args) if hasattr(tool, 'args') else 0
+                "description": tool.description[:100] + "..."
+                if len(tool.description) > 100
+                else tool.description,
+                "has_args_schema": hasattr(tool, "args_schema") and tool.args_schema is not None,
+                "args_count": len(tool.args) if hasattr(tool, "args") else 0,
             }
             report["tool_details"].append(tool_info)
 
@@ -260,7 +277,7 @@ def generate_report():
         with open("langchain_tools_report.json", "w") as f:
             json.dump(report, f, indent=2)
 
-        print(f"✅ Report saved to langchain_tools_report.json")
+        print("✅ Report saved to langchain_tools_report.json")
         print(f"📊 Total tools: {report['total_tools']}")
         print("📊 Tools by category:")
         for category, count in report["tools_by_category"].items():
@@ -271,6 +288,7 @@ def generate_report():
     except Exception as e:
         print(f"❌ Report generation failed: {e}")
         return False
+
 
 def main():
     """Main validation routine."""
@@ -317,6 +335,7 @@ def main():
     else:
         print("⚠️ Some tests failed. Please review the output above.")
         return 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

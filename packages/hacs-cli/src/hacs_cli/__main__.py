@@ -77,12 +77,22 @@ import typer
 from dotenv import load_dotenv
 
 # Import HACS modules
-from hacs_models import Actor, ActorRole, Evidence, EvidenceType, MemoryBlock
-from hacs_models import AgentMessage, Encounter, Observation, Patient
+from hacs_models import (
+    Actor,
+    ActorRole,
+    AgentMessage,
+    Encounter,
+    Evidence,
+    EvidenceType,
+    MemoryBlock,
+    Observation,
+    Patient,
+)
 
 # Optional FHIR functionality (graceful degradation if not available)
 try:
     from hacs_core.utils import from_fhir, to_fhir, validate_fhir_compliance
+
     FHIR_AVAILABLE = True
 except ImportError:
     # Provide graceful degradation wrappers that still run
@@ -106,17 +116,22 @@ except ImportError:
             def __init__(self, payload: dict[str, Any]):
                 self._payload = payload
                 self.resource_type = payload.get("resourceType") or payload.get("resource_type") or "Unknown"
+
             def model_dump(self):
-                return {"resource_type": self.resource_type, "payload": self._payload, "_note": "FHIR conversion not available"}
+                return {
+                    "resource_type": self.resource_type,
+                    "payload": self._payload,
+                    "_note": "FHIR conversion not available",
+                }
+
         return _HACSWrapper(data)
 
     FHIR_AVAILABLE = False
 from hacs_tools import (
     create_hacs_memory,
     search_hacs_memories,
-    search_records,
-    vector_similarity_search,
     validate_fhir_compliance,
+    vector_similarity_search,
 )
 from pydantic import ValidationError
 from rich.console import Console
@@ -635,7 +650,7 @@ def memory_store(
 
             # Store memory
             result = create_hacs_memory(memory_block, actor)
-            memory_id = result.data.get('id', 'unknown') if result.success else None
+            memory_id = result.data.get("id", "unknown") if result.success else None
 
         console.print("[green]✅ Memory stored successfully![/green]")
         console.print(f"[blue]Memory ID:[/blue] {memory_id}")
@@ -761,7 +776,7 @@ def evidence_create(
                 citation=citation,
                 content=content,
                 actor_id=actor.id if actor else "unknown",
-                evidence_type=EvidenceType.CLINICAL_NOTE
+                evidence_type=EvidenceType.CLINICAL_NOTE,
             )
 
             # Update evidence properties

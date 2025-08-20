@@ -54,13 +54,16 @@ class UMLSClient:
     def _ensure_key(self) -> Optional[str]:
         return self.api_key
 
-    def search(self, term_or_code: str, version: str = "current", page_size: int = 5) -> Dict[str, Any]:
+    def search(
+        self, term_or_code: str, version: str = "current", page_size: int = 5
+    ) -> Dict[str, Any]:
         """/search/{version}?string=..."""
         key = self._ensure_key()
         if not key:
             return {"success": False, "error": "Missing UMLS_API_KEY", "results": []}
         try:
             import requests
+
             params = {"string": term_or_code, "pageSize": page_size, "apiKey": key}
             resp = requests.get(f"{self.base_url}/search/{version}", params=params, timeout=15)
             resp.raise_for_status()
@@ -76,7 +79,10 @@ class UMLSClient:
             return {"success": False, "error": "Missing UMLS_API_KEY"}
         try:
             import requests
-            resp = requests.get(f"{self.base_url}/content/{version}/CUI/{cui}", params={"apiKey": key}, timeout=15)
+
+            resp = requests.get(
+                f"{self.base_url}/content/{version}/CUI/{cui}", params={"apiKey": key}, timeout=15
+            )
             resp.raise_for_status()
             return {"success": True, "data": resp.json()}
         except Exception as e:
@@ -88,6 +94,7 @@ class UMLSClient:
             return {"success": False, "error": "Missing UMLS_API_KEY"}
         try:
             import requests
+
             resp = requests.get(
                 f"{self.base_url}/crosswalk/{version}/source/{source}/{code}",
                 params={"apiKey": key},
@@ -104,6 +111,7 @@ class UMLSClient:
             return {"success": False, "error": "Missing UMLS_API_KEY"}
         try:
             import requests
+
             resp = requests.get(
                 f"{self.base_url}/content/{version}/CUI/{cui}/definitions",
                 params={"apiKey": key},
@@ -120,6 +128,7 @@ class UMLSClient:
             return {"success": False, "error": "Missing UMLS_API_KEY"}
         try:
             import requests
+
             resp = requests.get(
                 f"{self.base_url}/content/{version}/source/{source}/{code}",
                 params={"apiKey": key},
@@ -130,14 +139,17 @@ class UMLSClient:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    def source_relatives(self, source: str, code: str, rel: str, version: str = "current") -> Dict[str, Any]:
+    def source_relatives(
+        self, source: str, code: str, rel: str, version: str = "current"
+    ) -> Dict[str, Any]:
         """Relatives: parents|children|ancestors|descendants|relations|attributes"""
         key = self._ensure_key()
         if not key:
             return {"success": False, "error": "Missing UMLS_API_KEY"}
         try:
             import requests
-            rel = rel.strip('/')
+
+            rel = rel.strip("/")
             resp = requests.get(
                 f"{self.base_url}/content/{version}/source/{source}/{code}/{rel}",
                 params={"apiKey": key},
@@ -147,5 +159,3 @@ class UMLSClient:
             return {"success": True, "data": resp.json()}
         except Exception as e:
             return {"success": False, "error": str(e)}
-
-

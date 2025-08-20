@@ -1,5 +1,4 @@
-"""
-Actor models for authentication, authorization, and audit trails.
+"""Actor models for authentication, authorization, and audit trails.
 
 This module provides actor-related models that enable secure agent interactions
 with proper permission management, authentication context, and audit logging.
@@ -13,14 +12,15 @@ while maintaining compatibility for auth-specific imports.
 from hacs_models.actor import (
     Actor,
     ActorRole,
-    PermissionLevel, 
+    PermissionLevel,
     SessionStatus,
 )
+
 
 # Re-export all for import compatibility
 __all__ = [
     "Actor",
-    "ActorRole", 
+    "ActorRole",
     "PermissionLevel",
     "SessionStatus",
 ]

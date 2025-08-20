@@ -5,12 +5,7 @@ All tools are organized via an automatic registry system following SOLID princip
 """
 
 # Import registry-based tool discovery (using existing hacs-registry)
-from .tools import (
-    get_all_tools,
-    get_tool,
-    get_tools_by_domain,
-    get_available_domains
-)
+from .tools import get_all_tools, get_tool, get_tools_by_domain, get_available_domains
 
 # Import legacy interface for backward compatibility
 from .tools import *
@@ -21,19 +16,19 @@ from . import domains
 # Import result types from hacs_core
 try:
     from hacs_models import (
-    HACSResult,
-    ResourceSchemaResult,
-    ResourceDiscoveryResult,
-    FieldAnalysisResult,
-    DataQueryResult,
-    WorkflowResult,
-    GuidanceResult,
-    MemoryResult,
-    VersionResult,
-    ResourceStackResult,
-    ResourceTemplateResult,
-    VectorStoreResult,
-)
+        HACSResult,
+        ResourceSchemaResult,
+        ResourceDiscoveryResult,
+        FieldAnalysisResult,
+        DataQueryResult,
+        WorkflowResult,
+        GuidanceResult,
+        MemoryResult,
+        VersionResult,
+        ResourceStackResult,
+        ResourceTemplateResult,
+        VectorStoreResult,
+    )
 except ImportError:
     # Graceful fallback if hacs_core not available
     pass
@@ -51,6 +46,7 @@ def __getattr__(name: str):
     """
     # Delegate to tools module for tool functions
     from .tools import get_tool
+
     tool = get_tool(name)
     if tool is not None:
         return tool
@@ -58,6 +54,7 @@ def __getattr__(name: str):
     # Handle legacy ALL_HACS_TOOLS access
     if name == "ALL_HACS_TOOLS":
         from .tools import get_all_tools
+
         return get_all_tools()
 
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
@@ -70,7 +67,6 @@ __all__ = [
     "get_tool",
     "get_tools_by_domain",
     "get_available_domains",
-
     # Legacy support
     "ALL_HACS_TOOLS",
     "domains",

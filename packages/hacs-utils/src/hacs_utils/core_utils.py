@@ -89,9 +89,7 @@ def get_api_key(key_name: str, env_var: str, required: bool = True) -> Optional[
     api_key = dotenv_values().get(env_var)
 
     if not api_key and required:
-        raise ValueError(
-            f"{key_name} is required. Set the {env_var} environment variable."
-        )
+        raise ValueError(f"{key_name} is required. Set the {env_var} environment variable.")
 
     return api_key
 
@@ -262,23 +260,45 @@ def _get_resource_class(resource_type: str):
     """Get the model class for a resource type."""
     try:
         from hacs_core import (
-            Patient, Observation, Encounter, AgentMessage,
-            AllergyIntolerance, Condition, Medication, MedicationRequest,
-            PlanDefinition, ActivityDefinition, Library,
-            GuidanceResponse, RequestOrchestration,
-            DataRequirement, EvidenceVariable, ArtifactAssessment,
-            Memory, KnowledgeItem
+            Patient,
+            Observation,
+            Encounter,
+            AgentMessage,
+            AllergyIntolerance,
+            Condition,
+            Medication,
+            MedicationRequest,
+            PlanDefinition,
+            ActivityDefinition,
+            Library,
+            GuidanceResponse,
+            RequestOrchestration,
+            DataRequirement,
+            EvidenceVariable,
+            ArtifactAssessment,
+            Memory,
+            KnowledgeItem,
         )
 
         model_map = {
-            "Patient": Patient, "Observation": Observation, "Encounter": Encounter,
-            "AgentMessage": AgentMessage, "AllergyIntolerance": AllergyIntolerance,
-            "Condition": Condition, "Medication": Medication, "MedicationRequest": MedicationRequest,
-            "PlanDefinition": PlanDefinition, "ActivityDefinition": ActivityDefinition,
-            "Library": Library, "GuidanceResponse": GuidanceResponse,
-            "RequestOrchestration": RequestOrchestration, "DataRequirement": DataRequirement,
-            "EvidenceVariable": EvidenceVariable, "ArtifactAssessment": ArtifactAssessment,
-            "Memory": Memory, "KnowledgeItem": KnowledgeItem
+            "Patient": Patient,
+            "Observation": Observation,
+            "Encounter": Encounter,
+            "AgentMessage": AgentMessage,
+            "AllergyIntolerance": AllergyIntolerance,
+            "Condition": Condition,
+            "Medication": Medication,
+            "MedicationRequest": MedicationRequest,
+            "PlanDefinition": PlanDefinition,
+            "ActivityDefinition": ActivityDefinition,
+            "Library": Library,
+            "GuidanceResponse": GuidanceResponse,
+            "RequestOrchestration": RequestOrchestration,
+            "DataRequirement": DataRequirement,
+            "EvidenceVariable": EvidenceVariable,
+            "ArtifactAssessment": ArtifactAssessment,
+            "Memory": Memory,
+            "KnowledgeItem": KnowledgeItem,
         }
 
         return model_map.get(resource_type)

@@ -1,5 +1,4 @@
-"""
-Configuration Management for HACS Infrastructure
+"""Configuration Management for HACS Infrastructure
 
 This module providesconfiguration management with environment
 variable support, validation, and healthcare-specific settings.
@@ -7,9 +6,10 @@ variable support, validation, and healthcare-specific settings.
 
 import os
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
+
 
 # Fallback for environments without pydantic-settings
 try:
@@ -56,12 +56,12 @@ class SecurityLevel(str, Enum):
 class DatabaseConfig(BaseModel):
     """Database configuration settings."""
 
-    url: Optional[str] = Field(None, description="Database connection URL")
+    url: str | None = Field(None, description="Database connection URL")
     host: str = Field("localhost", description="Database host")
     port: int = Field(5432, description="Database port")
     name: str = Field("hacs", description="Database name")
-    user: Optional[str] = Field(None, description="Database user")
-    password: Optional[str] = Field(None, description="Database password")
+    user: str | None = Field(None, description="Database user")
+    password: str | None = Field(None, description="Database password")
     schema: str = Field("public", description="Database schema")
     pool_size: int = Field(10, description="Connection pool size")
     max_overflow: int = Field(20, description="Maximum pool overflow")
@@ -92,11 +92,11 @@ class CacheConfig(BaseModel):
     max_size: int = Field(1000, description="Maximum cache size")
 
     # Redis-specific settings
-    redis_url: Optional[str] = Field(None, description="Redis connection URL")
+    redis_url: str | None = Field(None, description="Redis connection URL")
     redis_host: str = Field("localhost", description="Redis host")
     redis_port: int = Field(6379, description="Redis port")
     redis_db: int = Field(0, description="Redis database number")
-    redis_password: Optional[str] = Field(None, description="Redis password")
+    redis_password: str | None = Field(None, description="Redis password")
 
 
 class LLMConfig(BaseModel):
@@ -104,12 +104,12 @@ class LLMConfig(BaseModel):
 
     provider: str = Field("openai", description="LLM provider (openai, anthropic)")
     model: str = Field("gpt-4", description="Default model")
-    api_key: Optional[str] = Field(None, description="API key")
-    base_url: Optional[str] = Field(None, description="Base URL")
+    api_key: str | None = Field(None, description="API key")
+    base_url: str | None = Field(None, description="Base URL")
     timeout: float = Field(30.0, description="Request timeout")
     max_retries: int = Field(3, description="Maximum retries")
     temperature: float = Field(0.7, description="Default temperature")
-    max_tokens: Optional[int] = Field(None, description="Maximum tokens")
+    max_tokens: int | None = Field(None, description="Maximum tokens")
 
 
 class VectorStoreConfig(BaseModel):
@@ -118,7 +118,7 @@ class VectorStoreConfig(BaseModel):
     provider: str = Field("qdrant", description="Vector store provider")
     host: str = Field("localhost", description="Vector store host")
     port: int = Field(6333, description="Vector store port")
-    api_key: Optional[str] = Field(None, description="API key")
+    api_key: str | None = Field(None, description="API key")
     collection_name: str = Field("hacs_vectors", description="Collection name")
     dimension: int = Field(1536, description="Vector dimension")
     distance_metric: str = Field("cosine", description="Distance metric")
@@ -146,7 +146,7 @@ class ObservabilityConfig(BaseModel):
     prometheus_port: int = Field(9090, description="Prometheus metrics port")
 
     # OpenTelemetry
-    otel_endpoint: Optional[str] = Field(None, description="OpenTelemetry endpoint")
+    otel_endpoint: str | None = Field(None, description="OpenTelemetry endpoint")
     otel_service_name: str = Field("hacs", description="Service name for tracing")
 
 
@@ -170,7 +170,7 @@ class SecurityConfig(BaseModel):
 
     # CORS settings
     cors_enabled: bool = Field(True, description="Enable CORS")
-    cors_origins: List[str] = Field(default_factory=list, description="Allowed CORS origins")
+    cors_origins: list[str] = Field(default_factory=list, description="Allowed CORS origins")
 
     # HIPAA compliance
     hipaa_compliant: bool = Field(True, description="Enable HIPAA compliance features")
@@ -179,17 +179,13 @@ class SecurityConfig(BaseModel):
 
 
 class HACSConfig(BaseSettings):
-    """
-   HACS configuration with healthcare-specific settings.
+    """HACS configuration with healthcare-specific settings.
 
     All settings can be configured via environment variables with the HACS_ prefix.
     """
 
     model_config = SettingsConfigDict(
-        env_prefix="HACS_",
-        case_sensitive=False,
-        validate_assignment=True,
-        extra="forbid"
+        env_prefix="HACS_", case_sensitive=False, validate_assignment=True, extra="forbid"
     )
 
     # Core settings
@@ -203,26 +199,41 @@ class HACSConfig(BaseSettings):
     workers: int = Field(1, description="Number of worker processes")
 
     # Component configurations
-    database: DatabaseConfig = Field(default_factory=DatabaseConfig, description="Database configuration")
+    database: DatabaseConfig = Field(
+        default_factory=DatabaseConfig, description="Database configuration"
+    )
     cache: CacheConfig = Field(default_factory=CacheConfig, description="Cache configuration")
     llm: LLMConfig = Field(default_factory=LLMConfig, description="LLM configuration")
-    vector_store: VectorStoreConfig = Field(default_factory=VectorStoreConfig, description="Vector store configuration")
-    health_check: HealthCheckConfig = Field(default_factory=HealthCheckConfig, description="Health check configuration")
-    observability: ObservabilityConfig = Field(default_factory=ObservabilityConfig, description="Observability configuration")
-    security: SecurityConfig = Field(default_factory=lambda: SecurityConfig(jwt_secret=os.urandom(32).hex()), description="Security configuration")
+    vector_store: VectorStoreConfig = Field(
+        default_factory=VectorStoreConfig, description="Vector store configuration"
+    )
+    health_check: HealthCheckConfig = Field(
+        default_factory=HealthCheckConfig, description="Health check configuration"
+    )
+    observability: ObservabilityConfig = Field(
+        default_factory=ObservabilityConfig, description="Observability configuration"
+    )
+    security: SecurityConfig = Field(
+        default_factory=lambda: SecurityConfig(jwt_secret=os.urandom(32).hex()),
+        description="Security configuration",
+    )
 
     # Healthcare-specific settings
     fhir_version: str = Field("R4", description="FHIR version")
     organization_name: str = Field("HACS Healthcare", description="Organization name")
-    organization_id: Optional[str] = Field(None, description="Organization identifier")
+    organization_id: str | None = Field(None, description="Organization identifier")
 
     # Default permissions
-    default_actor_permissions: List[str] = Field(
+    default_actor_permissions: list[str] = Field(
         default_factory=lambda: [
-            "read:patient", "read:observation", "read:encounter",
-            "write:memory", "read:workflow", "execute:workflow"
+            "read:patient",
+            "read:observation",
+            "read:encounter",
+            "write:memory",
+            "read:workflow",
+            "execute:workflow",
         ],
-        description="Default permissions for new actors"
+        description="Default permissions for new actors",
     )
 
     # Integration settings
@@ -276,17 +287,16 @@ class HACSConfig(BaseSettings):
         """Get database connection URL."""
         return self.database.connection_url
 
-    def get_cache_config(self) -> Dict[str, Any]:
+    def get_cache_config(self) -> dict[str, Any]:
         """Get cache configuration as dictionary."""
         return self.cache.model_dump()
 
-    def get_security_config(self) -> Dict[str, Any]:
+    def get_security_config(self) -> dict[str, Any]:
         """Get security configuration as dictionary."""
         return self.security.model_dump()
 
-    def validate_production_settings(self) -> List[str]:
-        """
-        Validate settings for production deployment.
+    def validate_production_settings(self) -> list[str]:
+        """Validate settings for production deployment.
 
         Returns:
             List of validation errors
@@ -304,7 +314,9 @@ class HACSConfig(BaseSettings):
             if not self.security.hipaa_compliant:
                 errors.append("HIPAA compliance should be enabled in production")
 
-            if not self.database.url and not all([self.database.host, self.database.user, self.database.password]):
+            if not self.database.url and not all(
+                [self.database.host, self.database.user, self.database.password]
+            ):
                 errors.append("Database connection must be properly configured in production")
 
             if self.security.level == SecurityLevel.LOW:
@@ -315,16 +327,15 @@ class HACSConfig(BaseSettings):
 
 class ConfigurationError(Exception):
     """Configuration-related errors."""
-    pass
+
 
 
 # Global configuration instance
-_global_config: Optional[HACSConfig] = None
+_global_config: HACSConfig | None = None
 
 
 def get_config() -> HACSConfig:
-    """
-    Get the global configuration instance.
+    """Get the global configuration instance.
 
     Returns:
         Global configuration instance
@@ -339,8 +350,7 @@ def get_config() -> HACSConfig:
 
 
 def set_config(config: HACSConfig) -> None:
-    """
-    Set the global configuration instance.
+    """Set the global configuration instance.
 
     Args:
         config: Configuration instance to set as global
@@ -356,8 +366,7 @@ def reset_config() -> None:
 
 
 def configure_hacs(**kwargs: Any) -> HACSConfig:
-    """
-    Configure HACS with explicit settings.
+    """Configure HACS with explicit settings.
 
     Args:
         **kwargs: Configuration values to override
@@ -374,8 +383,7 @@ def configure_hacs(**kwargs: Any) -> HACSConfig:
 
 
 def load_config_from_file(file_path: str) -> HACSConfig:
-    """
-    Load configuration from file.
+    """Load configuration from file.
 
     Args:
         file_path: Path to configuration file (JSON, YAML, or TOML)
@@ -391,16 +399,18 @@ def load_config_from_file(file_path: str) -> HACSConfig:
         raise ConfigurationError(f"Configuration file not found: {file_path}")
 
     try:
-        if config_file.suffix.lower() == '.json':
-            with open(config_file, 'r') as f:
+        if config_file.suffix.lower() == ".json":
+            with open(config_file) as f:
                 data = json.load(f)
-        elif config_file.suffix.lower() in ['.yml', '.yaml']:
+        elif config_file.suffix.lower() in [".yml", ".yaml"]:
             import yaml
-            with open(config_file, 'r') as f:
+
+            with open(config_file) as f:
                 data = yaml.safe_load(f)
-        elif config_file.suffix.lower() == '.toml':
+        elif config_file.suffix.lower() == ".toml":
             import tomllib
-            with open(config_file, 'rb') as f:
+
+            with open(config_file, "rb") as f:
                 data = tomllib.load(f)
         else:
             raise ConfigurationError(f"Unsupported configuration file format: {config_file.suffix}")
@@ -414,8 +424,7 @@ def load_config_from_file(file_path: str) -> HACSConfig:
 
 
 def validate_config() -> None:
-    """
-    Validate current configuration.
+    """Validate current configuration.
 
     Raises:
         ConfigurationError: If configuration is invalid
@@ -429,4 +438,3 @@ def validate_config() -> None:
             raise ConfigurationError(f"Production configuration errors: {'; '.join(errors)}")
 
     # Additional validation logic can be added here
-    pass

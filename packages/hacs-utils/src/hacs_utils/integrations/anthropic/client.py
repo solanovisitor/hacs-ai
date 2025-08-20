@@ -73,7 +73,7 @@ class AnthropicClient:
         **kwargs,
     ) -> BaseModel:
         """Generate structured output using tool-based JSON mode.
-        
+
         Uses Claude's tool use capability to enforce JSON schema compliance.
         """
         # Create a tool schema from the Pydantic model (simplified for Claude tools)
@@ -83,7 +83,7 @@ class AnthropicClient:
         tool_schema = {
             "name": "extract_data",
             "description": f"Extract data according to the {response_model.__name__} schema",
-            "input_schema": schema
+            "input_schema": schema,
         }
 
         response = self.client.messages.create(
@@ -97,10 +97,10 @@ class AnthropicClient:
 
         # Extract tool use input as the structured data
         for content in response.content:
-            if hasattr(content, 'type') and content.type == 'tool_use':
-                if content.name == 'extract_data':
+            if hasattr(content, "type") and content.type == "tool_use":
+                if content.name == "extract_data":
                     return response_model.model_validate(content.input)
-        
+
         raise ValueError("No structured tool use found in Claude's response")
 
     def tool_use(
@@ -125,30 +125,24 @@ class AnthropicClient:
     def extract_tool_calls(self, response: "anthropic.types.Message") -> List[Dict[str, Any]]:
         """Extract tool calls from Claude's response."""
         tool_calls = []
-        
+
         for content in response.content:
-            if hasattr(content, 'type') and content.type == 'tool_use':
-                tool_calls.append({
-                    "id": content.id,
-                    "name": content.name,
-                    "input": content.input,
-                })
-        
+            if hasattr(content, "type") and content.type == "tool_use":
+                tool_calls.append(
+                    {
+                        "id": content.id,
+                        "name": content.name,
+                        "input": content.input,
+                    }
+                )
+
         return tool_calls
 
-    def create_tool_result_message(
-        self, 
-        tool_use_id: str, 
-        result: str
-    ) -> Dict[str, Any]:
+    def create_tool_result_message(self, tool_use_id: str, result: str) -> Dict[str, Any]:
         """Create a properly formatted tool result message."""
         return {
             "role": "user",
-            "content": [{
-                "type": "tool_result",
-                "tool_use_id": tool_use_id,
-                "content": result
-            }]
+            "content": [{"type": "tool_result", "tool_use_id": tool_use_id, "content": result}],
         }
 
     def invoke(self, prompt: Union[str, List[Dict[str, Any]]], **kwargs) -> str:
@@ -159,18 +153,39 @@ class AnthropicClient:
             messages = prompt
 
         response = self.chat(messages, **kwargs)
-        
+
         # Extract text content from response
         text_content = []
         for content in response.content:
-            if hasattr(content, 'type') and content.type == 'text':
+            if hasattr(content, "type") and content.type == "text":
                 text_content.append(content.text)
-        
+
         return "\n".join(text_content)
 
     async def ainvoke(self, prompt: Union[str, List[Dict[str, Any]]], **kwargs) -> str:
         """Async invoke method (delegates to sync for now)."""
         return self.invoke(prompt, **kwargs)
+
+    # ---- Utilities ----
+    def to_langchain(self):
+        """Return a LangChain ChatAnthropic instance configured like this client.
+
+        Skips if langchain-anthropic is not installed.
+        """
+        try:
+            from langchain_anthropic import ChatAnthropic  # type: ignore
+        except Exception as e:  # pragma: no cover - optional dep
+            raise ImportError(f"langchain-anthropic not available: {e}")
+
+        load_dotenv()
+        kv = dotenv_values()
+        api_key = kv.get("ANTHROPIC_API_KEY")
+        return ChatAnthropic(
+            model=self.model,
+            max_retries=self.max_retries,
+            timeout=self.timeout,
+            api_key=api_key,
+        )
 
     # ---- Utilities ----
     @staticmethod
@@ -190,7 +205,15 @@ class AnthropicClient:
                 if "oneOf" in node and isinstance(node["oneOf"], list) and node["oneOf"]:
                     return simplify(node["oneOf"][0])
 
-                allowed_keys = {"type", "properties", "required", "enum", "items", "description", "title"}
+                allowed_keys = {
+                    "type",
+                    "properties",
+                    "required",
+                    "enum",
+                    "items",
+                    "description",
+                    "title",
+                }
                 cleaned: Dict[str, Any] = {}
                 for k, v in node.items():
                     if k in {"$ref", "$defs", "definitions"}:
@@ -198,8 +221,14 @@ class AnthropicClient:
                     if k in allowed_keys:
                         cleaned[k] = simplify(v)
                 # Ensure object with properties has required list
-                if cleaned.get("type") == "object" and "properties" in cleaned and "required" not in cleaned:
-                    cleaned["required"] = [k for k in cleaned["properties"].keys()][:0]  # default empty
+                if (
+                    cleaned.get("type") == "object"
+                    and "properties" in cleaned
+                    and "required" not in cleaned
+                ):
+                    cleaned["required"] = [k for k in cleaned["properties"].keys()][
+                        :0
+                    ]  # default empty
                 return cleaned
             if isinstance(node, list):
                 return [simplify(it) for it in node]
@@ -257,7 +286,17 @@ class AnthropicClient:
         followup = self.tool_use(
             messages=[
                 {"role": "user", "content": user_prompt},
-                {"role": "assistant", "content": [{"type": "tool_use", "id": call["id"], "name": call["name"], "input": call["input"]}]},
+                {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": call["id"],
+                            "name": call["name"],
+                            "input": call["input"],
+                        }
+                    ],
+                },
                 self.create_tool_result_message(call["id"], result_text),
             ],
             tools=tools,
@@ -270,16 +309,10 @@ class AnthropicClient:
 
 
 def create_anthropic_client(
-    model: str = "claude-sonnet-4-20250514",
-    api_key: Optional[str] = None,
-    **kwargs
+    model: str = "claude-sonnet-4-20250514", api_key: Optional[str] = None, **kwargs
 ) -> AnthropicClient:
     """Factory function to create an Anthropic client."""
-    return AnthropicClient(
-        model=model,
-        api_key=api_key,
-        **kwargs
-    )
+    return AnthropicClient(model=model, api_key=api_key, **kwargs)
 
 
 # Convenience function for structured extraction
@@ -288,7 +321,7 @@ def anthropic_structured_extract(
     response_model: Type[BaseModel],
     api_key: Optional[str] = None,
     model: str = "claude-sonnet-4-20250514",
-    **kwargs
+    **kwargs,
 ) -> BaseModel:
     """One-shot structured extraction using Claude."""
     client = create_anthropic_client(model=model, api_key=api_key)

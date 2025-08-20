@@ -8,7 +8,10 @@ database adapters, schema management, data mapping, and migrations.
 # from hacs_tools.vectorization import VectorMetadata, VectorStore
 from .adapter import PostgreSQLAdapter, create_postgres_adapter
 from .connection_factory import (
-    HACSConnectionFactory, get_default_adapter, get_test_adapter, ensure_database_ready
+    HACSConnectionFactory,
+    ensure_database_ready,
+    get_default_adapter,
+    get_test_adapter,
 )
 
 # Optional granular adapter – depends on hacs_models package
@@ -22,10 +25,15 @@ from .schema import HACSSchemaManager
 # Repository pattern implementations
 try:
     from .repositories import (
-        BaseRepository, ResourceRepository, PatientRepository,
-        ObservationRepository, EncounterRepository, RepositoryFactory,
-        create_repository_factory
+        BaseRepository,
+        EncounterRepository,
+        ObservationRepository,
+        PatientRepository,
+        RepositoryFactory,
+        ResourceRepository,
+        create_repository_factory,
     )
+
     REPOSITORIES_AVAILABLE = True
 except ImportError:
     BaseRepository = ResourceRepository = PatientRepository = None
@@ -37,6 +45,7 @@ except ImportError:
 try:
     from .migrations import HACSDatabaseMigration, run_migration
     from .migrations import get_migration_status as _get_migration_status
+
     MIGRATIONS_AVAILABLE = True
 except ImportError:
     HACSDatabaseMigration = None
@@ -50,6 +59,7 @@ QdrantVectorStore = None  # Available via dependency injection
 # pgvector integration
 try:
     from .vector_store import HACSVectorStore, create_vector_store
+
     PGVECTOR_AVAILABLE = True
 except ImportError:
     HACSVectorStore = None
@@ -72,7 +82,7 @@ __all__ = [
     # Connection factory
     "HACSConnectionFactory",
     "get_default_adapter",
-    "get_test_adapter", 
+    "get_test_adapter",
     "ensure_database_ready",
     # Repository pattern
     "BaseRepository",
@@ -85,6 +95,7 @@ __all__ = [
     # Availability flags
     "REPOSITORIES_AVAILABLE",
 ]
+
 
 def initialize_hacs_database(database_url: str, force_migration: bool = False) -> bool:
     """
@@ -133,7 +144,7 @@ def get_migration_status(database_url: str) -> dict:
             "migration_table_exists": False,
             "migration_records": [],
             "status": "error",
-            "error": "Migration functionality not available"
+            "error": "Migration functionality not available",
         }
 
     return _get_migration_status(database_url)

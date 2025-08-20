@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional
 
 from hacs_models import MemoryBlock
 
 
-def merge_memories(
-    *sources: Iterable[MemoryBlock] | Iterable[Dict[str, Any]]
-) -> List[MemoryBlock]:
+def merge_memories(*sources: Iterable[MemoryBlock] | Iterable[Dict[str, Any]]) -> List[MemoryBlock]:
     """
     Merge multiple sources of MemoryBlock instances or dicts into a unified list.
     Non-parsable items are skipped. No deduplication performed.
@@ -43,7 +41,10 @@ def filter_memories(
             continue
         if memory_type and m.memory_type != memory_type:
             continue
-        if min_importance is not None and (getattr(m, "importance_score", 0.0) or 0.0) < min_importance:
+        if (
+            min_importance is not None
+            and (getattr(m, "importance_score", 0.0) or 0.0) < min_importance
+        ):
             continue
         if tag_set:
             mtags = set(getattr(m, "tags", []) or [])
@@ -66,7 +67,9 @@ async def gather_memories(
     from hacs_models import Actor
 
     try:
-        found = await db_adapter.search(MemoryBlock, Actor(name=actor_name), filters=filters or {}, limit=limit)
+        found = await db_adapter.search(
+            MemoryBlock, Actor(name=actor_name), filters=filters or {}, limit=limit
+        )
         return list(found or [])
     except Exception:
         return []
@@ -79,12 +82,10 @@ def feed_memories(memories: Iterable[MemoryBlock], max_items: int = 5) -> List[s
     snippets: List[str] = []
     for m in list(memories)[:max_items]:
         content = (m.content or "").strip()
-        context = (m.context_metadata or {})
+        context = m.context_metadata or {}
         pid = context.get("patient_id")
         tag_str = ", ".join((m.tags or [])[:5]) if getattr(m, "tags", None) else ""
         prefix = f"[patient:{pid}] " if pid else ""
         suffix = f" (tags: {tag_str})" if tag_str else ""
         snippets.append(f"{prefix}{content}{suffix}")
     return snippets
-
-

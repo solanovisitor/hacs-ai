@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any, List
 
 from .data import FormatType
 
@@ -33,7 +33,7 @@ class QAPromptGenerator:
         text = self.template.template_text.format(**variables)
         if self.fenced_output:
             fence = "json" if self.format_type == FormatType.JSON else "yaml"
-            return f"Return strictly {fence} within fenced code block.\n```{fence}\n" + text + "\n```"
+            return (
+                f"Return strictly {fence} within fenced code block.\n```{fence}\n" + text + "\n```"
+            )
         return text
-
-

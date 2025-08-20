@@ -22,9 +22,8 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Dict, List, Optional, Protocol, Type, Union, Callable
+from typing import Any, Dict, List, Optional, Protocol, Type, Callable
 from dataclasses import dataclass, field
-from contextlib import asynccontextmanager
 
 from hacs_models import ToolDefinition
 from .tool_registry import HACSToolRegistry, get_global_registry
@@ -34,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 class FrameworkType(str, Enum):
     """Supported framework types for tool integration."""
+
     LANGCHAIN = "langchain"
     MCP = "mcp"
     NATIVE = "native"
@@ -42,6 +42,7 @@ class FrameworkType(str, Enum):
 
 class ExecutionStrategyType(str, Enum):
     """Tool execution strategies."""
+
     SYNC = "sync"
     ASYNC = "async"
     BATCH = "batch"
@@ -51,6 +52,7 @@ class ExecutionStrategyType(str, Enum):
 @dataclass
 class ExecutionContext:
     """Context information for tool execution."""
+
     actor_name: Optional[str] = None
     db_adapter: Optional[Any] = None
     vector_store: Optional[Any] = None
@@ -69,7 +71,7 @@ class ToolExecutionResult:
         data: Any = None,
         error: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        execution_time_ms: float = 0.0
+        execution_time_ms: float = 0.0,
     ):
         self.success = success
         self.data = data
@@ -84,11 +86,12 @@ class ToolExecutionResult:
             "data": self.data,
             "error": self.error,
             "metadata": self.metadata,
-            "execution_time_ms": self.execution_time_ms
+            "execution_time_ms": self.execution_time_ms,
         }
 
 
 # Protocol Definitions for Type Safety
+
 
 class ToolAdapter(Protocol):
     """Protocol for framework-specific tool adapters."""
@@ -106,10 +109,7 @@ class ExecutionStrategyProtocol(Protocol):
     """Protocol for tool execution strategies."""
 
     async def execute(
-        self,
-        tool_func: Callable,
-        params: Dict[str, Any],
-        context: ExecutionContext
+        self, tool_func: Callable, params: Dict[str, Any], context: ExecutionContext
     ) -> ToolExecutionResult:
         """Execute the tool with given parameters and context."""
         ...
@@ -123,15 +123,14 @@ class ToolValidator(Protocol):
         ...
 
     def validate_parameters(
-        self,
-        tool_def: ToolDefinition,
-        params: Dict[str, Any]
+        self, tool_def: ToolDefinition, params: Dict[str, Any]
     ) -> bool:
         """Validate tool parameters."""
         ...
 
 
 # Abstract Base Classes
+
 
 class BaseToolAdapter(ABC):
     """Abstract base class for tool adapters."""
@@ -164,16 +163,14 @@ class BaseExecutionStrategy(ABC):
 
     @abstractmethod
     async def execute(
-        self,
-        tool_func: Callable,
-        params: Dict[str, Any],
-        context: ExecutionContext
+        self, tool_func: Callable, params: Dict[str, Any], context: ExecutionContext
     ) -> ToolExecutionResult:
         """Execute the tool with given parameters and context."""
         pass
 
 
 # Concrete Implementations
+
 
 class LangChainAdapter(BaseToolAdapter):
     """LangChain framework adapter."""
@@ -187,6 +184,7 @@ class LangChainAdapter(BaseToolAdapter):
         try:
             from langchain_core.tools.structured import StructuredTool
             from langchain_core.tools.convert import tool
+
             return True
         except ImportError:
             return False
@@ -209,9 +207,12 @@ class LangChainAdapter(BaseToolAdapter):
         try:
             from langchain_core.tools.structured import StructuredTool
             from pydantic import BaseModel, create_model
+
             logger.debug(f"Successfully imported StructuredTool for {tool_def.name}")
         except ImportError as import_error:
-            logger.warning(f"StructuredTool import failed for {tool_def.name}: {import_error}")
+            logger.warning(
+                f"StructuredTool import failed for {tool_def.name}: {import_error}"
+            )
             # Return a simple tool wrapper instead of None
             return self._create_simple_tool_wrapper(tool_def)
 
@@ -220,18 +221,24 @@ class LangChainAdapter(BaseToolAdapter):
             input_fields = {}
             if tool_def.function:
                 import inspect
+
                 sig = inspect.signature(tool_def.function)
                 for param_name, param in sig.parameters.items():
-                    if param_name not in ['self', 'args', 'kwargs']:
-                        field_type = param.annotation if param.annotation != inspect.Parameter.empty else str
-                        default_val = param.default if param.default != inspect.Parameter.empty else ...
+                    if param_name not in ["self", "args", "kwargs"]:
+                        field_type = (
+                            param.annotation
+                            if param.annotation != inspect.Parameter.empty
+                            else str
+                        )
+                        default_val = (
+                            param.default
+                            if param.default != inspect.Parameter.empty
+                            else ...
+                        )
                         input_fields[param_name] = (field_type, default_val)
 
                 # Create Pydantic model
-                ToolInputModel = create_model(
-                    f"{tool_def.name}Input",
-                    **input_fields
-                )
+                ToolInputModel = create_model(f"{tool_def.name}Input", **input_fields)
 
                 # Create LangChain tool
                 langchain_tool = StructuredTool.from_function(
@@ -239,7 +246,7 @@ class LangChainAdapter(BaseToolAdapter):
                     name=tool_def.name,
                     description=tool_def.description,
                     args_schema=ToolInputModel,
-                    return_direct=False
+                    return_direct=False,
                 )
 
                 # Cache and return
@@ -253,6 +260,7 @@ class LangChainAdapter(BaseToolAdapter):
 
     def _create_simple_tool_wrapper(self, tool_def: ToolDefinition) -> Any:
         """Create a simple tool wrapper when StructuredTool is not available."""
+
         class SimpleTool:
             def __init__(self, name: str, description: str, func: callable):
                 self.name = name
@@ -261,7 +269,9 @@ class LangChainAdapter(BaseToolAdapter):
 
             def invoke(self, input_data):
                 if callable(self.func):
-                    return self.func(**input_data if isinstance(input_data, dict) else {})
+                    return self.func(
+                        **input_data if isinstance(input_data, dict) else {}
+                    )
                 return f"Tool {self.name} executed with input: {input_data}"
 
             def __call__(self, **kwargs):
@@ -297,14 +307,14 @@ class MCPAdapter(BaseToolAdapter):
             "inputSchema": {
                 "type": "object",
                 "properties": self._extract_input_schema(tool_def),
-                "required": self._get_required_parameters(tool_def)
+                "required": self._get_required_parameters(tool_def),
             },
             "category": tool_def.category,
             "domain": tool_def.domain,
             "requires_actor": tool_def.requires_actor,
             "requires_db": tool_def.requires_db,
             "requires_vector_store": tool_def.requires_vector_store,
-            "is_async": tool_def.is_async
+            "is_async": tool_def.is_async,
         }
 
         # Cache and return
@@ -317,16 +327,25 @@ class MCPAdapter(BaseToolAdapter):
             return {}
 
         import inspect
+
         sig = inspect.signature(tool_def.function)
         properties = {}
         # Reserved parameters are injected by HACS at runtime and must be hidden from schemas
         reserved_params = {
-            "actor_name", "db_adapter", "vector_store", "session_id",
-            "config", "state", "store"
+            "actor_name",
+            "db_adapter",
+            "vector_store",
+            "session_id",
+            "config",
+            "state",
+            "store",
         }
 
         for param_name, param in sig.parameters.items():
-            if param_name not in ['self', 'args', 'kwargs'] and param_name not in reserved_params:
+            if (
+                param_name not in ["self", "args", "kwargs"]
+                and param_name not in reserved_params
+            ):
                 param_type = "string"  # Default type
                 if param.annotation != inspect.Parameter.empty:
                     if param.annotation == int:
@@ -335,7 +354,7 @@ class MCPAdapter(BaseToolAdapter):
                         param_type = "number"
                     elif param.annotation == bool:
                         param_type = "boolean"
-                    elif hasattr(param.annotation, '__origin__'):
+                    elif hasattr(param.annotation, "__origin__"):
                         if param.annotation.__origin__ == list:
                             param_type = "array"
                         elif param.annotation.__origin__ == dict:
@@ -343,7 +362,7 @@ class MCPAdapter(BaseToolAdapter):
 
                 properties[param_name] = {
                     "type": param_type,
-                    "description": f"Parameter {param_name} for {tool_def.name}"
+                    "description": f"Parameter {param_name} for {tool_def.name}",
                 }
 
         return properties
@@ -354,16 +373,25 @@ class MCPAdapter(BaseToolAdapter):
             return []
 
         import inspect
+
         sig = inspect.signature(tool_def.function)
         required = []
         reserved_params = {
-            "actor_name", "db_adapter", "vector_store", "session_id",
-            "config", "state", "store"
+            "actor_name",
+            "db_adapter",
+            "vector_store",
+            "session_id",
+            "config",
+            "state",
+            "store",
         }
 
         for param_name, param in sig.parameters.items():
-            if (param_name not in ['self', 'args', 'kwargs'] and param_name not in reserved_params and
-                param.default == inspect.Parameter.empty):
+            if (
+                param_name not in ["self", "args", "kwargs"]
+                and param_name not in reserved_params
+                and param.default == inspect.Parameter.empty
+            ):
                 required.append(param_name)
 
         return required
@@ -388,13 +416,11 @@ class AsyncExecutionStrategy(BaseExecutionStrategy):
     """Async execution strategy."""
 
     async def execute(
-        self,
-        tool_func: Callable,
-        params: Dict[str, Any],
-        context: ExecutionContext
+        self, tool_func: Callable, params: Dict[str, Any], context: ExecutionContext
     ) -> ToolExecutionResult:
         """Execute tool asynchronously."""
         import time
+
         start_time = time.time()
 
         try:
@@ -403,25 +429,33 @@ class AsyncExecutionStrategy(BaseExecutionStrategy):
 
             # Security validation if auth system is available
             try:
-                from hacs_auth import ToolSecurityContext, create_secure_actor, ActorRole
-                
+                from hacs_auth import (
+                    ToolSecurityContext,
+                    create_secure_actor,
+                    ActorRole,
+                )
+
                 if context.actor_name:
                     # Create secure actor context
                     actor = create_secure_actor(
                         actor_name=context.actor_name,
                         role=ActorRole.AGENT,
-                        permissions=["read:*", "write:*", "admin:tools"]
+                        permissions=["read:*", "write:*", "admin:tools"],
                     )
-                    
+
                     security_context = ToolSecurityContext(actor)
-                    
+
                     # Validate tool execution permissions
-                    tool_permissions = getattr(tool_func, '_required_permissions', [])
+                    tool_permissions = getattr(tool_func, "_required_permissions", [])
                     if tool_permissions:
-                        security_context.validate_tool_permission(tool_func.__name__, tool_permissions)
-                    
-                    logger.info(f"Security validation passed for {tool_func.__name__} by {context.actor_name}")
-                
+                        security_context.validate_tool_permission(
+                            tool_func.__name__, tool_permissions
+                        )
+
+                    logger.info(
+                        f"Security validation passed for {tool_func.__name__} by {context.actor_name}"
+                    )
+
             except ImportError:
                 logger.debug("hacs-auth not available, skipping security validation")
             except Exception as security_error:
@@ -429,7 +463,7 @@ class AsyncExecutionStrategy(BaseExecutionStrategy):
                 return ToolExecutionResult(
                     success=False,
                     error=f"Security validation failed: {security_error}",
-                    execution_time_ms=(time.time() - start_time) * 1000
+                    execution_time_ms=(time.time() - start_time) * 1000,
                 )
 
             # Execute based on function type
@@ -442,13 +476,13 @@ class AsyncExecutionStrategy(BaseExecutionStrategy):
 
             # Log successful execution if security context available
             try:
-                if context.actor_name and 'security_context' in locals():
+                if context.actor_name and "security_context" in locals():
                     security_context.log_tool_execution(
                         tool_name=tool_func.__name__,
                         parameters=execution_params,
                         result=result,
                         execution_time_ms=execution_time,
-                        success=True
+                        success=True,
                     )
             except:
                 pass  # Continue if audit logging fails
@@ -458,11 +492,11 @@ class AsyncExecutionStrategy(BaseExecutionStrategy):
                 data=result,
                 execution_time_ms=execution_time,
                 metadata={
-                    "strategy": "async", 
+                    "strategy": "async",
                     "context": context.metadata,
                     "actor_name": context.actor_name,
-                    "security_validated": context.actor_name is not None
-                }
+                    "security_validated": context.actor_name is not None,
+                },
             )
 
         except Exception as e:
@@ -471,14 +505,14 @@ class AsyncExecutionStrategy(BaseExecutionStrategy):
 
             # Log failed execution if security context available
             try:
-                if context.actor_name and 'security_context' in locals():
+                if context.actor_name and "security_context" in locals():
                     security_context.log_tool_execution(
                         tool_name=tool_func.__name__,
                         parameters=execution_params,
                         result=None,
                         execution_time_ms=execution_time,
                         success=False,
-                        error=str(e)
+                        error=str(e),
                     )
             except:
                 pass  # Continue if audit logging fails
@@ -487,14 +521,11 @@ class AsyncExecutionStrategy(BaseExecutionStrategy):
                 success=False,
                 error=str(e),
                 execution_time_ms=execution_time,
-                metadata={"strategy": "async", "context": context.metadata}
+                metadata={"strategy": "async", "context": context.metadata},
             )
 
     def _prepare_parameters(
-        self,
-        tool_func: Callable,
-        params: Dict[str, Any],
-        context: ExecutionContext
+        self, tool_func: Callable, params: Dict[str, Any], context: ExecutionContext
     ) -> Dict[str, Any]:
         """Prepare parameters with context injection."""
         import inspect
@@ -503,19 +534,20 @@ class AsyncExecutionStrategy(BaseExecutionStrategy):
         sig = inspect.signature(tool_func)
 
         # Inject context parameters if tool supports them
-        if 'actor_name' in sig.parameters and context.actor_name:
-            execution_params['actor_name'] = context.actor_name
+        if "actor_name" in sig.parameters and context.actor_name:
+            execution_params["actor_name"] = context.actor_name
 
-        if 'db_adapter' in sig.parameters and context.db_adapter:
-            execution_params['db_adapter'] = context.db_adapter
+        if "db_adapter" in sig.parameters and context.db_adapter:
+            execution_params["db_adapter"] = context.db_adapter
 
-        if 'vector_store' in sig.parameters and context.vector_store:
-            execution_params['vector_store'] = context.vector_store
+        if "vector_store" in sig.parameters and context.vector_store:
+            execution_params["vector_store"] = context.vector_store
 
         return execution_params
 
 
 # Factory Classes
+
 
 class ToolAdapterFactory:
     """Factory for creating framework-specific tool adapters."""
@@ -523,7 +555,7 @@ class ToolAdapterFactory:
     _adapters: Dict[FrameworkType, Type[BaseToolAdapter]] = {
         FrameworkType.LANGCHAIN: LangChainAdapter,
         FrameworkType.MCP: MCPAdapter,
-        FrameworkType.NATIVE: NativeAdapter
+        FrameworkType.NATIVE: NativeAdapter,
     }
 
     @classmethod
@@ -537,9 +569,7 @@ class ToolAdapterFactory:
 
     @classmethod
     def register_adapter(
-        cls,
-        framework: FrameworkType,
-        adapter_class: Type[BaseToolAdapter]
+        cls, framework: FrameworkType, adapter_class: Type[BaseToolAdapter]
     ) -> None:
         """Register a custom adapter for a framework."""
         cls._adapters[framework] = adapter_class
@@ -570,6 +600,7 @@ class ExecutionStrategyFactory:
 
 # Main Integration Coordinator
 
+
 class HACSToolIntegrationManager:
     """
     Main coordinator for HACS tool integrations across frameworks.
@@ -592,11 +623,7 @@ class HACSToolIntegrationManager:
 
         return self._adapters[framework]
 
-    def adapt_tool(
-        self,
-        tool_name: str,
-        framework: FrameworkType
-    ) -> Optional[Any]:
+    def adapt_tool(self, tool_name: str, framework: FrameworkType) -> Optional[Any]:
         """Adapt a tool for the specified framework."""
         tool_def = self.registry.get_tool(tool_name)
         if not tool_def:
@@ -621,9 +648,7 @@ class HACSToolIntegrationManager:
         return adapted_tools
 
     def get_tools_by_category(
-        self,
-        category: str,
-        framework: FrameworkType
+        self, category: str, framework: FrameworkType
     ) -> List[Any]:
         """Get adapted tools for a specific category and framework."""
         tool_defs = self.registry.get_tools_by_category(category)
@@ -643,28 +668,24 @@ class HACSToolIntegrationManager:
         self,
         tool_name: str,
         params: Dict[str, Any],
-        context: Optional[ExecutionContext] = None
+        context: Optional[ExecutionContext] = None,
     ) -> ToolExecutionResult:
         """Execute a tool with the given parameters and context."""
         tool_def = self.registry.get_tool(tool_name)
         if not tool_def:
             return ToolExecutionResult(
-                success=False,
-                error=f"Tool not found: {tool_name}"
+                success=False, error=f"Tool not found: {tool_name}"
             )
 
         if not tool_def.function:
             return ToolExecutionResult(
-                success=False,
-                error=f"Tool function not available: {tool_name}"
+                success=False, error=f"Tool function not available: {tool_name}"
             )
 
         execution_context = context or ExecutionContext()
 
         return await self._execution_strategy.execute(
-            tool_def.function,
-            params,
-            execution_context
+            tool_def.function, params, execution_context
         )
 
     def get_integration_stats(self) -> Dict[str, Any]:
@@ -673,12 +694,17 @@ class HACSToolIntegrationManager:
 
         integration_stats = {
             "registry_stats": stats,
-            "supported_frameworks": [f.value for f in ToolAdapterFactory.get_supported_frameworks()],
+            "supported_frameworks": [
+                f.value for f in ToolAdapterFactory.get_supported_frameworks()
+            ],
             "loaded_adapters": [f.value for f in self._adapters.keys()],
-            "total_adaptable_tools": len([
-                tool for tool in self.registry.get_all_tools()
-                if tool.function is not None
-            ])
+            "total_adaptable_tools": len(
+                [
+                    tool
+                    for tool in self.registry.get_all_tools()
+                    if tool.function is not None
+                ]
+            ),
         }
 
         return integration_stats
@@ -697,6 +723,7 @@ def get_integration_manager() -> HACSToolIntegrationManager:
 
 
 # Convenience Functions for Common Operations
+
 
 def get_langchain_tools(category: Optional[str] = None) -> List[Any]:
     """Get LangChain-adapted tools, optionally filtered by category."""
@@ -722,14 +749,14 @@ async def execute_hacs_tool(
     actor_name: Optional[str] = None,
     db_adapter: Optional[Any] = None,
     vector_store: Optional[Any] = None,
-    **kwargs
+    **kwargs,
 ) -> ToolExecutionResult:
     """Execute a HACS tool with context."""
     context = ExecutionContext(
         actor_name=actor_name,
         db_adapter=db_adapter,
         vector_store=vector_store,
-        metadata=kwargs
+        metadata=kwargs,
     )
 
     manager = get_integration_manager()

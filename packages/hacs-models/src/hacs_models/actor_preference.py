@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Union
+
 from pydantic import Field
 
 from .base_resource import BaseResource
@@ -16,7 +17,7 @@ class PreferenceScope(str, Enum):
     TOOL = "tool"
 
 
-PreferenceValue = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
+PreferenceValue = Union[dict[str, Any], list[Any], str, int, float, bool, None]
 
 
 class ActorPreference(BaseResource):
@@ -32,8 +33,9 @@ class ActorPreference(BaseResource):
     key: str = Field(description="Preference key, e.g., response_format")
     value: PreferenceValue = Field(description="Preference value as JSON-compatible data")
     scope: PreferenceScope = Field(default=PreferenceScope.GLOBAL, description="Preference scope")
-    target_id: Optional[str] = Field(default=None, description="Target identifier for scoped preferences (e.g., workflow_id, agent_id, tool_name, org_id)")
-    datatype: Optional[str] = Field(default=None, description="Optional data type hint for value")
-    tags: List[str] = Field(default_factory=list)
-
-
+    target_id: str | None = Field(
+        default=None,
+        description="Target identifier for scoped preferences (e.g., workflow_id, agent_id, tool_name, org_id)",
+    )
+    datatype: str | None = Field(default=None, description="Optional data type hint for value")
+    tags: list[str] = Field(default_factory=list)

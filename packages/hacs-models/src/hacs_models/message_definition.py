@@ -8,7 +8,8 @@ with optional definition metadata (url, version, status, publisher, description,
 event, category) to support both runtime messaging and cataloged message specs.
 """
 
-from typing import Any, Dict, List, Optional, Union, Literal
+from typing import Any, Literal
+
 from pydantic import Field
 
 from .base_resource import BaseResource
@@ -27,29 +28,46 @@ class MessageDefinition(BaseResource):
     resource_type: Literal["MessageDefinition"] = Field(default="MessageDefinition")
 
     # Runtime message payload
-    content: Union[str, List[Union[str, Dict[str, Any]]]] = Field(
+    content: str | list[str | dict[str, Any]] = Field(
         description="Message content as plain text or a list of blocks (strings or typed dicts)."
     )
-    role: Optional[MessageRole] = Field(default=None, description="Message role (system, user, assistant, etc.)")
-    message_type: Optional[MessageType] = Field(default=None, description="Message content type (text, structured, etc.)")
-    name: Optional[str] = Field(default=None, description="Optional human-readable message label")
+    role: MessageRole | None = Field(
+        default=None, description="Message role (system, user, assistant, etc.)"
+    )
+    message_type: MessageType | None = Field(
+        default=None, description="Message content type (text, structured, etc.)"
+    )
+    name: str | None = Field(default=None, description="Optional human-readable message label")
 
-    additional_kwargs: Dict[str, Any] = Field(default_factory=dict, description="Provider-specific payload (tool calls, etc.)")
-    response_metadata: Dict[str, Any] = Field(default_factory=dict, description="Response metadata (headers, logprobs, token counts, model)")
-    tool_calls: List[Dict[str, Any]] = Field(default_factory=list, description="Tool/function calls encoded by the provider")
-    attachments: List[Dict[str, Any]] = Field(default_factory=list, description="Attached files or references")
+    additional_kwargs: dict[str, Any] = Field(
+        default_factory=dict, description="Provider-specific payload (tool calls, etc.)"
+    )
+    response_metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Response metadata (headers, logprobs, token counts, model)",
+    )
+    tool_calls: list[dict[str, Any]] = Field(
+        default_factory=list, description="Tool/function calls encoded by the provider"
+    )
+    attachments: list[dict[str, Any]] = Field(
+        default_factory=list, description="Attached files or references"
+    )
 
     # Optional definition/catalog metadata (FHIR-inspired)
-    url: Optional[str] = Field(default=None, description="Canonical URL for message definition")
-    title: Optional[str] = Field(default=None, description="Title for the message definition")
-    status: Optional[str] = Field(default=None, description="draft | active | retired | unknown")
-    experimental: Optional[bool] = Field(default=None)
-    publisher: Optional[str] = Field(default=None)
-    purpose: Optional[str] = Field(default=None)
-    description: Optional[str] = Field(default=None)
-    event_code: Optional[str] = Field(default=None, description="Event code identifying the message trigger")
-    event_system: Optional[str] = Field(default=None, description="Code system for the event code")
-    category: Optional[str] = Field(default=None, description="consequence | currency | notification")
+    url: str | None = Field(default=None, description="Canonical URL for message definition")
+    title: str | None = Field(default=None, description="Title for the message definition")
+    status: str | None = Field(default=None, description="draft | active | retired | unknown")
+    experimental: bool | None = Field(default=None)
+    publisher: str | None = Field(default=None)
+    purpose: str | None = Field(default=None)
+    description: str | None = Field(default=None)
+    event_code: str | None = Field(
+        default=None, description="Event code identifying the message trigger"
+    )
+    event_system: str | None = Field(default=None, description="Code system for the event code")
+    category: str | None = Field(
+        default=None, description="consequence | currency | notification"
+    )
 
     model_config = {"extra": "allow"}
 
@@ -61,8 +79,10 @@ class MessageDefinition(BaseResource):
             block
             for block in self.content
             if isinstance(block, str)
-            or (isinstance(block, dict) and block.get("type") == "text" and isinstance(block.get("text"), str))
+            or (
+                isinstance(block, dict)
+                and block.get("type") == "text"
+                and isinstance(block.get("text"), str)
+            )
         ]
         return "".join(block if isinstance(block, str) else block["text"] for block in blocks)
-
-

@@ -7,32 +7,40 @@ are now imported from hacs-core to ensure consistency across HACS packages.
 """
 
 import logging
-from abc import ABC, abstractmethod
+from abc import ABC
 from datetime import datetime, timezone
 from typing import (
-    TypeVar, Generic, List, Optional, Dict, Any,
-    Protocol, runtime_checkable, Union, Awaitable
+    TypeVar,
+    Generic,
+    List,
+    Optional,
+    Dict,
+    Any,
+    Protocol,
+    runtime_checkable,
 )
 from dataclasses import dataclass, field
 
 # Import core persistence protocols from hacs-core
 try:
     from hacs_core.persistence_protocols import (
-        EntityId, Entity, AggregateRoot, Repository, UnitOfWork
+        EntityId,
+        Entity,
+        AggregateRoot,
+        Repository,
+        UnitOfWork,
     )
 except ImportError:
     # Fallback for development - import from hacs-core main module
-    from hacs_core import (
-        EntityId, Entity, AggregateRoot, Repository, UnitOfWork
-    )
+    from hacs_core import EntityId, Entity, AggregateRoot, Repository, UnitOfWork
 
 logger = logging.getLogger(__name__)
 
 # Type variables for generic interfaces
-T = TypeVar('T')
-TEntity = TypeVar('TEntity', bound=Entity)
-TEvent = TypeVar('TEvent', bound='DomainEvent')
-TAggregate = TypeVar('TAggregate', bound=AggregateRoot)
+T = TypeVar("T")
+TEntity = TypeVar("TEntity", bound=Entity)
+TEvent = TypeVar("TEvent", bound="DomainEvent")
+TAggregate = TypeVar("TAggregate", bound=AggregateRoot)
 
 
 class ValueObject(ABC):
@@ -225,15 +233,15 @@ class Specification(Protocol, Generic[T]):
         """Check if entity satisfies the specification."""
         ...
 
-    def and_specification(self, other: 'Specification[T]') -> 'Specification[T]':
+    def and_specification(self, other: "Specification[T]") -> "Specification[T]":
         """Combine with another specification using AND."""
         ...
 
-    def or_specification(self, other: 'Specification[T]') -> 'Specification[T]':
+    def or_specification(self, other: "Specification[T]") -> "Specification[T]":
         """Combine with another specification using OR."""
         ...
 
-    def not_specification(self) -> 'Specification[T]':
+    def not_specification(self) -> "Specification[T]":
         """Negate this specification."""
         ...
 
@@ -272,7 +280,6 @@ __all__ = [
     "AggregateRoot",
     "Repository",
     "UnitOfWork",
-
     # Registry-specific abstractions
     "ValueObject",
     "DomainEvent",
@@ -284,7 +291,6 @@ __all__ = [
     "QueryRepository",
     "Specification",
     "RegistryAggregateRoot",
-
     # Type aliases
     "RepositoryType",
     "QueryRepositoryType",
