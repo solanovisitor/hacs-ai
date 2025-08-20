@@ -1,105 +1,118 @@
-# 🏥 HACS — Context‑engineering framework for healthcare agents
+---
+search:
+  boost: 2
+---
 
-[![License](https://img.shields.io/github/license/solanovisitor/hacs-ai)](https://github.com/solanovisitor/hacs-ai/blob/main/LICENSE)
-[![Python](https://img.shields.io/badge/python-3.11+-blue)](https://python.org)
-[![PyPI](https://img.shields.io/pypi/v/hacs-core)](https://pypi.org/project/hacs-core/)
-[![Docs](https://img.shields.io/badge/docs-latest-blue)](./docs/README.md)
+# HACS — Context‑engineering framework for healthcare agents
 
-HACS (Healthcare Agent Communication Standard) is a context‑engineering framework for building safe, capable healthcare agents. It operationalizes the four strategies of context engineering — Write, Select, Compress, Isolate — for clinical settings with healthcare‑native models, tools, and security.
+Context‑engineering framework for building healthcare AI with structured memory, clinical reasoning, and FHIR compliance.
 
-## Get started
+## Quick Links
 
-Install the core packages (uv):
+- **[Quick Start](quick-start.md)** - Install HACS and build healthcare AI in 5 minutes
+- **[API Reference](api-reference.md)** - Complete API documentation  
+- **[HACS Tools](hacs-tools.md)** - 20+ healthcare tools reference
+- **[Testing Guide](testing.md)** - Testing and validation
+
+ 
+
+## Tutorials
+
+- **[Complete Context Engineering](tutorials/complete_context_engineering.md)** - Full workflow with all 4 strategies
+- **[Medication Extraction](tutorials/medication_extraction.md)** - Extract clinical data from text
+
+## Key Features
+
+- **20+ Tools** - Specialized for clinical workflows via MCP protocol
+- **FHIR Models** - Type-safe Pydantic models for healthcare data
+- **Context Engineering** - Four strategies: Isolate, Select, Compress, Write  
+- **Actor Security** - Role-based permissions with audit trails
+- **AI Framework Ready** - Works with LangGraph, LangChain, and any MCP client
+
+## Architecture
+
+```mermaid  
+graph LR
+  A[Healthcare AI] --> B[HACS Tools]
+  B --> C[(PostgreSQL)]
+  B --> D[Vector Store]
+  B --> E[FHIR Models]
+```
+
+---
+
+## Install uv CLI
+
+Install the `uv` package manager first. It provides fast, reproducible environments and workspace management.
+
+!!! info "More installation options"
+
+    See the official uv installation guide for standalone installers, Homebrew, pipx, and more: [uv — Installing uv](https://docs.astral.sh/uv/getting-started/installation/).
 
 ```bash
-# Install uv and create a Python 3.11 environment
+# macOS/Linux standalone installer
 curl -LsSf https://astral.sh/uv/install.sh | sh
-uv venv -p 3.11
-source .venv/bin/activate
 
-# Install HACS packages into the uv-managed venv
-uv pip install -U hacs-core hacs-auth hacs-models hacs-tools hacs-utils hacs-persistence
+# Verify
+uv --version
 ```
 
-Then follow the Quick Start to run the MCP server and the LangGraph developer agent:
-- [Quick Start](./docs/quick-start.md)
+---
 
-### Quickstart (minimal code)
+## Install HACS (beta)
 
-Bind HACS tools directly to an agent (LangGraph):
+HACS is in active beta. The preferred install is from source to ensure the latest fixes and docs.
 
-```python
-from langgraph.prebuilt import create_react_agent
-from hacs_utils.integrations.langchain.tools import langchain_tools
+!!! info "Requirements"
 
-# Discover HACS tools (LangChain BaseTool) and create an agent that can call them
-tools = langchain_tools()
-agent = create_react_agent(
-    model="anthropic:claude-3-7-sonnet-latest",  # or "openai:gpt-4o"
-    tools=tools,
-    prompt="You are a healthcare assistant using HACS tools."
-)
+    - Python >= 3.11
+    - [`uv`](https://docs.astral.sh/uv/getting-started/installation/) (recommended)
+    - Optional: PostgreSQL + `pgvector` for persistence (see How‑to)
 
-# Ask the agent to use tools (it will decide which to call)
-result = agent.invoke({
-    "messages": [
-        {
-            "role": "user",
-            "content": "Create a Patient named John Smith (1980-05-15) and summarize current DB health"
-        }
-    ]
-})
-print(result)
-```
+=== "uv (recommended)"
 
-## Why HACS
+    ```bash
+    # Create virtual environment (requires uv installed)
+    uv venv -p 3.11
+    source .venv/bin/activate
 
-- **Context engineering for healthcare**: Write clinical memory; Select essential data; Compress safely; Isolate by regulatory boundaries.
-- **Protocol‑first tools (MCP)**: 40+ tools via Model Context Protocol; usable from any agent framework.
-- **Healthcare‑native models**: FHIR‑aligned, type‑safe Pydantic models for core clinical entities.
-- **Actor‑based security**: Roles, permissions, sessions, and audit trails for PHI and compliance.
-- **Ecosystem‑ready**: Works with LangGraph/LangChain and common LLM providers (Anthropic, OpenAI, etc.).
+    # Clone and install workspace from source (editable)
+    git clone https://github.com/solanovisitor/hacs-ai.git
+    cd hacs-ai
+    uv pip install -U pip
+    uv sync
 
-## Components (high‑level)
+    # Configure environment
+    cp .env.example .env    # fill OPENAI_API_KEY, DATABASE_URL
+    ```
 
-- Models & protocols: `hacs-core`, `hacs-models`
-- Tools & registry: `hacs-tools`, `hacs-registry`
-- Integrations & MCP server: `hacs-utils`
-- Persistence adapters: `hacs-persistence` (PostgreSQL + pgvector)
-- Security & IAM: `hacs-auth`
+=== "pip"
 
-Note: Package‑level docs evolve; use the links below for the most up‑to‑date guidance.
+    ```bash
+    python -m venv .venv && source .venv/bin/activate
+    pip install -U pip
+    pip install -U hacs-core hacs-auth hacs-models hacs-tools hacs-utils hacs-persistence hacs-registry
+    ```
 
-## Architecture at a glance
+!!! info "Missing Local Package?"
 
-| Layer | Package(s) | Purpose | Interfaces |
-| --- | --- | --- | --- |
-| Models & Protocols | `hacs-core`, `hacs-models` | Clinical data models and protocol contracts | Pydantic models, protocol utils |
-| Tools & Registry | `hacs-tools`, `hacs-registry` | Healthcare tools and resource/Tool registry | MCP Tools, registry APIs |
-| Integrations & MCP | `hacs-utils` | MCP server and framework adapters | JSON-RPC, streamable HTTP, adapters |
-| Persistence | `hacs-persistence` | PostgreSQL + pgvector adapters and repositories | DB adapters, migrations |
-| Security & IAM | `hacs-auth` | Actor model, permissions, sessions, audit | Decorators, token utilities |
+    If you are not using `uv` and run into a ModuleNotFoundError for local packages, ensure you installed the workspace or editable packages and re‑activated your environment. Using `uv sync` is recommended.
 
-## Learn more
+---
 
-- [Quick Start](./docs/quick-start.md)
-- [HACS Tools reference](./docs/hacs-tools.md)
-- [Use MCP with LangGraph](./docs/mcp_langgraph.md)
-- [Integrations overview](./docs/integrations.md)
-- [Testing and CI](./docs/testing.md)
-- [API reference (selected)](./docs/api-reference.md)
+## Next steps
 
-## Optional services
+- Follow the [Quick Start](quick-start.md) to validate your setup
+- Connect to a database: [Connect to database](how-to/connect_postgres.md)
+- Generate structured data with LLMs: [Generate structured data](how-to/extract_annotations.md)
+- Extract with citations: [Extract citations](how-to/grounded_extraction.md)
+- Persist resources: [Persist Resources](how-to/persist_resources.md)
 
-- MCP Server — expose HACS tools via JSON‑RPC and streamable HTTP
-- PostgreSQL + pgvector — persistence and vector search for clinical embeddings
-- LangGraph Developer Agent — a ready‑to‑run agent for local development (`examples/hacs_developer_agent/`)
+---
 
-## Community & support
+## Quick Links
 
-- Issues: https://github.com/solanovisitor/hacs-ai/issues
-- Discussions: https://github.com/solanovisitor/hacs-ai/discussions
-
-## License
-
-MIT — see `LICENSE`.
+- **[Quick Start](quick-start.md)** - Install HACS and build healthcare AI in minutes
+- **[API Reference](api-reference.md)** - Complete API documentation
+- **[HACS Tools](hacs-tools.md)** - Tooling overview and references
+- **[Testing Guide](testing.md)** - Testing and validation
