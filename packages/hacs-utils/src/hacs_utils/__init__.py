@@ -71,6 +71,26 @@ AnthropicClient = _safe_import("hacs_utils.integrations.anthropic", "AnthropicCl
 create_anthropic_client = _safe_import("hacs_utils.integrations.anthropic", "create_anthropic_client")
 anthropic_structured_extract = _safe_import("hacs_utils.integrations.anthropic", "anthropic_structured_extract")
 
+# Provider selection helpers
+from dotenv import load_dotenv
+import os as _os
+
+
+def create_llm_provider(preferred: str | None = None):
+    """Factory to create an LLM provider by name.
+
+    Names: "langchain", "openai", "anthropic". Defaults to LangChain-compatible
+    provider selection in call sites; this is a convenience for explicit choice.
+    """
+    load_dotenv()
+    name = (preferred or _os.getenv("HACS_LLM_PROVIDER", "langchain")).lower()
+    if name == "openai" and create_openai_client:
+        return create_openai_client()
+    if name == "anthropic" and create_anthropic_client:
+        return create_anthropic_client()
+    # Default: caller should pass a LangChain Chat model directly
+    return None
+
 # Pinecone Integration
 PineconeVectorStore = _safe_import("hacs_utils.integrations.pinecone", "PineconeVectorStore")
 create_pinecone_store = _safe_import("hacs_utils.integrations.pinecone", "create_pinecone_store")

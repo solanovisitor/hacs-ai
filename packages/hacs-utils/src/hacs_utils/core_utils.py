@@ -6,9 +6,9 @@ code duplication and ensure consistency.
 """
 
 import logging
-import os
 from functools import wraps
 from typing import Any, TypeVar, Optional
+from dotenv import load_dotenv, dotenv_values
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +85,8 @@ def get_api_key(key_name: str, env_var: str, required: bool = True) -> Optional[
     Raises:
         ValueError: If required key is not found
     """
-    api_key = os.getenv(env_var)
+    load_dotenv()
+    api_key = dotenv_values().get(env_var)
 
     if not api_key and required:
         raise ValueError(

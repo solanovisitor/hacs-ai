@@ -3,9 +3,9 @@ OpenAI Client Implementation for HACS
 """
 
 import json
-import os
 from collections.abc import Callable
 from typing import Any
+from dotenv import load_dotenv, dotenv_values
 
 try:
     import openai
@@ -50,8 +50,10 @@ class OpenAIClient:
         self.frequency_penalty = frequency_penalty
         self.presence_penalty = presence_penalty
 
+        load_dotenv()
+        resolved_key = api_key or dotenv_values().get("OPENAI_API_KEY")
         self.client = OpenAI(
-            api_key=api_key or os.getenv("OPENAI_API_KEY"),
+            api_key=resolved_key,
             base_url=base_url,
             organization=organization,
             timeout=timeout,
