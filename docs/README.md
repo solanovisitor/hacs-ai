@@ -1,1 +1,0 @@
-This file intentionally left blank; content moved to `index.md`.
