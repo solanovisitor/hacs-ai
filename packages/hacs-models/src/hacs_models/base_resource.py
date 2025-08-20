@@ -255,6 +255,8 @@ class BaseResource(BaseModel):
     _doc_references: ClassVar[List[str]] = []
     _doc_tools: ClassVar[List[str]] = []
     _doc_examples: ClassVar[List[Dict[str, Any]]] = []
+    # Canonical defaults used for extraction prompts and fallbacks
+    _canonical_defaults: ClassVar[Dict[str, Any]] = {}
 
     def model_post_init(self, __context: Any) -> None:
         """
@@ -419,17 +421,37 @@ class BaseResource(BaseModel):
         fields: dict[str, Any] = {}
         try:
             for name, field in getattr(cls, "model_fields", {}).items():
-                fields[name] = {
+                info: Dict[str, Any] = {
                     "type": str(getattr(field, "annotation", "")),
                     "description": getattr(field, "description", None),
                     "examples": getattr(field, "examples", None),
                 }
+                # Enums / Literals → list allowed values
+                try:
+                    from typing import get_origin, get_args
+                    from enum import Enum
+                    ann = getattr(field, "annotation", None)
+                    if ann is not None:
+                        if get_origin(ann) is Literal:  # type: ignore[name-defined]
+                            info["enum_values"] = list(get_args(ann))
+                        elif isinstance(ann, type) and issubclass(ann, Enum):
+                            info["enum_values"] = [getattr(e, 'value', e) for e in list(ann)]
+                except Exception:
+                    pass
+                fields[name] = info
         except Exception:
             pass
+        # Required fields from JSON schema when available
+        try:
+            required = list((cls.model_json_schema() or {}).get("required", []) or [])
+        except Exception:
+            required = []
         return {
             "title": cls.__name__,
             "description": doc,
             "fields": fields,
+            "required": required,
+            "canonical_defaults": cls.get_canonical_defaults(),
         }
 
     @classmethod
@@ -451,6 +473,29 @@ class BaseResource(BaseModel):
         if language:
             base["language"] = language
         return base
+
+    # --- Canonical defaults and extraction examples ---
+    @classmethod
+    def get_canonical_defaults(cls) -> Dict[str, Any]:
+        """Return canonical defaults for extraction and fallback seeding."""
+        try:
+            return dict(cls._canonical_defaults or {})
+        except Exception:
+            return {}
+
+    @classmethod
+    def get_extraction_examples(cls) -> Dict[str, Any]:
+        """Return minimal extraction examples: object and array forms.
+
+        The object form is a minimal JSON-like dict using canonical defaults
+        and resource_type; the array form is a single-element list.
+        """
+        example_obj: Dict[str, Any] = {"resource_type": getattr(cls, "__name__", "Resource")}
+        try:
+            example_obj.update({k: v for k, v in cls.get_canonical_defaults().items() if v is not None})
+        except Exception:
+            pass
+        return {"object": example_obj, "array": [example_obj]}
 
     def __str__(self) -> str:
         """

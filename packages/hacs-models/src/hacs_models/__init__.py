@@ -52,6 +52,7 @@ from .types import (
     ServiceRequestPriority,
     DiagnosticReportStatus,
     MedicationStatus,
+    MedicationRequestIntent,
     # Added for compatibility with legacy tests and FHIR alignment
     DocumentStatus,
     DocumentType,

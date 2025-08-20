@@ -15,6 +15,14 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Protocol, TypeVar, runtime_checkable
 from dataclasses import dataclass
 from enum import Enum
+import warnings
+
+# Consolidate registration path into hacs-registry (single source of truth)
+try:
+    # Local import to avoid hard dependency at import time if registry isn't installed
+    from hacs_registry.tool_registry import register_tool as _registry_register_tool
+except Exception:  # pragma: no cover - fallback if registry not available
+    _registry_register_tool = None  # type: ignore
 
 # Type variables
 F = TypeVar('F', bound=Callable[..., Any])
@@ -311,13 +319,33 @@ def register_tool_with_metadata(func: Callable, metadata: ToolMetadata) -> Calla
     Returns:
         Decorated function
     """
-    # Get framework-specific decorator
+    # 1) Register with the canonical hacs-registry (if available)
+    #    This ensures global discovery/search picks it up immediately.
+    registered_func = func
+    if _registry_register_tool is not None:
+        try:
+            domain = (metadata.domains[0] if metadata.domains else "general")
+            # Use tags to carry category and observability hints
+            tags = list(metadata.tags or [])
+            if metadata.category:
+                tags.append(f"category:{metadata.category}")
+            registry_decorator = _registry_register_tool(
+                name=metadata.name,
+                version=metadata.version,
+                description=metadata.description,
+                domain=domain,
+                tags=tags,
+            )
+            registered_func = registry_decorator(func)
+        except Exception:
+            # Best-effort: continue even if registry not available/misconfigured
+            pass
+
+    # 2) Apply framework-specific decoration (e.g., LangChain/MCP/CrewAI)
     decorator = get_tool_decorator()
+    decorated_func = decorator(registered_func)
 
-    # Apply framework decoration
-    decorated_func = decorator(func)
-
-    # Register with registry
+    # 3) Register with the in-memory adapter registry for the active framework
     registry = get_tool_registry()
     registry.register_tool(decorated_func, metadata)
 
@@ -355,13 +383,17 @@ def hacs_tool(
             name=name,
             description=description,
             category=category,
-            domains=domains or []
+            domains=domains or [],
             **kwargs
         )
 
         # Add observability metadata
-        metadata.enable_tracing = enable_tracing
-        metadata.enable_metrics = enable_metrics
+        try:
+            # Attach as dynamic attributes for downstream adapters if needed
+            setattr(metadata, "enable_tracing", enable_tracing)
+            setattr(metadata, "enable_metrics", enable_metrics)
+        except Exception:
+            pass
 
         return register_tool_with_metadata(func, metadata)
 

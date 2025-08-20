@@ -27,6 +27,9 @@ from .resource_registry import (
     HACSResourceRegistry,
     get_global_registry,
     register_hacs_resource,
+    register_resource,
+    get_pending_resource_registrations,
+    consume_pending_resource_registrations,
 )
 
 # Agent configuration and management
@@ -83,6 +86,12 @@ from .persistence_integration import (
     configure_registry_persistence, get_registry_integration,
     get_persistent_resource_registry, get_persistent_agent_registry,
     get_persistent_iam_registry, get_persistent_tool_registry
+)
+
+# Migrations and catalog registration
+from .migrations import (
+    discover_and_import_plugins,
+    register_catalog,
 )
 
 # Integration framework (existing)

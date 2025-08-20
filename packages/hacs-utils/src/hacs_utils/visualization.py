@@ -619,76 +619,265 @@ def annotations_to_markdown(annotated_document: Any, *, context_chars: int = 50)
     return "\n".join(lines)
 
 
-def resource_docs_to_markdown(resource_or_class: Any) -> str:
-    """Return Markdown rendering of a model's documentation (scope, boundaries, etc.).
+# NOTE: resource_docs_to_markdown removed; use get_specs_markdown instead.
 
-    Accepts a model class, an instance, or a resource type name string.
-    """
-    # Resolve class
-    cls: Any = None
-    if resource_or_class is None:
-        raise ValueError("resource_or_class is required")
-    if isinstance(resource_or_class, str):
+
+def _resolve_model_class(obj: Any) -> Any:
+    """Best-effort resolve a HACS model class from instance/class/str."""
+    # String → registry
+    if isinstance(obj, str):
         try:
             from hacs_models import get_model_registry  # type: ignore
-            cls = get_model_registry().get(resource_or_class)
+            return get_model_registry().get(obj)
         except Exception:
-            cls = None
-    elif hasattr(resource_or_class, "__mro__"):
-        cls = resource_or_class
-    else:
-        cls = resource_or_class.__class__
+            return None
+    # Class-like
+    if hasattr(obj, "__mro__"):
+        return obj
+    # Instance
+    try:
+        return obj.__class__
+    except Exception:
+        return None
 
+
+def _guess_original_class(subset_cls: Any) -> Any:
+    """Try to find the original resource class for pick()-created subsets."""
+    # If the class already has get_descriptive_schema, treat as original
+    if hasattr(subset_cls, "get_descriptive_schema"):
+        return subset_cls
+    # Try resource_type default from model_fields
+    try:
+        mf = getattr(subset_cls, "model_fields", {})
+        rt = mf.get("resource_type")
+        resource_type_name = getattr(rt, "default", None) if rt else None
+    except Exception:
+        resource_type_name = None
+    # Fall back to class name heuristics
+    if not resource_type_name:
+        name = getattr(subset_cls, "__name__", "")
+        # Remove common suffixes like Subset
+        for suf in ("Subset", "Pick", "Schema"):
+            if name.endswith(suf):
+                resource_type_name = name[: -len(suf)]
+                break
+    # Resolve via registry
+    if resource_type_name:
+        try:
+            from hacs_models import get_model_registry  # type: ignore
+            return get_model_registry().get(resource_type_name)
+        except Exception:
+            return None
+    return None
+
+
+def get_specs_markdown(
+    resource_or_class: Any,
+    *,
+    include_fields: bool = True,
+    include_examples: bool = True,
+) -> str:
+    """Return Markdown rendering of model specifications + optional field descriptions.
+
+    - Works with a model class, an instance, or a resource type name string
+    - If a subset model (from pick()) is provided, only shows available fields
+    - Combines high-level documentation with a field table
+    """
+    cls = _resolve_model_class(resource_or_class)
     if cls is None:
         return "_No documentation available_"
 
-    # Prefer standardized specifications when available
+    # Determine allowed fields (subset-aware)
+    allowed_fields: set[str] | None = None
+    try:
+        model_fields = getattr(cls, "model_fields", None)
+        if isinstance(model_fields, dict) and model_fields:
+            allowed_fields = set(model_fields.keys())
+    except Exception:
+        allowed_fields = None
+
+    # Resolve original class when subset lacks descriptive schema
+    original_cls = cls if hasattr(cls, "get_descriptive_schema") else _guess_original_class(cls) or cls
+
+    # Build documentation section (scope, boundaries, relationships, etc.)
+    lines: list[str] = []
+    # Title
+    title = getattr(original_cls, "__name__", "Resource")
+    lines.append(f"#### {title} Specifications")
+    lines.append("")
+
+    # Pull documentation via get_specifications() if available
     docs: Dict[str, Any] = {}
     try:
-        specs = getattr(cls, "get_specifications", None)
+        specs = getattr(original_cls, "get_specifications", None)
         if callable(specs):
             data = specs()
             docs = (data or {}).get("documentation", {}) or {}
     except Exception:
         docs = {}
 
-    # Fallback to class-level attributes
-    def _get_attr(name: str) -> Any:
-        return getattr(cls, name, None)
+    def _append_block(header: str, content: Any):
+        if not content:
+            return
+        lines.extend([f"**{header}**", "", str(content), ""])  # keep simple blocks
 
-    scope = docs.get("scope_usage") or _get_attr("_doc_scope_usage")
-    boundaries = docs.get("boundaries") or _get_attr("_doc_boundaries")
-    relationships = docs.get("relationships") or list(_get_attr("_doc_relationships") or [])
-    references = docs.get("references") or list(_get_attr("_doc_references") or [])
-    tools = docs.get("tools") or list(_get_attr("_doc_tools") or [])
-    examples = docs.get("examples") or list(_get_attr("_doc_examples") or [])
+    _append_block("Scope & Usage", docs.get("scope_usage"))
+    _append_block("Boundaries", docs.get("boundaries"))
 
-    lines: list[str] = []
-    if scope:
-        lines += ["**Scope & Usage**", "", scope, ""]
-    if boundaries:
-        lines += ["**Boundaries**", "", boundaries, ""]
-    if relationships:
+    rel = docs.get("relationships") or []
+    if rel:
         lines += ["**Relationships**", ""]
-        for item in relationships:
+        for item in rel:
             lines.append(f"- {item}")
         lines.append("")
-    if references:
+
+    refs = docs.get("references") or []
+    if refs:
         lines += ["**References**", ""]
-        for item in references:
+        for item in refs:
             lines.append(f"- {item}")
         lines.append("")
+
+    tools = docs.get("tools") or []
     if tools:
         lines += ["**Tools**", ""]
         for t in tools:
             lines.append(f"- {t}")
         lines.append("")
 
+    if not include_fields:
+        return "\n".join(lines) if lines else "_No documentation available_"
 
-    if len(lines) <= 2:
+    # Field descriptions table (subset-aware)
+    # Prefer descriptive schema fields when available
+    schema_fields: Dict[str, Any] = {}
+    try:
+        get_desc = getattr(original_cls, "get_descriptive_schema", None)
+        if callable(get_desc):
+            ds = get_desc() or {}
+            schema_fields = (ds.get("fields") or ds.get("properties") or {})
+    except Exception:
+        schema_fields = {}
+
+    # Fallback to model_json_schema
+    if not schema_fields:
+        try:
+            js = getattr(original_cls, "model_json_schema", None)
+            if callable(js):
+                s = js() or {}
+                schema_fields = s.get("properties", {})
+        except Exception:
+            schema_fields = {}
+
+    # Build table
+    if schema_fields:
+        lines += ["| Field | Type | Description |", "|---|---|---|"]
+        for fname, finfo in schema_fields.items():
+            if allowed_fields and fname not in allowed_fields:
+                continue
+            ftype = ""
+            fdesc = ""
+            try:
+                ftype = finfo.get("type", "")
+                fdesc = finfo.get("description", "")
+                if include_examples:
+                    examples = finfo.get("examples")
+                    if examples:
+                        example_str = examples[0] if isinstance(examples, list) else examples
+                        if example_str:
+                            fdesc = f"{fdesc} (e.g., {example_str})" if fdesc else f"e.g., {example_str}"
+            except Exception:
+                try:
+                    ftype = str(finfo)
+                except Exception:
+                    ftype = ""
+                fdesc = fdesc or ""
+            lines.append(f"| {fname} | {ftype} | {fdesc} |")
+        lines.append("")
+
+    return "\n".join(lines) if lines else "_No documentation available_"
+
+
+def _specs_dict_to_markdown(
+    specs: Dict[str, Any],
+    *,
+    include_fields: bool = True,
+    include_examples: bool = True,
+) -> str:
+    """Render a specifications dict (from BaseResource.get_specifications()) as Markdown.
+
+    Supports keys like: title, description, documentation, fields/properties.
+    """
+    if not isinstance(specs, dict):
         return "_No documentation available_"
-    return "\n".join(lines)
 
+    lines: list[str] = []
+    title = specs.get("title") or "Resource"
+    lines.append(f"#### {title} Specifications")
+    lines.append("")
+
+    desc = specs.get("description")
+    if desc:
+        lines.append(str(desc))
+        lines.append("")
+
+    docs = specs.get("documentation") or {}
+    def _append_block(header: str, content: Any):
+        if content:
+            lines.extend([f"**{header}**", "", str(content), ""])
+
+    _append_block("Scope & Usage", docs.get("scope_usage"))
+    _append_block("Boundaries", docs.get("boundaries"))
+
+    rel = docs.get("relationships") or []
+    if rel:
+        lines += ["**Relationships**", ""]
+        for item in rel:
+            lines.append(f"- {item}")
+        lines.append("")
+
+    refs = docs.get("references") or []
+    if refs:
+        lines += ["**References**", ""]
+        for item in refs:
+            lines.append(f"- {item}")
+        lines.append("")
+
+    tools = docs.get("tools") or []
+    if tools:
+        lines += ["**Tools**", ""]
+        for t in tools:
+            lines.append(f"- {t}")
+        lines.append("")
+
+    if not include_fields:
+        return "\n".join(lines) if lines else "_No documentation available_"
+
+    fields = specs.get("fields") or specs.get("properties") or {}
+    if fields:
+        lines += ["| Field | Type | Description |", "|---|---|---|"]
+        for fname, finfo in fields.items():
+            ftype = ""
+            fdesc = ""
+            try:
+                ftype = finfo.get("type", "")
+                fdesc = finfo.get("description", "")
+                if include_examples:
+                    examples = finfo.get("examples")
+                    if examples:
+                        example_str = examples[0] if isinstance(examples, list) else examples
+                        if example_str:
+                            fdesc = f"{fdesc} (e.g., {example_str})" if fdesc else f"e.g., {example_str}"
+            except Exception:
+                try:
+                    ftype = str(finfo)
+                except Exception:
+                    ftype = ""
+                fdesc = fdesc or ""
+            lines.append(f"| {fname} | {ftype} | {fdesc} |")
+        lines.append("")
+
+    return "\n".join(lines) if lines else "_No documentation available_"
 
 def _resource_to_dict(resource: Any) -> Dict[str, Any]:
     try:
@@ -837,17 +1026,135 @@ def resource_to_html_widget(resource: Any, *, title: Optional[str] = None, defau
 """
     return tabs_md
 
+def resource_list_to_markdown(resources: Sequence[Any], *, title: Optional[str] = None, include_json: bool = False) -> str:
+    """Render a list of HACS resources as a compact Markdown section.
+
+    - Shows one compact table per resource using resource_to_markdown
+    - Optionally includes JSON for each resource
+    - Accepts pydantic models or dicts
+    """
+    if resources is None:
+        raise ValueError("resources is required")
+    resources = list(resources)
+    if not resources:
+        return "_No resources_"
+
+    header = f"### {title}\n\n" if title else ""
+    blocks: list[str] = []
+    for idx, res in enumerate(resources, 1):
+        res_title = None  # let resource_to_markdown infer title from resource_type
+        blocks.append(resource_to_markdown(res, title=res_title, include_json=include_json))
+    return header + "\n\n".join(blocks)
+
+
+def document_summary_markdown(
+    annotated_document: Any,
+    *,
+    resources: Optional[Sequence[Any]] = None,
+    show_annotations: bool = True,
+    context_chars: int = 50,
+) -> str:
+    """Produce a single Markdown summary for a document + associated resources.
+
+    Sections:
+    - Document header (id, length)
+    - Optional resource list (compact tables)
+    - Optional grounded annotations table with context snippets
+    """
+    if annotated_document is None or getattr(annotated_document, "text", None) is None:
+        raise ValueError("annotated_document with text is required")
+
+    doc_id = getattr(annotated_document, "document_id", getattr(annotated_document, "id", "document"))
+    text: str = annotated_document.text
+    lines: list[str] = []
+
+    # Header
+    lines.append(f"### Document: {doc_id}")
+    lines.append("")
+    lines.append(f"Text length: {len(text)} characters")
+    lines.append("")
+
+    # Resources
+    if resources:
+        lines.append("#### Extracted Resources")
+        lines.append("")
+        lines.append(resource_list_to_markdown(resources, include_json=False))
+        lines.append("")
+
+    # Annotations
+    if show_annotations:
+        lines.append("#### Grounded Annotations")
+        lines.append("")
+        lines.append(annotations_to_markdown(annotated_document, context_chars=context_chars))
+        lines.append("")
+
+    return "\n".join(lines)
+
+def to_markdown(
+    obj: Any,
+    *,
+    title: Optional[str] = None,
+    include_json: bool = False,
+    show_annotations: bool = True,
+    context_chars: int = 50,
+    resources: Optional[Sequence[Any]] = None,
+) -> str:
+    """Unified Markdown renderer (auto-detects input type).
+
+    Supported inputs:
+    - Pydantic resource instance or resource dict -> compact table
+    - Sequence of resources -> list of compact tables
+    - AnnotatedDocument-like -> document summary (optionally include resources)
+    - Specifications dict (from BaseResource.get_specifications) -> specs markdown
+    - Model class or type name -> specs markdown
+    """
+
+    # 1) Sequence of resources (avoid str/bytes/dict which are also Sequences)
+    try:
+        from collections.abc import Sequence as _Seq  # local import
+        if isinstance(obj, _Seq) and not isinstance(obj, (str, bytes, dict)):
+            return resource_list_to_markdown(obj, title=title, include_json=include_json)
+    except Exception:
+        pass
+
+    # 2) Specifications dict (from get_specifications)
+    if isinstance(obj, dict) and ("documentation" in obj or "fields" in obj or "properties" in obj):
+        return _specs_dict_to_markdown(obj)
+
+    # 3) Document-like (has text)
+    try:
+        if hasattr(obj, "text"):
+            return document_summary_markdown(obj, resources=resources, show_annotations=show_annotations, context_chars=context_chars)
+    except Exception:
+        pass
+
+    # 4) Resource specs (class or type name)
+    try:
+        if isinstance(obj, dict):
+            return _specs_dict_to_markdown(obj)
+        if isinstance(obj, str) or hasattr(obj, "__mro__"):
+            return get_specs_markdown(obj)
+    except Exception:
+        pass
+
+    # 5) Fallback: render as single resource
+    return resource_to_markdown(obj, title=title, include_json=include_json)
+
 __all__ = [
     "visualize_resource",
     "visualize_annotations",
     "resource_to_markdown",
+    "resource_list_to_markdown",
+    "document_summary_markdown",
     "annotations_to_markdown",
-    "resource_docs_to_markdown",
+    "get_specs_markdown",
+    "get_specs_markdown",
     "resource_to_html_widget",
     "resource_to_json_str",
     "resource_to_yaml_str",
     "resource_to_schema_json_str",
     "resource_to_schema_markdown",
+    "to_markdown",
 ]
 
 

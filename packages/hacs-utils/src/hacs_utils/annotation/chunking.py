@@ -70,8 +70,13 @@ class ChunkIterator:
             raise StopIteration
         start = self._pos
         end = min(self._pos + self.max_char_buffer, self._n)
-        # Advance with overlap
-        self._pos = end - self.chunk_overlap if self.chunk_overlap > 0 else end
+        # Advance with overlap, ensuring forward progress even when the final chunk is shorter than overlap
+        if self.chunk_overlap > 0:
+            next_pos = end - self.chunk_overlap
+            # Guarantee progress; if overlap would stall, advance to end (which will terminate next iteration)
+            self._pos = next_pos if next_pos > self._pos else end
+        else:
+            self._pos = end
         chunk = TextChunk(start_index=start, end_index=end, document=self.document)
         self._index += 1
         return chunk

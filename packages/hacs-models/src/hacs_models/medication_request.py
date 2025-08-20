@@ -171,6 +171,15 @@ class MedicationRequest(DomainResource):
     """
     
     resource_type: Literal["MedicationRequest"] = Field(default="MedicationRequest")
+
+    # Canonical defaults for extraction and fallback
+    _canonical_defaults: dict[str, Any] = {
+        "status": MedicationRequestStatus.ACTIVE,
+        "intent": MedicationRequestIntent.ORDER,
+        "subject": "Patient/placeholder",
+        "medication_codeable_concept": {"text": ""},
+        "dosage_instruction": [{"text": ""}],
+    }
     
     # Business identifiers
     identifier: list[str] = Field(

@@ -1,7 +1,7 @@
 [project]
 name = "hacs-models"
 version = "0.4.3"
-description = "HACS Healthcare Data Models - Pure Pydantic models for FHIR-compliant healthcare data"
+description = "Pure FHIR-compliant healthcare data models with automatic ID generation and schema introspection"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [

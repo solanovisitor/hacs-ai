@@ -59,6 +59,7 @@ class ResourceBundle(BaseResource):
     maturity_level: Optional[str] = None
     experimental: Optional[bool] = None
 
+
     def add_entry(self, resource: BaseResource, title: Optional[str] = None, tags: Optional[List[str]] = None, priority: int = 0) -> None:
         entry = BundleEntry(
             resource_type="BundleEntry",

@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "hacs-tools"
 version = "0.4.3"
-description = "Core tools and utilities for HACS (Healthcare Agent Communication Standard)"
+description = "Healthcare AI agent tools organized in 4 domains: modeling, extraction, database, and agents"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11"

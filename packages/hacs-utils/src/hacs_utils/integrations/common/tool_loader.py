@@ -62,7 +62,6 @@ def _check_hacs_availability():
         logger.debug("✅ HACS Tools available")
     except ImportError:
         logger.debug("⚠️ HACS Tools not available")
-``
     # Check LangChain
     try:
         from langchain_core.tools import tool, BaseTool

@@ -11,19 +11,9 @@ Extract structured healthcare data from clinical text and persist to database wi
 
 ---
 
-## Step 1: Installation and minimal usage
+## Step 1: Minimal in‑process example
 
-Install with uv and run a minimal in‑process example using HACS models. HACS models are healthcare‑native, FHIR‑aligned typed data structures that form the canonical layer for agents, tools, and persistence. This first step introduces the core types and how resources are constructed and reasoned over in‑process.
-
-```bash
-# Install uv and create Python 3.11 environment
-curl -LsSf https://astral.sh/uv/install.sh | sh
-uv venv -p 3.11
-source .venv/bin/activate
-
-# Install core HACS packages
-uv pip install -U hacs-core hacs-models hacs-auth
-```
+Install HACS first (see home page “Install HACS (beta)”). Then run this minimal in‑process example using HACS models. HACS models are healthcare‑native, FHIR‑aligned typed data structures that form the canonical layer for agents, tools, and persistence. This first step introduces the core types and how resources are constructed and reasoned over in‑process.
 
 ```python
 from hacs_auth import Actor, ActorRole

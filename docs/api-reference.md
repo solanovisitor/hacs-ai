@@ -18,7 +18,7 @@ Lightweight, developer-first reference to core packages and integrations. See Ho
 ```python
 from hacs_models import Patient, Observation, CodeableConcept, Quantity
 from hacs_models.types import ObservationStatus
-from hacs_utils.visualization import resource_to_markdown, resource_docs_to_markdown
+from hacs_utils.visualization import resource_to_markdown, get_specs_markdown, get_specs
 
 pat = Patient(full_name="Maria Rodriguez", birth_date="1985-03-15", gender="female")
 obs = Observation(status=ObservationStatus.FINAL,
@@ -27,12 +27,12 @@ obs = Observation(status=ObservationStatus.FINAL,
                   subject=f"Patient/{pat.id}")
 
 # Render concise Markdown summaries for any resource
-print(resource_to_markdown(pat, include_json=False))
-print(resource_to_markdown(obs, include_json=False))
+print(to_markdown(pat, include_json=False))
+print(to_markdown(obs, include_json=False))
 
 # Render model definition docs (scope, boundaries, relationships)
-print(resource_docs_to_markdown(Patient))
-print(resource_docs_to_markdown(Observation))
+print(get_specs_markdown(Patient))
+print(get_specs_markdown(Observation))
 ```
 
 ```

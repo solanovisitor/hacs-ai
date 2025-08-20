@@ -117,7 +117,7 @@ from .vector_ops import (
     get_vector_collection_stats as utils_get_vector_collection_stats,
     optimize_vector_collection as utils_optimize_vector_collection,
 )
-from .resource_utils import (
+from .resource_specific import (
     calculate_patient_age,
     add_patient_identifier, 
     get_patient_identifier_by_type,
@@ -161,7 +161,7 @@ try:
         visualize_annotations,
         resource_to_markdown,
         annotations_to_markdown,
-        resource_docs_to_markdown,
+        get_specs_markdown,
         resource_to_html_widget,
         resource_to_json_str,
         resource_to_yaml_str,
@@ -173,7 +173,7 @@ except Exception:
     visualize_annotations = None  # type: ignore
     resource_to_markdown = None  # type: ignore
     annotations_to_markdown = None  # type: ignore
-    resource_docs_to_markdown = None  # type: ignore
+    get_specs_markdown = None  # type: ignore
     resource_to_html_widget = None  # type: ignore
     resource_to_json_str = None  # type: ignore
     resource_to_yaml_str = None  # type: ignore
@@ -335,12 +335,13 @@ __all__ = [
     "visualize_annotations",
     "resource_to_markdown",
     "annotations_to_markdown",
-    "resource_docs_to_markdown",
+    "get_specs_markdown",
     "resource_to_html_widget",
     "resource_to_json_str",
     "resource_to_yaml_str",
     "resource_to_schema_json_str",
     "resource_to_schema_markdown",
+    "get_specs_markdown",
     # Core
     "AbstractAdapter",
     "AdapterConfig",

@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "hacs-registry"
 version = "0.4.3"
-description = "HACS Registry - Model, prompt, and workflow definitions for healthcare AI"
+description = "Registration and versioning system for HACS resources, tools, agents, and IAM policies"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [

@@ -14,7 +14,7 @@ Architecture:
 import logging
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Type, Union, get_type_hints
+from typing import Any, Dict, List, Optional, Type, Union, get_type_hints, Tuple
 from dataclasses import dataclass, field
 
 from pydantic import Field, BaseModel
@@ -406,6 +406,25 @@ class HACSResourceRegistry:
 
         return stats
 
+    def register_default_cardiology_bundle(self) -> RegisteredResource:
+        """Create and register the default 'Cardiologia: Consulta Inicial' bundle template."""
+        try:
+            from hacs_models.resource_bundle import ResourceBundle
+        except Exception as e:
+            raise RuntimeError(f"hacs_models not available: {e}")
+
+        bundle = ResourceBundle.create_cardiology_first_consult_template()
+        metadata = ResourceMetadata(
+            name=bundle.title or "Cardiologia: Consulta Inicial",
+            version=bundle.version or "1.0.0",
+            description=bundle.description or "",
+            category=ResourceCategory.CLINICAL,
+            status=ResourceStatus.PUBLISHED,
+            tags=["cardiologia", "template", "consulta"],
+        )
+        registered = self.register_resource(ResourceBundle, metadata, instance_data=bundle.model_dump())
+        return registered
+
 
 # Global registry instance
 _global_registry: Optional[HACSResourceRegistry] = None
@@ -562,3 +581,77 @@ __all__ = [
     'get_global_registry',
     'register_hacs_resource',
 ]
+
+# ---------------------------------------------
+# Experimental: Decorator-based resource registration (deferred)
+# ---------------------------------------------
+
+# Pending queue for decorator-registered resources (deferred until migrations or explicit commit)
+_pending_resource_registrations: List[Tuple[Type[BaseResource], ResourceMetadata, Optional[Dict[str, Any]], Optional[str]]] = []
+
+
+def register_resource(
+    *,
+    name: Optional[str] = None,
+    version: str = "1.0.0",
+    description: str = "",
+    category: ResourceCategory = ResourceCategory.CLINICAL,
+    tags: Optional[List[str]] = None,
+    status: ResourceStatus = ResourceStatus.DRAFT,
+    instance_data: Optional[Dict[str, Any]] = None,
+    actor_id: Optional[str] = None,
+    **metadata_kwargs: Any,
+):
+    """Class decorator to register a HACS resource (deferred).
+
+    Usage:
+        @register_resource(name="MedicationReview", category=ResourceCategory.CLINICAL)
+        class MedicationReview(Document): ...
+
+    This does not persist to DB at import time. Use
+    consume_pending_resource_registrations() during migrations/startup.
+    """
+
+    def _decorator(resource_class: Type[BaseResource]) -> Type[BaseResource]:
+        meta = ResourceMetadata(
+            name=name or resource_class.__name__,
+            version=version,
+            description=description or (resource_class.__doc__ or ""),
+            category=category,
+            status=status,
+            tags=tags or [],
+            **metadata_kwargs,
+        )
+        _pending_resource_registrations.append((resource_class, meta, instance_data, actor_id))
+        return resource_class
+
+    return _decorator
+
+
+def get_pending_resource_registrations() -> List[Tuple[Type[BaseResource], ResourceMetadata, Optional[Dict[str, Any]], Optional[str]]]:
+    """Inspect the current pending decorator-based registrations."""
+    return list(_pending_resource_registrations)
+
+
+def consume_pending_resource_registrations(clear: bool = True) -> List[RegisteredResource]:
+    """Register pending decorator-based resources into the in-memory registry.
+
+    Returns the list of RegisteredResource wrappers created.
+    """
+    registry = get_global_registry()
+    results: List[RegisteredResource] = []
+    for resource_class, metadata, instance_data, actor_id in _pending_resource_registrations:
+        try:
+            registered = registry.register_resource(
+                resource_class,
+                metadata,
+                instance_data=instance_data,
+                actor_id=actor_id,
+            )
+            results.append(registered)
+        except Exception as e:
+            logger.warning(f"Failed to register resource {metadata.name}: {e}")
+
+    if clear:
+        _pending_resource_registrations.clear()
+    return results

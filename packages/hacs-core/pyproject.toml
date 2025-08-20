@@ -1,7 +1,7 @@
 [project]
 name = "hacs-core"
 version = "0.4.3"
-description = "Core models and base classes for Healthcare Agent Communication Standard"
+description = "Protocol definitions and core abstractions for Healthcare Agent Communication Standard"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [

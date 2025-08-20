@@ -73,19 +73,33 @@ class OpenAIClient:
         tool_choice: str | None = None,
         **kwargs,
     ) -> "openai.types.chat.ChatCompletion":
-        """Standard chat completion."""
-        return self.client.chat.completions.create(
-            model=model or self.model,
-            messages=messages,
-            temperature=temperature or self.temperature,
-            max_tokens=max_tokens or self.max_tokens,
-            top_p=self.top_p,
-            frequency_penalty=self.frequency_penalty,
-            presence_penalty=self.presence_penalty,
-            tools=tools,
-            tool_choice=tool_choice,
-            **kwargs,
-        )
+        """Standard chat completion with graceful param fallbacks for newer models."""
+        params: dict[str, Any] = {
+            "model": model or self.model,
+            "messages": messages,
+            "max_completion_tokens": max_tokens or self.max_tokens,
+            "top_p": self.top_p,
+            "frequency_penalty": self.frequency_penalty,
+            "presence_penalty": self.presence_penalty,
+        }
+        if tools is not None:
+            params["tools"] = tools
+        if tool_choice is not None:
+            params["tool_choice"] = tool_choice
+        # Try with temperature; some models reject non-default temperature
+        if temperature is not None:
+            params["temperature"] = temperature
+        elif self.temperature is not None:
+            params["temperature"] = self.temperature
+        try:
+            return self.client.chat.completions.create(**params)
+        except Exception as e:
+            # Retry without temperature if model rejects it
+            msg = str(e)
+            if "temperature" in msg and ("unsupported" in msg or "does not support" in msg):
+                params.pop("temperature", None)
+                return self.client.chat.completions.create(**params)
+            raise
 
     def structured_output(
         self,
@@ -123,7 +137,7 @@ class OpenAIClient:
             model=model or self.model,
             messages=messages,
             temperature=temperature or self.temperature,
-            max_tokens=max_tokens or self.max_tokens,
+            max_completion_tokens=max_tokens or self.max_tokens,
             top_p=self.top_p,
             frequency_penalty=self.frequency_penalty,
             presence_penalty=self.presence_penalty,
@@ -135,6 +149,46 @@ class OpenAIClient:
         )
 
         return json.loads(response.choices[0].message.content)
+
+    def responses_parse(
+        self,
+        input_messages: list[dict[str, str]],
+        response_model: type[BaseModel],
+        *,
+        model: str | None = None,
+        temperature: float | None = None,
+        max_output_tokens: int | None = None,
+        **kwargs,
+    ) -> BaseModel:
+        """Use OpenAI Responses API structured outputs parser with a Pydantic model.
+
+        Falls back to instructor-based structured_output if Responses.parse is unavailable.
+        """
+        # Prefer native Responses.parse when available
+        try:
+            responses = getattr(self.client, "responses", None)
+            if responses and hasattr(responses, "parse"):
+                resp = responses.parse(
+                    model=model or self.model,
+                    input=input_messages,
+                    text_format=response_model,
+                    temperature=temperature or self.temperature,
+                    max_output_tokens=max_output_tokens or self.max_tokens,
+                    **kwargs,
+                )
+                return getattr(resp, "output_parsed")
+        except Exception:
+            pass
+
+        # Fallback to instructor (chat.completions with response_model)
+        return self.structured_output(
+            messages=input_messages,  # instructor uses chat.completions under the hood
+            response_model=response_model,
+            model=model or self.model,
+            temperature=temperature or self.temperature,
+            max_tokens=max_output_tokens or self.max_tokens,
+            **kwargs,
+        )
 
     def function_call(
         self,
@@ -153,7 +207,7 @@ class OpenAIClient:
             functions=functions,
             function_call=function_call,
             temperature=temperature or self.temperature,
-            max_tokens=max_tokens or self.max_tokens,
+            max_completion_tokens=max_tokens or self.max_tokens,
             **kwargs,
         )
 
@@ -174,9 +228,19 @@ class OpenAIClient:
             tools=tools,
             tool_choice=tool_choice,
             temperature=temperature or self.temperature,
-            max_tokens=max_tokens or self.max_tokens,
+            max_completion_tokens=max_tokens or self.max_tokens,
             **kwargs,
         )
+
+    # Generic interface for hacs_utils.structured fallback path
+    def invoke(self, prompt: str) -> str:
+        """Synchronous invoke: send a single user prompt and return content string."""
+        resp = self.chat(messages=[{"role": "user", "content": prompt}], model=self.model)
+        try:
+            return resp.choices[0].message.content or ""
+        except Exception:
+            # Best effort stringify
+            return json.dumps(resp.model_dump(mode="json")) if hasattr(resp, "model_dump") else str(resp)
 
 
 """Deprecated: OpenAIStructuredGenerator removed. Use hacs_utils.structured instead."""

@@ -12,7 +12,7 @@
         <link rel="prev" href="../api-reference/">
       
       
-        <link rel="next" href="../tutorials/complete_context_engineering/">
+        <link rel="next" href="../how-to/authenticate_actor/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -312,330 +312,48 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#how-to-call-tools-two-modes" class="md-nav__link">
+  <a href="#how-to-use-hacs-tools" class="md-nav__link">
     <span class="md-ellipsis">
-      How to call tools (two modes)
+      How to use HACS tools
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#context-engineering-tool-categories" class="md-nav__link">
+  <a href="#quick-start-save-and-retrieve-a-patient" class="md-nav__link">
     <span class="md-ellipsis">
-      Context Engineering Tool Categories
+      Quick Start: Save and retrieve a patient
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Context Engineering Tool Categories">
+    <nav class="md-nav" aria-label="Quick Start: Save and retrieve a patient">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#resource-management-8-tools" class="md-nav__link">
+  <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
-      🔍 Resource Management (8 tools)
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="🔍 Resource Management (8 tools)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#save_record" class="md-nav__link">
-    <span class="md-ellipsis">
-      save_record
+      Prerequisites
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#read_record" class="md-nav__link">
+  <a href="#python-api" class="md-nav__link">
     <span class="md-ellipsis">
-      read_record
+      Python API
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#update_record" class="md-nav__link">
+  <a href="#mcp-api" class="md-nav__link">
     <span class="md-ellipsis">
-      update_record
+      MCP API
     </span>
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#delete_record" class="md-nav__link">
-    <span class="md-ellipsis">
-      delete_record
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#validate_resource" class="md-nav__link">
-    <span class="md-ellipsis">
-      validate_resource
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#list_models" class="md-nav__link">
-    <span class="md-ellipsis">
-      list_models
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#memory-operations-5-tools" class="md-nav__link">
-    <span class="md-ellipsis">
-      🧠 Memory Operations (5 tools)
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="🧠 Memory Operations (5 tools)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#create_memory" class="md-nav__link">
-    <span class="md-ellipsis">
-      create_memory
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#search_memories" class="md-nav__link">
-    <span class="md-ellipsis">
-      search_memories
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#consolidate_memories" class="md-nav__link">
-    <span class="md-ellipsis">
-      consolidate_memories
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#retrieve_context" class="md-nav__link">
-    <span class="md-ellipsis">
-      retrieve_context
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#analyze_memory_patterns" class="md-nav__link">
-    <span class="md-ellipsis">
-      analyze_memory_patterns
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#check_memory" class="md-nav__link">
-    <span class="md-ellipsis">
-      check_memory
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#resource-specific-tools-examples" class="md-nav__link">
-    <span class="md-ellipsis">
-      ⚕️ Resource-Specific Tools (examples)
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="⚕️ Resource-Specific Tools (examples)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#event" class="md-nav__link">
-    <span class="md-ellipsis">
-      Event
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#appointment" class="md-nav__link">
-    <span class="md-ellipsis">
-      Appointment
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#careplan-careteam-goal" class="md-nav__link">
-    <span class="md-ellipsis">
-      CarePlan / CareTeam / Goal
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#nutritionorder" class="md-nav__link">
-    <span class="md-ellipsis">
-      NutritionOrder
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#terminology-optional" class="md-nav__link">
-    <span class="md-ellipsis">
-      🧬 Terminology (optional)
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="🧬 Terminology (optional)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#visualize-resources-and-annotations" class="md-nav__link">
-    <span class="md-ellipsis">
-      Visualize resources and annotations
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#summarize-codable-concepts-in-a-document" class="md-nav__link">
-    <span class="md-ellipsis">
-      Summarize codable concepts in a document
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#annotate-document-codings-single-artifact" class="md-nav__link">
-    <span class="md-ellipsis">
-      Annotate document codings (single artifact)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#map-codes-between-systems-eg-snomed-loinc" class="md-nav__link">
-    <span class="md-ellipsis">
-      Map codes between systems (e.g., SNOMED → LOINC)
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#evidence" class="md-nav__link">
-    <span class="md-ellipsis">
-      📚 Evidence
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#schema-discovery-5-tools" class="md-nav__link">
-    <span class="md-ellipsis">
-      ⚕️ Schema Discovery (5 tools)
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="⚕️ Schema Discovery (5 tools)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#describe_models" class="md-nav__link">
-    <span class="md-ellipsis">
-      describe_models
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#list_model_fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      list_model_fields
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#plan_bundle_schema" class="md-nav__link">
-    <span class="md-ellipsis">
-      plan_bundle_schema
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#analyze_model_fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      analyze_model_fields
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#suggest_model_fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      suggest_model_fields
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -645,20 +363,137 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
+  <a href="#core-workflow-tools" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      Core Workflow Tools
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Workflow Tools">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-management-20-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      📊 Data Management (20 tools)
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#tool-discovery" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#resource-modeling-5-tools" class="md-nav__link">
     <span class="md-ellipsis">
-      Tool Discovery
+      🏗️ Resource Modeling (5 tools)
     </span>
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-operations-10-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      🤖 Agent Operations (10 tools)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-features-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      🔍 Advanced Features (Optional)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-handling-and-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Error Handling and Patterns
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Error Handling and Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#hacsresult-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      HACSResult Pattern
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#asyncsync-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Async/Sync Patterns
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authentication-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Authentication Requirements
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#discovery-and-registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      Discovery and Registry
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Discovery and Registry">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#list-all-available-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      List All Available Tools
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#search-tools-by-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      Search Tools by Domain
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tool-categories-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tool Categories Summary
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -700,7 +535,7 @@
   
   
   <span class="md-ellipsis">
-    Tutorials
+    How-to
     
   </span>
   
@@ -710,6 +545,340 @@
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            How-to
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/authenticate_actor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Authenticate an Actor
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/connect_postgres/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Connect to database
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/extract_annotations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Generate structured data
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/grounded_extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Extract citations
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/visualize_resources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Visualize data
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/persist_resources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Persist Resources
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/use_register_tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Use & Register Tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/create_langgraph_agent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Create a simple agent (LangGraph)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Advanced
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Advanced
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/creating_private_registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Creating a private Registry
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/manage_context_tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Manage context with agentic tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Tutorials
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             Tutorials
           </label>
@@ -812,6 +981,28 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Reference
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -839,330 +1030,48 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#how-to-call-tools-two-modes" class="md-nav__link">
+  <a href="#how-to-use-hacs-tools" class="md-nav__link">
     <span class="md-ellipsis">
-      How to call tools (two modes)
+      How to use HACS tools
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#context-engineering-tool-categories" class="md-nav__link">
+  <a href="#quick-start-save-and-retrieve-a-patient" class="md-nav__link">
     <span class="md-ellipsis">
-      Context Engineering Tool Categories
+      Quick Start: Save and retrieve a patient
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Context Engineering Tool Categories">
+    <nav class="md-nav" aria-label="Quick Start: Save and retrieve a patient">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#resource-management-8-tools" class="md-nav__link">
+  <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
-      🔍 Resource Management (8 tools)
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="🔍 Resource Management (8 tools)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#save_record" class="md-nav__link">
-    <span class="md-ellipsis">
-      save_record
+      Prerequisites
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#read_record" class="md-nav__link">
+  <a href="#python-api" class="md-nav__link">
     <span class="md-ellipsis">
-      read_record
+      Python API
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#update_record" class="md-nav__link">
+  <a href="#mcp-api" class="md-nav__link">
     <span class="md-ellipsis">
-      update_record
+      MCP API
     </span>
   </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#delete_record" class="md-nav__link">
-    <span class="md-ellipsis">
-      delete_record
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#validate_resource" class="md-nav__link">
-    <span class="md-ellipsis">
-      validate_resource
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#list_models" class="md-nav__link">
-    <span class="md-ellipsis">
-      list_models
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#memory-operations-5-tools" class="md-nav__link">
-    <span class="md-ellipsis">
-      🧠 Memory Operations (5 tools)
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="🧠 Memory Operations (5 tools)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#create_memory" class="md-nav__link">
-    <span class="md-ellipsis">
-      create_memory
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#search_memories" class="md-nav__link">
-    <span class="md-ellipsis">
-      search_memories
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#consolidate_memories" class="md-nav__link">
-    <span class="md-ellipsis">
-      consolidate_memories
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#retrieve_context" class="md-nav__link">
-    <span class="md-ellipsis">
-      retrieve_context
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#analyze_memory_patterns" class="md-nav__link">
-    <span class="md-ellipsis">
-      analyze_memory_patterns
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#check_memory" class="md-nav__link">
-    <span class="md-ellipsis">
-      check_memory
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#resource-specific-tools-examples" class="md-nav__link">
-    <span class="md-ellipsis">
-      ⚕️ Resource-Specific Tools (examples)
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="⚕️ Resource-Specific Tools (examples)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#event" class="md-nav__link">
-    <span class="md-ellipsis">
-      Event
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#appointment" class="md-nav__link">
-    <span class="md-ellipsis">
-      Appointment
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#careplan-careteam-goal" class="md-nav__link">
-    <span class="md-ellipsis">
-      CarePlan / CareTeam / Goal
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#nutritionorder" class="md-nav__link">
-    <span class="md-ellipsis">
-      NutritionOrder
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#terminology-optional" class="md-nav__link">
-    <span class="md-ellipsis">
-      🧬 Terminology (optional)
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="🧬 Terminology (optional)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#visualize-resources-and-annotations" class="md-nav__link">
-    <span class="md-ellipsis">
-      Visualize resources and annotations
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#summarize-codable-concepts-in-a-document" class="md-nav__link">
-    <span class="md-ellipsis">
-      Summarize codable concepts in a document
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#annotate-document-codings-single-artifact" class="md-nav__link">
-    <span class="md-ellipsis">
-      Annotate document codings (single artifact)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#map-codes-between-systems-eg-snomed-loinc" class="md-nav__link">
-    <span class="md-ellipsis">
-      Map codes between systems (e.g., SNOMED → LOINC)
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#evidence" class="md-nav__link">
-    <span class="md-ellipsis">
-      📚 Evidence
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#schema-discovery-5-tools" class="md-nav__link">
-    <span class="md-ellipsis">
-      ⚕️ Schema Discovery (5 tools)
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="⚕️ Schema Discovery (5 tools)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#describe_models" class="md-nav__link">
-    <span class="md-ellipsis">
-      describe_models
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#list_model_fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      list_model_fields
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#plan_bundle_schema" class="md-nav__link">
-    <span class="md-ellipsis">
-      plan_bundle_schema
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#analyze_model_fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      analyze_model_fields
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#suggest_model_fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      suggest_model_fields
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
         
@@ -1172,20 +1081,137 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
+  <a href="#core-workflow-tools" class="md-nav__link">
     <span class="md-ellipsis">
-      
+      Core Workflow Tools
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Workflow Tools">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-management-20-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      📊 Data Management (20 tools)
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#tool-discovery" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#resource-modeling-5-tools" class="md-nav__link">
     <span class="md-ellipsis">
-      Tool Discovery
+      🏗️ Resource Modeling (5 tools)
     </span>
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-operations-10-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      🤖 Agent Operations (10 tools)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-features-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      🔍 Advanced Features (Optional)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-handling-and-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Error Handling and Patterns
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Error Handling and Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#hacsresult-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      HACSResult Pattern
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#asyncsync-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Async/Sync Patterns
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authentication-requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Authentication Requirements
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#discovery-and-registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      Discovery and Registry
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Discovery and Registry">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#list-all-available-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      List All Available Tools
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#search-tools-by-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      Search Tools by Domain
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tool-categories-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tool Categories Summary
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1206,287 +1232,783 @@
 
 
 <h1 id="hacs-tools-reference">HACS Tools Reference<a class="headerlink" href="#hacs-tools-reference" title="Permanent link">&para;</a></h1>
-<p>Low-level HACS tools for resource modeling, bundles, schema discovery, memory, and minimal workflow modeling. High-level, business-specific tools have been removed; keep prompts/logic in workflows.</p>
+<p>A comprehensive guide to the 50+ HACS tools for healthcare AI agents. Build clinical workflows with typed resources, CRUD operations, agent memory, and specialized healthcare tools.</p>
 <p>New to HACS? Start with the <a href="../quick-start/">Quick Start</a>.</p>
-<h2 id="how-to-call-tools-two-modes">How to call tools (two modes)<a class="headerlink" href="#how-to-call-tools-two-modes" title="Permanent link">&para;</a></h2>
+<h2 id="how-to-use-hacs-tools">How to use HACS tools<a class="headerlink" href="#how-to-use-hacs-tools" title="Permanent link">&para;</a></h2>
+<p>HACS tools work in <strong>two modes</strong>:</p>
 <ul>
-<li>Python API (in-process): import functions from <code>hacs_tools.domains.*</code> and call them directly (sync/async as defined). Best for Python apps/tests.</li>
-<li>MCP API (out-of-process): call <code>tools/call</code> over JSON-RPC with the tool <code>name</code> and <code>arguments</code>. Best for agents, non-Python clients, or sandboxed contexts.</li>
+<li><strong>Python API</strong> (in-process): Import and call functions directly. Best for Python applications and testing.</li>
+<li><strong>MCP API</strong> (out-of-process): JSON-RPC over HTTP/stdio. Best for non-Python agents or sandboxed contexts.</li>
 </ul>
-<p>Notes:
-- Function names are identical in both modes. Some tools are async in Python (e.g., database); await them when used directly.
-- <code>tools/list</code> returns a curated set for quick starts. Any registry tool can still be called via <code>tools/call</code> by name.</p>
-<p>Examples</p>
-<p>Python API (Terminology):
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.terminology</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_possible_codes</span>
-<span class="n">report</span> <span class="o">=</span> <span class="n">get_possible_codes</span><span class="p">(</span><span class="n">composition_doc</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="s2">&quot;hypertension&quot;</span><span class="p">)</span>
-</code></pre></div></p>
-<p>MCP API (CRUD):
-<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
-<span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;http://localhost:8000/&quot;</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span>
-  <span class="s2">&quot;jsonrpc&quot;</span><span class="p">:</span> <span class="s2">&quot;2.0&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;tools/call&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;save_record&quot;</span><span class="p">,</span> <span class="s2">&quot;arguments&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;resource_type&quot;</span><span class="p">:</span> <span class="s2">&quot;Patient&quot;</span><span class="p">,</span> <span class="s2">&quot;resource_data&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;full_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Jane Doe&quot;</span><span class="p">}}},</span>
-  <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span>
-<span class="p">})</span>
-</code></pre></div></p>
-<h2 id="context-engineering-tool-categories">Context Engineering Tool Categories<a class="headerlink" href="#context-engineering-tool-categories" title="Permanent link">&para;</a></h2>
-<p>Each tool category implements specific context engineering strategies optimized for healthcare AI:</p>
-<h3 id="resource-management-8-tools">🔍 Resource Management (8 tools)<a class="headerlink" href="#resource-management-8-tools" title="Permanent link">&para;</a></h3>
-<p><strong>🎯 SELECT + 🔒 ISOLATE Strategies</strong>: Healthcare resource operations with selective data access and compliance boundaries.</p>
-<p>Core CRUD operations implementing context selection and isolation for healthcare AI agents:</p>
-<h4 id="save_record"><code>save_record</code><a class="headerlink" href="#save_record" title="Permanent link">&para;</a></h4>
-<p><strong>🎯 SELECT</strong>: Create healthcare resources with selective data extraction</p>
-<div class="highlight"><pre><span></span><code><span class="c1"># SELECT: Create patient with only essential clinical context</span>
-<span class="n">patient_data</span> <span class="o">=</span> <span class="n">patient</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span>
-    <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;contained&quot;</span><span class="p">,</span> <span class="s2">&quot;extension&quot;</span><span class="p">,</span> <span class="s2">&quot;modifier_extension&quot;</span>  <span class="c1"># Exclude FHIR overhead</span>
-<span class="p">})</span>
+<p>All examples show both patterns where applicable.</p>
+<h2 id="quick-start-save-and-retrieve-a-patient">Quick Start: Save and retrieve a patient<a class="headerlink" href="#quick-start-save-and-retrieve-a-patient" title="Permanent link">&para;</a></h2>
+<h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Install HACS with database support</span>
+uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-U<span class="w"> </span>hacs-tools<span class="w"> </span>hacs-persistence
 
-<span class="n">result</span> <span class="o">=</span> <span class="n">use_tool</span><span class="p">(</span><span class="s2">&quot;save_record&quot;</span><span class="p">,</span> <span class="p">{</span>
-    <span class="s2">&quot;resource_type&quot;</span><span class="p">:</span> <span class="s2">&quot;Patient&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;resource_data&quot;</span><span class="p">:</span> <span class="n">patient_data</span>  <span class="c1"># Optimized clinical context only</span>
-<span class="p">})</span>
+<span class="c1"># Set up environment </span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">DATABASE_URL</span><span class="o">=</span><span class="s2">&quot;postgresql://user:pass@localhost/hacs&quot;</span><span class="w">  </span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">OPENAI_API_KEY</span><span class="o">=</span><span class="s2">&quot;sk-...&quot;</span><span class="w">  </span><span class="c1"># Optional, for extraction tools</span>
 </code></pre></div>
-<h4 id="read_record"><code>read_record</code><a class="headerlink" href="#read_record" title="Permanent link">&para;</a></h4>
-<p>Retrieve healthcare resource by ID and type</p>
-<div class="highlight"><pre><span></span><code><span class="n">patient</span> <span class="o">=</span> <span class="n">use_tool</span><span class="p">(</span><span class="s2">&quot;read_record&quot;</span><span class="p">,</span> <span class="p">{</span>
-    <span class="s2">&quot;resource_type&quot;</span><span class="p">:</span> <span class="s2">&quot;Patient&quot;</span><span class="p">,</span> 
-    <span class="s2">&quot;resource_id&quot;</span><span class="p">:</span> <span class="s2">&quot;patient-123&quot;</span>
-<span class="p">})</span>
+<h3 id="python-api">Python API<a class="headerlink" href="#python-api" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span>
+<span class="n">load_dotenv</span><span class="p">()</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.database</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_resource</span><span class="p">,</span> <span class="n">read_resource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.modeling</span><span class="w"> </span><span class="kn">import</span> <span class="n">pin_resource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Patient</span>
+
+<span class="c1"># 1. Create a patient resource</span>
+<span class="n">patient_data</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;full_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Jane Doe&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;birth_date&quot;</span><span class="p">:</span> <span class="s2">&quot;1990-01-01&quot;</span><span class="p">,</span> 
+    <span class="s2">&quot;gender&quot;</span><span class="p">:</span> <span class="s2">&quot;female&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">True</span>
+<span class="p">}</span>
+
+<span class="c1"># 2. Pin the resource (validates and adds metadata)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">pin_resource</span><span class="p">(</span><span class="s2">&quot;Patient&quot;</span><span class="p">,</span> <span class="n">patient_data</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+    <span class="n">patient_resource</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;resource&quot;</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Created Patient: </span><span class="si">{</span><span class="n">patient_resource</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✗ Error: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Output:</span>
+<span class="c1"># ✓ Created Patient: patient_a1b2c3d4</span>
+
+<span class="c1"># 3. Save to database</span>
+<span class="n">save_result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">save_resource</span><span class="p">(</span><span class="n">resource</span><span class="o">=</span><span class="n">patient_resource</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Saved: </span><span class="si">{</span><span class="n">save_result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;resource_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Output:  </span>
+<span class="c1"># ✓ Saved: patient_a1b2c3d4</span>
+
+<span class="c1"># 4. Read back from database</span>
+<span class="n">read_result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">read_resource</span><span class="p">(</span><span class="s2">&quot;Patient&quot;</span><span class="p">,</span> <span class="s2">&quot;patient_a1b2c3d4&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">read_result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+    <span class="n">retrieved</span> <span class="o">=</span> <span class="n">read_result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;resource&quot;</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Retrieved: </span><span class="si">{</span><span class="n">retrieved</span><span class="p">[</span><span class="s1">&#39;full_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> (DOB: </span><span class="si">{</span><span class="n">retrieved</span><span class="p">[</span><span class="s1">&#39;birth_date&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error: </span><span class="si">{</span><span class="n">read_result</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Output:</span>
+<span class="c1"># Retrieved: Jane Doe (DOB: 1990-01-01)</span>
 </code></pre></div>
-<h4 id="update_record"><code>update_record</code><a class="headerlink" href="#update_record" title="Permanent link">&para;</a></h4>
-<p>Update existing healthcare resource</p>
-<div class="highlight"><pre><span></span><code><span class="n">use_tool</span><span class="p">(</span><span class="s2">&quot;update_record&quot;</span><span class="p">,</span> <span class="p">{</span>
-    <span class="s2">&quot;resource_type&quot;</span><span class="p">:</span> <span class="s2">&quot;Patient&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;resource_id&quot;</span><span class="p">:</span> <span class="s2">&quot;patient-123&quot;</span><span class="p">,</span> 
-    <span class="s2">&quot;resource_data&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;agent_context&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;insurance_provider&quot;</span><span class="p">:</span> <span class="s2">&quot;Blue Cross&quot;</span>
+<h3 id="mcp-api">MCP API<a class="headerlink" href="#mcp-api" title="Permanent link">&para;</a></h3>
+<p>Start the MCP server:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/Users/solanotodeschini/Code/hacs-ai
+uv<span class="w"> </span>run<span class="w"> </span>hacs-utils<span class="w"> </span>mcp-server<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span>
+</code></pre></div>
+<p>Call tools via JSON-RPC:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+
+<span class="c1"># 1. List available tools</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;http://localhost:8000/&quot;</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span>
+    <span class="s2">&quot;jsonrpc&quot;</span><span class="p">:</span> <span class="s2">&quot;2.0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;tools/list&quot;</span><span class="p">,</span> 
+    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span>
+<span class="p">})</span>
+<span class="n">tools</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;result&quot;</span><span class="p">][</span><span class="s2">&quot;tools&quot;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">tools</span><span class="p">)</span><span class="si">}</span><span class="s2"> tools&quot;</span><span class="p">)</span>
+
+<span class="c1"># Output:</span>
+<span class="c1"># Found 23 tools</span>
+
+<span class="c1"># 2. Save a patient</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;http://localhost:8000/&quot;</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span>
+    <span class="s2">&quot;jsonrpc&quot;</span><span class="p">:</span> <span class="s2">&quot;2.0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;tools/call&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;params&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;pin_resource&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;arguments&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;resource_type&quot;</span><span class="p">:</span> <span class="s2">&quot;Patient&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;resource_data&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;full_name&quot;</span><span class="p">:</span> <span class="s2">&quot;John Smith&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;birth_date&quot;</span><span class="p">:</span> <span class="s2">&quot;1985-03-15&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;gender&quot;</span><span class="p">:</span> <span class="s2">&quot;male&quot;</span>
+            <span class="p">}</span>
         <span class="p">}</span>
-    <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">2</span>
 <span class="p">})</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;result&quot;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Patient ID: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;resource&#39;</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Output:</span>
+<span class="c1"># ✓ Patient ID: patient_x9y8z7w6</span>
 </code></pre></div>
-<h4 id="delete_record"><code>delete_record</code><a class="headerlink" href="#delete_record" title="Permanent link">&para;</a></h4>
-<p>Remove healthcare resource</p>
-<div class="highlight"><pre><span></span><code><span class="n">use_tool</span><span class="p">(</span><span class="s2">&quot;delete_record&quot;</span><span class="p">,</span> <span class="p">{</span>
-    <span class="s2">&quot;resource_type&quot;</span><span class="p">:</span> <span class="s2">&quot;Patient&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;resource_id&quot;</span><span class="p">:</span> <span class="s2">&quot;patient-123&quot;</span>
-<span class="p">})</span>
+<h2 id="core-workflow-tools">Core Workflow Tools<a class="headerlink" href="#core-workflow-tools" title="Permanent link">&para;</a></h2>
+<h3 id="data-management-20-tools">📊 Data Management (20 tools)<a class="headerlink" href="#data-management-20-tools" title="Permanent link">&para;</a></h3>
+<p>Healthcare data persistence, search, and registry operations with full CRUD support.</p>
+<h4 id="core-crud-operations">Core CRUD Operations<a class="headerlink" href="#core-crud-operations" title="Permanent link">&para;</a></h4>
+<h5 id="save_resource"><code>save_resource</code><a class="headerlink" href="#save_resource" title="Permanent link">&para;</a></h5>
+<p><strong>Purpose</strong>: Persist HACS resources to typed tables or generic JSONB storage.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.database</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_resource</span>
+
+<span class="c1"># Save with typed table (recommended)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">save_resource</span><span class="p">(</span>
+    <span class="n">resource</span><span class="o">=</span><span class="n">patient_dict</span><span class="p">,</span>
+    <span class="n">as_typed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>           <span class="c1"># Use strongly-typed Patient table</span>
+    <span class="n">index_semantic</span><span class="o">=</span><span class="kc">True</span>      <span class="c1"># Create vector embeddings for search</span>
+<span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># HACSResult(</span>
+<span class="c1">#   success=True,</span>
+<span class="c1">#   message=&quot;Resource saved successfully&quot;,</span>
+<span class="c1">#   data={</span>
+<span class="c1">#     &quot;resource_id&quot;: &quot;patient_abc123&quot;,</span>
+<span class="c1">#     &quot;resource_type&quot;: &quot;Patient&quot;, </span>
+<span class="c1">#     &quot;schema&quot;: &quot;hacs_clinical&quot;,</span>
+<span class="c1">#     &quot;table&quot;: &quot;patient&quot;,</span>
+<span class="c1">#     &quot;semantic_indexed&quot;: True</span>
+<span class="c1">#   }</span>
+<span class="c1"># )</span>
+
+<span class="c1"># Save to generic JSONB (for flexibility)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">save_resource</span><span class="p">(</span>
+    <span class="n">resource</span><span class="o">=</span><span class="n">custom_resource</span><span class="p">,</span>
+    <span class="n">as_typed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>          <span class="c1"># Use generic jsonb storage</span>
+    <span class="n">schema</span><span class="o">=</span><span class="s2">&quot;custom_schema&quot;</span>
+<span class="p">)</span>
+</code></pre></div>
+<p><strong>Parameters</strong>:
+- <code>resource</code> (dict): Resource data to save
+- <code>as_typed</code> (bool): Use typed table (True) or generic JSONB (False) 
+- <code>schema</code> (str, optional): Schema name override
+- <code>index_semantic</code> (bool): Create vector embeddings for search</p>
+<p><strong>Returns</strong>: <code>HACSResult</code> with resource ID and storage details</p>
+<h5 id="read_resource"><code>read_resource</code><a class="headerlink" href="#read_resource" title="Permanent link">&para;</a></h5>
+<p><strong>Purpose</strong>: Retrieve resources by type and ID.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.database</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_resource</span>
+
+<span class="c1"># Read from typed table</span>
+<span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">read_resource</span><span class="p">(</span><span class="s2">&quot;Patient&quot;</span><span class="p">,</span> <span class="s2">&quot;patient_abc123&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+    <span class="n">patient</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;resource&quot;</span><span class="p">]</span> 
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Name: </span><span class="si">{</span><span class="n">patient</span><span class="p">[</span><span class="s1">&#39;full_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DOB: </span><span class="si">{</span><span class="n">patient</span><span class="p">[</span><span class="s1">&#39;birth_date&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># Name: Jane Doe</span>
+<span class="c1"># DOB: 1990-01-01</span>
+<span class="c1"># </span>
+<span class="c1"># HACSResult.data = {</span>
+<span class="c1">#   &quot;resource&quot;: {</span>
+<span class="c1">#     &quot;id&quot;: &quot;patient_abc123&quot;,</span>
+<span class="c1">#     &quot;resource_type&quot;: &quot;Patient&quot;,</span>
+<span class="c1">#     &quot;full_name&quot;: &quot;Jane Doe&quot;,</span>
+<span class="c1">#     &quot;birth_date&quot;: &quot;1990-01-01&quot;,</span>
+<span class="c1">#     &quot;created_at&quot;: &quot;2024-01-15T10:30:00Z&quot;,</span>
+<span class="c1">#     ...</span>
+<span class="c1">#   },</span>
+<span class="c1">#   &quot;metadata&quot;: {</span>
+<span class="c1">#     &quot;table&quot;: &quot;patient&quot;,</span>
+<span class="c1">#     &quot;schema&quot;: &quot;hacs_clinical&quot;</span>
+<span class="c1">#   }</span>
+<span class="c1"># }</span>
+
+<span class="c1"># Read from generic storage</span>
+<span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">read_resource</span><span class="p">(</span><span class="s2">&quot;CustomType&quot;</span><span class="p">,</span> <span class="s2">&quot;custom_123&quot;</span><span class="p">,</span> <span class="n">as_typed</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div>
+<p><strong>Parameters</strong>:
+- <code>resource_type</code> (str): HACS resource type name
+- <code>resource_id</code> (str): Resource ID to retrieve<br />
+- <code>as_typed</code> (bool): Read from typed table (True) or generic (False)
+- <code>schema</code> (str, optional): Schema name override</p>
+<h5 id="update_resource"><code>update_resource</code><a class="headerlink" href="#update_resource" title="Permanent link">&para;</a></h5>
+<p><strong>Purpose</strong>: Apply partial updates to existing resources.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.database</span><span class="w"> </span><span class="kn">import</span> <span class="n">update_resource</span>
+
+<span class="c1"># Update specific fields</span>
+<span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">update_resource</span><span class="p">(</span>
+    <span class="n">resource_type</span><span class="o">=</span><span class="s2">&quot;Patient&quot;</span><span class="p">,</span>
+    <span class="n">resource_id</span><span class="o">=</span><span class="s2">&quot;patient_abc123&quot;</span><span class="p">,</span>
+    <span class="n">patch</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;telecom&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;system&quot;</span><span class="p">:</span> <span class="s2">&quot;phone&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;555-1234&quot;</span><span class="p">}],</span>
+        <span class="s2">&quot;updated_reason&quot;</span><span class="p">:</span> <span class="s2">&quot;Phone number updated&quot;</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># HACSResult(</span>
+<span class="c1">#   success=True,</span>
+<span class="c1">#   message=&quot;Resource updated successfully&quot;, </span>
+<span class="c1">#   data={</span>
+<span class="c1">#     &quot;resource&quot;: {</span>
+<span class="c1">#       &quot;id&quot;: &quot;patient_abc123&quot;,</span>
+<span class="c1">#       &quot;full_name&quot;: &quot;Jane Doe&quot;,  # unchanged</span>
+<span class="c1">#       &quot;active&quot;: False,          # updated</span>
+<span class="c1">#       &quot;telecom&quot;: [...],         # updated</span>
+<span class="c1">#       &quot;updated_at&quot;: &quot;2024-01-15T15:45:00Z&quot;  # auto-updated</span>
+<span class="c1">#     }</span>
+<span class="c1">#   }</span>
+<span class="c1"># )</span>
+</code></pre></div>
+<h5 id="delete_resource"><code>delete_resource</code><a class="headerlink" href="#delete_resource" title="Permanent link">&para;</a></h5>
+<p><strong>Purpose</strong>: Remove resources from storage.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.database</span><span class="w"> </span><span class="kn">import</span> <span class="n">delete_resource</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">delete_resource</span><span class="p">(</span><span class="s2">&quot;Patient&quot;</span><span class="p">,</span> <span class="s2">&quot;patient_abc123&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✓ Patient deleted successfully&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output: </span>
+<span class="c1"># ✓ Patient deleted successfully</span>
+<span class="c1">#</span>
+<span class="c1"># HACSResult(</span>
+<span class="c1">#   success=True,</span>
+<span class="c1">#   message=&quot;Resource deleted successfully&quot;,</span>
+<span class="c1">#   data={</span>
+<span class="c1">#     &quot;resource_id&quot;: &quot;patient_abc123&quot;,</span>
+<span class="c1">#     &quot;resource_type&quot;: &quot;Patient&quot;,</span>
+<span class="c1">#     &quot;deleted_at&quot;: &quot;2024-01-15T16:00:00Z&quot;</span>
+<span class="c1">#   }</span>
+<span class="c1"># )</span>
+</code></pre></div>
+<h4 id="search-operations">Search Operations<a class="headerlink" href="#search-operations" title="Permanent link">&para;</a></h4>
+<h5 id="search_memories"><code>search_memories</code><a class="headerlink" href="#search_memories" title="Permanent link">&para;</a></h5>
+<p><strong>Purpose</strong>: Vector-based search of agent memories with database filters.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.database</span><span class="w"> </span><span class="kn">import</span> <span class="n">search_memories</span>
+
+<span class="c1"># Semantic search with actor filter</span>
+<span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">search_memories</span><span class="p">(</span>
+    <span class="n">actor_id</span><span class="o">=</span><span class="s2">&quot;dr_chen&quot;</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="s2">&quot;patient blood pressure management&quot;</span><span class="p">,</span>
+    <span class="n">filters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;memory_type&quot;</span><span class="p">:</span> <span class="s2">&quot;episodic&quot;</span><span class="p">},</span>
+    <span class="n">top_k</span><span class="o">=</span><span class="mi">5</span>
+<span class="p">)</span>
+
+<span class="k">for</span> <span class="n">memory</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;memories&quot;</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;• </span><span class="si">{</span><span class="n">memory</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">][:</span><span class="mi">100</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Relevance: </span><span class="si">{</span><span class="n">memory</span><span class="p">[</span><span class="s1">&#39;score&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># • Discussed BP management with Patient Jane Doe. Recommended lifestyle changes and monitoring...</span>
+<span class="c1">#   Relevance: 0.892</span>
+<span class="c1"># • Patient reported difficulty with medication adherence. Suggested pill organizer and...</span>
+<span class="c1">#   Relevance: 0.847</span>
+</code></pre></div>
+<h5 id="search_knowledge_items"><code>search_knowledge_items</code><a class="headerlink" href="#search_knowledge_items" title="Permanent link">&para;</a></h5>
+<p><strong>Purpose</strong>: Search clinical knowledge base using vector similarity.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.database</span><span class="w"> </span><span class="kn">import</span> <span class="n">search_knowledge_items</span>
+
+<span class="c1"># Search evidence with reranking</span>
+<span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">search_knowledge_items</span><span class="p">(</span>
+    <span class="n">query</span><span class="o">=</span><span class="s2">&quot;hypertension treatment guidelines ACE inhibitors&quot;</span><span class="p">,</span>
+    <span class="n">top_k</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">filters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;pubmed&quot;</span><span class="p">,</span> <span class="s2">&quot;year_min&quot;</span><span class="p">:</span> <span class="mi">2020</span><span class="p">},</span>
+    <span class="n">rerank</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+
+<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;items&quot;</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Title: </span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Source: </span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Relevance: </span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;relevance_score&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># Title: ACE Inhibitors in Hypertension Management: 2023 Guidelines</span>
+<span class="c1"># Source: pubmed (2023)  </span>
+<span class="c1"># Relevance: 0.934</span>
+<span class="c1">#</span>
+<span class="c1"># Title: Comparative Effectiveness of ACE Inhibitors vs ARBs</span>
+<span class="c1"># Source: pubmed (2022)</span>
+<span class="c1"># Relevance: 0.891</span>
+</code></pre></div>
+<h4 id="registry-operations">Registry Operations<a class="headerlink" href="#registry-operations" title="Permanent link">&para;</a></h4>
+<h5 id="register_model_version"><code>register_model_version</code><a class="headerlink" href="#register_model_version" title="Permanent link">&para;</a></h5>
+<p><strong>Purpose</strong>: Register model schemas in the HACS registry for versioning.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.database</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_model_version</span>
+
+<span class="c1"># Register a custom patient extension</span>
+<span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">register_model_version</span><span class="p">(</span>
+    <span class="n">resource_name</span><span class="o">=</span><span class="s2">&quot;ExtendedPatient&quot;</span><span class="p">,</span>
+    <span class="n">version</span><span class="o">=</span><span class="s2">&quot;1.2.0&quot;</span><span class="p">,</span> 
+    <span class="n">schema_def</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;full_name&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">},</span>
+            <span class="s2">&quot;birth_date&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="s2">&quot;date&quot;</span><span class="p">},</span>
+            <span class="s2">&quot;genetic_markers&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;array&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;items&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;full_name&quot;</span><span class="p">,</span> <span class="s2">&quot;birth_date&quot;</span><span class="p">]</span>
+    <span class="p">},</span>
+    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;patient&quot;</span><span class="p">,</span> <span class="s2">&quot;genomics&quot;</span><span class="p">,</span> <span class="s2">&quot;extended&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Registered: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;registry_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># ✓ Registered: extended_patient_v1.2.0_abc123</span>
+</code></pre></div>
+<h4 id="database-administration">Database Administration<a class="headerlink" href="#database-administration" title="Permanent link">&para;</a></h4>
+<h5 id="run_migrations"><code>run_migrations</code><a class="headerlink" href="#run_migrations" title="Permanent link">&para;</a></h5>
+<p><strong>Purpose</strong>: Execute database schema migrations to ensure consistency.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.database</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_migrations</span>
+
+<span class="c1"># Run all pending migrations</span>
+<span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">run_migrations</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Applied </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;applied&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2"> migrations:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">migration</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;applied&#39;</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  • </span><span class="si">{</span><span class="n">migration</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">migration</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># Applied 3 migrations:</span>
+<span class="c1">#   • 20240115_001_patient_telecom - Add telecom fields to patient table</span>
+<span class="c1">#   • 20240115_002_observation_index - Add semantic index to observation table  </span>
+<span class="c1">#   • 20240115_003_memory_schema - Update memory table schema</span>
+</code></pre></div>
+<h5 id="get_db_status"><code>get_db_status</code><a class="headerlink" href="#get_db_status" title="Permanent link">&para;</a></h5>
+<p><strong>Purpose</strong>: Check database connection and migration state.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.database</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_db_status</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">get_db_status</span><span class="p">()</span>
+<span class="n">status</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Connection: </span><span class="si">{</span><span class="s1">&#39;✓&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">status</span><span class="p">[</span><span class="s1">&#39;connected&#39;</span><span class="p">]</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;✗&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Schema version: </span><span class="si">{</span><span class="n">status</span><span class="p">[</span><span class="s1">&#39;schema_version&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Pending migrations: </span><span class="si">{</span><span class="n">status</span><span class="p">[</span><span class="s1">&#39;pending_migrations&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># Connection: ✓</span>
+<span class="c1"># Schema version: 2.1.3</span>
+<span class="c1"># Pending migrations: 0</span>
+</code></pre></div>
+<h3 id="resource-modeling-5-tools">🏗️ Resource Modeling (5 tools)<a class="headerlink" href="#resource-modeling-5-tools" title="Permanent link">&para;</a></h3>
+<p>Tools for creating, validating, and composing HACS resources with proper metadata and type safety.</p>
+<h4 id="pin_resource"><code>pin_resource</code><a class="headerlink" href="#pin_resource" title="Permanent link">&para;</a></h4>
+<p><strong>Purpose</strong>: Create and validate HACS resources with proper metadata.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.modeling</span><span class="w"> </span><span class="kn">import</span> <span class="n">pin_resource</span>
+
+<span class="c1"># Create a medication request</span>
+<span class="n">med_data</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;active&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;intent&quot;</span><span class="p">:</span> <span class="s2">&quot;order&quot;</span><span class="p">,</span> 
+    <span class="s2">&quot;medication_codeable_concept&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="s2">&quot;Lisinopril 10mg&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;coding&quot;</span><span class="p">:</span> <span class="p">[{</span>
+            <span class="s2">&quot;system&quot;</span><span class="p">:</span> <span class="s2">&quot;http://www.nlm.nih.gov/research/umls/rxnorm&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="s2">&quot;314077&quot;</span>
+        <span class="p">}]</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;subject&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;reference&quot;</span><span class="p">:</span> <span class="s2">&quot;Patient/patient_abc123&quot;</span><span class="p">},</span>
+    <span class="s2">&quot;dosage_instruction&quot;</span><span class="p">:</span> <span class="p">[{</span>
+        <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="s2">&quot;Take one tablet daily&quot;</span>
+    <span class="p">}]</span>
+<span class="p">}</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">pin_resource</span><span class="p">(</span><span class="s2">&quot;MedicationRequest&quot;</span><span class="p">,</span> <span class="n">med_data</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+    <span class="n">resource</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;resource&quot;</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Created MedicationRequest: </span><span class="si">{</span><span class="n">resource</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Status: </span><span class="si">{</span><span class="n">resource</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Medication: </span><span class="si">{</span><span class="n">resource</span><span class="p">[</span><span class="s1">&#39;medication_codeable_concept&#39;</span><span class="p">][</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># ✓ Created MedicationRequest: medreq_def456</span>
+<span class="c1"># Status: active</span>
+<span class="c1"># Medication: Lisinopril 10mg</span>
+</code></pre></div>
+<h4 id="compose_bundle"><code>compose_bundle</code><a class="headerlink" href="#compose_bundle" title="Permanent link">&para;</a></h4>
+<p><strong>Purpose</strong>: Combine multiple resources into a FHIR Bundle.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.modeling</span><span class="w"> </span><span class="kn">import</span> <span class="n">compose_bundle</span>
+
+<span class="c1"># Create a bundle with patient and observations</span>
+<span class="n">resources</span> <span class="o">=</span> <span class="p">[</span><span class="n">patient_resource</span><span class="p">,</span> <span class="n">bp_observation</span><span class="p">,</span> <span class="n">hr_observation</span><span class="p">]</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">compose_bundle</span><span class="p">(</span>
+    <span class="n">bundle_type</span><span class="o">=</span><span class="s2">&quot;collection&quot;</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Patient Visit Summary&quot;</span><span class="p">,</span>
+    <span class="n">resources</span><span class="o">=</span><span class="n">resources</span>
+<span class="p">)</span>
+
+<span class="n">bundle</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;bundle&quot;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Bundle contains </span><span class="si">{</span><span class="n">bundle</span><span class="p">[</span><span class="s1">&#39;total&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> resources&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">bundle</span><span class="p">[</span><span class="s2">&quot;entry&quot;</span><span class="p">]:</span>
+    <span class="n">resource</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;resource&quot;</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  • </span><span class="si">{</span><span class="n">resource</span><span class="p">[</span><span class="s1">&#39;resource_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">resource</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># ✓ Bundle contains 3 resources</span>
+<span class="c1">#   • Patient: patient_abc123</span>
+<span class="c1">#   • Observation: obs_bp_789</span>
+<span class="c1">#   • Observation: obs_hr_456</span>
 </code></pre></div>
 <h4 id="validate_resource"><code>validate_resource</code><a class="headerlink" href="#validate_resource" title="Permanent link">&para;</a></h4>
-<p>Validate resource against model constraints</p>
-<div class="highlight"><pre><span></span><code><span class="n">validation</span> <span class="o">=</span> <span class="n">use_tool</span><span class="p">(</span><span class="s2">&quot;validate_resource&quot;</span><span class="p">,</span> <span class="p">{</span>
-    <span class="s2">&quot;resource_type&quot;</span><span class="p">:</span> <span class="s2">&quot;Observation&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;code_text&quot;</span><span class="p">:</span> <span class="s2">&quot;Blood Pressure&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;120/80&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;unit&quot;</span><span class="p">:</span> <span class="s2">&quot;mmHg&quot;</span>
+<p><strong>Purpose</strong>: Validate resources against HACS schemas and business rules.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.modeling</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_resource</span>
+
+<span class="c1"># Validate with comprehensive checking</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_resource</span><span class="p">(</span>
+    <span class="n">resource</span><span class="o">=</span><span class="n">medication_request</span><span class="p">,</span>
+    <span class="n">check_references</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>    <span class="c1"># Validate reference integrity</span>
+    <span class="n">check_business_rules</span><span class="o">=</span><span class="kc">True</span> <span class="c1"># Apply clinical validation rules  </span>
+<span class="p">)</span>
+
+<span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✓ Resource is valid&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;warnings&quot;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">warning</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;warnings&quot;</span><span class="p">]:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠ Warning: </span><span class="si">{</span><span class="n">warning</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✗ Validation failed:&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">error</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;errors&quot;</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  • </span><span class="si">{</span><span class="n">error</span><span class="p">[</span><span class="s1">&#39;field&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># ✓ Resource is valid</span>
+<span class="c1"># ⚠ Warning: dosage_instruction[0] missing timing information</span>
+</code></pre></div>
+<h3 id="agent-operations-10-tools">🤖 Agent Operations (10 tools)<a class="headerlink" href="#agent-operations-10-tools" title="Permanent link">&para;</a></h3>
+<p>Tools for agent working memory, task planning, long-term memory, and context management.</p>
+<h4 id="working-memory-scratchpad">Working Memory (Scratchpad)<a class="headerlink" href="#working-memory-scratchpad" title="Permanent link">&para;</a></h4>
+<h5 id="write_scratchpad"><code>write_scratchpad</code><a class="headerlink" href="#write_scratchpad" title="Permanent link">&para;</a></h5>
+<p><strong>Purpose</strong>: Record observations, decisions, and working notes.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.agents</span><span class="w"> </span><span class="kn">import</span> <span class="n">write_scratchpad</span>
+
+<span class="c1"># Record a clinical observation</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">write_scratchpad</span><span class="p">(</span>
+    <span class="n">content</span><span class="o">=</span><span class="s2">&quot;Patient reports 7/10 chest pain, onset 2 hours ago. No radiation to arms. Vital signs stable.&quot;</span><span class="p">,</span>
+    <span class="n">entry_type</span><span class="o">=</span><span class="s2">&quot;observation&quot;</span><span class="p">,</span>
+    <span class="n">session_id</span><span class="o">=</span><span class="s2">&quot;visit_20240115&quot;</span><span class="p">,</span>
+    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chest_pain&quot;</span><span class="p">,</span> <span class="s2">&quot;assessment&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Recorded entry: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;entry_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># ✓ Recorded entry: scratchpad_ghi789</span>
+</code></pre></div>
+<h5 id="read_scratchpad"><code>read_scratchpad</code><a class="headerlink" href="#read_scratchpad" title="Permanent link">&para;</a></h5>
+<p><strong>Purpose</strong>: Retrieve working memory entries for context.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.agents</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_scratchpad</span>
+
+<span class="c1"># Get recent observations for this session</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">read_scratchpad</span><span class="p">(</span>
+    <span class="n">session_id</span><span class="o">=</span><span class="s2">&quot;visit_20240115&quot;</span><span class="p">,</span>
+    <span class="n">entry_type</span><span class="o">=</span><span class="s2">&quot;observation&quot;</span><span class="p">,</span> 
+    <span class="n">limit</span><span class="o">=</span><span class="mi">5</span>
+<span class="p">)</span>
+
+<span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;entries&quot;</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">entry</span><span class="p">[</span><span class="s1">&#39;created_at&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">entry</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">][:</span><span class="mi">80</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># [2024-01-15T14:30:00Z] Patient reports 7/10 chest pain, onset 2 hours ago. No radiation to arms...</span>
+<span class="c1"># [2024-01-15T14:25:00Z] Reviewed patient history: 3 prior ED visits for chest pain, all negative...</span>
+</code></pre></div>
+<h4 id="task-planning">Task Planning<a class="headerlink" href="#task-planning" title="Permanent link">&para;</a></h4>
+<h5 id="create_todo"><code>create_todo</code><a class="headerlink" href="#create_todo" title="Permanent link">&para;</a></h5>
+<p><strong>Purpose</strong>: Create structured task items for clinical workflows.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.agents</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_todo</span>
+
+<span class="c1"># Create urgent clinical task</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">create_todo</span><span class="p">(</span>
+    <span class="n">content</span><span class="o">=</span><span class="s2">&quot;Order cardiac enzymes and chest X-ray for patient with chest pain&quot;</span><span class="p">,</span>
+    <span class="n">priority</span><span class="o">=</span><span class="s2">&quot;high&quot;</span><span class="p">,</span>
+    <span class="n">clinical_urgency</span><span class="o">=</span><span class="s2">&quot;urgent&quot;</span><span class="p">,</span>
+    <span class="n">due_date</span><span class="o">=</span><span class="s2">&quot;2024-01-15T16:00:00Z&quot;</span><span class="p">,</span>
+    <span class="n">context</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="s2">&quot;patient_abc123&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;session_id&quot;</span><span class="p">:</span> <span class="s2">&quot;visit_20240115&quot;</span>
     <span class="p">}</span>
-<span class="p">})</span>
-</code></pre></div>
-<h4 id="list_models"><code>list_models</code><a class="headerlink" href="#list_models" title="Permanent link">&para;</a></h4>
-<p>List available HACS model types</p>
-<div class="highlight"><pre><span></span><code><span class="n">models</span> <span class="o">=</span> <span class="n">use_tool</span><span class="p">(</span><span class="s2">&quot;list_models&quot;</span><span class="p">,</span> <span class="p">{})</span>
-</code></pre></div>
-<h3 id="memory-operations-5-tools">🧠 Memory Operations (5 tools)<a class="headerlink" href="#memory-operations-5-tools" title="Permanent link">&para;</a></h3>
-<p><strong>🖊️ WRITE + 🎯 SELECT Strategies</strong>: Clinical memory generation and selective retrieval for healthcare AI cognition.</p>
-<p>Clinical memory operations implementing context writing and selective memory access:</p>
-<h4 id="create_memory"><code>create_memory</code><a class="headerlink" href="#create_memory" title="Permanent link">&para;</a></h4>
-<p><strong>🖊️ WRITE</strong>: Generate clinical memories with structured context metadata</p>
-<div class="highlight"><pre><span></span><code><span class="c1"># WRITE: Generate clinical context with metadata</span>
-<span class="n">memory</span> <span class="o">=</span> <span class="n">use_tool</span><span class="p">(</span><span class="s2">&quot;create_memory&quot;</span><span class="p">,</span> <span class="p">{</span>
-    <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;Patient reports 75</span><span class="si">% r</span><span class="s2">eduction in chest pain after metoprolol initiation. Excellent medication tolerance.&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;memory_type&quot;</span><span class="p">:</span> <span class="s2">&quot;episodic&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;importance_score&quot;</span><span class="p">:</span> <span class="mf">0.9</span><span class="p">,</span>  <span class="c1"># High clinical significance</span>
-    <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;medication_response&quot;</span><span class="p">,</span> <span class="s2">&quot;chest_pain&quot;</span><span class="p">,</span> <span class="s2">&quot;improvement&quot;</span><span class="p">,</span> <span class="s2">&quot;metoprolol&quot;</span><span class="p">],</span>
-    <span class="s2">&quot;context_metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;patient_id&quot;</span><span class="p">:</span> <span class="s2">&quot;patient-123&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;encounter_type&quot;</span><span class="p">:</span> <span class="s2">&quot;follow_up&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;medication_change&quot;</span><span class="p">:</span> <span class="s2">&quot;metoprolol_start&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;outcome_measure&quot;</span><span class="p">:</span> <span class="s2">&quot;symptom_improvement&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;context_strategies_used&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;write&quot;</span><span class="p">,</span> <span class="s2">&quot;select&quot;</span><span class="p">]</span>  <span class="c1"># Track context engineering</span>
-    <span class="p">}</span>
-<span class="p">})</span>
-</code></pre></div>
-<h4 id="search_memories"><code>search_memories</code><a class="headerlink" href="#search_memories" title="Permanent link">&para;</a></h4>
-<p>Semantic search across clinical memories</p>
-<div class="highlight"><pre><span></span><code><span class="n">memories</span> <span class="o">=</span> <span class="n">use_tool</span><span class="p">(</span><span class="s2">&quot;search_memories&quot;</span><span class="p">,</span> <span class="p">{</span>
-    <span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="s2">&quot;medication side effects&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;memory_type&quot;</span><span class="p">:</span> <span class="s2">&quot;episodic&quot;</span><span class="p">,</span> 
-    <span class="s2">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
-    <span class="s2">&quot;similarity_threshold&quot;</span><span class="p">:</span> <span class="mf">0.7</span>
-<span class="p">})</span>
-</code></pre></div>
-<h4 id="consolidate_memories"><code>consolidate_memories</code><a class="headerlink" href="#consolidate_memories" title="Permanent link">&para;</a></h4>
-<p>Merge related memories for knowledge synthesis</p>
-<div class="highlight"><pre><span></span><code><span class="n">consolidated</span> <span class="o">=</span> <span class="n">use_tool</span><span class="p">(</span><span class="s2">&quot;consolidate_memories&quot;</span><span class="p">,</span> <span class="p">{</span>
-    <span class="s2">&quot;memory_ids&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;memory-1&quot;</span><span class="p">,</span> <span class="s2">&quot;memory-2&quot;</span><span class="p">,</span> <span class="s2">&quot;memory-3&quot;</span><span class="p">],</span>
-    <span class="s2">&quot;consolidation_strategy&quot;</span><span class="p">:</span> <span class="s2">&quot;thematic_synthesis&quot;</span>
-<span class="p">})</span>
-</code></pre></div>
-<h4 id="retrieve_context"><code>retrieve_context</code><a class="headerlink" href="#retrieve_context" title="Permanent link">&para;</a></h4>
-<p>Get relevant clinical context for current task</p>
-<div class="highlight"><pre><span></span><code><span class="n">context</span> <span class="o">=</span> <span class="n">use_tool</span><span class="p">(</span><span class="s2">&quot;retrieve_context&quot;</span><span class="p">,</span> <span class="p">{</span>
-    <span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="s2">&quot;diabetes management plan&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;context_type&quot;</span><span class="p">:</span> <span class="s2">&quot;clinical&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;max_memories&quot;</span><span class="p">:</span> <span class="mi">3</span>
-<span class="p">})</span>
-</code></pre></div>
-<h4 id="analyze_memory_patterns"><code>analyze_memory_patterns</code><a class="headerlink" href="#analyze_memory_patterns" title="Permanent link">&para;</a></h4>
-<p>Identify patterns and insights from clinical memories</p>
-<div class="highlight"><pre><span></span><code><span class="n">patterns</span> <span class="o">=</span> <span class="n">use_tool</span><span class="p">(</span><span class="s2">&quot;analyze_memory_patterns&quot;</span><span class="p">,</span> <span class="p">{</span>
-    <span class="s2">&quot;memory_type&quot;</span><span class="p">:</span> <span class="s2">&quot;episodic&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;analysis_focus&quot;</span><span class="p">:</span> <span class="s2">&quot;patient_outcomes&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;time_window&quot;</span><span class="p">:</span> <span class="s2">&quot;last_30_days&quot;</span>
-<span class="p">})</span>
-</code></pre></div>
-<h4 id="check_memory"><code>check_memory</code><a class="headerlink" href="#check_memory" title="Permanent link">&para;</a></h4>
-<p>Collect a filtered set of memories (episodic/procedural) for agent context</p>
-<div class="highlight"><pre><span></span><code><span class="n">context_memories</span> <span class="o">=</span> <span class="n">use_tool</span><span class="p">(</span><span class="s2">&quot;check_memory&quot;</span><span class="p">,</span> <span class="p">{</span>
-    <span class="s2">&quot;actor_id&quot;</span><span class="p">:</span> <span class="n">actor</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
-    <span class="s2">&quot;memory_types&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;episodic&quot;</span><span class="p">,</span> <span class="s2">&quot;procedural&quot;</span><span class="p">],</span>
-    <span class="s2">&quot;min_importance&quot;</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span>
-    <span class="s2">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">20</span>
-<span class="p">})</span>
-</code></pre></div>
-<h3 id="resource-specific-tools-examples">⚕️ Resource-Specific Tools (examples)<a class="headerlink" href="#resource-specific-tools-examples" title="Permanent link">&para;</a></h3>
-<h4 id="event">Event<a class="headerlink" href="#event" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.resource_tools</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-  <span class="n">create_event_tool</span><span class="p">,</span> <span class="n">update_event_status_tool</span><span class="p">,</span> <span class="n">add_event_performer_tool</span><span class="p">,</span> <span class="n">schedule_event_tool</span><span class="p">,</span> <span class="n">summarize_event_tool</span>
 <span class="p">)</span>
 
-<span class="c1"># Create and schedule an event</span>
-<span class="n">evt</span> <span class="o">=</span> <span class="n">create_event_tool</span><span class="p">(</span><span class="n">subject</span><span class="o">=</span><span class="s2">&quot;Patient/patient-123&quot;</span><span class="p">,</span> <span class="n">code_text</span><span class="o">=</span><span class="s2">&quot;physiotherapy_session&quot;</span><span class="p">,</span> <span class="n">when</span><span class="o">=</span><span class="s2">&quot;2025-02-01T10:00:00Z&quot;</span><span class="p">)</span>
-<span class="k">if</span> <span class="n">evt</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
-  <span class="n">evt2</span> <span class="o">=</span> <span class="n">schedule_event_tool</span><span class="p">(</span><span class="n">evt</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;event&quot;</span><span class="p">),</span> <span class="n">start</span><span class="o">=</span><span class="s2">&quot;2025-02-01T10:00:00Z&quot;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;2025-02-01T11:00:00Z&quot;</span><span class="p">)</span>
-  <span class="n">summary</span> <span class="o">=</span> <span class="n">summarize_event_tool</span><span class="p">((</span><span class="n">evt2</span><span class="o">.</span><span class="n">data</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;event&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">evt</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;event&quot;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Created todo: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;todo_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># ✓ Created todo: todo_urgent_jkl012</span>
 </code></pre></div>
-<h4 id="appointment">Appointment<a class="headerlink" href="#appointment" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.resource_tools</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-  <span class="n">schedule_appointment</span><span class="p">,</span> <span class="n">reschedule_appointment</span><span class="p">,</span> <span class="n">cancel_appointment</span><span class="p">,</span> <span class="n">check_appointment_conflicts</span><span class="p">,</span> <span class="n">send_appointment_reminders</span>
+<h5 id="list_todos"><code>list_todos</code><a class="headerlink" href="#list_todos" title="Permanent link">&para;</a></h5>
+<p><strong>Purpose</strong>: Retrieve and filter task lists.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.agents</span><span class="w"> </span><span class="kn">import</span> <span class="n">list_todos</span>
+
+<span class="c1"># Get high-priority pending tasks</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">list_todos</span><span class="p">(</span>
+    <span class="n">status</span><span class="o">=</span><span class="s2">&quot;pending&quot;</span><span class="p">,</span>
+    <span class="n">priority_min</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>  <span class="c1"># High priority and above</span>
+    <span class="n">limit</span><span class="o">=</span><span class="mi">10</span>
 <span class="p">)</span>
 
-<span class="n">appt</span> <span class="o">=</span> <span class="n">schedule_appointment</span><span class="p">(</span><span class="s2">&quot;Patient/p1&quot;</span><span class="p">,</span> <span class="s2">&quot;Practitioner/pr1&quot;</span><span class="p">,</span> <span class="s2">&quot;2025-02-02T09:00:00Z&quot;</span><span class="p">,</span> <span class="s2">&quot;2025-02-02T09:30:00Z&quot;</span><span class="p">)</span>
-<span class="n">conflicts</span> <span class="o">=</span> <span class="n">check_appointment_conflicts</span><span class="p">((</span><span class="n">appt</span><span class="o">.</span><span class="n">data</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;appointment&quot;</span><span class="p">),</span> <span class="n">existing</span><span class="o">=</span><span class="p">[])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;todos&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2"> high-priority tasks:&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">todo</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;todos&quot;</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;• [</span><span class="si">{</span><span class="n">todo</span><span class="p">[</span><span class="s1">&#39;priority&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">todo</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">][:</span><span class="mi">60</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">todo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;clinical_urgency&#39;</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Clinical urgency: </span><span class="si">{</span><span class="n">todo</span><span class="p">[</span><span class="s1">&#39;clinical_urgency&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># Found 3 high-priority tasks:</span>
+<span class="c1"># • [high] Order cardiac enzymes and chest X-ray for patient with chest...</span>
+<span class="c1">#   Clinical urgency: urgent</span>
+<span class="c1"># • [high] Review medication interactions for patient on multiple...</span>
+<span class="c1">#   Clinical urgency: moderate</span>
 </code></pre></div>
-<h4 id="careplan-careteam-goal">CarePlan / CareTeam / Goal<a class="headerlink" href="#careplan-careteam-goal" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.resource_tools</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-  <span class="n">create_care_plan</span><span class="p">,</span> <span class="n">update_care_plan_progress</span><span class="p">,</span> <span class="n">coordinate_care_activities</span><span class="p">,</span> <span class="n">track_care_plan_goals</span><span class="p">,</span>
-  <span class="n">assemble_care_team</span><span class="p">,</span> <span class="n">assign_team_roles</span><span class="p">,</span> <span class="n">coordinate_team_communication</span><span class="p">,</span> <span class="n">track_team_responsibilities</span><span class="p">,</span>
-  <span class="n">update_team_membership</span><span class="p">,</span> <span class="n">track_goal_progress</span><span class="p">,</span> <span class="n">update_goal_status</span><span class="p">,</span> <span class="n">measure_goal_achievement</span><span class="p">,</span> <span class="n">link_goal_to_careplan</span>
+<h4 id="long-term-memory">Long-term Memory<a class="headerlink" href="#long-term-memory" title="Permanent link">&para;</a></h4>
+<h5 id="store_memory"><code>store_memory</code><a class="headerlink" href="#store_memory" title="Permanent link">&para;</a></h5>
+<p><strong>Purpose</strong>: Persist important information for future reference.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.agents</span><span class="w"> </span><span class="kn">import</span> <span class="n">store_memory</span>
+
+<span class="c1"># Store procedural knowledge</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">store_memory</span><span class="p">(</span>
+    <span class="n">content</span><span class="o">=</span><span class="s2">&quot;When evaluating chest pain in young patients, always consider anxiety/panic disorder if cardiac workup is negative. Patient education about anxiety symptoms is crucial.&quot;</span><span class="p">,</span>
+    <span class="n">memory_type</span><span class="o">=</span><span class="s2">&quot;procedural&quot;</span><span class="p">,</span>
+    <span class="n">actor_id</span><span class="o">=</span><span class="s2">&quot;dr_chen&quot;</span><span class="p">,</span> 
+    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chest_pain&quot;</span><span class="p">,</span> <span class="s2">&quot;anxiety&quot;</span><span class="p">,</span> <span class="s2">&quot;young_patients&quot;</span><span class="p">],</span>
+    <span class="n">context</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;domain&quot;</span><span class="p">:</span> <span class="s2">&quot;emergency_medicine&quot;</span><span class="p">,</span> <span class="s2">&quot;evidence_level&quot;</span><span class="p">:</span> <span class="s2">&quot;clinical_experience&quot;</span><span class="p">}</span>
 <span class="p">)</span>
 
-<span class="n">cp</span> <span class="o">=</span> <span class="n">create_care_plan</span><span class="p">(</span><span class="s2">&quot;Patient/p1&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Diabetes care plan&quot;</span><span class="p">)</span>
-<span class="n">track_goal_progress</span><span class="p">({</span><span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;reduce A1C to &lt;7%&quot;</span><span class="p">},</span> <span class="n">current_value</span><span class="o">=</span><span class="mf">7.5</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Stored memory: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;memory_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># ✓ Stored memory: memory_mno345</span>
 </code></pre></div>
-<h4 id="nutritionorder">NutritionOrder<a class="headerlink" href="#nutritionorder" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.resource_tools</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-  <span class="n">create_therapeutic_diet_order</span><span class="p">,</span> <span class="n">manage_nutrition_restrictions</span><span class="p">,</span> <span class="n">calculate_nutritional_requirements</span><span class="p">,</span> <span class="n">coordinate_feeding_protocols</span>
+<h5 id="retrieve_memories"><code>retrieve_memories</code><a class="headerlink" href="#retrieve_memories" title="Permanent link">&para;</a></h5>
+<p><strong>Purpose</strong>: Find relevant memories using semantic search.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.agents</span><span class="w"> </span><span class="kn">import</span> <span class="n">retrieve_memories</span>
+
+<span class="c1"># Retrieve relevant clinical knowledge</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">retrieve_memories</span><span class="p">(</span>
+    <span class="n">query</span><span class="o">=</span><span class="s2">&quot;chest pain young patient anxiety&quot;</span><span class="p">,</span>
+    <span class="n">actor_id</span><span class="o">=</span><span class="s2">&quot;dr_chen&quot;</span><span class="p">,</span>
+    <span class="n">memory_type</span><span class="o">=</span><span class="s2">&quot;procedural&quot;</span><span class="p">,</span>
+    <span class="n">limit</span><span class="o">=</span><span class="mi">3</span>
 <span class="p">)</span>
 
-<span class="n">diet</span> <span class="o">=</span> <span class="n">create_therapeutic_diet_order</span><span class="p">(</span><span class="s2">&quot;Patient/p1&quot;</span><span class="p">,</span> <span class="n">diet_text</span><span class="o">=</span><span class="s2">&quot;low_sodium&quot;</span><span class="p">)</span>
-<span class="n">reqs</span> <span class="o">=</span> <span class="n">calculate_nutritional_requirements</span><span class="p">(</span><span class="mf">80.0</span><span class="p">,</span> <span class="mf">175.0</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="s2">&quot;male&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">memory</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;memories&quot;</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;• </span><span class="si">{</span><span class="n">memory</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">][:</span><span class="mi">100</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Relevance: </span><span class="si">{</span><span class="n">memory</span><span class="p">[</span><span class="s1">&#39;relevance_score&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Tags: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">memory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tags&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">[]))</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># • When evaluating chest pain in young patients, always consider anxiety/panic disorder if...</span>
+<span class="c1">#   Relevance: 0.924</span>
+<span class="c1">#   Tags: chest_pain, anxiety, young_patients</span>
 </code></pre></div>
-<h3 id="terminology-optional">🧬 Terminology (optional)<a class="headerlink" href="#terminology-optional" title="Permanent link">&para;</a></h3>
-<p>High-level terminology tools help agents understand and align clinical codes without mutating resources directly.</p>
-<h4 id="visualize-resources-and-annotations">Visualize resources and annotations<a class="headerlink" href="#visualize-resources-and-annotations" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">visualize_resource</span><span class="p">,</span> <span class="n">visualize_annotations</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Patient</span><span class="p">,</span> <span class="n">AnnotatedDocument</span><span class="p">,</span> <span class="n">Extraction</span><span class="p">,</span> <span class="n">CharInterval</span>
+<h4 id="context-management">Context Management<a class="headerlink" href="#context-management" title="Permanent link">&para;</a></h4>
+<h5 id="inject_preferences"><code>inject_preferences</code><a class="headerlink" href="#inject_preferences" title="Permanent link">&para;</a></h5>
+<p><strong>Purpose</strong>: Apply actor preferences to messages and responses.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.agents</span><span class="w"> </span><span class="kn">import</span> <span class="n">inject_preferences</span>
 
-<span class="c1"># Resource card</span>
-<span class="n">p</span> <span class="o">=</span> <span class="n">Patient</span><span class="p">(</span><span class="n">full_name</span><span class="o">=</span><span class="s2">&quot;Jane Doe&quot;</span><span class="p">,</span> <span class="n">birth_date</span><span class="o">=</span><span class="s2">&quot;1990-01-01&quot;</span><span class="p">,</span> <span class="n">gender</span><span class="o">=</span><span class="s2">&quot;female&quot;</span><span class="p">)</span>
-<span class="n">visualize_resource</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="c1"># Apply communication preferences</span>
+<span class="n">message</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;The patient should start on ACE inhibitor therapy.&quot;</span>
+<span class="p">}</span>
 
-<span class="c1"># Annotations highlighting</span>
-<span class="n">doc</span> <span class="o">=</span> <span class="n">AnnotatedDocument</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;BP 128/82, HR 72&quot;</span><span class="p">,</span> <span class="n">extractions</span><span class="o">=</span><span class="p">[</span>
-    <span class="n">Extraction</span><span class="p">(</span><span class="n">extraction_class</span><span class="o">=</span><span class="s2">&quot;blood_pressure&quot;</span><span class="p">,</span> <span class="n">extraction_text</span><span class="o">=</span><span class="s2">&quot;128/82&quot;</span><span class="p">,</span> <span class="n">char_interval</span><span class="o">=</span><span class="n">CharInterval</span><span class="p">(</span><span class="n">start_pos</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">end_pos</span><span class="o">=</span><span class="mi">9</span><span class="p">))</span>
-<span class="p">])</span>
-<span class="n">visualize_annotations</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
-</code></pre></div>
-<h4 id="summarize-codable-concepts-in-a-document">Summarize codable concepts in a document<a class="headerlink" href="#summarize-codable-concepts-in-a-document" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.terminology</span><span class="w"> </span><span class="kn">import</span> <span class="n">summarize_codable_concepts</span>
-
-<span class="n">summary</span> <span class="o">=</span> <span class="n">summarize_codable_concepts</span><span class="p">(</span><span class="n">composition_doc</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="s2">&quot;hypertension&quot;</span><span class="p">,</span> <span class="n">top_k</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">summary</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;summary&quot;</span><span class="p">])</span>  <span class="c1"># human-readable summary for prompts</span>
-</code></pre></div>
-<h4 id="annotate-document-codings-single-artifact">Annotate document codings (single artifact)<a class="headerlink" href="#annotate-document-codings-single-artifact" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.terminology</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_possible_codes</span>
-
-<span class="n">report</span> <span class="o">=</span> <span class="n">get_possible_codes</span><span class="p">(</span><span class="n">composition_doc</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="s2">&quot;blood pressure&quot;</span><span class="p">,</span> <span class="n">top_k</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="c1"># report.data = {resource_id, summary, candidates, umls}</span>
-</code></pre></div>
-<h4 id="map-codes-between-systems-eg-snomed-loinc">Map codes between systems (e.g., SNOMED → LOINC)<a class="headerlink" href="#map-codes-between-systems-eg-snomed-loinc" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.terminology</span><span class="w"> </span><span class="kn">import</span> <span class="n">map_terminology</span>
-
-<span class="n">mappings</span> <span class="o">=</span> <span class="n">map_terminology</span><span class="p">(</span>
-    <span class="n">composition_doc</span><span class="p">,</span>
-    <span class="n">source</span><span class="o">=</span><span class="s2">&quot;SNOMED&quot;</span><span class="p">,</span>
-    <span class="n">target</span><span class="o">=</span><span class="s2">&quot;LOINC&quot;</span><span class="p">,</span>
-    <span class="n">top_k</span><span class="o">=</span><span class="mi">3</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">inject_preferences</span><span class="p">(</span>
+    <span class="n">message</span><span class="o">=</span><span class="n">message</span><span class="p">,</span>
+    <span class="n">actor_id</span><span class="o">=</span><span class="s2">&quot;dr_chen&quot;</span><span class="p">,</span>
+    <span class="n">preference_scope</span><span class="o">=</span><span class="s2">&quot;communication_style&quot;</span>
 <span class="p">)</span>
+
+<span class="n">enhanced_message</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;message&quot;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Enhanced: </span><span class="si">{</span><span class="n">enhanced_message</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># Enhanced: Based on current guidelines, I recommend initiating ACE inhibitor therapy for this patient. Please consider starting with lisinopril 5mg daily, with close monitoring of blood pressure and renal function. Would you like me to provide patient education materials about this medication?</span>
 </code></pre></div>
-<h3 id="evidence">📚 Evidence<a class="headerlink" href="#evidence" title="Permanent link">&para;</a></h3>
-<p>Use dedicated search for literature evidence.</p>
-<div class="highlight"><pre><span></span><code><span class="n">evidence</span> <span class="o">=</span> <span class="n">use_tool</span><span class="p">(</span><span class="s2">&quot;search_evidence&quot;</span><span class="p">,</span> <span class="p">{</span>
-    <span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="s2">&quot;ACE inhibitor contraindications&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;top_k&quot;</span><span class="p">:</span> <span class="mi">5</span>
+<h5 id="select_tools_for_task"><code>select_tools_for_task</code><a class="headerlink" href="#select_tools_for_task" title="Permanent link">&para;</a></h5>
+<p><strong>Purpose</strong>: Choose relevant tools using semantic matching.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.agents</span><span class="w"> </span><span class="kn">import</span> <span class="n">select_tools_for_task</span>
+
+<span class="c1"># Get tools for clinical documentation</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">select_tools_for_task</span><span class="p">(</span>
+    <span class="n">task_description</span><span class="o">=</span><span class="s2">&quot;Create comprehensive discharge summary for patient with heart failure&quot;</span><span class="p">,</span>
+    <span class="n">max_tools</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+    <span class="n">domain_filter</span><span class="o">=</span><span class="s2">&quot;modeling&quot;</span>
+<span class="p">)</span>
+
+<span class="k">for</span> <span class="n">tool</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;selected_tools&quot;</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;• </span><span class="si">{</span><span class="n">tool</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">tool</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">][:</span><span class="mi">60</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Relevance: </span><span class="si">{</span><span class="n">tool</span><span class="p">[</span><span class="s1">&#39;relevance_score&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output:  </span>
+<span class="c1"># • pin_resource: Create and validate HACS resources with proper metadata...</span>
+<span class="c1">#   Relevance: 0.887</span>
+<span class="c1"># • compose_bundle: Combine multiple resources into a FHIR Bundle...</span>
+<span class="c1">#   Relevance: 0.823</span>
+</code></pre></div>
+<h3 id="advanced-features-optional">🔍 Advanced Features (Optional)<a class="headerlink" href="#advanced-features-optional" title="Permanent link">&para;</a></h3>
+<h4 id="extraction-tools-llm-dependent">Extraction Tools (LLM-dependent)<a class="headerlink" href="#extraction-tools-llm-dependent" title="Permanent link">&para;</a></h4>
+<p>These tools require LLM integration and are optional based on your setup.</p>
+<h5 id="extract_variables"><code>extract_variables</code><a class="headerlink" href="#extract_variables" title="Permanent link">&para;</a></h5>
+<p><strong>Purpose</strong>: Extract structured data from clinical text using LLMs.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.extraction</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract_variables</span>
+
+<span class="c1"># Extract vital signs from clinical notes  </span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">extract_variables</span><span class="p">(</span>
+    <span class="n">text</span><span class="o">=</span><span class="s2">&quot;Patient presents with BP 140/90, HR 88, temp 98.6F, O2 sat 97</span><span class="si">% o</span><span class="s2">n room air&quot;</span><span class="p">,</span>
+    <span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;systolic_bp&quot;</span><span class="p">,</span> <span class="s2">&quot;diastolic_bp&quot;</span><span class="p">,</span> <span class="s2">&quot;heart_rate&quot;</span><span class="p">,</span> <span class="s2">&quot;temperature&quot;</span><span class="p">,</span> <span class="s2">&quot;oxygen_saturation&quot;</span><span class="p">],</span>
+    <span class="n">provider</span><span class="o">=</span><span class="s2">&quot;openai&quot;</span>
+<span class="p">)</span>
+
+<span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+    <span class="n">extracted</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;variables&quot;</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Extracted variables:&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">extracted</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># Extracted variables:</span>
+<span class="c1">#   systolic_bp: 140</span>
+<span class="c1">#   diastolic_bp: 90  </span>
+<span class="c1">#   heart_rate: 88</span>
+<span class="c1">#   temperature: 98.6</span>
+<span class="c1">#   oxygen_saturation: 97</span>
+</code></pre></div>
+<h4 id="terminology-tools-optional">Terminology Tools (Optional)<a class="headerlink" href="#terminology-tools-optional" title="Permanent link">&para;</a></h4>
+<p>Clinical coding and terminology management tools.</p>
+<h5 id="search_umls"><code>search_umls</code><a class="headerlink" href="#search_umls" title="Permanent link">&para;</a></h5>
+<p><strong>Purpose</strong>: Search UMLS terminology for clinical codes.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.terminology</span><span class="w"> </span><span class="kn">import</span> <span class="n">search_umls</span>
+
+<span class="c1"># Find codes for hypertension</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">search_umls</span><span class="p">(</span>
+    <span class="n">query</span><span class="o">=</span><span class="s2">&quot;essential hypertension&quot;</span><span class="p">,</span>
+    <span class="n">source_vocabularies</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;SNOMEDCT_US&quot;</span><span class="p">,</span> <span class="s2">&quot;ICD10CM&quot;</span><span class="p">],</span>
+    <span class="n">max_results</span><span class="o">=</span><span class="mi">5</span>
+<span class="p">)</span>
+
+<span class="k">for</span> <span class="n">concept</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;concepts&quot;</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;• </span><span class="si">{</span><span class="n">concept</span><span class="p">[</span><span class="s1">&#39;preferred_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Code: </span><span class="si">{</span><span class="n">concept</span><span class="p">[</span><span class="s1">&#39;code&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">concept</span><span class="p">[</span><span class="s1">&#39;vocabulary&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Definition: </span><span class="si">{</span><span class="n">concept</span><span class="p">[</span><span class="s1">&#39;definition&#39;</span><span class="p">][:</span><span class="mi">80</span><span class="p">]</span><span class="si">}</span><span class="s2">...</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># • Essential hypertension</span>
+<span class="c1">#   Code: 59621000 (SNOMEDCT_US)</span>
+<span class="c1">#   Definition: Hypertension that occurs without apparent cause; idiopathic...</span>
+</code></pre></div>
+<h2 id="error-handling-and-patterns">Error Handling and Patterns<a class="headerlink" href="#error-handling-and-patterns" title="Permanent link">&para;</a></h2>
+<h3 id="hacsresult-pattern">HACSResult Pattern<a class="headerlink" href="#hacsresult-pattern" title="Permanent link">&para;</a></h3>
+<p>All HACS tools return a consistent <code>HACSResult</code> object:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">HACSResult</span>
+
+<span class="c1"># Always check success before using data</span>
+<span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">some_tool</span><span class="p">(</span><span class="n">parameters</span><span class="o">...</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># Use data safely</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✗ Error: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">error</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Details: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># Handle error gracefully</span>
+</code></pre></div>
+<h3 id="asyncsync-patterns">Async/Sync Patterns<a class="headerlink" href="#asyncsync-patterns" title="Permanent link">&para;</a></h3>
+<p>Most database tools are async; agent tools are typically sync:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Database tools (async)</span>
+<span class="k">await</span> <span class="n">save_resource</span><span class="p">(</span><span class="n">resource</span><span class="p">)</span>
+<span class="k">await</span> <span class="n">search_memories</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="p">)</span>
+
+<span class="c1"># Agent tools (sync)  </span>
+<span class="n">write_scratchpad</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">create_todo</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="p">)</span>
+
+<span class="c1"># Check tool documentation for async status</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_tool</span>
+<span class="n">tool</span> <span class="o">=</span> <span class="n">get_tool</span><span class="p">(</span><span class="s2">&quot;save_resource&quot;</span><span class="p">)</span> 
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Async: </span><span class="si">{</span><span class="n">tool</span><span class="o">.</span><span class="n">is_async</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># True</span>
+</code></pre></div>
+<h3 id="authentication-requirements">Authentication Requirements<a class="headerlink" href="#authentication-requirements" title="Permanent link">&para;</a></h3>
+<p>Tools that require actor authentication:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Tools requiring authentication inject actor automatically</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.integrations.common.tool_loader</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_injected_params</span>
+
+<span class="n">set_injected_params</span><span class="p">({</span><span class="s2">&quot;actor_name&quot;</span><span class="p">:</span> <span class="s2">&quot;dr_chen&quot;</span><span class="p">})</span>
+
+<span class="c1"># Now all authenticated tools use this actor</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">store_memory</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="p">)</span>  <span class="c1"># Automatically uses dr_chen</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">create_todo</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="p">)</span>   <span class="c1"># Automatically uses dr_chen</span>
+</code></pre></div>
+<h2 id="discovery-and-registry">Discovery and Registry<a class="headerlink" href="#discovery-and-registry" title="Permanent link">&para;</a></h2>
+<h3 id="list-all-available-tools">List All Available Tools<a class="headerlink" href="#list-all-available-tools" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Python API - get all tools</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_global_tool_registry</span>
+
+<span class="n">registry</span> <span class="o">=</span> <span class="n">get_global_tool_registry</span><span class="p">()</span>
+<span class="n">all_tools</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">get_all_tools</span><span class="p">()</span>
+
+<span class="k">for</span> <span class="n">tool</span> <span class="ow">in</span> <span class="n">all_tools</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tool</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">tool</span><span class="o">.</span><span class="n">domain</span><span class="si">}</span><span class="s2">) - </span><span class="si">{</span><span class="n">tool</span><span class="o">.</span><span class="n">description</span><span class="p">[:</span><span class="mi">60</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+
+<span class="c1"># MCP API - get curated tools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;http://localhost:8000/&quot;</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span>
+    <span class="s2">&quot;jsonrpc&quot;</span><span class="p">:</span> <span class="s2">&quot;2.0&quot;</span><span class="p">,</span> 
+    <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;tools/list&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span>
 <span class="p">})</span>
+
+<span class="n">tools</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;result&quot;</span><span class="p">][</span><span class="s2">&quot;tools&quot;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MCP exposes </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">tools</span><span class="p">)</span><span class="si">}</span><span class="s2"> tools&quot;</span><span class="p">)</span>
 </code></pre></div>
-<h3 id="schema-discovery-5-tools">⚕️ Schema Discovery (5 tools)<a class="headerlink" href="#schema-discovery-5-tools" title="Permanent link">&para;</a></h3>
-<p>Healthcare resource schema exploration and analysis.</p>
-<h4 id="describe_models"><code>describe_models</code><a class="headerlink" href="#describe_models" title="Permanent link">&para;</a></h4>
-<p>Describe HACS model definitions</p>
-<div class="highlight"><pre><span></span><code><span class="n">resources</span> <span class="o">=</span> <span class="n">use_tool</span><span class="p">(</span><span class="s2">&quot;describe_models&quot;</span><span class="p">,</span> <span class="p">{</span>
-    <span class="s2">&quot;resource_types&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Patient&quot;</span><span class="p">,</span> <span class="s2">&quot;Observation&quot;</span><span class="p">],</span>
-    <span class="s2">&quot;include_examples&quot;</span><span class="p">:</span> <span class="kc">True</span>
-<span class="p">})</span>
+<h3 id="search-tools-by-domain">Search Tools by Domain<a class="headerlink" href="#search-tools-by-domain" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Find all modeling tools</span>
+<span class="n">modeling_tools</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">get_tools_by_domain</span><span class="p">(</span><span class="s2">&quot;modeling&quot;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">tool</span> <span class="ow">in</span> <span class="n">modeling_tools</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;• </span><span class="si">{</span><span class="n">tool</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">tool</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example output:</span>
+<span class="c1"># • pin_resource: Create and validate HACS resources with proper metadata</span>
+<span class="c1"># • compose_bundle: Combine multiple resources into a FHIR Bundle</span>
+<span class="c1"># • validate_resource: Validate resources against HACS schemas</span>
+<span class="c1"># • diff_resources: Compare two resources and show differences</span>
+<span class="c1"># • validate_bundle: Validate bundle structure and resource references</span>
 </code></pre></div>
-<h4 id="list_model_fields"><code>list_model_fields</code><a class="headerlink" href="#list_model_fields" title="Permanent link">&para;</a></h4>
-<p>List fields for a resource type</p>
-<div class="highlight"><pre><span></span><code><span class="n">schema</span> <span class="o">=</span> <span class="n">use_tool</span><span class="p">(</span><span class="s2">&quot;list_model_fields&quot;</span><span class="p">,</span> <span class="p">{</span>
-    <span class="s2">&quot;resource_type&quot;</span><span class="p">:</span> <span class="s2">&quot;Patient&quot;</span>
-<span class="p">})</span>
-</code></pre></div>
-<h4 id="plan_bundle_schema"><code>plan_bundle_schema</code><a class="headerlink" href="#plan_bundle_schema" title="Permanent link">&para;</a></h4>
-<p>Plan a bundle schema across resource types</p>
-<div class="highlight"><pre><span></span><code><span class="n">plan</span> <span class="o">=</span> <span class="n">use_tool</span><span class="p">(</span><span class="s2">&quot;plan_bundle_schema&quot;</span><span class="p">,</span> <span class="p">{</span>
-    <span class="s2">&quot;resource_types&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Patient&quot;</span><span class="p">,</span> <span class="s2">&quot;Document&quot;</span><span class="p">,</span> <span class="s2">&quot;Encounter&quot;</span><span class="p">]</span>
-<span class="p">})</span>
-</code></pre></div>
-<h4 id="analyze_model_fields"><code>analyze_model_fields</code><a class="headerlink" href="#analyze_model_fields" title="Permanent link">&para;</a></h4>
-<p>Analyze fields in healthcare model</p>
-<div class="highlight"><pre><span></span><code><span class="n">analysis</span> <span class="o">=</span> <span class="n">use_tool</span><span class="p">(</span><span class="s2">&quot;analyze_model_fields&quot;</span><span class="p">,</span> <span class="p">{</span>
-    <span class="s2">&quot;resource_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Observation&quot;</span><span class="p">,</span> 
-    <span class="s2">&quot;analysis_type&quot;</span><span class="p">:</span> <span class="s2">&quot;comprehensive&quot;</span>
-<span class="p">})</span>
-</code></pre></div>
-<h4 id="suggest_model_fields"><code>suggest_model_fields</code><a class="headerlink" href="#suggest_model_fields" title="Permanent link">&para;</a></h4>
-<p>Get field suggestions for models</p>
-<div class="highlight"><pre><span></span><code><span class="n">suggestions</span> <span class="o">=</span> <span class="n">use_tool</span><span class="p">(</span><span class="s2">&quot;suggest_model_fields&quot;</span><span class="p">,</span> <span class="p">{</span>
-    <span class="s2">&quot;resource_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Patient&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;use_case&quot;</span><span class="p">:</span> <span class="s2">&quot;diabetes_management&quot;</span>
-<span class="p">})</span>
-</code></pre></div>
-<h2 id="_1"><a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<h2 id="tool-discovery">Tool Discovery<a class="headerlink" href="#tool-discovery" title="Permanent link">&para;</a></h2>
-<ul>
-<li>
-<p>MCP (curated):
-<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
-<span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;http://localhost:8000/&quot;</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;jsonrpc&quot;</span><span class="p">:</span><span class="s2">&quot;2.0&quot;</span><span class="p">,</span><span class="s2">&quot;method&quot;</span><span class="p">:</span><span class="s2">&quot;tools/list&quot;</span><span class="p">,</span><span class="s2">&quot;id&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">})</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;result&quot;</span><span class="p">][</span><span class="s2">&quot;tools&quot;</span><span class="p">])</span>  <span class="c1"># curated list</span>
-</code></pre></div></p>
-</li>
-<li>
-<p>Python (full registry):
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_global_tool_registry</span>
-<span class="n">reg</span> <span class="o">=</span> <span class="n">get_global_tool_registry</span><span class="p">()</span>
-<span class="n">all_tools</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">reg</span><span class="o">.</span><span class="n">get_all_tools</span><span class="p">()]</span>  <span class="c1"># complete catalog</span>
-</code></pre></div></p>
-</li>
-</ul>
+<h3 id="tool-categories-summary">Tool Categories Summary<a class="headerlink" href="#tool-categories-summary" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Domain</th>
+<th>Tools</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>📊 Database</strong></td>
+<td>20</td>
+<td>CRUD, search, registry, admin</td>
+</tr>
+<tr>
+<td><strong>🤖 Agents</strong></td>
+<td>10</td>
+<td>Memory, tasks, context, preferences</td>
+</tr>
+<tr>
+<td><strong>🏗️ Modeling</strong></td>
+<td>5</td>
+<td>Resource creation, validation, bundles</td>
+</tr>
+<tr>
+<td><strong>🔍 Extraction</strong></td>
+<td>4</td>
+<td>LLM-based data extraction (optional)</td>
+</tr>
+<tr>
+<td><strong>🧬 Terminology</strong></td>
+<td>5</td>
+<td>Clinical coding, UMLS search (optional)</td>
+</tr>
+<tr>
+<td><strong>🏥 Resource-specific</strong></td>
+<td>15+</td>
+<td>Specialized tools for Patient, Observation, etc.</td>
+</tr>
+</tbody>
+</table>
+<p>For implementation examples and integration patterns, see the <a href="../quick-start/">Quick Start</a> guide.</p>
 <hr />
-<p>For more examples and integration patterns, see the <a href="../quick-start/">Quick Start</a>. Integration-specific docs have been consolidated into package READMEs.</p>
+<p><em>This reference covers all 50+ HACS tools with real examples and outputs. For the latest tool additions, check the registry with <code>get_all_tools()</code>.</em></p>
 
 
 

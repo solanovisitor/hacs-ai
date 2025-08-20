@@ -35,11 +35,15 @@ nav:
   - HACS Tools: hacs-tools.md
   - How-to:
       - Authenticate an Actor: how-to/authenticate_actor.md
-      - Connect to Postgres: how-to/connect_postgres.md
-      - Extend & Customize Resources: how-to/extend_resources.md
-      - Extract Annotations & Structured Outputs: how-to/extract_annotations.md
+      - Connect to database: how-to/connect_postgres.md
+      - Generate structured data: how-to/extract_annotations.md
+      - Extract citations: how-to/grounded_extraction.md
+      - Visualize data: how-to/visualize_resources.md
+      - Persist Resources: how-to/persist_resources.md
       - Use & Register Tools: how-to/use_register_tools.md
       - Create a simple agent (LangGraph): how-to/create_langgraph_agent.md
+  - Advanced:
+      - Creating a private Registry: how-to/creating_private_registry.md
       - Manage context with agentic tools: how-to/manage_context_tools.md
   - Tutorials:
       - Complete Context Engineering: tutorials/complete_context_engineering.md

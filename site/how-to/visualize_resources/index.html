@@ -1,0 +1,1290 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../grounded_extraction/">
+      
+      
+        <link rel="next" href="../persist_resources/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.17">
+    
+    
+      
+        <title>Visualize data - HACS</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e37652d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#visualize-hacs-models-and-documents" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="HACS" class="md-header__button md-logo" aria-label="HACS" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            HACS
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Visualize data
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="HACS" class="md-nav__button md-logo" aria-label="HACS" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    HACS
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quick-start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quick Start
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Reference
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hacs-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    HACS Tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    How-to
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            How-to
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authenticate_actor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Authenticate an Actor
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../connect_postgres/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Connect to database
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extract_annotations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Generate structured data
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../grounded_extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Extract citations
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Visualize data
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Visualize data
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#visualize-hacs-models-and-documents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Visualize HACS models and documents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#visualize-individual-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Visualize individual resources
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-extraction-summaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      Create extraction summaries
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#document-resource-linking-visualization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Document-resource linking visualization
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interactive-html-visualization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Interactive HTML visualization
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#batch-visualization-utilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      Batch visualization utilities
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#export-visualizations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Export visualizations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Summary
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../persist_resources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Persist Resources
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use_register_tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Use & Register Tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../create_langgraph_agent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Create a simple agent (LangGraph)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Advanced
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Advanced
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../creating_private_registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Creating a private Registry
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../manage_context_tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Manage context with agentic tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Tutorials
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/complete_context_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Complete Context Engineering
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/medication_extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Medication Extraction
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gallery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Gallery
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Testing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Reference
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#visualize-hacs-models-and-documents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Visualize HACS models and documents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#visualize-individual-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Visualize individual resources
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-extraction-summaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      Create extraction summaries
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#document-resource-linking-visualization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Document-resource linking visualization
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interactive-html-visualization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Interactive HTML visualization
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#batch-visualization-utilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      Batch visualization utilities
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#export-visualizations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Export visualizations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Summary
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+  <h1>Visualize data</h1>
+
+<h2 id="visualize-hacs-models-and-documents">Visualize HACS models and documents<a class="headerlink" href="#visualize-hacs-models-and-documents" title="Permanent link">&para;</a></h2>
+<p>This guide shows how to create rich visualizations of HACS resources, annotated documents, and extraction results.</p>
+<p>Prerequisites:
+- Extracted HACS models (see <a href="../extract_annotations/">Extract Annotations</a>)
+- <code>uv pip install -U hacs-utils[visualization]</code></p>
+<h2 id="visualize-individual-resources">Visualize individual resources<a class="headerlink" href="#visualize-individual-resources" title="Permanent link">&para;</a></h2>
+<p>Using the <code>medication_requests</code> from the extraction guide:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Visualize the structured HACS models</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">resource_to_markdown</span><span class="p">,</span> <span class="n">to_markdown</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Generating HACS model visualizations...&quot;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">med_request</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">medication_requests</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">--- MedicationRequest </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> Visualization ---&quot;</span><span class="p">)</span>
+    <span class="n">markdown_view</span> <span class="o">=</span> <span class="n">resource_to_markdown</span><span class="p">(</span><span class="n">med_request</span><span class="p">,</span> <span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">markdown_view</span><span class="p">)</span>
+</code></pre></div>
+<p><strong>Output:</strong>
+<div class="highlight"><pre><span></span><code>Generating HACS model visualizations...
+
+--- MedicationRequest 1 Visualization ---
+#### MedicationRequest
+
+| Field | Value |
+|---|---|
+| resource_type | MedicationRequest |
+| id | medreq-lisinopril-1 |
+| status | active |
+| subject | Patient/unknown |
+| medication_codeable_concept | Lisinopril 10 mg oral tablet |
+| dosage_instruction | Take 10 mg orally once daily. |
+| priority | routine |
+| intent | order |
+| created_at | 2025-08-19T00:00:00Z |
+| updated_at | 2025-08-19T00:00:00Z |
+
+--- MedicationRequest 2 Visualization ---
+#### MedicationRequest
+
+| Field | Value |
+|---|---|
+| resource_type | MedicationRequest |
+| id | medreq-metformin-1 |
+| status | active |
+| subject | Patient/unknown |
+| medication_codeable_concept | Metformin 500 mg oral tablet |
+| dosage_instruction | Take 500 mg orally twice daily (morning and evening). |
+| priority | routine |
+| intent | order |
+| created_at | 2025-08-19T00:00:00Z |
+| updated_at | 2025-08-19T00:00:00Z |
+</code></pre></div></p>
+<h2 id="create-extraction-summaries">Create extraction summaries<a class="headerlink" href="#create-extraction-summaries" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># Create a summary document showing the extraction results</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Creating extraction summary...&quot;</span><span class="p">)</span>
+
+<span class="n">summary_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Extraction Summary for Document: </span><span class="si">{</span><span class="n">annotated_doc</span><span class="o">.</span><span class="n">document_id</span><span class="si">}</span>
+
+<span class="s2">Source text length: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">annotated_doc</span><span class="o">.</span><span class="n">text</span><span class="p">)</span><span class="si">}</span><span class="s2"> characters</span>
+<span class="s2">Extracted </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">medication_requests</span><span class="p">)</span><span class="si">}</span><span class="s2"> MedicationRequest objects:</span>
+
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">mr</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">medication_requests</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="n">med_name</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">medication_codeable_concept</span><span class="o">.</span><span class="n">text</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">mr</span><span class="o">.</span><span class="n">medication_codeable_concept</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;Unknown&#39;</span>
+    <span class="n">summary_text</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">. </span><span class="si">{</span><span class="n">med_name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">mr</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2">) - </span><span class="si">{</span><span class="n">mr</span><span class="o">.</span><span class="n">intent</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">summary_text</span><span class="p">)</span>
+
+<span class="c1"># Also create a structured table summary</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Structured HACS Models Summary:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;| Medication | Status | Intent | Dosage |&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;|---|---|---|---|&quot;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">mr</span> <span class="ow">in</span> <span class="n">medication_requests</span><span class="p">:</span>
+    <span class="n">med_name</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">medication_codeable_concept</span><span class="o">.</span><span class="n">text</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">mr</span><span class="o">.</span><span class="n">medication_codeable_concept</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;Unknown&#39;</span>
+    <span class="n">dosage_text</span> <span class="o">=</span> <span class="s2">&quot;No dosage&quot;</span>
+    <span class="k">if</span> <span class="n">mr</span><span class="o">.</span><span class="n">dosage_instruction</span><span class="p">:</span>
+        <span class="n">dosage_text</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">dosage_instruction</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">text</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">mr</span><span class="o">.</span><span class="n">dosage_instruction</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;text&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">mr</span><span class="o">.</span><span class="n">dosage_instruction</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;| </span><span class="si">{</span><span class="n">med_name</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">mr</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">mr</span><span class="o">.</span><span class="n">intent</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">dosage_text</span><span class="si">}</span><span class="s2"> |&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p><strong>Output:</strong>
+<div class="highlight"><pre><span></span><code>Creating extraction summary...
+
+Extraction Summary for Document: clinical_note_001
+
+Source text length: 196 characters
+Extracted 3 MedicationRequest objects:
+
+1. Lisinopril 10 mg oral tablet (active) - order
+2. Metformin 500 mg oral tablet (active) - order
+3. Aspirin 81 mg oral tablet (active) - order
+
+Structured HACS Models Summary:
+| Medication | Status | Intent | Dosage |
+|---|---|---|---|
+| Lisinopril 10 mg oral tablet | active | order | Take 10 mg orally once daily. |
+| Metformin 500 mg oral tablet | active | order | Take 500 mg orally twice daily (morning and evening). |
+| Aspirin 81 mg oral tablet | active | order | Take 81 mg orally once daily. |
+</code></pre></div></p>
+<h2 id="document-resource-linking-visualization">Document-resource linking visualization<a class="headerlink" href="#document-resource-linking-visualization" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_markdown</span>
+
+<span class="c1"># Create summary metadata linking the structured models to the source document</span>
+<span class="n">model_metadata</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">med_request</span> <span class="ow">in</span> <span class="n">medication_requests</span><span class="p">:</span>
+    <span class="n">med_concept</span> <span class="o">=</span> <span class="n">med_request</span><span class="o">.</span><span class="n">medication_codeable_concept</span>
+    <span class="n">med_name</span> <span class="o">=</span> <span class="n">med_concept</span><span class="o">.</span><span class="n">text</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">med_concept</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;Unknown&#39;</span>
+    <span class="n">model_metadata</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+        <span class="s2">&quot;source_document&quot;</span><span class="p">:</span> <span class="n">annotated_doc</span><span class="o">.</span><span class="n">document_id</span><span class="p">,</span>
+        <span class="s2">&quot;resource_type&quot;</span><span class="p">:</span> <span class="n">med_request</span><span class="o">.</span><span class="n">resource_type</span><span class="p">,</span>
+        <span class="s2">&quot;resource_id&quot;</span><span class="p">:</span> <span class="n">med_request</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="s2">&quot;extracted_medication&quot;</span><span class="p">:</span> <span class="n">med_name</span><span class="p">,</span>
+        <span class="s2">&quot;extraction_timestamp&quot;</span><span class="p">:</span> <span class="n">med_request</span><span class="o">.</span><span class="n">created_at</span>
+    <span class="p">})</span>
+
+<span class="c1"># Render a consolidated document summary</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">to_markdown</span><span class="p">(</span><span class="n">annotated_doc</span><span class="p">,</span> <span class="n">resources</span><span class="o">=</span><span class="n">medication_requests</span><span class="p">,</span> <span class="n">show_annotations</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+</code></pre></div>
+<h2 id="interactive-html-visualization">Interactive HTML visualization<a class="headerlink" href="#interactive-html-visualization" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">visualize_resource</span><span class="p">,</span> <span class="n">resource_to_html_widget</span>
+
+<span class="c1"># Create interactive HTML widgets for notebook environments</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">mr</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">medication_requests</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="mi">1</span><span class="p">):</span>  <span class="c1"># Show first 2</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">=== Interactive Widget </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> ===&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Rich HTML widget with tabs (Rendered/JSON/YAML/Schema)</span>
+    <span class="n">widget_html</span> <span class="o">=</span> <span class="n">resource_to_html_widget</span><span class="p">(</span>
+        <span class="n">mr</span><span class="p">,</span> 
+        <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;MedicationRequest </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">default_view</span><span class="o">=</span><span class="s2">&quot;rendered&quot;</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;HTML widget created with tabs:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;- Rendered: Human-readable table&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;- JSON: Raw JSON representation&quot;</span><span class="p">)</span> 
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;- YAML: YAML representation&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;- Schema: Model schema documentation&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Widget size: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">widget_html</span><span class="p">)</span><span class="si">}</span><span class="s2"> characters&quot;</span><span class="p">)</span>
+
+<span class="c1"># Simple HTML card for individual resources</span>
+<span class="n">html_card</span> <span class="o">=</span> <span class="n">visualize_resource</span><span class="p">(</span>
+    <span class="n">medication_requests</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Sample MedicationRequest&quot;</span><span class="p">,</span>
+    <span class="n">show_json</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">HTML card generated: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">html_card</span><span class="p">)</span><span class="si">}</span><span class="s2"> characters&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Includes: Resource table + JSON view + styling&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="batch-visualization-utilities">Batch visualization utilities<a class="headerlink" href="#batch-visualization-utilities" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># Visualize all resources at once using unified to_markdown</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=== Unified Visualization ===&quot;</span><span class="p">)</span>
+
+<span class="c1"># All resources in one view</span>
+<span class="n">all_resources_md</span> <span class="o">=</span> <span class="n">to_markdown</span><span class="p">(</span>
+    <span class="n">medication_requests</span><span class="p">,</span> 
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;All Extracted MedicationRequests&quot;</span><span class="p">,</span>
+    <span class="n">include_json</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">all_resources_md</span><span class="p">)</span>
+
+<span class="c1"># Document + resources combined</span>
+<span class="n">document_summary</span> <span class="o">=</span> <span class="n">to_markdown</span><span class="p">(</span>
+    <span class="n">annotated_doc</span><span class="p">,</span>
+    <span class="n">resources</span><span class="o">=</span><span class="n">medication_requests</span><span class="p">,</span>
+    <span class="n">show_annotations</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Clinical Note with Extracted Medications&quot;</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">document_summary</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="export-visualizations">Export visualizations<a class="headerlink" href="#export-visualizations" title="Permanent link">&para;</a></h2>
+<p><div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="c1"># Create a comprehensive report</span>
+<span class="n">report</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;extraction_report&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;document_id&quot;</span><span class="p">:</span> <span class="n">annotated_doc</span><span class="o">.</span><span class="n">document_id</span><span class="p">,</span>
+        <span class="s2">&quot;extraction_timestamp&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+        <span class="s2">&quot;source_text_length&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">annotated_doc</span><span class="o">.</span><span class="n">text</span><span class="p">),</span>
+        <span class="s2">&quot;extracted_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">medication_requests</span><span class="p">),</span>
+        <span class="s2">&quot;resources&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">mr</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">mr</span><span class="o">.</span><span class="n">resource_type</span><span class="p">,</span>
+                <span class="s2">&quot;medication&quot;</span><span class="p">:</span> <span class="n">mr</span><span class="o">.</span><span class="n">medication_codeable_concept</span><span class="o">.</span><span class="n">text</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">mr</span><span class="o">.</span><span class="n">medication_codeable_concept</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;Unknown&#39;</span><span class="p">,</span>
+                <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">mr</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
+                <span class="s2">&quot;intent&quot;</span><span class="p">:</span> <span class="n">mr</span><span class="o">.</span><span class="n">intent</span><span class="p">,</span>
+                <span class="s2">&quot;dosage&quot;</span><span class="p">:</span> <span class="n">mr</span><span class="o">.</span><span class="n">dosage_instruction</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">text</span> <span class="k">if</span> <span class="n">mr</span><span class="o">.</span><span class="n">dosage_instruction</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">mr</span><span class="o">.</span><span class="n">dosage_instruction</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;text&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;No dosage&#39;</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">mr</span> <span class="ow">in</span> <span class="n">medication_requests</span>
+        <span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1"># Save report</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;extraction_report.json&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">report</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✓ Extraction report saved to extraction_report.json&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Report contains </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;extraction_report&#39;</span><span class="p">][</span><span class="s1">&#39;resources&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2"> resource summaries&quot;</span><span class="p">)</span>
+
+<span class="c1"># Create markdown report</span>
+<span class="n">markdown_report</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;# Extraction Report</span>
+
+<span class="s2">**Document:** </span><span class="si">{</span><span class="n">annotated_doc</span><span class="o">.</span><span class="n">document_id</span><span class="si">}</span><span class="s2">  </span>
+<span class="s2">**Extracted:** </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">medication_requests</span><span class="p">)</span><span class="si">}</span><span class="s2"> MedicationRequest objects  </span>
+<span class="s2">**Date:** </span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">)</span><span class="si">}</span>
+
+<span class="s2">## Resources</span>
+
+<span class="si">{</span><span class="n">to_markdown</span><span class="p">(</span><span class="n">medication_requests</span><span class="p">,</span><span class="w"> </span><span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="si">}</span>
+
+<span class="s2">## Source Text</span>
+</code></pre></div>
+{annotated_doc.text}
+<div class="highlight"><pre><span></span><code>&quot;&quot;&quot;
+
+with open(&quot;extraction_report.md&quot;, &quot;w&quot;) as f:
+    f.write(markdown_report)
+
+print(&quot;✓ Markdown report saved to extraction_report.md&quot;)
+</code></pre></div></p>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<p>Visualization tools provide:
+- <strong>Resource tables</strong>: Clean, readable field-value presentations
+- <strong>Interactive widgets</strong>: Multi-format views (HTML/JSON/YAML/Schema)
+- <strong>Document summaries</strong>: Combined document + extracted resources
+- <strong>Export formats</strong>: JSON and Markdown reports for documentation
+- <strong>Batch operations</strong>: Visualize multiple resources efficiently</p>
+<p>Use these patterns to create comprehensive documentation and reports of your extraction workflows.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand"], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.92b07e13.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -12,7 +12,7 @@ from datetime import datetime
 
 from hacs_models import HACSResult
 from hacs_registry.tool_registry import register_tool, VersionStatus
-from hacs_utils.resource_utils import (
+from hacs_utils.resource_specific import (
     calculate_patient_age, add_patient_identifier, get_patient_identifier_by_type,
     add_patient_care_provider, deactivate_patient, get_observation_value_summary,
     get_document_full_text, add_condition_stage as util_add_condition_stage,

@@ -198,12 +198,12 @@ def extract_values(
         if extraction_prompt:
             try:
                 schema = {"type": "object", "properties": {v: {"type": "string"} for v in variables}, "required": variables}
-                result = generate_extractions(
-                    prompt=extraction_prompt,
-                    input_text=text_input,
-                    extraction_schema=schema,
+                result = await extract(
                     llm_provider=provider,
-                    fenced_output=True,
+                    prompt=extraction_prompt,
+                    output_model=ExtractionSchemaModel,  # TODO: map schema to a Pydantic model
+                    many=False,
+                    use_descriptive_schema=True,
                 )
                 if result.success:
                     return HACSResult(success=True, message="Extracted using custom prompt", data={"variables": result.data})
@@ -226,12 +226,14 @@ def extract_values(
                 "required": variables
             }
             
-            result = generate_chunked_extractions(
-                text=text_input,
-                extraction_schema=extraction_schema,
-                chunk_size=chunk_config["max_chars"],
-                overlap=chunk_config["overlap"],
-                llm_provider=provider
+            result = await extract(
+                llm_provider=provider,
+                prompt=extraction_prompt or extraction_prompt_default,
+                output_model=Extraction,  # Use Extraction for grounded mentions
+                many=True,
+                use_descriptive_schema=True,
+                chunking_policy=ChunkingPolicy(max_chars=chunk_config["max_chars"], chunk_overlap=chunk_config["overlap"]),
+                source_text=text_input,
             )
             
             if result.success:
@@ -272,11 +274,12 @@ If a variable cannot be found, use an empty string or reasonable default.
                 "required": variables
             }
             
-            result = extract(
-                prompt=extraction_prompt or extraction_prompt_default,
-                response_model=extraction_schema,
+            result = await extract(
                 llm_provider=provider,
-                format_type="json"
+                prompt=extraction_prompt or extraction_prompt_default,
+                output_model=Extraction,  # Or a specific typed model if defined
+                many=True,
+                use_descriptive_schema=True,
             )
             
             if result.success:
