@@ -13,7 +13,7 @@ class CompositionAuthor(DomainResource):
     role: Optional[str] = None
     organization: Optional[str] = None
     specialty: Optional[str] = None
-
+             
 
 class CompositionAttester(DomainResource):
     resource_type: Literal["CompositionAttester"] = Field(default="CompositionAttester")
