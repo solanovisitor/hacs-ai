@@ -794,7 +794,7 @@ def _try_provider_structured_output(
     use_descriptive_schema: bool = False,
     **kwargs,
 ) -> T | list[T] | None:
-    """Attempt to use provider-native structured outputs (OpenAI Responses.parse).
+    """Attempt to use provider-native structured outputs (OpenAI Responses.parse, Anthropic tools JSON).
 
     Returns parsed instance(s) on success, or None to indicate fallback to text-based path.
     """
@@ -836,6 +836,42 @@ def _try_provider_structured_output(
             else:
                 parsed = llm_provider.responses_parse(
                     input_messages=messages,
+                    response_model=output_model,
+                    **kwargs,
+                )
+                return parsed
+    except Exception:
+        return None
+
+    # Detect HACS Anthropic client wrapper (tool-based JSON mode)
+    try:
+        if hasattr(llm_provider, "structured_output"):
+            # Build enriched prompt as above
+            if many:
+                # Wrap list in an object schema to satisfy object root constraints
+                try:
+                    ListWrapper = create_model(  # type: ignore[assignment]
+                        f"{output_model.__name__}ListWrapper",
+                        items=(list[output_model], ...),  # required list field
+                        __base__=BaseModel,
+                    )
+                except Exception:
+                    return None
+                parsed = llm_provider.structured_output(
+                    prompt=enhanced_prompt,
+                    response_model=ListWrapper,
+                    **kwargs,
+                )
+                try:
+                    items = getattr(parsed, "items", None)
+                    if isinstance(items, list) and items:
+                        return items[: max_items]
+                    return items or []
+                except Exception:
+                    return None
+            else:
+                parsed = llm_provider.structured_output(
+                    prompt=enhanced_prompt,
                     response_model=output_model,
                     **kwargs,
                 )
