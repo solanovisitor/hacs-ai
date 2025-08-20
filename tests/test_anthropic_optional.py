@@ -14,59 +14,86 @@ def test_anthropic_connectivity_optional():
         pytest.skip("ANTHROPIC_API_KEY not set; skipping optional Anthropic test")
 
     try:
-        from anthropic import Anthropic
+        from hacs_utils.integrations.anthropic import AnthropicClient
     except Exception as e:
-        pytest.skip(f"Anthropic SDK not available: {e}")
+        pytest.skip(f"Anthropic integration not available: {e}")
 
-    client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    client = AnthropicClient(model="claude-sonnet-4-20250514", timeout=15, max_retries=1)
     
     # Minimal text generation test
-    response = client.messages.create(
-        model="claude-3-haiku-20240307",
-        max_tokens=20,
-        messages=[{"role": "user", "content": "Say 'hello' in one word"}]
-    )
-    
-    text = response.content[0].text if response.content else ""
+    text = client.invoke("Say 'hello' in one word")
     assert isinstance(text, str)
     assert len(text) > 0
 
 
-def test_anthropic_json_mode_optional():
-    """Optional Anthropic JSON mode test for structured outputs.
-    
-    Tests if Anthropic can produce structured JSON for simple schemas.
-    """
+def test_anthropic_structured_output_optional():
+    """Test Anthropic structured output using tool-based JSON mode."""
     if not os.getenv("ANTHROPIC_API_KEY"):
-        pytest.skip("ANTHROPIC_API_KEY not set; skipping optional Anthropic JSON test")
+        pytest.skip("ANTHROPIC_API_KEY not set; skipping Anthropic structured output test")
 
     try:
-        from anthropic import Anthropic
-        import json
+        from hacs_utils.integrations.anthropic import AnthropicClient
+        from hacs_models import Patient
     except Exception as e:
         pytest.skip(f"Dependencies not available: {e}")
 
-    client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    client = AnthropicClient(model="claude-sonnet-4-20250514", timeout=20, max_retries=1)
     
-    prompt = '''Extract name and age from: "Alice Smith is 30 years old"
-    
-Return only valid JSON in this format:
-{"name": "string", "age": number}'''
+    # Use Patient subset for structured extraction
+    PatientInfo = Patient.pick("full_name", "birth_date")
+    note = "Alice Smith was born on 1990-05-15."
 
-    response = client.messages.create(
-        model="claude-3-haiku-20240307",
-        max_tokens=50,
-        messages=[{"role": "user", "content": prompt}]
+    instance = client.structured_output(
+        prompt=f"Extract patient demographics from: {note}",
+        response_model=PatientInfo,
     )
-    
-    text = response.content[0].text if response.content else ""
-    
-    # Try parsing as JSON
+
+    # Validate structured output
+    assert instance is not None
+    assert hasattr(instance, "full_name")
+    assert isinstance(instance.full_name, str)
+    assert len(instance.full_name) > 0
+    assert getattr(instance, "birth_date", None) is not None
+
+
+def test_anthropic_tool_use_optional():
+    """Test Anthropic tool use capability with HACS-style tools."""
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        pytest.skip("ANTHROPIC_API_KEY not set; skipping Anthropic tool use test")
+
     try:
-        data = json.loads(text)
-        assert "name" in data
-        assert "age" in data
-        assert isinstance(data["name"], str)
-        assert isinstance(data["age"], (int, float))
-    except json.JSONDecodeError:
-        pytest.fail(f"Anthropic did not return valid JSON: {text}")
+        from hacs_utils.integrations.anthropic import AnthropicClient
+    except Exception as e:
+        pytest.skip(f"Dependencies not available: {e}")
+
+    client = AnthropicClient(model="claude-sonnet-4-20250514", timeout=20, max_retries=1)
+    
+    # Define a simple healthcare tool
+    tools = [{
+        "name": "calculate_bmi",
+        "description": "Calculate BMI from height and weight",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "height_cm": {"type": "number", "description": "Height in centimeters"},
+                "weight_kg": {"type": "number", "description": "Weight in kilograms"}
+            },
+            "required": ["height_cm", "weight_kg"]
+        }
+    }]
+
+    response = client.tool_use(
+        messages=[{"role": "user", "content": "Calculate BMI for someone who is 175cm tall and weighs 70kg"}],
+        tools=tools,
+    )
+
+    # Verify tool use was triggered
+    tool_calls = client.extract_tool_calls(response)
+    assert len(tool_calls) > 0
+    
+    call = tool_calls[0]
+    assert call["name"] == "calculate_bmi"
+    assert "height_cm" in call["input"]
+    assert "weight_kg" in call["input"]
+    assert isinstance(call["input"]["height_cm"], (int, float))
+    assert isinstance(call["input"]["weight_kg"], (int, float))

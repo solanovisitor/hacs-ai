@@ -69,6 +69,7 @@ create_openai_embedding = _safe_import("hacs_utils.integrations.openai", "create
 # Anthropic Integration
 AnthropicClient = _safe_import("hacs_utils.integrations.anthropic", "AnthropicClient")
 create_anthropic_client = _safe_import("hacs_utils.integrations.anthropic", "create_anthropic_client")
+anthropic_structured_extract = _safe_import("hacs_utils.integrations.anthropic", "anthropic_structured_extract")
 
 # Pinecone Integration
 PineconeVectorStore = _safe_import("hacs_utils.integrations.pinecone", "PineconeVectorStore")
