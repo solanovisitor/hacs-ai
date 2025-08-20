@@ -1,3 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  echo "Usage: $0 [--local|--db|--llm|--all]";
+}
+
+target="local"
+if [[ "${1:-}" == "--local" ]]; then target=local; fi
+if [[ "${1:-}" == "--db" ]]; then target=db; fi
+if [[ "${1:-}" == "--llm" ]]; then target=llm; fi
+if [[ "${1:-}" == "--all" ]]; then target=all; fi
+
+case "$target" in
+  local)
+    uv run pytest -q -m "unit" --maxfail=1 ;;
+  db)
+    export DATABASE_URL=${DATABASE_URL:-"postgresql://postgres:postgres@localhost:5432/hacs"}
+    uv run pytest -q -m "db" --maxfail=1 ;;
+  llm)
+    if [[ -z "${OPENAI_API_KEY:-}" ]]; then echo "OPENAI_API_KEY is required"; exit 1; fi
+    uv run --env-file .env -- pytest -q -m "llm" --maxfail=1 ;;
+  all)
+    $0 --local
+    $0 --db
+    $0 --llm ;;
+  *) usage; exit 1 ;;
+esac
+
 #!/bin/bash
 
 # HACS Test Runner Script

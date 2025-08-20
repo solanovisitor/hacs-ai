@@ -1,3 +1,106 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * *" # nightly
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-type:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+      - name: Install workspace
+        run: uv sync
+      - name: Ruff
+        run: uv run ruff check .
+      - name: Type check (optional)
+        run: uv run mypy || true
+
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+      - run: uv sync
+      - name: Unit tests
+        run: uv run pytest -q -m "unit" --maxfail=1
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+      - run: uv sync
+      - name: Build docs
+        run: uv run mkdocs build
+
+  db-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hacs
+        ports:
+          - "5432:5432"
+        options: >-
+          --health-cmd="pg_isready -U postgres" --health-interval=10s --health-timeout=5s --health-retries=5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hacs
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+      - run: uv sync
+      - name: Run DB tests
+        run: uv run pytest -q -m "db" --maxfail=1
+
+  llm-integration:
+    if: ${{ github.event_name != 'pull_request' && secrets.OPENAI_API_KEY != '' }}
+    runs-on: ubuntu-latest
+    env:
+      HACS_LLM_MODEL: gpt-5-mini-2025-08-07
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+      - run: uv sync
+      - name: Write CI env file
+        run: |
+          printf "OPENAI_API_KEY=%s\n" "${{ secrets.OPENAI_API_KEY }}" > .env.ci
+      - name: Run LLM tests
+        run: uv run --env-file .env.ci -- pytest -q -m "llm" --maxfail=1
+
 name: HACS CI
 
 on:
