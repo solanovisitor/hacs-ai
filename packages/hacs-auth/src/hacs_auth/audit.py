@@ -36,8 +36,7 @@ class AuditCategory(str, Enum):
 
 
 class AuditEvent(BaseModel):
-    """Represents a single audit event with healthcare compliance features.
-    """
+    """Represents a single audit event with healthcare compliance features."""
 
     event_id: str = Field(
         default_factory=lambda: f"audit_{uuid.uuid4().hex[:16]}",
@@ -147,10 +146,9 @@ class AuditEvent(BaseModel):
 
 
 class AuditLogger:
-    """audit logger for healthcare systems with compliance features.
-    """
+    """audit logger for healthcare systems with compliance features."""
 
-    def __init__(self, organization: str | None = None, department: str | None = None):
+    def __init__(self, organization: str | None = None, department: str | None = None) -> None:
         """Initialize audit logger.
 
         Args:
@@ -240,7 +238,6 @@ class AuditLogger:
         self._events.append(event)
 
         # In a real implementation, this would send to logging system
-        print(event.to_log_format())
 
         return event
 
@@ -514,4 +511,5 @@ class AuditLogger:
                 csv_lines.append(",".join(row))
 
             return "\n".join(csv_lines)
-        raise ValueError(f"Unsupported export format: {format}")
+        msg = f"Unsupported export format: {format}"
+        raise ValueError(msg)

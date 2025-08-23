@@ -359,7 +359,7 @@ async def register_model_version(
         # This would typically use the hacs-registry persistence
         from hacs_registry import get_global_registry
 
-        registry = get_global_registry()
+        get_global_registry()
 
         # Create model version entry
         model_version = {
@@ -484,7 +484,7 @@ async def search_memories(
             )
         else:
             # Direct database query for actor memories
-            adapter = await create_postgres_adapter()
+            await create_postgres_adapter()
 
             # This would need proper memory table querying
             # For now, return empty results with filters applied
@@ -577,7 +577,7 @@ async def get_db_status(database_url: Optional[str] = None) -> HACSResult:
 
         # Test connection
         try:
-            adapter = await create_postgres_adapter(database_url=db_url)
+            await create_postgres_adapter(database_url=db_url)
             connection_status = "connected"
         except Exception as e:
             connection_status = f"failed: {str(e)}"

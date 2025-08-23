@@ -54,12 +54,14 @@ def require_auth(
             # Try to extract from Authorization header
             if not token and auth_header:
                 if not auth_header.startswith("Bearer "):
-                    raise AuthError("Invalid authorization header format", "INVALID_AUTH_HEADER")
+                    msg = "Invalid authorization header format"
+                    raise AuthError(msg, "INVALID_AUTH_HEADER")
                 token = auth_header[7:]  # Remove "Bearer " prefix
 
             if not token:
+                msg = "Authentication required"
                 raise AuthError(
-                    "Authentication required",
+                    msg,
                     "AUTH_REQUIRED",
                     {"required_permission": permission, "required_role": role},
                 )
@@ -70,16 +72,19 @@ def require_auth(
             except AuthError:
                 raise
             except Exception as e:
-                raise AuthError(f"Token verification failed: {e}", "VERIFICATION_FAILED") from e
+                msg = f"Token verification failed: {e}"
+                raise AuthError(msg, "VERIFICATION_FAILED") from e
 
             # Check if token is expired
             if manager.is_token_expired(token_data):
-                raise AuthError("Token has expired", "TOKEN_EXPIRED")
+                msg = "Token has expired"
+                raise AuthError(msg, "TOKEN_EXPIRED")
 
             # Check role requirement
             if role and token_data.role != role:
+                msg = f"Role '{role}' required, but user has role '{token_data.role}'"
                 raise AuthError(
-                    f"Role '{role}' required, but user has role '{token_data.role}'",
+                    msg,
                     "ROLE_REQUIRED",
                     {"required_role": role, "user_role": token_data.role},
                 )
@@ -93,8 +98,9 @@ def require_auth(
 
             # Check security level requirement
             if security_level and not manager.validate_security_level(token_data, security_level):
+                msg = f"Security level '{security_level}' required"
                 raise AuthError(
-                    f"Security level '{security_level}' required",
+                    msg,
                     "SECURITY_LEVEL_REQUIRED",
                     {"required_level": security_level, "user_level": token_data.security_level},
                 )
@@ -203,19 +209,22 @@ def require_actor_permission(permission: str) -> Callable[[F], F]:
                         break
 
             if not actor:
+                msg = "Actor instance required"
                 raise AuthError(
-                    "Actor instance required", "ACTOR_REQUIRED", {"required_permission": permission}
+                    msg, "ACTOR_REQUIRED", {"required_permission": permission}
                 )
 
             if not isinstance(actor, Actor):
+                msg = "Invalid actor instance"
                 raise AuthError(
-                    "Invalid actor instance", "INVALID_ACTOR", {"actor_type": type(actor).__name__}
+                    msg, "INVALID_ACTOR", {"actor_type": type(actor).__name__}
                 )
 
             # Check if actor has permission
             if not actor.has_permission(permission):
+                msg = f"Actor '{actor.name}' does not have permission '{permission}'"
                 raise AuthError(
-                    f"Actor '{actor.name}' does not have permission '{permission}'",
+                    msg,
                     "PERMISSION_DENIED",
                     {
                         "actor_id": actor.id,
@@ -261,13 +270,15 @@ def require_actor_role(role: ActorRole) -> Callable[[F], F]:
                         break
 
             if not actor:
+                msg = "Actor instance required"
                 raise AuthError(
-                    "Actor instance required", "ACTOR_REQUIRED", {"required_role": role}
+                    msg, "ACTOR_REQUIRED", {"required_role": role}
                 )
 
             if actor.role != role:
+                msg = f"Actor role '{role}' required, but actor has role '{actor.role}'"
                 raise AuthError(
-                    f"Actor role '{role}' required, but actor has role '{actor.role}'",
+                    msg,
                     "ROLE_REQUIRED",
                     {
                         "actor_id": actor.id,

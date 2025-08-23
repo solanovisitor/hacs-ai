@@ -22,7 +22,6 @@ from .structured import (
     extract_hacs_document_with_citation_guidance,
     extract_hacs_multi_with_citations,
     extract_hacs_resources_with_citations,
-    _get_compact_extractable_fields,
 )
 
 
@@ -265,7 +264,7 @@ class ExtractionRunner:
                 # Apply post-processing and validation
                 return self._post_process_results(result)
                 
-            except Exception as e:
+            except Exception:
                 if attempt == self.config.max_retries:
                     raise
                 
@@ -309,7 +308,7 @@ class ExtractionRunner:
                 # Apply validation and deduplication
                 return self._validate_and_dedupe_single(result, resource_model)
                 
-            except Exception as e:
+            except Exception:
                 if attempt == self.config.max_retries:
                     raise
                 
@@ -350,7 +349,7 @@ class ExtractionRunner:
                 # Apply post-processing and validation
                 return self._post_process_results(result)
                 
-            except Exception as e:
+            except Exception:
                 if attempt == self.config.max_retries:
                     raise
                 

@@ -17,7 +17,7 @@ def set_nested_field(obj: Any, path: str, value: Any) -> None:
                 else:
                     try:
                         if hasattr(cur, "agent_context") and isinstance(
-                            value, (str, int, float, bool, dict, list)
+                            value, str | int | float | bool | dict | list
                         ):
                             ctx = cur.agent_context or {}
                             ctx[path] = value

@@ -329,9 +329,9 @@ def visualize_annotations(
     """
     # Late import to avoid heavy deps on import
     try:
-        from hacs_models import ExtractionResults as Extraction  # type: ignore
+        pass  # type: ignore
     except Exception:  # pragma: no cover
-        Extraction = object  # type: ignore
+        pass  # type: ignore
 
     if not annotated_document or getattr(annotated_document, "text", None) is None:
         raise ValueError("annotated_document must have text")

@@ -1,4 +1,4 @@
-"""HACS Observability Framework - OpenTelemetry-based Monitoring
+"""HACS Observability Framework - OpenTelemetry-based Monitoring.
 
 This module providesobservability for healthcare AI systems
 including distributed tracing, metrics collection, structured logging,
@@ -130,7 +130,7 @@ class ObservabilityConfig:
 class StructuredLogger:
     """PHI-safe structured logger with healthcare context."""
 
-    def __init__(self, name: str, config: ObservabilityConfig):
+    def __init__(self, name: str, config: ObservabilityConfig) -> None:
         """Initialize structured logger."""
         self.name = name
         self.config = config
@@ -142,7 +142,7 @@ class StructuredLogger:
         # Healthcare context
         self.healthcare_context = {}
 
-    def _configure_logger(self):
+    def _configure_logger(self) -> None:
         """Configure structured logging format."""
         # Handle both enum and string log levels
         if hasattr(self.config.log_level, "value"):
@@ -157,10 +157,7 @@ class StructuredLogger:
             self.logger.removeHandler(handler)
 
         # Create structured formatter
-        if self.config.log_format == "json":
-            formatter = JSONFormatter()
-        else:
-            formatter = StructuredFormatter()
+        formatter = JSONFormatter() if self.config.log_format == "json" else StructuredFormatter()
 
         # Console handler
         console_handler = logging.StreamHandler()
@@ -184,7 +181,7 @@ class StructuredLogger:
         organization: str | None = None,
         care_team: str | None = None,
         workflow_type: str | None = None,
-    ):
+    ) -> None:
         """Set healthcare context for all subsequent logs."""
         self.healthcare_context.update(
             {
@@ -199,7 +196,7 @@ class StructuredLogger:
             }
         )
 
-    def _log(self, level: LogLevel, message: str, **kwargs):
+    def _log(self, level: LogLevel, message: str, **kwargs) -> None:
         """Internal logging method with healthcare context."""
         log_data = {
             "timestamp": datetime.now(UTC).isoformat(),
@@ -258,27 +255,27 @@ class StructuredLogger:
             extra=extra_data,
         )
 
-    def debug(self, message: str, **kwargs):
+    def debug(self, message: str, **kwargs) -> None:
         """Log debug message."""
         self._log(LogLevel.DEBUG, message, **kwargs)
 
-    def info(self, message: str, **kwargs):
+    def info(self, message: str, **kwargs) -> None:
         """Log info message."""
         self._log(LogLevel.INFO, message, **kwargs)
 
-    def warn(self, message: str, **kwargs):
+    def warn(self, message: str, **kwargs) -> None:
         """Log warning message."""
         self._log(LogLevel.WARN, message, **kwargs)
 
-    def error(self, message: str, **kwargs):
+    def error(self, message: str, **kwargs) -> None:
         """Log error message."""
         self._log(LogLevel.ERROR, message, **kwargs)
 
-    def fatal(self, message: str, **kwargs):
+    def fatal(self, message: str, **kwargs) -> None:
         """Log fatal message."""
         self._log(LogLevel.FATAL, message, **kwargs)
 
-    def audit(self, message: str, **kwargs):
+    def audit(self, message: str, **kwargs) -> None:
         """Log audit event for HIPAA compliance."""
         kwargs["audit_event"] = True
         self._log(LogLevel.AUDIT, message, **kwargs)
@@ -368,7 +365,7 @@ class StructuredFormatter(logging.Formatter):
 class HealthcareTracer:
     """Healthcare-specific distributed tracing."""
 
-    def __init__(self, config: ObservabilityConfig):
+    def __init__(self, config: ObservabilityConfig) -> None:
         """Initialize healthcare tracer."""
         self.config = config
         self.tracer = None
@@ -376,7 +373,7 @@ class HealthcareTracer:
         if OTEL_AVAILABLE and config.enable_tracing:
             self._setup_tracing()
 
-    def _setup_tracing(self):
+    def _setup_tracing(self) -> None:
         """Setup OpenTelemetry tracing."""
         # Configure tracer provider
         tracer_provider = TracerProvider()
@@ -447,7 +444,7 @@ class HealthcareTracer:
         with self.tracer.start_as_current_span(name, attributes=span_attributes) as span:
             yield span
 
-    def add_event(self, name: str, attributes: dict[str, Any] | None = None):
+    def add_event(self, name: str, attributes: dict[str, Any] | None = None) -> None:
         """Add event to current span."""
         if not self.tracer:
             return
@@ -456,7 +453,7 @@ class HealthcareTracer:
         if current_span.is_recording():
             current_span.add_event(name, attributes or {})
 
-    def set_attribute(self, key: str, value: Any):
+    def set_attribute(self, key: str, value: Any) -> None:
         """Set attribute on current span."""
         if not self.tracer:
             return
@@ -465,7 +462,7 @@ class HealthcareTracer:
         if current_span.is_recording():
             current_span.set_attribute(key, value)
 
-    def record_exception(self, exception: Exception):
+    def record_exception(self, exception: Exception) -> None:
         """Record exception in current span."""
         if not self.tracer:
             return
@@ -479,7 +476,7 @@ class HealthcareTracer:
 class HealthcareMetrics:
     """Healthcare-specific metrics collection."""
 
-    def __init__(self, config: ObservabilityConfig):
+    def __init__(self, config: ObservabilityConfig) -> None:
         """Initialize healthcare metrics."""
         self.config = config
         self.meter = None
@@ -488,7 +485,7 @@ class HealthcareMetrics:
         if OTEL_AVAILABLE and config.enable_metrics:
             self._setup_metrics()
 
-    def _setup_metrics(self):
+    def _setup_metrics(self) -> None:
         """Setup OpenTelemetry metrics."""
         # Configure OTLP exporter if endpoint provided
         if self.config.metrics_endpoint:
@@ -510,7 +507,7 @@ class HealthcareMetrics:
         # Create common healthcare metrics
         self._create_healthcare_metrics()
 
-    def _create_healthcare_metrics(self):
+    def _create_healthcare_metrics(self) -> None:
         """Create healthcare-specific metrics."""
         if not self.meter:
             return
@@ -565,21 +562,21 @@ class HealthcareMetrics:
 
     def increment_counter(
         self, metric_name: str, value: int = 1, attributes: dict[str, str] | None = None
-    ):
+    ) -> None:
         """Increment a counter metric."""
         if metric_name in self.metrics:
             self.metrics[metric_name].add(value, attributes or {})
 
     def record_histogram(
         self, metric_name: str, value: float, attributes: dict[str, str] | None = None
-    ):
+    ) -> None:
         """Record a histogram value."""
         if metric_name in self.metrics:
             self.metrics[metric_name].record(value, attributes or {})
 
     def set_gauge(
         self, metric_name: str, value: float, attributes: dict[str, str] | None = None
-    ):
+    ) -> None:
         """Set a gauge value."""
         if metric_name in self.metrics:
             self.metrics[metric_name].set(value, attributes or {})
@@ -598,7 +595,7 @@ class HealthcareMetrics:
 class ObservabilityManager:
     """Central manager for HACS observability."""
 
-    def __init__(self, config: ObservabilityConfig | None = None):
+    def __init__(self, config: ObservabilityConfig | None = None) -> None:
         """Initialize observability manager."""
         self.config = config or self._create_default_config()
 
@@ -676,7 +673,7 @@ class ObservabilityManager:
                             span.record_exception(e)
                             span.set_attribute("workflow.success", False)
 
-                        self.logger.error(
+                        self.logger.exception(
                             f"Healthcare workflow failed: {workflow_name}",
                             workflow_type=workflow_name,
                             error=str(e),
@@ -732,7 +729,7 @@ class ObservabilityManager:
                                 span.record_exception(e)
                                 span.set_attribute("tool.success", False)
 
-                            self.logger.error(
+                            self.logger.exception(
                                 f"Healthcare tool execution failed: {tool_name}",
                                 tool_name=tool_name,
                                 category=category,
@@ -751,7 +748,7 @@ class ObservabilityManager:
         resource_type: str,
         action: str,
         organization: str | None = None,
-    ):
+    ) -> None:
         """Log PHI access for HIPAA compliance."""
         self.logger.audit(
             "PHI access event",
@@ -785,7 +782,7 @@ class ObservabilityManager:
         success: bool,
         method: str = "password",
         ip_address: str | None = None,
-    ):
+    ) -> None:
         """Record authentication attempt."""
         self.logger.info(
             "Authentication attempt",
@@ -799,7 +796,7 @@ class ObservabilityManager:
             "auth_attempts_total", attributes={"success": str(success), "method": method}
         )
 
-    def register_health_check(self, name: str, check_func: Callable[[], bool]):
+    def register_health_check(self, name: str, check_func: Callable[[], bool]) -> None:
         """Register a health check function."""
         self.health_checks[name] = check_func
 
@@ -837,7 +834,7 @@ class ObservabilityManager:
 
         return health_status
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Shutdown observability components."""
         self.logger.info("Shutting down observability framework")
 

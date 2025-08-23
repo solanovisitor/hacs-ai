@@ -1,4 +1,4 @@
-"""HACS Security Module - HIPAA-Compliant Security Controls
+"""HACS Security Module - HIPAA-Compliant Security Controls.
 
 This module implementssecurity controls required for HIPAA
 compliance and healthcare data protection, including encryption, audit
@@ -106,7 +106,7 @@ class SecurityConfig(BaseModel):
 class PHIEncryption:
     """PHI (Protected Health Information) encryption utilities."""
 
-    def __init__(self, encryption_key: bytes | None = None):
+    def __init__(self, encryption_key: bytes | None = None) -> None:
         """Initialize PHI encryption.
 
         Args:
@@ -212,12 +212,14 @@ class PHIEncryption:
                 encrypted_data = base64.b64decode(encrypted_package["encrypted_data"])
                 decrypted_data = self.fernet.decrypt(encrypted_data)
             else:
-                raise ValueError(f"Unsupported encryption type: {encryption_type}")
+                msg = f"Unsupported encryption type: {encryption_type}"
+                raise ValueError(msg)
 
             return decrypted_data.decode("utf-8")
 
         except Exception as e:
-            raise ValueError(f"PHI decryption failed: {e}") from e
+            msg = f"PHI decryption failed: {e}"
+            raise ValueError(msg) from e
 
     def get_public_key_pem(self) -> str:
         """Get public key in PEM format for sharing."""
@@ -244,7 +246,7 @@ class PHIEncryption:
 class SecureSecretsManager:
     """Secure secrets management for HACS system."""
 
-    def __init__(self, secrets_path: Path | None = None):
+    def __init__(self, secrets_path: Path | None = None) -> None:
         """Initialize secrets manager.
 
         Args:
@@ -310,7 +312,8 @@ class SecureSecretsManager:
         secret_file = self.secrets_path / f"{name}.secret"
 
         if not secret_file.exists():
-            raise FileNotFoundError(f"Secret '{name}' not found")
+            msg = f"Secret '{name}' not found"
+            raise FileNotFoundError(msg)
 
         with open(secret_file) as f:
             import json
@@ -360,7 +363,7 @@ class SecureSecretsManager:
 class HIPAAAuditLogger:
     """HIPAA-compliant audit logging system."""
 
-    def __init__(self, log_path: Path | None = None, encryption: PHIEncryption | None = None):
+    def __init__(self, log_path: Path | None = None, encryption: PHIEncryption | None = None) -> None:
         """Initialize HIPAA audit logger.
 
         Args:
@@ -514,7 +517,7 @@ class HIPAAAuditLogger:
 class SecurityValidator:
     """Validates security configuration and compliance."""
 
-    def __init__(self, config: SecurityConfig):
+    def __init__(self, config: SecurityConfig) -> None:
         """Initialize security validator."""
         self.config = config
         self.secrets_manager = SecureSecretsManager()

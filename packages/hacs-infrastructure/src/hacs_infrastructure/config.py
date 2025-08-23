@@ -1,4 +1,4 @@
-"""Configuration Management for HACS Infrastructure
+"""Configuration Management for HACS Infrastructure.
 
 This module providesconfiguration management with environment
 variable support, validation, and healthcare-specific settings.
@@ -345,7 +345,8 @@ def get_config() -> HACSConfig:
         try:
             _global_config = HACSConfig()
         except Exception as e:
-            raise ConfigurationError(f"Failed to load configuration: {e}") from e
+            msg = f"Failed to load configuration: {e}"
+            raise ConfigurationError(msg) from e
     return _global_config
 
 
@@ -378,7 +379,8 @@ def configure_hacs(**kwargs: Any) -> HACSConfig:
     try:
         _global_config = HACSConfig(**kwargs)
     except Exception as e:
-        raise ConfigurationError(f"Failed to configure HACS: {e}") from e
+        msg = f"Failed to configure HACS: {e}"
+        raise ConfigurationError(msg) from e
     return _global_config
 
 
@@ -396,7 +398,8 @@ def load_config_from_file(file_path: str) -> HACSConfig:
 
     config_file = Path(file_path)
     if not config_file.exists():
-        raise ConfigurationError(f"Configuration file not found: {file_path}")
+        msg = f"Configuration file not found: {file_path}"
+        raise ConfigurationError(msg)
 
     try:
         if config_file.suffix.lower() == ".json":
@@ -413,14 +416,16 @@ def load_config_from_file(file_path: str) -> HACSConfig:
             with open(config_file, "rb") as f:
                 data = tomllib.load(f)
         else:
-            raise ConfigurationError(f"Unsupported configuration file format: {config_file.suffix}")
+            msg = f"Unsupported configuration file format: {config_file.suffix}"
+            raise ConfigurationError(msg)
 
         global _global_config
         _global_config = HACSConfig(**data)
         return _global_config
 
     except Exception as e:
-        raise ConfigurationError(f"Failed to load configuration from {file_path}: {e}") from e
+        msg = f"Failed to load configuration from {file_path}: {e}"
+        raise ConfigurationError(msg) from e
 
 
 def validate_config() -> None:
@@ -435,6 +440,7 @@ def validate_config() -> None:
     if config.is_production:
         errors = config.validate_production_settings()
         if errors:
-            raise ConfigurationError(f"Production configuration errors: {'; '.join(errors)}")
+            msg = f"Production configuration errors: {'; '.join(errors)}"
+            raise ConfigurationError(msg)
 
     # Additional validation logic can be added here

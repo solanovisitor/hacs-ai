@@ -145,7 +145,7 @@ class ToolVersionManager:
 
         # Validate version format
         try:
-            semantic_version = SemanticVersion(version_info.version)
+            SemanticVersion(version_info.version)
         except ValueError as e:
             raise ValueError(f"Invalid version for tool {tool_name}: {e}")
 

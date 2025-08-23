@@ -1,4 +1,4 @@
-"""Monitoring and Observability for HACS Infrastructure
+"""Monitoring and Observability for HACS Infrastructure.
 
 This module providesmonitoring capabilities including
 health checks, metrics collection, and performance monitoring.
@@ -15,6 +15,7 @@ try:
     HAS_PSUTIL = True
 except ImportError:
     HAS_PSUTIL = False
+import contextlib
 import time
 from collections import defaultdict, deque
 from collections.abc import Callable
@@ -78,10 +79,9 @@ class ServiceMetrics(BaseModel):
 
 
 class MetricsCollector:
-    """Collects and aggregates metrics for services and system resources.
-    """
+    """Collects and aggregates metrics for services and system resources."""
 
-    def __init__(self, retention_period: int = 3600):
+    def __init__(self, retention_period: int = 3600) -> None:
         """Initialize metrics collector.
 
         Args:
@@ -114,10 +114,8 @@ class MetricsCollector:
         self._running = False
         if self._cleanup_task:
             self._cleanup_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._cleanup_task
-            except asyncio.CancelledError:
-                pass
 
     def increment_counter(
         self, name: str, value: int = 1, tags: dict[str, str] | None = None
@@ -220,7 +218,7 @@ class MetricsCollector:
                 "gauges": dict(self._gauges),
                 "histograms": {
                     k: self.get_histogram_stats(k.split("|")[0], self._parse_tags(k))
-                    for k in self._histograms.keys()
+                    for k in self._histograms
                 },
             }
 
@@ -280,22 +278,21 @@ class MetricsCollector:
         cutoff_time = time.time() - self._retention_period
 
         with self._lock:
-            for name, points in self._metrics.items():
+            for points in self._metrics.values():
                 # Remove old points
                 while points and points[0].timestamp < cutoff_time:
                     points.popleft()
 
 
 class HealthMonitor:
-    """Monitors health of services and system resources.
-    """
+    """Monitors health of services and system resources."""
 
     def __init__(
         self,
         event_bus: EventBus | None = None,
         check_interval: int = 30,
         failure_threshold: int = 3,
-    ):
+    ) -> None:
         """Initialize health monitor.
 
         Args:
@@ -350,10 +347,8 @@ class HealthMonitor:
         self._running = False
         if self._monitor_task:
             self._monitor_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._monitor_task
-            except asyncio.CancelledError:
-                pass
 
     async def check_service_health(self, service_name: str) -> HealthCheckResult:
         """Check health of a specific service."""
@@ -492,10 +487,9 @@ class HealthMonitor:
 
 
 class PerformanceMonitor:
-    """Monitors system performance metrics.
-    """
+    """Monitors system performance metrics."""
 
-    def __init__(self, metrics_collector: MetricsCollector):
+    def __init__(self, metrics_collector: MetricsCollector) -> None:
         """Initialize performance monitor.
 
         Args:
@@ -522,10 +516,8 @@ class PerformanceMonitor:
         self._running = False
         if self._monitor_task:
             self._monitor_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._monitor_task
-            except asyncio.CancelledError:
-                pass
 
     async def _monitoring_loop(self) -> None:
         """Main performance monitoring loop."""

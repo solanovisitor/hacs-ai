@@ -81,7 +81,7 @@ def main() -> None:
     # Get settings first to provide defaults
     from hacs_core import get_settings
 
-    settings = get_settings()
+    get_settings()
 
     parser = argparse.ArgumentParser(description="HACS Model Context Protocol Server")
     parser.add_argument(

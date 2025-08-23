@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Dict, Any, List
+from typing import Dict, Any
 from contextlib import contextmanager
 
 
@@ -187,25 +187,25 @@ def format_metrics_summary(metrics: ExtractionSessionMetrics) -> str:
     rates = calculate_extraction_rate(metrics)
     
     lines = [
-        f"=== Extraction Metrics Summary ===",
+        "=== Extraction Metrics Summary ===",
         f"Total Duration: {metrics.total_duration_sec:.2f}s",
         f"Citations Found: {metrics.total_citations_found}",
         f"Records Extracted: {metrics.total_records_extracted}",
-        f"",
-        f"Records by Type:",
+        "",
+        "Records by Type:",
     ]
     
     for resource_type, count in sorted(metrics.records_by_type.items()):
         lines.append(f"  {resource_type}: {count}")
     
     lines.extend([
-        f"",
-        f"Quality Metrics:",
+        "",
+        "Quality Metrics:",
         f"  Timeout Failures: {metrics.total_timeout_failures}",
         f"  Validation Failures: {metrics.total_validation_failures}",
         f"  Zero-Yield Fallbacks: {metrics.zero_yield_fallbacks_used}",
-        f"",
-        f"Performance:",
+        "",
+        "Performance:",
     ])
     
     if "records_per_second" in rates:
@@ -216,7 +216,7 @@ def format_metrics_summary(metrics: ExtractionSessionMetrics) -> str:
         lines.append(f"  Success Rate: {rates['success_rate']:.1%}")
     
     if metrics.stages:
-        lines.extend([f"", f"Stage Breakdown:"])
+        lines.extend(["", "Stage Breakdown:"])
         for stage_name, stage in metrics.stages.items():
             lines.append(f"  {stage_name}: {stage.duration_sec:.2f}s ({stage.items_extracted} extracted)")
     

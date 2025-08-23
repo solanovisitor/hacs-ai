@@ -5,6 +5,7 @@ security requirements, including session expiration, activity tracking,
 and multi-factor authentication support.
 """
 
+import contextlib
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -47,8 +48,7 @@ class SessionConfig(BaseModel):
 
 
 class Session(BaseModel):
-    """Represents an active user session with healthcare security features.
-    """
+    """Represents an active user session with healthcare security features."""
 
     session_id: str = Field(
         default_factory=lambda: f"sess_{uuid.uuid4().hex[:16]}",
@@ -153,10 +153,9 @@ class Session(BaseModel):
 
 
 class SessionManager:
-    """Manages user sessions with healthcare security requirements.
-    """
+    """Manages user sessions with healthcare security requirements."""
 
-    def __init__(self, config: SessionConfig | None = None):
+    def __init__(self, config: SessionConfig | None = None) -> None:
         """Initialize session manager.
 
         Args:
@@ -204,7 +203,8 @@ class SessionManager:
         ]
 
         if len(active_sessions) >= self.config.max_concurrent_sessions:
-            raise ValueError(f"User {user_id} has too many concurrent sessions")
+            msg = f"User {user_id} has too many concurrent sessions"
+            raise ValueError(msg)
 
         # Determine timeout
         timeout = timeout_minutes or self.config.default_timeout_minutes
@@ -321,10 +321,8 @@ class SessionManager:
 
         # Remove from active tracking
         if session.user_id in self._user_sessions:
-            try:
+            with contextlib.suppress(ValueError):
                 self._user_sessions[session.user_id].remove(session_id)
-            except ValueError:
-                pass
 
         return True
 
@@ -379,9 +377,8 @@ class SessionManager:
 
         for session_id in session_ids:
             session = self.get_session(session_id)
-            if session:
-                if not active_only or session.status == SessionStatus.ACTIVE:
-                    sessions.append(session)
+            if session and (not active_only or session.status == SessionStatus.ACTIVE):
+                sessions.append(session)
 
         return sessions
 
@@ -406,10 +403,8 @@ class SessionManager:
             if session:
                 # Remove from user tracking
                 if session.user_id in self._user_sessions:
-                    try:
+                    with contextlib.suppress(ValueError):
                         self._user_sessions[session.user_id].remove(session_id)
-                    except ValueError:
-                        pass
                 cleaned_count += 1
 
         return cleaned_count

@@ -345,7 +345,7 @@ class ResourceAggregate(AggregateRoot):
 
     def update_instance_data(self, new_data: Dict[str, Any]) -> None:
         """Update resource instance data."""
-        old_data = self._instance_data.copy()
+        self._instance_data.copy()
         self._instance_data = new_data.copy()
         self.update_timestamp()
 

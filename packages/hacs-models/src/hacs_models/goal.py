@@ -367,15 +367,15 @@ class Goal(DomainResource):
     def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
         """Coerce extractable payload to proper types with relaxed validation."""
         coerced = payload.copy()
-        
+
         # Coerce description to CodeableConcept if it's a string
         if "description" in coerced and isinstance(coerced["description"], str):
             coerced["description"] = {"text": coerced["description"]}
-        
+
         # Coerce target to list if it's a single dict
         if "target" in coerced and isinstance(coerced["target"], dict):
             coerced["target"] = [coerced["target"]]
-        
+
         return coerced
 
     @classmethod

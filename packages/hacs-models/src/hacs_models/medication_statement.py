@@ -10,13 +10,13 @@ from typing import Literal
 from pydantic import Field, field_validator
 
 from .base_resource import DomainResource
+from .medication_request import Dosage
 from .observation import CodeableConcept
 from .types import (
     MedicationStatementStatus,
     ResourceReference,
     TimestampStr,
 )
-from .medication_request import Dosage
 
 
 class MedicationStatement(DomainResource):

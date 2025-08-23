@@ -1,4 +1,4 @@
-"""HACS Monitoring Dashboards - Healthcare Analytics and Visualization
+"""HACS Monitoring Dashboards - Healthcare Analytics and Visualization.
 
 This module providesmonitoring dashboards for healthcare AI systems
 including real-time metrics, clinical alerts, compliance tracking, and performance monitoring.
@@ -92,7 +92,7 @@ class HealthcareDashboardManager:
         self,
         observability_manager: ObservabilityManager | None = None,
         healthcare_monitoring: HealthcareMonitoringManager | None = None,
-    ):
+    ) -> None:
         """Initialize dashboard manager."""
         self.observability = observability_manager or get_observability_manager()
         self.healthcare_monitoring = healthcare_monitoring or get_healthcare_monitoring()
@@ -110,7 +110,7 @@ class HealthcareDashboardManager:
         self._create_default_dashboards()
         self._register_data_sources()
 
-    def _create_default_dashboards(self):
+    def _create_default_dashboards(self) -> None:
         """Create default healthcare monitoring dashboards."""
         # Clinical Overview Dashboard
         clinical_dashboard = Dashboard(
@@ -336,7 +336,7 @@ class HealthcareDashboardManager:
             }
         )
 
-    def _register_data_sources(self):
+    def _register_data_sources(self) -> None:
         """Register data source functions."""
         self._data_sources.update(
             {
@@ -393,7 +393,7 @@ class HealthcareDashboardManager:
                         "error": f"Data source '{widget.data_source}' not found"
                     }
             except Exception as e:
-                self.logger.error(f"Error fetching data for widget {widget.id}: {e}")
+                self.logger.exception(f"Error fetching data for widget {widget.id}: {e}")
                 widget_data[widget.id] = {"error": str(e)}
 
         dashboard_data = {
@@ -437,10 +437,10 @@ class HealthcareDashboardManager:
                 }
             return {"error": f"Data source '{widget.data_source}' not found"}
         except Exception as e:
-            self.logger.error(f"Error fetching data for widget {widget_id}: {e}")
+            self.logger.exception(f"Error fetching data for widget {widget_id}: {e}")
             return {"error": str(e)}
 
-    def list_dashboards(self, user_permissions: list[str] = None) -> list[dict[str, Any]]:
+    def list_dashboards(self, user_permissions: list[str] | None = None) -> list[dict[str, Any]]:
         """List available dashboards based on user permissions."""
         user_permissions = user_permissions or []
 
@@ -463,12 +463,12 @@ class HealthcareDashboardManager:
 
         return available_dashboards
 
-    def register_custom_dashboard(self, dashboard: Dashboard):
+    def register_custom_dashboard(self, dashboard: Dashboard) -> None:
         """Register a custom dashboard."""
         self.dashboards[dashboard.id] = dashboard
         self.logger.info(f"Registered custom dashboard: {dashboard.id}")
 
-    def register_data_source(self, name: str, func: Callable):
+    def register_data_source(self, name: str, func: Callable) -> None:
         """Register a custom data source function."""
         self._data_sources[name] = func
         self.logger.info(f"Registered data source: {name}")
@@ -478,7 +478,7 @@ class HealthcareDashboardManager:
         self, widget: DashboardWidget, organization: str | None
     ) -> list[dict]:
         """Get clinical alerts data."""
-        alerts_summary = self.healthcare_monitoring.metrics.get_clinical_alerts_summary(24)
+        self.healthcare_monitoring.metrics.get_clinical_alerts_summary(24)
 
         # Convert to widget format
         alerts = []
@@ -568,7 +568,7 @@ class HealthcareDashboardManager:
         self, widget: DashboardWidget, organization: str | None
     ) -> dict:
         """Get PHI access timeline data."""
-        access_summary = self.healthcare_monitoring.metrics.get_phi_access_summary(
+        self.healthcare_monitoring.metrics.get_phi_access_summary(
             24 * 7
         )  # Last week
 

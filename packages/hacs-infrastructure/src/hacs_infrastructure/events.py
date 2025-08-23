@@ -1,10 +1,11 @@
-"""Event System for HACS Infrastructure
+"""Event System for HACS Infrastructure.
 
 This module provides aevent system with pub/sub capabilities,
 event filtering, and asynchronous event handling.
 """
 
 import asyncio
+import contextlib
 import threading
 import uuid
 from collections.abc import Callable
@@ -68,7 +69,7 @@ class EventFilter:
         sources: set[str] | None = None,
         priority: EventPriority | None = None,
         custom_filter: Callable[[Event], bool] | None = None,
-    ):
+    ) -> None:
         """Initialize event filter.
 
         Args:
@@ -110,10 +111,7 @@ class EventFilter:
                 return False
 
         # Check custom filter
-        if self.custom_filter and not self.custom_filter(event):
-            return False
-
-        return True
+        return not (self.custom_filter and not self.custom_filter(event))
 
 
 EventHandler = Callable[[Event], None]
@@ -129,7 +127,7 @@ class EventSubscription:
         handler: Callable[[Event], Any],
         event_filter: EventFilter | None = None,
         is_async: bool = False,
-    ):
+    ) -> None:
         """Initialize event subscription.
 
         Args:
@@ -165,7 +163,7 @@ class EventSubscription:
             import logging
 
             logger = logging.getLogger(__name__)
-            logger.error(f"Event handler failed for subscription {self.id}: {e}")
+            logger.exception(f"Event handler failed for subscription {self.id}: {e}")
 
 
 class EventError(Exception):
@@ -178,7 +176,7 @@ class EventBus:
     and asynchronous event handling.
     """
 
-    def __init__(self, max_event_history: int = 1000):
+    def __init__(self, max_event_history: int = 1000) -> None:
         """Initialize event bus.
 
         Args:
@@ -216,10 +214,8 @@ class EventBus:
 
         if self._processing_task:
             self._processing_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._processing_task
-            except asyncio.CancelledError:
-                pass
             self._processing_task = None
 
     def publish(self, event: Event) -> None:
@@ -375,7 +371,7 @@ class EventBus:
                 import logging
 
                 logger = logging.getLogger(__name__)
-                logger.error(f"Error processing event: {e}")
+                logger.exception(f"Error processing event: {e}")
 
     async def _dispatch_event(self, event: Event) -> None:
         """Dispatch event to matching subscriptions."""

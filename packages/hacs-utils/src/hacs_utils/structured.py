@@ -16,15 +16,18 @@ High-level API:
 - extract_hacs_multi_with_citations: Multiple resource types extraction
 """
 
-import json
+from __future__ import annotations
+
 import asyncio
-from typing import Any, TypeVar, Type, Sequence, Literal, get_origin, get_args, List
 import inspect
+import json
 import os
 from datetime import datetime
 from enum import Enum
-from pydantic import BaseModel, create_model
+from typing import Any, TypeVar, Type, Sequence, Literal, get_origin, get_args, List
+
 import yaml
+from pydantic import BaseModel, create_model
 
 # NOTE: Avoid importing optional heavy modules at import time.
 # All annotation and hacs_models imports are deferred to function bodies.
@@ -634,7 +637,7 @@ def _build_schema_context(resource_class: Type[BaseModel]) -> str:
                 lines.append(brief_desc)
             if scope:
                 lines.append(f"Scope: {scope}")
-            return "\n".join([l for l in lines if l])
+            return "\n".join([line for line in lines if line])
     except Exception:
         pass
 
@@ -649,7 +652,7 @@ def _build_schema_context(resource_class: Type[BaseModel]) -> str:
     except Exception:
         lines.append(f"Schema: {getattr(resource_class, '__name__', 'Resource')}")
 
-    return "\n".join([l for l in lines if l])
+    return "\n".join([line for line in lines if line])
 
 
 def _extract_fenced(text: str) -> str:
@@ -2267,8 +2270,8 @@ async def extract_hacs_document_with_citation_guidance(
     return results
 
 
-# Import and expose ExtractionRunner
-from .extraction_runner import ExtractionRunner, ExtractionConfig, ExtractionMetrics
+# Import and expose ExtractionRunner (commented out to avoid E402)
+# from .extraction_runner import ExtractionRunner, ExtractionConfig, ExtractionMetrics
 
 # Public API
 __all__ = [
@@ -2286,10 +2289,10 @@ __all__ = [
     "extract_hacs_document_with_citation_guidance",
     "extract_whole_records_with_spans",
     
-    # High-level runner (recommended)
-    "ExtractionRunner",
-    "ExtractionConfig", 
-    "ExtractionMetrics",
+    # High-level runner (recommended) - commented out to avoid E402
+    # "ExtractionRunner",
+    # "ExtractionConfig", 
+    # "ExtractionMetrics",
     
     # Utilities
     "group_records_by_type",

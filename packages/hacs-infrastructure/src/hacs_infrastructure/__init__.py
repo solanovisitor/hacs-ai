@@ -1,4 +1,4 @@
-"""HACS Infrastructure - Core Infrastructure Components
+"""HACS Infrastructure - Core Infrastructure Components.
 
 This package provides the foundational infrastructure for healthcare AI systems,
 including dependency injection, configuration management, service discovery,
@@ -74,50 +74,50 @@ __license__ = "MIT"
 
 # Public API
 __all__ = [
-    # Core container
-    "Container",
-    "Injectable",
-    "Singleton",
-    "Scoped",
-    "ServiceError",
-    "DependencyError",
-    "get_container",
-    "reset_container",
-    # Configuration
-    "HACSConfig",
-    "ConfigurationError",
-    "get_config",
-    "reset_config",
-    "configure_hacs",
-    # Service registry
-    "ServiceRegistry",
-    "ServiceInfo",
-    "ServiceStatus",
-    "HealthCheck",
-    "ServiceDiscovery",
-    # Lifecycle management
-    "ServiceLifecycle",
-    "LifecycleState",
-    "StartupManager",
-    "ShutdownManager",
-    "GracefulShutdown",
     # Protocols
     "Configurable",
-    "HealthCheckable",
-    "Startable",
-    "Stoppable",
-    "InjectableProtocol",
+    "ConfigurationError",
+    # Core container
+    "Container",
+    "DependencyError",
+    "Event",
     # Event system
     "EventBus",
-    "Event",
+    "EventError",
     "EventHandler",
     "EventSubscription",
-    "EventError",
+    "GracefulShutdown",
+    # Configuration
+    "HACSConfig",
+    "HealthCheck",
+    "HealthCheckable",
     # Monitoring
     "HealthMonitor",
+    "Injectable",
+    "InjectableProtocol",
+    "LifecycleState",
     "MetricsCollector",
-    "ServiceMetrics",
     "PerformanceMonitor",
+    "Scoped",
+    "ServiceDiscovery",
+    "ServiceError",
+    "ServiceInfo",
+    # Lifecycle management
+    "ServiceLifecycle",
+    "ServiceMetrics",
+    # Service registry
+    "ServiceRegistry",
+    "ServiceStatus",
+    "ShutdownManager",
+    "Singleton",
+    "Startable",
+    "StartupManager",
+    "Stoppable",
+    "configure_hacs",
+    "get_config",
+    "get_container",
+    "reset_config",
+    "reset_container",
 ]
 
 # Package metadata
@@ -178,30 +178,33 @@ def validate_infrastructure_setup() -> bool:
         # Test configuration loading
         config = get_config()
         if not hasattr(config, "debug"):
-            raise ValueError("Configuration not properly loaded")
+            msg = "Configuration not properly loaded"
+            raise ValueError(msg)
 
         # Test container creation
         container = Container()
 
         # Test service registry
-        service_registry = ServiceRegistry()
+        ServiceRegistry()
 
         # Test basic dependency injection
         @Injectable
         class TestService:
-            def __init__(self):
+            def __init__(self) -> None:
                 self.name = "test"
 
         container.register(TestService)
         test_service = container.get(TestService)
 
         if test_service.name != "test":
-            raise ValueError("Dependency injection not working")
+            msg = "Dependency injection not working"
+            raise ValueError(msg)
 
         return True
 
     except Exception as e:
-        raise ValueError(f"Infrastructure setup validation failed: {e}") from e
+        msg = f"Infrastructure setup validation failed: {e}"
+        raise ValueError(msg) from e
 
 
 def get_feature_info() -> dict[str, str]:

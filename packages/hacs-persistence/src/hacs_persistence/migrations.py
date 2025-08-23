@@ -161,7 +161,7 @@ class HACSDatabaseMigration:
                 id TEXT PRIMARY KEY,
                 resource_type TEXT NOT NULL,
                 data JSONB NOT NULL,
-                full_resource JSONB, 
+                full_resource JSONB,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                 created_by TEXT,

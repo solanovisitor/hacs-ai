@@ -25,7 +25,7 @@ Design Principles:
 import inspect
 import uuid
 from datetime import UTC, datetime
-from typing import Any, ClassVar, TypeVar, List, Optional
+from typing import Any, ClassVar, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
@@ -102,8 +102,8 @@ class AgentMeta(BaseModel):
     """
 
     reasoning: str | None = Field(default=None, description="LLM reasoning or justification text")
-    citations: List[str] | None = Field(default=None, description="Evidence snippets")
-    char_intervals: List[CharInterval] | None = Field(
+    citations: list[str] | None = Field(default=None, description="Evidence snippets")
+    char_intervals: list[CharInterval] | None = Field(
         default=None, description="Character spans of evidence in source text"
     )
     confidence: float | None = Field(default=None, ge=0.0, le=1.0)
@@ -111,7 +111,7 @@ class AgentMeta(BaseModel):
     provider: str | None = Field(default=None, description="Provider name")
     generated_at: datetime | None = Field(default=None, description="Generation timestamp")
     recipe_id: str | None = Field(default=None, description="Extraction recipe identifier")
-    window_ids: List[str] | None = Field(default=None, description="IDs of windows used")
+    window_ids: list[str] | None = Field(default=None, description="IDs of windows used")
 
 
 class BaseResource(BaseModel):

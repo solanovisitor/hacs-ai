@@ -1,4 +1,4 @@
-"""HACS Authentication Manager
+"""HACS Authentication Manager.
 
 Provides OAuth2 and JWT token management for secure API access with
 healthcare-specific claims and security requirements.
@@ -76,7 +76,7 @@ class AuthError(Exception):
         message: str,
         error_code: str | None = None,
         details: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         """Initialize authentication error.
 
         Args:
@@ -98,7 +98,7 @@ class AuthManager:
     healthcare AI agent systems.
     """
 
-    def __init__(self, config: AuthConfig | None = None):
+    def __init__(self, config: AuthConfig | None = None) -> None:
         """Initialize authentication manager.
 
         Args:
@@ -125,7 +125,6 @@ class AuthManager:
                 # Generate and store new secure secret
                 jwt_secret = secrets_manager.generate_jwt_secret()
                 secrets_manager.store_secret("jwt_secret", jwt_secret)
-                print("🔒 Generated new secure JWT secret and stored safely")
 
         return AuthConfig(
             jwt_secret=jwt_secret,
@@ -149,10 +148,12 @@ class AuthManager:
         """Validate authentication configuration with enhanced security checks."""
         # SECURITY: Validate JWT secret strength
         if not self.config.jwt_secret:
-            raise AuthError("JWT secret is required for authentication")
+            msg = "JWT secret is required for authentication"
+            raise AuthError(msg)
 
         if len(self.config.jwt_secret) < 32:
-            raise AuthError("JWT secret must be at least 32 characters for security")
+            msg = "JWT secret must be at least 32 characters for security"
+            raise AuthError(msg)
 
         # SECURITY: Reject known weak secrets
         weak_secrets = [
@@ -163,33 +164,41 @@ class AuthManager:
             "development-key",
         ]
         if self.config.jwt_secret in weak_secrets:
-            raise AuthError("Weak or default JWT secret detected - use secure generated secret")
+            msg = "Weak or default JWT secret detected - use secure generated secret"
+            raise AuthError(msg)
 
         # SECURITY: Validate algorithm
         if self.config.jwt_algorithm not in self.config.allowed_algorithms:
-            raise AuthError(f"JWT algorithm {self.config.jwt_algorithm} not in allowed list")
+            msg = f"JWT algorithm {self.config.jwt_algorithm} not in allowed list"
+            raise AuthError(msg)
 
         # SECURITY: Validate token expiration times
         if self.config.token_expire_minutes > 60:
-            raise AuthError("Token expiration too long - maximum 60 minutes for security")
+            msg = "Token expiration too long - maximum 60 minutes for security"
+            raise AuthError(msg)
 
         if self.config.token_expire_minutes < 5:
-            raise AuthError("Token expiration too short - minimum 5 minutes for usability")
+            msg = "Token expiration too short - minimum 5 minutes for usability"
+            raise AuthError(msg)
 
         # SECURITY: Validate session duration
         if self.config.max_session_duration_hours > 24:
-            raise AuthError("Session duration too long - maximum 24 hours")
+            msg = "Session duration too long - maximum 24 hours"
+            raise AuthError(msg)
 
         # SECURITY: Production environment checks
         if os.getenv("HACS_ENV") == "production":
             if not self.config.require_https:
-                raise AuthError("HTTPS is required in production environment")
+                msg = "HTTPS is required in production environment"
+                raise AuthError(msg)
 
             if not self.config.require_mfa:
-                raise AuthError("Multi-factor authentication is required in production")
+                msg = "Multi-factor authentication is required in production"
+                raise AuthError(msg)
 
             if self.config.token_expire_minutes > 30:
-                raise AuthError("Token expiration must be ≤30 minutes in production")
+                msg = "Token expiration must be ≤30 minutes in production"
+                raise AuthError(msg)
 
     def create_access_token(
         self,
@@ -294,9 +303,11 @@ class AuthManager:
             nbf = payload.get("nbf")
 
             if not user_id:
-                raise AuthError("Invalid token: missing user ID", "MISSING_USER_ID")
+                msg = "Invalid token: missing user ID"
+                raise AuthError(msg, "MISSING_USER_ID")
             if not role:
-                raise AuthError("Invalid token: missing role", "MISSING_ROLE")
+                msg = "Invalid token: missing role"
+                raise AuthError(msg, "MISSING_ROLE")
 
             # Convert timestamps to datetime objects
             issued_at = (
@@ -324,11 +335,14 @@ class AuthManager:
             )
 
         except jwt.ExpiredSignatureError as e:
-            raise AuthError("Token has expired", "TOKEN_EXPIRED") from e
+            msg = "Token has expired"
+            raise AuthError(msg, "TOKEN_EXPIRED") from e
         except jwt.InvalidTokenError as e:
-            raise AuthError("Invalid token", "INVALID_TOKEN") from e
+            msg = "Invalid token"
+            raise AuthError(msg, "INVALID_TOKEN") from e
         except Exception as e:
-            raise AuthError(f"Token verification failed: {e}", "VERIFICATION_FAILED") from e
+            msg = f"Token verification failed: {e}"
+            raise AuthError(msg, "VERIFICATION_FAILED") from e
 
     def create_refresh_token(self, user_id: str, session_id: str | None = None) -> str:
         """Create a refresh token for token renewal.
@@ -385,18 +399,22 @@ class AuthManager:
             )
 
             if payload.get("token_type") != "refresh":
-                raise AuthError("Invalid refresh token type", "INVALID_REFRESH_TYPE")
+                msg = "Invalid refresh token type"
+                raise AuthError(msg, "INVALID_REFRESH_TYPE")
 
             user_id = payload.get("sub")
             if not user_id:
-                raise AuthError("Invalid refresh token: missing user ID", "MISSING_USER_ID")
+                msg = "Invalid refresh token: missing user ID"
+                raise AuthError(msg, "MISSING_USER_ID")
 
             return user_id
 
         except jwt.ExpiredSignatureError as e:
-            raise AuthError("Refresh token has expired", "REFRESH_EXPIRED") from e
+            msg = "Refresh token has expired"
+            raise AuthError(msg, "REFRESH_EXPIRED") from e
         except jwt.InvalidTokenError as e:
-            raise AuthError("Invalid refresh token", "INVALID_REFRESH_TOKEN") from e
+            msg = "Invalid refresh token"
+            raise AuthError(msg, "INVALID_REFRESH_TOKEN") from e
 
     def has_permission(self, token_data: TokenData, required_permission: str) -> bool:
         """Check if token has required permission.
@@ -442,8 +460,9 @@ class AuthManager:
             AuthError: If permission is not granted
         """
         if not self.has_permission(token_data, required_permission):
+            msg = f"Permission denied: {required_permission} required"
             raise AuthError(
-                f"Permission denied: {required_permission} required",
+                msg,
                 "PERMISSION_DENIED",
                 {
                     "required_permission": required_permission,

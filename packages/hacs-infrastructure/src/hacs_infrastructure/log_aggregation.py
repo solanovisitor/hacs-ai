@@ -1,4 +1,4 @@
-"""HACS Log Aggregation and Correlation System
+"""HACS Log Aggregation and Correlation System.
 
 This module provideslog aggregation, correlation, and analysis
 capabilities for healthcare AI systems with HIPAA-compliant centralized logging.
@@ -138,7 +138,7 @@ class LogAggregator:
 
     def __init__(
         self, buffer_size: int = 10000, flush_interval_seconds: int = 30, retention_days: int = 30
-    ):
+    ) -> None:
         """Initialize log aggregator."""
         self.buffer_size = buffer_size
         self.flush_interval_seconds = flush_interval_seconds
@@ -167,7 +167,7 @@ class LogAggregator:
         # Logger
         self.logger = logging.getLogger("hacs.log_aggregation")
 
-    def _setup_healthcare_patterns(self):
+    def _setup_healthcare_patterns(self) -> None:
         """Setup healthcare-specific log patterns."""
         patterns = [
             LogPattern(
@@ -228,7 +228,7 @@ class LogAggregator:
 
         self._patterns.extend(patterns)
 
-    async def start(self):
+    async def start(self) -> None:
         """Start log aggregation."""
         if self._running:
             return
@@ -239,7 +239,7 @@ class LogAggregator:
 
         self.logger.info("Log aggregation started")
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop log aggregation."""
         if not self._running:
             return
@@ -264,7 +264,7 @@ class LogAggregator:
 
     def add_log_entry(
         self, level: LogSeverity, service: str, message: str, logger_name: str = "unknown", **kwargs
-    ):
+    ) -> None:
         """Add a log entry to the aggregation system."""
         entry = LogEntry(
             timestamp=datetime.now(UTC),
@@ -289,9 +289,9 @@ class LogAggregator:
             try:
                 subscriber(entry)
             except Exception as e:
-                self.logger.error(f"Error notifying subscriber: {e}")
+                self.logger.exception(f"Error notifying subscriber: {e}")
 
-    def add_structured_log(self, log_data: dict[str, Any]):
+    def add_structured_log(self, log_data: dict[str, Any]) -> None:
         """Add structured log data."""
         try:
             entry = LogEntry(
@@ -344,12 +344,12 @@ class LogAggregator:
                 try:
                     subscriber(entry)
                 except Exception as e:
-                    self.logger.error(f"Error notifying subscriber: {e}")
+                    self.logger.exception(f"Error notifying subscriber: {e}")
 
         except Exception as e:
-            self.logger.error(f"Error processing structured log: {e}")
+            self.logger.exception(f"Error processing structured log: {e}")
 
-    def _index_log_entry(self, entry: LogEntry):
+    def _index_log_entry(self, entry: LogEntry) -> None:
         """Index log entry for correlation."""
         # Index by various correlation fields
         if entry.trace_id:
@@ -367,7 +367,7 @@ class LogAggregator:
         if entry.organization:
             self._log_index[f"org:{entry.organization}"].append(entry)
 
-    def _match_patterns(self, entry: LogEntry):
+    def _match_patterns(self, entry: LogEntry) -> None:
         """Match log entry against known patterns."""
         full_text = f"{entry.message} {' '.join(entry.extra_fields.values() if isinstance(v, str) else str(v) for v in entry.extra_fields.values())}"
 
@@ -384,7 +384,7 @@ class LogAggregator:
                 if pattern.action:
                     asyncio.create_task(self._execute_pattern_action(pattern, entry))
 
-    async def _execute_pattern_action(self, pattern: LogPattern, entry: LogEntry):
+    async def _execute_pattern_action(self, pattern: LogPattern, entry: LogEntry) -> None:
         """Execute action for matched pattern."""
         try:
             if pattern.action == "security_alert":
@@ -404,7 +404,7 @@ class LogAggregator:
                 pass
 
         except Exception as e:
-            self.logger.error(f"Error executing pattern action {pattern.action}: {e}")
+            self.logger.exception(f"Error executing pattern action {pattern.action}: {e}")
 
     def correlate_logs(
         self,
@@ -442,7 +442,7 @@ class LogAggregator:
         error_count = sum(
             1 for e in recent_entries if e.level in [LogSeverity.ERROR, LogSeverity.FATAL]
         )
-        services_involved = list(set(e.service for e in recent_entries))
+        services_involved = list({e.service for e in recent_entries})
 
         correlation = LogCorrelation(
             correlation_id=correlation_value,
@@ -523,11 +523,11 @@ class LogAggregator:
             "top_services": sorted(service_counts.items(), key=lambda x: x[1], reverse=True)[:10],
         }
 
-    def subscribe_to_stream(self, callback: Callable[[LogEntry], None]):
+    def subscribe_to_stream(self, callback: Callable[[LogEntry], None]) -> None:
         """Subscribe to real-time log stream."""
         self._stream_subscribers.append(callback)
 
-    def unsubscribe_from_stream(self, callback: Callable[[LogEntry], None]):
+    def unsubscribe_from_stream(self, callback: Callable[[LogEntry], None]) -> None:
         """Unsubscribe from log stream."""
         if callback in self._stream_subscribers:
             self._stream_subscribers.remove(callback)
@@ -538,7 +538,7 @@ class LogAggregator:
         """Stream logs asynchronously."""
         queue = asyncio.Queue()
 
-        def stream_callback(entry: LogEntry):
+        def stream_callback(entry: LogEntry) -> None:
             if level_filter and entry.level != level_filter:
                 return
             if service_filter and entry.service != service_filter:
@@ -557,7 +557,7 @@ class LogAggregator:
         finally:
             self.unsubscribe_from_stream(stream_callback)
 
-    async def _flush_loop(self):
+    async def _flush_loop(self) -> None:
         """Background log flushing loop."""
         while self._running:
             try:
@@ -566,9 +566,9 @@ class LogAggregator:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Error in flush loop: {e}")
+                self.logger.exception(f"Error in flush loop: {e}")
 
-    async def _flush_logs(self):
+    async def _flush_logs(self) -> None:
         """Flush logs to persistent storage."""
         if not self._log_buffer:
             return
@@ -578,7 +578,7 @@ class LogAggregator:
         log_count = len(self._log_buffer)
         self.logger.debug(f"Flushing {log_count} log entries to storage")
 
-    async def _cleanup_loop(self):
+    async def _cleanup_loop(self) -> None:
         """Background cleanup loop for old logs and correlations."""
         while self._running:
             try:
@@ -587,9 +587,9 @@ class LogAggregator:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Error in cleanup loop: {e}")
+                self.logger.exception(f"Error in cleanup loop: {e}")
 
-    async def _cleanup_old_data(self):
+    async def _cleanup_old_data(self) -> None:
         """Clean up old logs and correlations."""
         cutoff = datetime.now(UTC) - timedelta(days=self.retention_days)
 

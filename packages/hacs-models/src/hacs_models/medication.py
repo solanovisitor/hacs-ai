@@ -398,15 +398,15 @@ class Medication(DomainResource):
     def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
         """Coerce extractable payload to proper types with relaxed validation."""
         coerced = payload.copy()
-        
+
         # Coerce code to CodeableConcept if it's a string
         if "code" in coerced and isinstance(coerced["code"], str):
             coerced["code"] = {"text": coerced["code"]}
-        
+
         # Coerce form to CodeableConcept if it's a string
         if "form" in coerced and isinstance(coerced["form"], str):
             coerced["form"] = {"text": coerced["form"]}
-        
+
         return coerced
 
     @classmethod

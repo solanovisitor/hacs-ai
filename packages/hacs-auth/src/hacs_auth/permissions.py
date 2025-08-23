@@ -89,23 +89,19 @@ class Permission(BaseModel):
 
         # Check action match
         action_match = (
-            self.action == ActionType.ALL
-            or self.action == req_action
-            or (self.action == ActionType.ADMIN and req_action in ["read", "write", "delete"])
+            self.action in (ActionType.ALL, req_action) or (self.action == ActionType.ADMIN and req_action in ["read", "write", "delete"])
         )
 
         if not action_match:
             return False
 
         # Check resource match
-        resource_match = self.resource == ResourceType.ALL or self.resource == req_resource
+        return self.resource in (ResourceType.ALL, req_resource)
 
-        return resource_match
 
 
 class PermissionSchema(BaseModel):
-    """Schema for managing sets of permissions with validation.
-    """
+    """Schema for managing sets of permissions with validation."""
 
     permissions: list[Permission] = Field(default_factory=list, description="List of permissions")
 
@@ -189,7 +185,7 @@ class PermissionManager:
     and dynamic permission management.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize permission manager with role templates."""
         self._role_templates = self._create_role_templates()
 

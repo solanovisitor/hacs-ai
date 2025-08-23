@@ -1,4 +1,4 @@
-"""HACS Healthcare-Specific Monitoring Framework
+"""HACS Healthcare-Specific Monitoring Framework.
 
 This module extends the base monitoring capabilities with healthcare-specific
 monitoring, alerting, and compliance tracking for HIPAA environments.
@@ -103,7 +103,7 @@ class ComplianceEvent:
 class HealthcareMetricsCollector(MetricsCollector):
     """Extended metrics collector with healthcare-specific metrics."""
 
-    def __init__(self, retention_period: int = 7 * 24 * 3600):  # 7 days for HIPAA
+    def __init__(self, retention_period: int = 7 * 24 * 3600) -> None:  # 7 days for HIPAA
         """Initialize with longer retention for healthcare compliance."""
         super().__init__(retention_period)
 
@@ -296,8 +296,8 @@ class HealthcareMetricsCollector(MetricsCollector):
             "by_resource_type": by_resource,
             "by_action": by_action,
             "by_user": by_user,
-            "unique_patients": len(set(e.patient_id_hash for e in recent_events)),
-            "unique_users": len(set(e.user_id for e in recent_events)),
+            "unique_patients": len({e.patient_id_hash for e in recent_events}),
+            "unique_users": len({e.user_id for e in recent_events}),
         }
 
     def get_clinical_alerts_summary(self, hours: int = 24) -> dict[str, Any]:
@@ -413,7 +413,7 @@ class HealthcareMetricsCollector(MetricsCollector):
     ) -> None:
         """Check for suspicious authentication patterns."""
         # Check failed attempts in last 15 minutes
-        cutoff = datetime.now(UTC) - timedelta(minutes=15)
+        datetime.now(UTC) - timedelta(minutes=15)
 
         # Count recent failures by user
         user_failures = self.get_counter(
@@ -478,7 +478,7 @@ class HealthcareMonitoringManager:
         event_bus: EventBus | None = None,
         enable_phi_monitoring: bool = True,
         enable_compliance_tracking: bool = True,
-    ):
+    ) -> None:
         """Initialize healthcare monitoring manager."""
         self.event_bus = event_bus or EventBus()
         self.enable_phi_monitoring = enable_phi_monitoring
@@ -579,7 +579,7 @@ class HealthcareMonitoringManager:
                 break
             except Exception as e:
                 logger = logging.getLogger("hacs.monitoring")
-                logger.error(f"Error in PHI monitoring: {e}")
+                logger.exception(f"Error in PHI monitoring: {e}")
                 await asyncio.sleep(60)
 
     async def _compliance_monitoring_loop(self) -> None:
@@ -596,7 +596,7 @@ class HealthcareMonitoringManager:
                 break
             except Exception as e:
                 logger = logging.getLogger("hacs.monitoring")
-                logger.error(f"Error in compliance monitoring: {e}")
+                logger.exception(f"Error in compliance monitoring: {e}")
                 await asyncio.sleep(60)
 
     async def _alert_processing_loop(self) -> None:
@@ -615,14 +615,14 @@ class HealthcareMonitoringManager:
                                 callback(alert)
                             except Exception as e:
                                 logger = logging.getLogger("hacs.monitoring")
-                                logger.error(f"Error in alert callback: {e}")
+                                logger.exception(f"Error in alert callback: {e}")
 
                 await asyncio.sleep(30)  # Check every 30 seconds
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 logger = logging.getLogger("hacs.monitoring")
-                logger.error(f"Error in alert processing: {e}")
+                logger.exception(f"Error in alert processing: {e}")
                 await asyncio.sleep(30)
 
     async def _check_audit_trail_integrity(self) -> None:

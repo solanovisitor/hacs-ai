@@ -16,6 +16,8 @@ Notes:
 import logging
 from typing import Any, Dict, List, Optional
 
+from hacs_registry import get_global_tool_registry as get_global_registry
+
 try:
     from pydantic import BaseModel, Field, ValidationError
 
@@ -312,7 +314,8 @@ def validate_tool_inputs(tool_name: str, inputs: Dict[str, Any]) -> bool:
 # ===== Tool Registry and Management =====
 
 # HACS Registry is required - no fallback
-from hacs_registry import get_global_tool_registry as get_global_registry
+# Moved to top of file to fix E402
+# from hacs_registry import get_global_tool_registry as get_global_registry
 
 
 class HACSToolRegistry:

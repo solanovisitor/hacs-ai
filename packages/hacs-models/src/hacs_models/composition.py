@@ -5,8 +5,14 @@ from typing import Any, Literal
 from pydantic import Field
 
 from .base_resource import DomainResource
-from .types import ConfidentialityLevel, DocumentStatus, DocumentType, ResourceReference, TimestampStr
 from .observation import CodeableConcept
+from .types import (
+    ConfidentialityLevel,
+    DocumentStatus,
+    DocumentType,
+    ResourceReference,
+    TimestampStr,
+)
 
 
 class CompositionAuthor(DomainResource):
@@ -118,7 +124,7 @@ class Composition(DomainResource):
         )
 
     def to_resource_bundle(self):
-        from .resource_bundle import BundleStatus, BundleType, ResourceBundle, BundleEntry
+        from .resource_bundle import BundleEntry, BundleStatus, BundleType, ResourceBundle
 
         bundle = ResourceBundle(
             title=self.title,
@@ -135,7 +141,7 @@ class Composition(DomainResource):
         )
         # Include referenced resources if provided via section.entry_refs
         for section in self.sections:
-            for ref in section.entry_refs:
+            for _ref in section.entry_refs:
                 # In HACS, we don't dereference; callers should add resources explicitly.
                 # Here we only track references; actual resource inclusion is handled by caller.
                 # This method remains a convenience to build a document bundle shell.
@@ -150,7 +156,7 @@ class Composition(DomainResource):
         - This helper does not attempt to resolve references automatically; callers
           should pass the exact resource objects they want included.
         """
-        from .resource_bundle import BundleStatus, BundleType, ResourceBundle, BundleEntry
+        from .resource_bundle import BundleEntry, BundleStatus, BundleType, ResourceBundle
 
         bundle = ResourceBundle(
             title=self.title,

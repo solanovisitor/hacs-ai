@@ -192,7 +192,7 @@ class RegistryRepositoryWrapper:
                 data = aggregate.__dict__.copy()
 
             # Save via persistence provider
-            saved_data = await self.persistence_provider.save(
+            await self.persistence_provider.save(
                 self.aggregate_type, aggregate.id, data
             )
 

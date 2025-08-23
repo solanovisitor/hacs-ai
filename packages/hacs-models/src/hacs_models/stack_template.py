@@ -127,7 +127,7 @@ def instantiate_stack_template(
         organization_ref = None
         patient_ref = None
 
-        for name, res in outputs.items():
+        for _name, res in outputs.items():
             rtype = getattr(res, "resource_type", "")
             if rtype == "Encounter" and encounter_ref is None:
                 encounter_ref = f"Encounter/{getattr(res, 'id', '')}"

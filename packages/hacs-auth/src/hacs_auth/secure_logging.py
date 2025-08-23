@@ -1,4 +1,4 @@
-"""HACS Secure Logging - PHI-Safe Logging System
+"""HACS Secure Logging - PHI-Safe Logging System.
 
 This module provides HIPAA-compliant logging that automatically
 sanitizes PHI data from log messages and error outputs.
@@ -40,7 +40,7 @@ class LogLevel(str, Enum):
 class PHIDetector:
     """Detects and redacts PHI from log messages."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize PHI detector with patterns."""
         # PHI patterns (compiled for performance)
         self.patterns = {
@@ -170,7 +170,7 @@ class PHIDetector:
         redacted_text = text
 
         # Redact PHI pattern matches
-        for phi_type, pattern in self.patterns.items():
+        for pattern in self.patterns.values():
             redacted_text = pattern.sub(replacement, redacted_text)
 
         # Redact injection attack patterns
@@ -181,9 +181,8 @@ class PHIDetector:
         json_phi_pattern = re.compile(
             r'("(?:' + "|".join(self.phi_keywords) + r')"\s*:\s*)"[^"]*"', re.IGNORECASE
         )
-        redacted_text = json_phi_pattern.sub(r'\1"[REDACTED]"', redacted_text)
+        return json_phi_pattern.sub(r'\1"[REDACTED]"', redacted_text)
 
-        return redacted_text
 
     def create_phi_hash(self, text: str) -> str:
         """Create a hash of PHI for tracking without exposing actual values.
@@ -200,7 +199,7 @@ class PHIDetector:
 class SecureLogFormatter(logging.Formatter):
     """Secure log formatter that redacts PHI and structures logs for compliance."""
 
-    def __init__(self, phi_detector: PHIDetector | None = None):
+    def __init__(self, phi_detector: PHIDetector | None = None) -> None:
         """Initialize secure formatter."""
         super().__init__()
         self.phi_detector = phi_detector or PHIDetector()
@@ -241,9 +240,8 @@ class SecureLogFormatter(logging.Formatter):
         record.asctime = datetime.fromtimestamp(record.created, tz=UTC).isoformat()
 
         # Apply template formatting
-        formatted = self.format_template % record.__dict__
+        return self.format_template % record.__dict__
 
-        return formatted
 
 
 class SecureLogger:
@@ -255,7 +253,7 @@ class SecureLogger:
         log_path: Path | None = None,
         encryption: PHIEncryption | None = None,
         min_level: LogLevel = LogLevel.INFO,
-    ):
+    ) -> None:
         """Initialize secure logger.
 
         Args:
@@ -429,7 +427,7 @@ class SecureLogger:
 class ErrorSanitizer:
     """Sanitizes error messages to remove PHI before display."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize error sanitizer."""
         self.phi_detector = PHIDetector()
 

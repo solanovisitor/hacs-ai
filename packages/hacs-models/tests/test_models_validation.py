@@ -324,7 +324,7 @@ class TestModelRegistry:
     def test_model_compatibility_validation(self):
         """Test model compatibility validation."""
         # This should pass with all models properly configured
-        assert validate_model_compatibility() == True
+        assert validate_model_compatibility()
 
     def test_model_instantiation_from_registry(self):
         """Test creating models from registry."""

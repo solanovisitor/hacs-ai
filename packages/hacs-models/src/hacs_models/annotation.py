@@ -330,7 +330,7 @@ class Document(_Composition):
             metadata["encounter_class"] = getattr(enc, "class_code", None)
         # Merge stored langchain_metadata and extra kwargs
         merged = {**self.langchain_metadata, **extra_metadata}
-        metadata.update({k: v for k, v in merged.items()})
+        metadata.update(dict(merged.items()))
         return {"page_content": page_content, "metadata": metadata}
 
     @classmethod

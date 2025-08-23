@@ -1474,37 +1474,8 @@ def suggest_bundle_schema(
             # Keep a small subset for readability
             field_map[rtype] = fields[:20]
 
-        prompt = (
-            "You are helping plan a HACS ResourceBundle schema for the following use case.\n"
-            "Select up to {max_resources} resource types from the candidates and specify a concise set of fields per resource.\n"
-            "Prefer fields essential for downstream composition and clinical workflows.\n"
-            "Use only fields that exist in the provided field lists.\n\n"
-            f"Use case:\n{use_case}\n\n"
-            f"Candidate resources: {candidates}\n"
-            f"Fields per candidate (subset): {field_map}\n\n"
-            "Respond as JSON with the shape: {\n"
-            '  "resources": [ { "resource_type": str, "fields": [str, ...] }, ... ]\n'
-            "}\n"
-        )
 
         # Response schema (loosely typed) for robust parsing
-        response_schema = {
-            "type": "object",
-            "properties": {
-                "resources": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "resource_type": {"type": "string"},
-                            "fields": {"type": "array", "items": {"type": "string"}},
-                        },
-                        "required": ["resource_type", "fields"],
-                    },
-                }
-            },
-            "required": ["resources"],
-        }
 
         # LLM generation temporarily disabled - fallback to deterministic plan
         llm_result = HACSResult(success=False, message="LLM not available")

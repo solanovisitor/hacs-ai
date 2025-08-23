@@ -493,7 +493,7 @@ class Observation(DomainResource):
         return [
             "status",
             "code",
-            "value_quantity", 
+            "value_quantity",
             "value_string",
             "effective_date_time",
             "interpretation",
@@ -517,25 +517,25 @@ class Observation(DomainResource):
     def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
         """Coerce extractable payload to proper types with relaxed validation."""
         coerced = payload.copy()
-        
+
         # Coerce code to CodeableConcept if it's a string
         if "code" in coerced and isinstance(coerced["code"], str):
             coerced["code"] = {"text": coerced["code"]}
-        
+
         # Ensure code has text field
         if "code" in coerced and isinstance(coerced["code"], dict) and "text" not in coerced["code"]:
             coerced["code"]["text"] = ""
-            
+
         # Coerce value_quantity to proper structure
-        if "value_quantity" in coerced and isinstance(coerced["value_quantity"], (int, float)):
+        if "value_quantity" in coerced and isinstance(coerced["value_quantity"], int | float):
             coerced["value_quantity"] = {"value": coerced["value_quantity"]}
-            
+
         # Coerce interpretation to list of CodeableConcepts
         if "interpretation" in coerced and isinstance(coerced["interpretation"], str):
             coerced["interpretation"] = [{"text": coerced["interpretation"]}]
         elif "interpretation" in coerced and isinstance(coerced["interpretation"], dict):
             coerced["interpretation"] = [coerced["interpretation"]]
-            
+
         return coerced
 
     @classmethod

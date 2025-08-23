@@ -380,7 +380,7 @@ def _add_extractable_fields_to_service_request():
             "Extract service requests for consultations, referrals, or procedures",
             "Use reason_text for the clinical indication or reason",
         ]
-    
+
     ServiceRequest.get_extractable_fields = get_extractable_fields
     ServiceRequest.llm_hints = llm_hints
 

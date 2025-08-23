@@ -1,4 +1,4 @@
-"""HACS Authentication - Secure Authentication and Authorization
+"""HACS Authentication - Secure Authentication and Authorization.
 
 This package providesauthentication and authorization components
 for healthcare AI agent systems, including JWT token management, OAuth2 support,
@@ -54,40 +54,40 @@ __license__ = "MIT"
 
 # Public API
 __all__ = [
-    # Core authentication
-    "AuthManager",
-    "AuthConfig",
-    "TokenData",
-    "AuthError",
     # Actor and roles
     "Actor",
     "ActorRole",
+    "AuditEvent",
+    "AuditLevel",
+    # Audit logging
+    "AuditLogger",
+    "AuthConfig",
+    "AuthError",
+    # Core authentication
+    "AuthManager",
+    # OAuth2 (if available)
+    "OAuth2Config",
+    "OAuth2Error",
+    "OAuth2Manager",
+    "Permission",
     "PermissionLevel",
-    "SessionStatus",
     # Permission management
     "PermissionManager",
     "PermissionSchema",
-    "Permission",
-    # Session management
-    "SessionManager",
     "Session",
     "SessionConfig",
+    # Session management
+    "SessionManager",
+    "SessionStatus",
+    "TokenData",
+    # Tool security integration
+    "ToolSecurityContext",
+    "create_secure_actor",
     # Decorators
     "require_auth",
     "require_permission",
     "require_role",
-    # Audit logging
-    "AuditLogger",
-    "AuditEvent",
-    "AuditLevel",
-    # OAuth2 (if available)
-    "OAuth2Config",
-    "OAuth2Manager",
-    "OAuth2Error",
-    # Tool security integration
-    "ToolSecurityContext",
     "secure_tool_execution",
-    "create_secure_actor",
 ]
 
 # Package metadata
@@ -151,7 +151,8 @@ def validate_auth_setup() -> bool:
         token_data = auth_manager.verify_token(test_token)
 
         if token_data.user_id != "test-user":
-            raise ValueError("Token verification failed")
+            msg = "Token verification failed"
+            raise ValueError(msg)
 
         # Test actor creation
         actor = Actor(name="Test Actor", role=ActorRole.AGENT, permissions=["read:patient"])
@@ -160,12 +161,14 @@ def validate_auth_setup() -> bool:
         actor.start_session("test-session")
 
         if not actor.has_permission("read:patient"):
-            raise ValueError("Actor permission check failed")
+            msg = "Actor permission check failed"
+            raise ValueError(msg)
 
         return True
 
     except Exception as e:
-        raise ValueError(f"Authentication setup validation failed: {e}") from e
+        msg = f"Authentication setup validation failed: {e}"
+        raise ValueError(msg) from e
 
 
 def get_security_info() -> dict[str, str]:

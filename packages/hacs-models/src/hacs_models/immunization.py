@@ -62,7 +62,7 @@ class Immunization(DomainResource):
         return [
             "status",
             "vaccine_code",
-            "occurrence_datetime", 
+            "occurrence_datetime",
             "dose_quantity",
             "site_text",
             "route_text",
@@ -87,15 +87,15 @@ class Immunization(DomainResource):
     def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
         """Coerce extractable payload to proper types with relaxed validation."""
         coerced = payload.copy()
-        
+
         # Coerce vaccine_code to CodeableConcept if it's a string
         if "vaccine_code" in coerced and isinstance(coerced["vaccine_code"], str):
             coerced["vaccine_code"] = {"text": coerced["vaccine_code"]}
-        
+
         # Ensure vaccine_code has text field
         if "vaccine_code" in coerced and isinstance(coerced["vaccine_code"], dict) and "text" not in coerced["vaccine_code"]:
             coerced["vaccine_code"]["text"] = ""
-            
+
         return coerced
 
     @classmethod

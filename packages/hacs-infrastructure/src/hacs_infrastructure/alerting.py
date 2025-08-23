@@ -1,4 +1,4 @@
-"""HACS Alerting and Notification Framework
+"""HACS Alerting and Notification Framework.
 
 This module providesalerting and notification capabilities
 for healthcare AI systems with multi-channel delivery and escalation support.
@@ -184,7 +184,7 @@ class OnCallSchedule:
 class AlertManager:
     """Healthcare alert management system."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize alert manager."""
         self.observability = get_observability_manager()
         self.logger = self.observability.get_logger("hacs.alerting")
@@ -211,7 +211,7 @@ class AlertManager:
         self._setup_default_rules()
         self._setup_default_channels()
 
-    def _setup_default_rules(self):
+    def _setup_default_rules(self) -> None:
         """Setup default healthcare alert rules."""
         default_rules = [
             AlertRule(
@@ -274,7 +274,7 @@ class AlertManager:
         for rule in default_rules:
             self._alert_rules[rule.id] = rule
 
-    def _setup_default_channels(self):
+    def _setup_default_channels(self) -> None:
         """Setup default notification channels."""
         # Email channel
         email_channel = NotificationChannel(
@@ -315,7 +315,7 @@ class AlertManager:
             }
         )
 
-    async def start(self):
+    async def start(self) -> None:
         """Start alert processing."""
         if self._running:
             return
@@ -326,7 +326,7 @@ class AlertManager:
 
         self.logger.info("Alert manager started")
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop alert processing."""
         if not self._running:
             return
@@ -357,7 +357,8 @@ class AlertManager:
         """Create a new alert."""
         rule = self._alert_rules.get(rule_id)
         if not rule:
-            raise ValueError(f"Unknown alert rule: {rule_id}")
+            msg = f"Unknown alert rule: {rule_id}"
+            raise ValueError(msg)
 
         # Check suppression
         suppression_key = self._get_suppression_key(rule_id, title, metadata or {})
@@ -508,7 +509,7 @@ class AlertManager:
             try:
                 handler(alert)
             except Exception as e:
-                self.logger.error(f"Error in alert handler: {e}")
+                self.logger.exception(f"Error in alert handler: {e}")
 
         return True
 
@@ -535,7 +536,7 @@ class AlertManager:
             try:
                 handler(alert)
             except Exception as e:
-                self.logger.error(f"Error in alert handler: {e}")
+                self.logger.exception(f"Error in alert handler: {e}")
 
         return True
 
@@ -608,11 +609,11 @@ class AlertManager:
             "critical_alerts": by_priority.get("p1_critical", 0),
         }
 
-    def register_alert_handler(self, handler: Callable[[Alert], None]):
+    def register_alert_handler(self, handler: Callable[[Alert], None]) -> None:
         """Register alert event handler."""
         self._alert_handlers.append(handler)
 
-    async def _process_alerts(self):
+    async def _process_alerts(self) -> None:
         """Background alert processing loop."""
         while self._running:
             try:
@@ -624,9 +625,9 @@ class AlertManager:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Error processing alert: {e}")
+                self.logger.exception(f"Error processing alert: {e}")
 
-    async def _send_notifications(self, alert: Alert):
+    async def _send_notifications(self, alert: Alert) -> None:
         """Send notifications for an alert."""
         rule = self._alert_rules.get(alert.rule_id)
         if not rule or not rule.enabled:
@@ -638,16 +639,16 @@ class AlertManager:
                 await self._send_to_channel(alert, channel, rule.recipients)
                 alert.channels_notified.append(channel)
             except Exception as e:
-                self.logger.error(f"Failed to send alert {alert.id} to {channel}: {e}")
+                self.logger.exception(f"Failed to send alert {alert.id} to {channel}: {e}")
 
         # Notify handlers
         for handler in self._alert_handlers:
             try:
                 handler(alert)
             except Exception as e:
-                self.logger.error(f"Error in alert handler: {e}")
+                self.logger.exception(f"Error in alert handler: {e}")
 
-    async def _send_to_channel(self, alert: Alert, channel: AlertChannel, recipients: list[str]):
+    async def _send_to_channel(self, alert: Alert, channel: AlertChannel, recipients: list[str]) -> None:
         """Send alert to specific channel."""
         if channel == AlertChannel.EMAIL:
             await self._send_email(alert, recipients)
@@ -657,7 +658,7 @@ class AlertManager:
             await self._send_webhook(alert)
         # Add more channels as needed
 
-    async def _send_email(self, alert: Alert, recipients: list[str]):
+    async def _send_email(self, alert: Alert, recipients: list[str]) -> None:
         """Send email notification."""
         channel = self._notification_channels.get("email_default")
         if not channel or not channel.enabled:
@@ -696,7 +697,7 @@ This is an automated message from HACS Healthcare Monitoring System.
         # Send email (mock implementation)
         self.logger.info(f"Email notification sent for alert {alert.id}")
 
-    async def _send_slack(self, alert: Alert):
+    async def _send_slack(self, alert: Alert) -> None:
         """Send Slack notification."""
         channel = self._notification_channels.get("slack_default")
         if not channel or not channel.enabled:
@@ -711,7 +712,7 @@ This is an automated message from HACS Healthcare Monitoring System.
             AlertPriority.P5_INFO: "#9E9E9E",
         }
 
-        message = {
+        {
             "username": channel.config["username"],
             "channel": channel.config["channel"],
             "attachments": [
@@ -733,7 +734,7 @@ This is an automated message from HACS Healthcare Monitoring System.
         # Send to Slack (mock implementation)
         self.logger.info(f"Slack notification sent for alert {alert.id}")
 
-    async def _send_webhook(self, alert: Alert):
+    async def _send_webhook(self, alert: Alert) -> None:
         """Send webhook notification."""
         channel = self._notification_channels.get("webhook_default")
         if not channel or not channel.enabled:
@@ -742,7 +743,7 @@ This is an automated message from HACS Healthcare Monitoring System.
         # Send webhook (mock implementation)
         self.logger.info(f"Webhook notification sent for alert {alert.id}")
 
-    async def _handle_escalations(self):
+    async def _handle_escalations(self) -> None:
         """Handle alert escalations."""
         while self._running:
             try:
@@ -751,9 +752,9 @@ This is an automated message from HACS Healthcare Monitoring System.
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Error handling escalations: {e}")
+                self.logger.exception(f"Error handling escalations: {e}")
 
-    async def _check_escalations(self):
+    async def _check_escalations(self) -> None:
         """Check for alerts that need escalation."""
         now = datetime.now(UTC)
 
@@ -770,7 +771,7 @@ This is an automated message from HACS Healthcare Monitoring System.
             if now >= escalation_threshold and not alert.escalated_at:
                 await self._escalate_alert(alert)
 
-    async def _escalate_alert(self, alert: Alert):
+    async def _escalate_alert(self, alert: Alert) -> None:
         """Escalate an alert."""
         alert.status = AlertStatus.ESCALATED
         alert.escalated_at = datetime.now(UTC)

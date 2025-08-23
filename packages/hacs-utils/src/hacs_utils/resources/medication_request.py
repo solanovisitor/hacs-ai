@@ -3,8 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 from hacs_models.medication_request import MedicationRequest, create_prescription
-from hacs_models.observation import CodeableConcept
-from hacs_models.types import MedicationRequestIntent, MedicationRequestStatus, ResourceReference
+from hacs_models.types import ResourceReference
 
 
 def create_simple_prescription(

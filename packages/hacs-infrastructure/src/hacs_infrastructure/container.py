@@ -1,4 +1,4 @@
-"""Dependency Injection Container for HACS Infrastructure
+"""Dependency Injection Container for HACS Infrastructure.
 
 This module provides adependency injection container designed
 for healthcare AI systems with type safety, lifecycle management, and
@@ -15,7 +15,7 @@ import inspect
 import logging
 import threading
 from collections.abc import Callable
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from enum import Enum
 from typing import (
     Any,
@@ -47,7 +47,7 @@ class ServiceLifetime(str, Enum):
 class ServiceError(Exception):
     """Base exception for service-related errors."""
 
-    def __init__(self, message: str, service_type: type | None = None):
+    def __init__(self, message: str, service_type: type | None = None) -> None:
         super().__init__(message)
         self.service_type = service_type
 
@@ -85,7 +85,7 @@ class ServiceDescriptor(BaseModel):
 class InjectionContext:
     """Context for dependency injection resolution."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._resolving: set[type] = set()
 
     def is_resolving(self, service_type: type) -> bool:
@@ -96,8 +96,9 @@ class InjectionContext:
     def resolving(self, service_type: type):
         """Context manager for tracking service resolution."""
         if service_type in self._resolving:
+            msg = f"Circular dependency detected: {service_type.__name__} is already being resolved"
             raise CircularDependencyError(
-                f"Circular dependency detected: {service_type.__name__} is already being resolved"
+                msg
             )
 
         self._resolving.add(service_type)
@@ -110,7 +111,7 @@ class InjectionContext:
 class Scope:
     """Represents a dependency injection scope."""
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         self.name = name
         self._instances: dict[type, Any] = {}
         self._lock = threading.RLock()
@@ -156,7 +157,7 @@ class Container:
     - Scope management for request/session-based services
     """
 
-    def __init__(self, parent: Optional["Container"] = None):
+    def __init__(self, parent: Optional["Container"] = None) -> None:
         """Initialize container.
 
         Args:
@@ -249,29 +250,29 @@ class Container:
 
     def _resolve_service(self, service_type: type[T], context: InjectionContext) -> T:
         """Resolve service with dependency injection context."""
-        with context.resolving(service_type):
-            with self._lock:
-                # Check if service is registered in this container
-                if service_type in self._services:
-                    descriptor = self._services[service_type]
-                    return self._create_instance(descriptor, context)
+        with context.resolving(service_type), self._lock:
+            # Check if service is registered in this container
+            if service_type in self._services:
+                descriptor = self._services[service_type]
+                return self._create_instance(descriptor, context)
 
-                # Check parent container
-                if self._parent is not None:
-                    try:
-                        return self._parent._resolve_service(service_type, context)
-                    except DependencyError:
-                        pass
+            # Check parent container
+            if self._parent is not None:
+                try:
+                    return self._parent._resolve_service(service_type, context)
+                except DependencyError:
+                    pass
 
-                # Try to auto-register if it's a concrete class
-                if self._can_auto_register(service_type):
-                    self.register(service_type)
-                    descriptor = self._services[service_type]
-                    return self._create_instance(descriptor, context)
+            # Try to auto-register if it's a concrete class
+            if self._can_auto_register(service_type):
+                self.register(service_type)
+                descriptor = self._services[service_type]
+                return self._create_instance(descriptor, context)
 
-                raise DependencyError(
-                    f"Service {service_type.__name__} is not registered", service_type
-                )
+            msg = f"Service {service_type.__name__} is not registered"
+            raise DependencyError(
+                msg, service_type
+            )
 
     def _create_instance(self, descriptor: ServiceDescriptor, context: InjectionContext) -> Any:
         """Create service instance based on descriptor."""
@@ -320,8 +321,9 @@ class Container:
         try:
             return impl_type(**constructor_args)
         except Exception as e:
+            msg = f"Failed to create instance of {impl_type.__name__}: {e}"
             raise DependencyError(
-                f"Failed to create instance of {impl_type.__name__}: {e}", impl_type
+                msg, impl_type
             ) from e
 
     def _resolve_constructor_args(
@@ -345,8 +347,9 @@ class Container:
             # Skip parameters without type annotations
             if param_type == inspect.Parameter.empty:
                 if param.default == inspect.Parameter.empty:
+                    msg = f"Parameter '{param.name}' in {service_type.__name__} has no type annotation and no default value"
                     raise DependencyError(
-                        f"Parameter '{param.name}' in {service_type.__name__} has no type annotation and no default value"
+                        msg
                     )
                 continue
 
@@ -396,8 +399,9 @@ class Container:
 
             if param_type == inspect.Parameter.empty:
                 if param.default == inspect.Parameter.empty:
+                    msg = f"Factory parameter '{param.name}' has no type annotation and no default value"
                     raise DependencyError(
-                        f"Factory parameter '{param.name}' has no type annotation and no default value"
+                        msg
                     )
                 continue
 
@@ -645,10 +649,8 @@ class Container:
             # Dispose singleton instances
             for instance in self._singletons.values():
                 if hasattr(instance, "dispose"):
-                    try:
+                    with suppress(Exception):
                         instance.dispose()
-                    except Exception:
-                        pass
 
             self._singletons.clear()
             self._services.clear()

@@ -1,9 +1,12 @@
 """
-Typed-first resource helpers for HACS models.
+HACS resource utilities for common operations on FHIR resources.
 
-Submodules provide utilities per resource type (Observation, Condition, etc.).
+This module provides helper functions for working with HACS resources,
+including observation creation, patient management, document handling,
+and care coordination utilities.
 """
 
+# Core utilities that are commonly used
 from .observation import (
     set_quantity,
     add_category,
@@ -73,6 +76,80 @@ from .nutrition import (
     coordinate_feeding_protocols_util,
 )
 
-__all__ = [name for name in globals() if not name.startswith("_")]
-
-
+__all__ = [
+    # Observation utilities
+    "set_quantity",
+    "add_category",
+    "ensure_code_text",
+    "create_vital_observation",
+    
+    # Condition utilities
+    "add_stage",
+    "create_condition",
+    
+    # Service request utilities
+    "normalize_intent",
+    "create_referral",
+    
+    # Medication utilities
+    "create_simple_prescription",
+    
+    # Patient utilities
+    "calculate_patient_age",
+    "add_patient_identifier",
+    "get_patient_identifier_by_type",
+    "add_patient_care_provider",
+    "deactivate_patient",
+    
+    # Document utilities
+    "get_document_full_text",
+    "validate_document_metadata",
+    "resolve_document_location",
+    "register_external_document",
+    "link_document_to_record",
+    
+    # Diagnostic report utilities
+    "summarize_diagnostic_report",
+    "link_report_observations",
+    "attach_report_media",
+    "validate_report_completeness",
+    
+    # Appointment utilities
+    "schedule_appointment_util",
+    "reschedule_appointment_util",
+    "cancel_appointment_util",
+    "check_appointment_conflicts_util",
+    "send_appointment_reminders_util",
+    
+    # Event utilities
+    "create_event",
+    "update_event_status_util",
+    "add_event_performer_util",
+    "schedule_event_util",
+    "summarize_event_util",
+    
+    # Care plan utilities
+    "create_care_plan_util",
+    "update_care_plan_progress_util",
+    "coordinate_care_activities_util",
+    "track_care_plan_goals_util",
+    
+    # Care team utilities
+    "assemble_care_team_util",
+    "assign_team_roles_util",
+    "coordinate_team_communication_util",
+    "track_team_responsibilities_util",
+    "update_team_membership_util",
+    
+    # Goal utilities
+    "track_goal_progress_util",
+    "update_goal_status_util",
+    "measure_goal_achievement_util",
+    "link_goal_to_careplan_util",
+    
+    # Nutrition utilities
+    "create_therapeutic_diet_order_util",
+    "manage_nutrition_restrictions_util",
+    "calculate_nutritional_requirements_util",
+    "coordinate_feeding_protocols_util",
+]

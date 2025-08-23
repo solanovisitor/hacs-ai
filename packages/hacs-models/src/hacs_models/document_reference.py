@@ -81,7 +81,7 @@ class DocumentReference(DomainResource):
         return [
             "status",
             "type_text",
-            "title", 
+            "title",
             "description",
         ]
 

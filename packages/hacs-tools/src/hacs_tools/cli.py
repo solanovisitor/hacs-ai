@@ -12,7 +12,6 @@ import asyncio
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict
 
 def create_parser() -> argparse.ArgumentParser:
     """Create the main CLI parser."""
@@ -206,7 +205,7 @@ async def cmd_extract(args: argparse.Namespace) -> int:
         
         # Print summary
         total_records = sum(len(v) for v in results.values())
-        print(f"\n✓ Extraction completed successfully!")
+        print("\n✓ Extraction completed successfully!")
         print(f"  Total records: {total_records}")
         print(f"  Resource types: {list(results.keys())}")
         print(f"  Output: {results_path}")
@@ -282,7 +281,7 @@ def cmd_registry(args: argparse.Namespace) -> int:
                     if getattr(model_class, "__name__", "") == resource_name:
                         hints = getattr(model_class, "llm_hints", lambda: [])()
                         if hints:
-                            print(f"LLM hints:")
+                            print("LLM hints:")
                             for hint in hints:
                                 print(f"  - {hint}")
                         break
@@ -292,12 +291,12 @@ def cmd_registry(args: argparse.Namespace) -> int:
         else:
             # Show general registry info
             extractables_index = registry.get_extractables_index()
-            print(f"HACS Resource Registry")
+            print("HACS Resource Registry")
             print(f"Total resources: {len(extractables_index)}")
             print(f"Resources with extractables: {sum(1 for info in extractables_index.values() if info.get('extractable_fields'))}")
             print(f"Resources with coercion: {sum(1 for info in extractables_index.values() if info.get('has_coerce_extractable'))}")
-            print(f"\nUse --list-extractables to see all extractable fields")
-            print(f"Use --resource <name> to see details for a specific resource")
+            print("\nUse --list-extractables to see all extractable fields")
+            print("Use --resource <name> to see details for a specific resource")
         
         return 0
         

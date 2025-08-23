@@ -87,7 +87,7 @@ def get_hacs_actor():
             from hacs_models import Actor
             from hacs_core.config import get_hacs_config
 
-            config = get_hacs_config()
+            get_hacs_config()
             return Actor(
                 actor_id="hacs_agent",
                 role="ai_agent",

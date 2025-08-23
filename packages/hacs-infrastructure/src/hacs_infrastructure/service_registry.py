@@ -1,10 +1,11 @@
-"""Service Registry and Discovery for HACS Infrastructure
+"""Service Registry and Discovery for HACS Infrastructure.
 
 This module providesservice registry and discovery capabilities
 with health monitoring, load balancing, and automatic failover.
 """
 
 import asyncio
+import contextlib
 import threading
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -102,7 +103,7 @@ class ServiceRegistry:
     - Automatic cleanup of stale services
     """
 
-    def __init__(self, health_check_config: HealthCheck | None = None):
+    def __init__(self, health_check_config: HealthCheck | None = None) -> None:
         """Initialize service registry.
 
         Args:
@@ -314,10 +315,8 @@ class ServiceRegistry:
         self._running = False
         if self._health_check_task:
             self._health_check_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._health_check_task
-            except asyncio.CancelledError:
-                pass
             self._health_check_task = None
 
     async def _health_check_loop(self) -> None:
@@ -444,10 +443,9 @@ class ServiceRegistry:
 
 
 class ServiceDiscovery:
-    """Service discovery client with load balancing and failover.
-    """
+    """Service discovery client with load balancing and failover."""
 
-    def __init__(self, registry: ServiceRegistry):
+    def __init__(self, registry: ServiceRegistry) -> None:
         """Initialize service discovery.
 
         Args:

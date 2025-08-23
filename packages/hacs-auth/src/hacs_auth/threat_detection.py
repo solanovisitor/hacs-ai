@@ -1,4 +1,4 @@
-"""HACS Threat Detection and Security Monitoring
+"""HACS Threat Detection and Security Monitoring.
 
 This module provides real-time threat detection and security monitoring
 capabilities for healthcare AI systems, including anomaly detection,
@@ -94,7 +94,7 @@ class UserBehaviorProfile:
 class ThreatDetectionEngine:
     """Real-time threat detection and security monitoring engine."""
 
-    def __init__(self, storage_path: Path | None = None, logger: SecureLogger | None = None):
+    def __init__(self, storage_path: Path | None = None, logger: SecureLogger | None = None) -> None:
         """Initialize threat detection engine.
 
         Args:
@@ -350,27 +350,26 @@ class ThreatDetectionEngine:
                 events.append(event)
 
         # Check for new IP address
-        if ip_address and profile.typical_ip_addresses:
-            if (
-                ip_address not in profile.typical_ip_addresses
-                and self.detection_rules["new_ip_alert"]
-            ):
-                event = SecurityEvent(
-                    event_id=self._generate_event_id(),
-                    timestamp=timestamp,
-                    event_type=AuditEventType.SECURITY_ALERT,
-                    threat_type=ThreatType.SUSPICIOUS_ACCESS,
-                    threat_level=ThreatLevel.MEDIUM,
-                    user_id=profile.user_id,
-                    ip_address=ip_address,
-                    user_agent=user_agent,
-                    description=f"New IP address detected for user {profile.user_id}",
-                    details={
-                        "new_ip": ip_address,
-                        "typical_ips": list(profile.typical_ip_addresses),
-                    },
-                )
-                events.append(event)
+        if ip_address and profile.typical_ip_addresses and (
+            ip_address not in profile.typical_ip_addresses
+            and self.detection_rules["new_ip_alert"]
+        ):
+            event = SecurityEvent(
+                event_id=self._generate_event_id(),
+                timestamp=timestamp,
+                event_type=AuditEventType.SECURITY_ALERT,
+                threat_type=ThreatType.SUSPICIOUS_ACCESS,
+                threat_level=ThreatLevel.MEDIUM,
+                user_id=profile.user_id,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                description=f"New IP address detected for user {profile.user_id}",
+                details={
+                    "new_ip": ip_address,
+                    "typical_ips": list(profile.typical_ip_addresses),
+                },
+            )
+            events.append(event)
 
         # Check for new user agent
         if user_agent and profile.typical_user_agents:
@@ -517,7 +516,7 @@ class ThreatDetectionEngine:
                 time.sleep(60)
 
             except Exception as e:
-                self.logger.error(f"Error in continuous monitoring: {e}")
+                self.logger.exception(f"Error in continuous monitoring: {e}")
                 time.sleep(60)
 
     def _detect_pattern_threats(self) -> None:
@@ -582,7 +581,7 @@ class ThreatDetectionEngine:
                         )
                         self.user_profiles[user_id] = profile
             except Exception as e:
-                self.logger.error(f"Failed to load user profiles: {e}")
+                self.logger.exception(f"Failed to load user profiles: {e}")
 
     def _save_user_profiles(self) -> None:
         """Save user profiles to storage."""
@@ -604,7 +603,7 @@ class ThreatDetectionEngine:
                 json.dump(data, f, indent=2)
 
         except Exception as e:
-            self.logger.error(f"Failed to save user profiles: {e}")
+            self.logger.exception(f"Failed to save user profiles: {e}")
 
     def _load_ip_reputation(self) -> None:
         """Load IP reputation data from storage."""
@@ -614,7 +613,7 @@ class ThreatDetectionEngine:
                 with open(reputation_file) as f:
                     self.ip_reputation = json.load(f)
             except Exception as e:
-                self.logger.error(f"Failed to load IP reputation: {e}")
+                self.logger.exception(f"Failed to load IP reputation: {e}")
 
     def _save_ip_reputation(self) -> None:
         """Save IP reputation data to storage."""
@@ -623,7 +622,7 @@ class ThreatDetectionEngine:
             with open(reputation_file, "w") as f:
                 json.dump(self.ip_reputation, f, indent=2)
         except Exception as e:
-            self.logger.error(f"Failed to save IP reputation: {e}")
+            self.logger.exception(f"Failed to save IP reputation: {e}")
 
     def is_ip_blocked(self, ip_address: str) -> bool:
         """Check if an IP address is blocked."""

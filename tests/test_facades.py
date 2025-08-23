@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from hacs_models.patient import Patient
 from hacs_models.organization import Organization
-from hacs_models.observation import Observation, CodeableConcept, Quantity
+from hacs_models.observation import Observation, CodeableConcept
 from hacs_models.immunization import Immunization
 from hacs_models.diagnostic_report import DiagnosticReport
 from hacs_models.procedure import Procedure

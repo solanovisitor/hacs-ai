@@ -1,4 +1,4 @@
-"""HACS Tool Security Integration
+"""HACS Tool Security Integration.
 
 This module provides security integration for HACS tools, including
 permission validation, audit logging, and secure execution contexts.
@@ -21,8 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class ToolSecurityContext:
-    """Security context for tool execution with permission validation and audit logging.
-    """
+    """Security context for tool execution with permission validation and audit logging."""
 
     def __init__(
         self,
@@ -30,7 +29,7 @@ class ToolSecurityContext:
         permission_manager: PermissionManager | None = None,
         audit_logger: AuditLogger | None = None,
         session_manager: SessionManager | None = None,
-    ):
+    ) -> None:
         self.actor = actor
         self.permission_manager = permission_manager or PermissionManager()
         self.audit_logger = audit_logger or AuditLogger()
@@ -39,7 +38,8 @@ class ToolSecurityContext:
         # Validate actor has active session (unless in development mode)
         dev_mode = os.getenv("HACS_DEV_MODE", "false").lower() == "true"
         if not dev_mode and not self.actor.has_active_session():
-            raise ValueError(f"Actor {actor.name} must have an active session for tool execution")
+            msg = f"Actor {actor.name} must have an active session for tool execution"
+            raise ValueError(msg)
         if dev_mode and not self.actor.has_active_session():
             # In dev mode, auto-start session for convenience
             logger.info(f"DEV MODE: Auto-starting session for actor {actor.name}")
@@ -75,8 +75,9 @@ class ToolSecurityContext:
                     "actor_permissions": self.actor.permissions,
                 },
             )
+            msg = f"Actor {self.actor.name} missing permissions for {tool_name}: {missing_permissions}"
             raise PermissionError(
-                f"Actor {self.actor.name} missing permissions for {tool_name}: {missing_permissions}"
+                msg
             )
 
         # Log successful permission validation
@@ -137,8 +138,9 @@ class ToolSecurityContext:
             },
         )
 
+        msg = f"Actor {self.actor.name} not authorized for {operation} on {resource_type}"
         raise PermissionError(
-            f"Actor {self.actor.name} not authorized for {operation} on {resource_type}"
+            msg
         )
 
     def log_tool_execution(
@@ -248,7 +250,7 @@ class ToolSecurityContext:
 
 
 def secure_tool_execution(
-    required_permissions: list[str] = None,
+    required_permissions: list[str] | None = None,
     resource_type: str | None = None,
     operation: str | None = None,
     audit_level: AuditLevel = AuditLevel.INFO,
@@ -278,7 +280,8 @@ def secure_tool_execution(
             # Extract actor information
             actor_name = kwargs.get("actor_name") or (args[0] if args else None)
             if not actor_name:
-                raise ValueError("Tool execution requires actor_name parameter")
+                msg = "Tool execution requires actor_name parameter"
+                raise ValueError(msg)
 
             # Create actor instance (simplified for tool execution)
             actor = Actor(

@@ -4,6 +4,14 @@ of get_hacs_tools imports. Prefer using hacs_utils.integrations.common.tool_load
 or hacs_utils.integrations.langgraph.hacs_agent_tools.
 """
 
+from .tools import (
+    get_hacs_tools,
+    get_hacs_tool,
+    get_hacs_tools_by_category,
+    HACSToolRegistry,
+    validate_tool_inputs,
+)
+
 try:
     from langchain.schema import Document
     from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -59,15 +67,6 @@ def create_document_processor(
 ) -> LangChainDocumentAdapter:
     """Create a LangChain document processor."""
     return create_langchain_adapter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-
-
-from .tools import (
-    get_hacs_tools,
-    get_hacs_tool,
-    get_hacs_tools_by_category,
-    HACSToolRegistry,
-    validate_tool_inputs,
-)
 
 # Import newmodules
 # Legacy modules (adapters, memory, chains, vector_stores, retrievers) removed

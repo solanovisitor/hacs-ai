@@ -375,19 +375,19 @@ class Procedure(DomainResource):
     def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
         """Coerce extractable payload to proper types with relaxed validation."""
         coerced = payload.copy()
-        
+
         # Coerce code to CodeableConcept if it's a string
         if "code" in coerced and isinstance(coerced["code"], str):
             coerced["code"] = {"text": coerced["code"]}
-        
+
         # Ensure code has text field
         if "code" in coerced and isinstance(coerced["code"], dict) and "text" not in coerced["code"]:
             coerced["code"]["text"] = ""
-            
+
         # Coerce performer to list if it's a single reference
         if "performer" in coerced and isinstance(coerced["performer"], str):
             coerced["performer"] = [{"actor": coerced["performer"]}]
-            
+
         return coerced
 
     @classmethod

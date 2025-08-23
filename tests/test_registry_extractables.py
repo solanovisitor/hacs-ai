@@ -8,7 +8,6 @@ Validates that:
 4. Registry utilities work correctly
 """
 
-import pytest
 from hacs_registry.resource_registry import (
     get_extractables_index,
     iter_model_classes,

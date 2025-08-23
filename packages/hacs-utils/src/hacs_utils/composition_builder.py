@@ -4,7 +4,7 @@ CompositionBuilder: assemble HACS Composition with coded sections and entries.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from hacs_models.composition import Composition
 from hacs_models.observation import CodeableConcept

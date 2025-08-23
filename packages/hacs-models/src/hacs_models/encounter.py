@@ -157,7 +157,7 @@ class Encounter(DomainResource):
     def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
         """Coerce extractable payload to proper types with relaxed validation."""
         coerced = payload.copy()
-        
+
         # Coerce reason_code to list of CodeableConcept if it's a string or dict
         if "reason_code" in coerced:
             reason = coerced["reason_code"]
@@ -167,7 +167,7 @@ class Encounter(DomainResource):
                 coerced["reason_code"] = [reason]
             elif not isinstance(reason, list):
                 coerced["reason_code"] = []
-        
+
         return coerced
 
     @classmethod

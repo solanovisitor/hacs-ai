@@ -11,7 +11,7 @@ Tests with mocked LLM providers to validate:
 import asyncio
 import json
 import time
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import Mock
 from typing import Any, Dict, List
 
 import pytest
@@ -211,7 +211,7 @@ class TestExtractionRunnerPerformance:
         
         # Create multiple resource types to trigger concurrent processing
         start_time = time.time()
-        results = await runner.extract_document(
+        await runner.extract_document(
             mock_fast_provider,
             source_text=sample_transcript,
         )
@@ -268,7 +268,7 @@ class TestExtractionRunnerPerformance:
         # Run extraction and measure provider calls
         initial_calls = mock_fast_provider.call_count
         
-        results = await runner.extract_document(
+        await runner.extract_document(
             mock_fast_provider,
             source_text=sample_transcript,
         )
@@ -293,7 +293,7 @@ class TestPromptShapeValidation:
     async def test_extraction_prompt_contains_allowed_keys(self, mock_fast_provider, sample_transcript):
         """Test that extraction prompts contain allowed keys specification."""
         # Run extraction to capture prompts
-        results = await extract_hacs_resources_with_citations(
+        await extract_hacs_resources_with_citations(
             mock_fast_provider,
             source_text=sample_transcript,
             resource_model=Observation,
@@ -341,7 +341,7 @@ class TestPromptShapeValidation:
         
         sample_text = "Patient has hypertension. BP 140/90. Given lisinopril 10mg daily."
         
-        results = await extract_hacs_document_with_citation_guidance(
+        await extract_hacs_document_with_citation_guidance(
             mock_fast_provider,
             source_text=sample_text,
             resource_models=[Observation, Condition],

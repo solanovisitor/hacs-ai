@@ -1,4 +1,4 @@
-"""HACS Health Checks and Performance Monitoring
+"""HACS Health Checks and Performance Monitoring.
 
 This module provideshealth check and performance monitoring
 capabilities for healthcare AI systems with proactive issue detection.
@@ -18,6 +18,7 @@ Version: 1.0.0
 """
 
 import asyncio
+import contextlib
 import socket
 import time
 from collections.abc import Callable
@@ -154,7 +155,7 @@ class HealthReport:
 class HealthCheckManager:
     """Comprehensive health check manager."""
 
-    def __init__(self, service_name: str = "hacs-healthcare-ai", version: str = "1.0.0"):
+    def __init__(self, service_name: str = "hacs-healthcare-ai", version: str = "1.0.0") -> None:
         """Initialize health check manager."""
         self.service_name = service_name
         self.version = version
@@ -179,7 +180,7 @@ class HealthCheckManager:
         # Initialize default health checks
         self._setup_default_checks()
 
-    def _setup_default_checks(self):
+    def _setup_default_checks(self) -> None:
         """Setup default system health checks."""
         # System resource checks
         self.register_health_check(
@@ -276,7 +277,7 @@ class HealthCheckManager:
 
     def register_health_check(
         self, config: HealthCheckConfig, check_function: Callable[[], bool | dict[str, Any]]
-    ):
+    ) -> None:
         """Register a health check."""
         self._check_configs[config.name] = config
         self._check_functions[config.name] = check_function
@@ -284,7 +285,7 @@ class HealthCheckManager:
 
         self.logger.info(f"Registered health check: {config.name}")
 
-    async def start(self):
+    async def start(self) -> None:
         """Start health monitoring."""
         if self._running:
             return
@@ -294,7 +295,7 @@ class HealthCheckManager:
 
         self.logger.info("Health check monitoring started")
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop health monitoring."""
         if not self._running:
             return
@@ -303,10 +304,8 @@ class HealthCheckManager:
 
         if self._monitoring_task:
             self._monitoring_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._monitoring_task
-            except asyncio.CancelledError:
-                pass
 
         self.logger.info("Health check monitoring stopped")
 
@@ -322,7 +321,7 @@ class HealthCheckManager:
                 result = await self._run_single_check(name)
                 results[name] = result
             except Exception as e:
-                self.logger.error(f"Error running health check {name}: {e}")
+                self.logger.exception(f"Error running health check {name}: {e}")
                 results[name] = HealthCheckResult(
                     service_name=name, is_healthy=False, response_time=0, error=str(e)
                 )
@@ -337,7 +336,7 @@ class HealthCheckManager:
         try:
             return await self._run_single_check(check_name)
         except Exception as e:
-            self.logger.error(f"Error running health check {check_name}: {e}")
+            self.logger.exception(f"Error running health check {check_name}: {e}")
             return HealthCheckResult(
                 service_name=check_name, is_healthy=False, response_time=0, error=str(e)
             )
@@ -373,7 +372,7 @@ class HealthCheckManager:
             recommendations=recommendations,
         )
 
-    async def _monitoring_loop(self):
+    async def _monitoring_loop(self) -> None:
         """Background health monitoring loop."""
         check_schedules = dict.fromkeys(self._check_configs.keys(), 0)
 
@@ -401,10 +400,10 @@ class HealthCheckManager:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Error in monitoring loop: {e}")
+                self.logger.exception(f"Error in monitoring loop: {e}")
                 await asyncio.sleep(30)
 
-    async def _run_and_store_check(self, check_name: str):
+    async def _run_and_store_check(self, check_name: str) -> None:
         """Run a health check and store the result."""
         try:
             result = await self._run_single_check(check_name)
@@ -419,7 +418,7 @@ class HealthCheckManager:
                 history[:] = history[-100:]
 
         except Exception as e:
-            self.logger.error(f"Error running health check {check_name}: {e}")
+            self.logger.exception(f"Error running health check {check_name}: {e}")
 
     async def _run_single_check(self, check_name: str) -> HealthCheckResult:
         """Run a single health check."""
@@ -477,7 +476,7 @@ class HealthCheckManager:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, check_function)
 
-    async def _update_system_metrics(self):
+    async def _update_system_metrics(self) -> None:
         """Update system performance metrics."""
         try:
             now = datetime.now(UTC)
@@ -534,7 +533,7 @@ class HealthCheckManager:
             )
 
         except Exception as e:
-            self.logger.error(f"Error updating system metrics: {e}")
+            self.logger.exception(f"Error updating system metrics: {e}")
 
     def _get_metric_status(
         self, value: float, warning_threshold: float, critical_threshold: float

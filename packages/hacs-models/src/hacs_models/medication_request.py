@@ -441,11 +441,11 @@ class MedicationRequest(DomainResource):
     def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
         """Coerce extractable payload to proper types with relaxed validation."""
         coerced = payload.copy()
-        
+
         # Coerce medication_codeable_concept to CodeableConcept if it's a string
         if "medication_codeable_concept" in coerced and isinstance(coerced["medication_codeable_concept"], str):
             coerced["medication_codeable_concept"] = {"text": coerced["medication_codeable_concept"]}
-        
+
         # Coerce dosage_instruction to list of Dosage if it's a string or dict
         if "dosage_instruction" in coerced:
             dosage = coerced["dosage_instruction"]
@@ -455,7 +455,7 @@ class MedicationRequest(DomainResource):
                 coerced["dosage_instruction"] = [dosage]
             elif not isinstance(dosage, list):
                 coerced["dosage_instruction"] = []
-        
+
         # Coerce reason_code to list of CodeableConcept if it's a string or dict
         if "reason_code" in coerced:
             reason = coerced["reason_code"]
@@ -465,7 +465,7 @@ class MedicationRequest(DomainResource):
                 coerced["reason_code"] = [reason]
             elif not isinstance(reason, list):
                 coerced["reason_code"] = []
-        
+
         return coerced
 
     @classmethod

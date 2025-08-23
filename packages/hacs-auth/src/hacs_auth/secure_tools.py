@@ -1,4 +1,4 @@
-"""HACS Secure Tool Execution - Authentication-Protected Tool Wrappers
+"""HACS Secure Tool Execution - Authentication-Protected Tool Wrappers.
 
 This module provides secure wrappers for tool execution that enforce
 authentication and authorization requirements for all Hacs Tools.
@@ -38,7 +38,7 @@ class SecurityContext:
         ip_address: str | None = None,
         user_agent: str | None = None,
         session_data: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         """Initialize security context."""
         self.token_data = token_data
         self.ip_address = ip_address
@@ -50,7 +50,7 @@ class SecurityContext:
 class RateLimiter:
     """Rate limiter for preventing abuse."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize rate limiter."""
         self.requests = defaultdict(list)  # user_id -> [timestamps]
         self.limits = {"per_minute": 60, "per_hour": 1000, "per_day": 10000}
@@ -99,7 +99,7 @@ class SecureToolExecutor:
         auth_manager: AuthManager | None = None,
         audit_logger: HIPAAAuditLogger | None = None,
         rate_limiter: RateLimiter | None = None,
-    ):
+    ) -> None:
         """Initialize secure tool executor.
 
         Args:
@@ -158,7 +158,8 @@ class SecureToolExecutor:
                 # Extract security context from kwargs (injected by framework adapter)
                 security_context = kwargs.pop("_security_context", None)
                 if not security_context:
-                    raise AuthError("Authentication required - no security context provided")
+                    msg = "Authentication required - no security context provided"
+                    raise AuthError(msg)
 
                 # Validate security context
                 self._validate_security_context(
@@ -175,7 +176,8 @@ class SecureToolExecutor:
                         user_id=security_context.token_data.user_id,
                         ip_address=security_context.ip_address,
                     )
-                    raise AuthError(f"Rate limit exceeded: {reason}")
+                    msg = f"Rate limit exceeded: {reason}"
+                    raise AuthError(msg)
 
                 # Log PHI access if applicable
                 if phi_access:
@@ -195,8 +197,7 @@ class SecureToolExecutor:
 
                 try:
                     # Execute the tool function
-                    result = func(*args, **kwargs)
-                    return result
+                    return func(*args, **kwargs)
 
                 except Exception as e:
                     # Log failed execution
@@ -243,7 +244,8 @@ class SecureToolExecutor:
 
         # Check token expiration
         if self.auth_manager.is_token_expired(token_data):
-            raise AuthError("Token has expired - authentication required")
+            msg = "Token has expired - authentication required"
+            raise AuthError(msg)
 
         # Check permissions
         permissions = required_permissions or self.permission_requirements.get(category, [])
@@ -260,15 +262,17 @@ class SecureToolExecutor:
                         "user_permissions": token_data.permissions,
                     },
                 )
-                raise AuthError(f"Permission denied: {permission} required for {category.value}")
+                msg = f"Permission denied: {permission} required for {category.value}"
+                raise AuthError(msg)
 
         # Check security level
         req_level = required_security_level or self.security_level_requirements.get(
             category, SecurityLevel.CONFIDENTIAL
         )
         if not self.auth_manager.validate_security_level(token_data, req_level.value):
+            msg = f"Insufficient security level: {req_level.value} required for {category.value}"
             raise AuthError(
-                f"Insufficient security level: {req_level.value} required for {category.value}"
+                msg
             )
 
         # Additional security checks for high-risk categories
@@ -276,7 +280,8 @@ class SecureToolExecutor:
             # Require recent authentication (within last 30 minutes)
             token_age = (datetime.now(UTC) - token_data.issued_at).total_seconds()
             if token_age > 1800:  # 30 minutes
-                raise AuthError("Recent authentication required for high-security operations")
+                msg = "Recent authentication required for high-security operations"
+                raise AuthError(msg)
 
     def _sanitize_args_for_audit(self, args: tuple, kwargs: dict) -> dict:
         """Sanitize function arguments for audit logging (remove sensitive data)."""
@@ -287,7 +292,7 @@ class SecureToolExecutor:
         for key, value in kwargs.items():
             if any(sensitive in key.lower() for sensitive in sensitive_keys):
                 sanitized[key] = "[REDACTED]"
-            elif isinstance(value, (str, int, float, bool)):
+            elif isinstance(value, str | int | float | bool):
                 sanitized[key] = value
             else:
                 sanitized[key] = str(type(value).__name__)

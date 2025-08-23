@@ -160,7 +160,7 @@ class BaseRepository(Repository[TAggregate]):
         try:
             data_list = await self.adapter.list_all(self.aggregate_type, limit, offset)
             results = []
-            for data in data_list:
+            for _data in data_list:
                 # This will be overridden in concrete repositories
                 raise NotImplementedError("Concrete repositories must implement find_all")
             return results
@@ -173,7 +173,7 @@ class BaseRepository(Repository[TAggregate]):
         try:
             data_list = await self.adapter.find_by_criteria(self.aggregate_type, criteria)
             results = []
-            for data in data_list:
+            for _data in data_list:
                 # This will be overridden in concrete repositories
                 raise NotImplementedError("Concrete repositories must implement find_by_criteria")
             return results

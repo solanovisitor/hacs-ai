@@ -68,11 +68,8 @@ def extract_hacs_fields(
     - chunking: optional dict; when provided, chunked extraction + aggregation is applied.
     """
     try:
-        try:
-            from hacs_utils import create_llm  # type: ignore
-            from hacs_utils.structured import extract_sync  # type: ignore
-            except Exception as e:
-            return HACSResult(success=False, message="Extraction engine unavailable", error=str(e))
+        from hacs_utils import create_llm  # type: ignore
+        from hacs_utils.structured import extract_sync  # type: ignore
 
         # Resolve model class
         registry = get_model_registry()
