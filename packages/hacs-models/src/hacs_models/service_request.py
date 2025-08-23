@@ -13,21 +13,6 @@ from .base_resource import DomainResource
 from .observation import CodeableConcept
 from .types import ServiceRequestIntent, ServiceRequestPriority, ServiceRequestStatus
 
-
-class ServiceRequest(DomainResource):
-    resource_type: Literal["ServiceRequest"] = Field(default="ServiceRequest")
-
-    status: ServiceRequestStatus = Field(default=ServiceRequestStatus.ACTIVE)
-    intent: ServiceRequestIntent = Field(default=ServiceRequestIntent.ORDER)
-    priority: ServiceRequestPriority | None = Field(default=None)
-
-    code: CodeableConcept | None = Field(default=None, description="What is being requested")
-    subject_ref: str | None = Field(default=None, description="Patient reference")
-    encounter_ref: str | None = Field(default=None, description="Encounter reference")
-    reason_text: str | None = Field(default=None, description="Free-text reason")
-    note: list[str] = Field(default_factory=list, description="Additional notes")
-
-
 """
 ServiceRequest model for HACS.
 
@@ -38,17 +23,12 @@ FHIR R4 Specification:
 https://hl7.org/fhir/R4/servicerequest.html
 """
 
-from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import field_validator
 
-from .base_resource import DomainResource
-from .observation import CodeableConcept, Quantity
+from .observation import Quantity
 from .types import (
     ResourceReference,
-    ServiceRequestIntent,
-    ServiceRequestPriority,
-    ServiceRequestStatus,
     TimestampStr,
 )
 

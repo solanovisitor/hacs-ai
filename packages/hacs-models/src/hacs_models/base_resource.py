@@ -25,7 +25,7 @@ Design Principles:
 import inspect
 import uuid
 from datetime import UTC, datetime
-from typing import Any, ClassVar, TypeVar
+from typing import Any, ClassVar, Literal, TypeVar, get_args, get_origin
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
@@ -466,7 +466,7 @@ class BaseResource(BaseModel):
                 # Enums / Literals → list allowed values
                 try:
                     from enum import Enum
-                    from typing import get_args, get_origin
+                    # get_args, get_origin already imported at top
 
                     ann = getattr(field, "annotation", None)
                     if ann is not None:
@@ -638,14 +638,7 @@ class BaseResource(BaseModel):
             base["language"] = language
         return base
 
-    # --- Canonical defaults and extraction examples ---
-    @classmethod
-    def get_canonical_defaults(cls) -> dict[str, Any]:
-        """Return canonical defaults for extraction and fallback seeding."""
-        try:
-            return dict(cls._canonical_defaults or {})
-        except Exception:
-            return {}
+    # --- Extraction examples ---
 
     @classmethod
     def get_extraction_examples(cls) -> dict[str, Any]:

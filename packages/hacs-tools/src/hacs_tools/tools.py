@@ -194,11 +194,14 @@ def __dir__():
 
 
 # Explicit exports for type checkers and documentation
+# Legacy compatibility
+ALL_HACS_TOOLS = None  # Will be populated by __getattr__
+
 __all__ = [
     # Registry functions (preferred)
     "get_all_tools",
     "get_tool",
-    "get_tools_by_domain",
+    "get_tools_by_domain", 
     "get_available_domains",
     # Legacy export
     "ALL_HACS_TOOLS",

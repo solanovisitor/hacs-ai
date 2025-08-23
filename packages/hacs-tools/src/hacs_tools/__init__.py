@@ -5,10 +5,13 @@ All tools are organized via an automatic registry system following SOLID princip
 """
 
 # Import registry-based tool discovery (using existing hacs-registry)
-from .tools import get_all_tools, get_tool, get_tools_by_domain, get_available_domains
-
-# Import legacy interface for backward compatibility
-from .tools import *
+from .tools import (
+    get_all_tools,
+    get_tool,
+    get_tools_by_domain,
+    get_available_domains,
+    ALL_HACS_TOOLS,
+)
 
 # Import domain modules for direct access if needed
 from . import domains

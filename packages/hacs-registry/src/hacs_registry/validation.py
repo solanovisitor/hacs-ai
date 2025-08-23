@@ -360,7 +360,9 @@ class HealthcareComplianceValidator(BaseValidator):
         """Check clinical safety requirements."""
         results = []
 
-        if isinstance(target, PromptConfiguration):
+        # TODO: Import PromptConfiguration or define it
+        # if isinstance(target, PromptConfiguration):
+        if hasattr(target, 'safety_instructions'):
             # Check for disclaimer
             if "disclaimer" not in target.safety_instructions.lower():
                 results.append(

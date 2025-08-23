@@ -16,8 +16,6 @@ High-level API:
 - extract_hacs_multi_with_citations: Multiple resource types extraction
 """
 
-from __future__ import annotations
-
 import asyncio
 import inspect
 import json
@@ -1791,7 +1789,7 @@ async def extract_hacs_resource_type_citations(
             from .annotation.resolver import Resolver
             document = HACSDocument(text=source_text)
             chunks = select_chunks(document, chunking_policy)
-            resolver = Resolver()
+            Resolver()
             for idx, ch in enumerate(chunks):
                 ch_label = f"{label}__chunk_{idx:02d}"
                 ch_prompt = prompt.replace("TEXT:\n" + source_text, "TEXT:\n" + ch.chunk_text)

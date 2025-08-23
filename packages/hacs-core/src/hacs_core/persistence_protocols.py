@@ -106,13 +106,13 @@ class AggregateRoot(Entity):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._domain_events: List["DomainEvent"] = []
+        self._domain_events: List[Any] = []  # DomainEvent type not imported
 
-    def add_domain_event(self, event: "DomainEvent"):
+    def add_domain_event(self, event: Any):  # DomainEvent type not imported
         """Add a domain event to be published."""
         self._domain_events.append(event)
 
-    def get_domain_events(self) -> List["DomainEvent"]:
+    def get_domain_events(self) -> List[Any]:  # DomainEvent type not imported
         """Get all pending domain events."""
         return self._domain_events.copy()
 

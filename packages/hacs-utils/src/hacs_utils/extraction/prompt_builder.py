@@ -292,7 +292,7 @@ def build_schema_context(resource_class: Type[BaseModel]) -> str:
                 lines.append(brief_desc)
             if scope:
                 lines.append(f"Scope: {scope}")
-            return "\n".join([l for l in lines if l])
+            return "\n".join([line for line in lines if line])
     except Exception:
         pass
 
@@ -307,7 +307,7 @@ def build_schema_context(resource_class: Type[BaseModel]) -> str:
     except Exception:
         lines.append(f"Schema: {getattr(resource_class, '__name__', 'Resource')}")
 
-    return "\n".join([l for l in lines if l])
+    return "\n".join([line for line in lines if line])
 
 
 def citations_format_rules() -> str:
