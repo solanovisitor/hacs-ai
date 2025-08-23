@@ -1,37 +1,35 @@
 """
-Extraction submodule for organized structured output components.
+Public high-level extraction API.
 
-This module splits the large structured.py into focused components:
-- prompt_builder: Prompt construction and schema handling
-- pipeline: Core LLM invocation and structured output pipeline
-- parsing: Response parsing and validation
-- windowing: Citation windowing and span extraction
-- validation: Record validation and coercion
-- dedupe: Deduplication logic
-- metrics: Performance tracking
+This module re-exports the stable, user-facing functions and classes from
+`hacs_utils.structured` so new code can depend on `hacs_utils.extraction`
+without breaking existing imports. Over time, implementations can migrate
+behind this facade.
 """
 
-# Re-export main APIs through the public API facade
-from .api import (
-    # Core functions
+from __future__ import annotations
+
+# Re-export from the existing structured module to avoid duplication
+from ..structured import (
+    # Core
     extract,
     structure,
     extract_sync,
     structure_sync,
-    
-    # HACS extraction functions
+
+    # HACS-specific pipelines
     extract_hacs_resources_with_citations,
     extract_hacs_multi_with_citations,
     extract_hacs_document_with_citations,
     extract_hacs_resource_type_citations,
     extract_hacs_document_with_citation_guidance,
     extract_whole_records_with_spans,
-    
-    # Runner and config
+
+    # Runner and configuration
     ExtractionRunner,
     ExtractionConfig,
     ExtractionMetrics,
-    
+
     # Utilities
     group_records_by_type,
     group_resource_type_citations,
@@ -39,27 +37,29 @@ from .api import (
 )
 
 __all__ = [
-    # Core functions
+    # Core
     "extract",
-    "structure", 
+    "structure",
     "extract_sync",
     "structure_sync",
-    
-    # HACS extraction functions
+
+    # HACS-specific pipelines
     "extract_hacs_resources_with_citations",
-    "extract_hacs_multi_with_citations", 
+    "extract_hacs_multi_with_citations",
     "extract_hacs_document_with_citations",
     "extract_hacs_resource_type_citations",
     "extract_hacs_document_with_citation_guidance",
     "extract_whole_records_with_spans",
-    
-    # Runner and config
+
+    # Runner and configuration
     "ExtractionRunner",
-    "ExtractionConfig", 
+    "ExtractionConfig",
     "ExtractionMetrics",
-    
+
     # Utilities
     "group_records_by_type",
     "group_resource_type_citations",
     "FormatType",
 ]
+
+

@@ -11,7 +11,7 @@ If you're new to HACS, complete the [Quick Start](../quick-start.md) first.
 - A running Postgres if you plan to persist records (set `DATABASE_URL`)
 
 ```python
-from hacs_utils.structured import generate_chunked_extractions
+from hacs_utils.extraction import generate_chunked_extractions
 from hacs_models import ChunkingPolicy
 from langchain_openai import ChatOpenAI  # or any ChatModel
 
@@ -82,7 +82,7 @@ Annotations preview:
 
 ### 2) Structured records (typed) with pick() + persist
 from hacs_models import MedicationRequest, Patient
-from hacs_utils.structured import extract
+from hacs_utils.extraction import extract
 from hacs_tools.domains.modeling import pin_resource, make_reference, set_reference
 from hacs_tools.domains.database import save_record
 from hacs_models.composition import Composition

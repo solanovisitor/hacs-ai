@@ -14,7 +14,7 @@ load_dotenv()
 
 import asyncio
 from langchain_openai import ChatOpenAI
-from hacs_utils.structured import extract
+from hacs_utils.extraction import extract
 from hacs_models import (
     MedicationRequest, Condition,
     MedicationRequestStatus, MedicationRequestIntent,

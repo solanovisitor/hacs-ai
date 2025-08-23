@@ -69,7 +69,8 @@ def extract_hacs_fields(
     """
     try:
         from hacs_utils import create_llm  # type: ignore
-        from hacs_utils.structured import extract_sync  # type: ignore
+        # Prefer new extraction API (backed by structured module for now)
+        from hacs_utils.extraction import extract_sync  # type: ignore
 
         # Resolve model class
         registry = get_model_registry()
