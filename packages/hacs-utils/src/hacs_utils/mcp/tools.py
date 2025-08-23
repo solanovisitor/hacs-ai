@@ -6,8 +6,12 @@ workflows to programmatically select appropriate resources and validated
 fields when generating stacks.
 """
 
-from typing import Any, Dict, List, Optional
 import inspect
+import logging
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from .messages import CallToolResult
 
 
 def _get_models_info() -> List[Dict[str, Any]]:
@@ -65,21 +69,6 @@ def mcp_get_model_schema(resource_name: str) -> Dict[str, Any]:
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-
-"""
-HACS MCP Tools - Clean Wrapper for HACS Tools
-
-This module provides a clean, simple wrapper around the HACS tools
-for use with the Model Context Protocol (MCP) server.
-
-Follows Single Responsibility Principle - only handles MCP tool execution.
-"""
-
-import logging
-from datetime import datetime
-from typing import Any, Dict, List
-
-from .messages import CallToolResult
 
 logger = logging.getLogger(__name__)
 

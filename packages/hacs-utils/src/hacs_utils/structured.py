@@ -1,5 +1,16 @@
 from __future__ import annotations
 
+import asyncio
+import inspect
+import json
+import os
+from datetime import datetime
+from enum import Enum
+from typing import Any, TypeVar, Type, Sequence, Literal, get_origin, get_args, List
+
+import yaml
+from pydantic import BaseModel, create_model
+
 """
 Structured output generation utilities for HACS applications.
 
@@ -15,17 +26,6 @@ High-level API:
 - extract_hacs_resources_with_citations: Single resource type extraction
 - extract_hacs_multi_with_citations: Multiple resource types extraction
 """
-
-import asyncio
-import inspect
-import json
-import os
-from datetime import datetime
-from enum import Enum
-from typing import Any, TypeVar, Type, Sequence, Literal, get_origin, get_args, List
-
-import yaml
-from pydantic import BaseModel, create_model
 
 # NOTE: Avoid importing optional heavy modules at import time.
 # All annotation and hacs_models imports are deferred to function bodies.
