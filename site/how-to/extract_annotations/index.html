@@ -1236,7 +1236,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">MedicationRequest</span><span class="p">,</span> <span class="n">AnnotatedDocument</span><span class="p">,</span> <span class="n">Observation</span><span class="p">,</span> <span class="n">Condition</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models.annotation</span><span class="w"> </span><span class="kn">import</span> <span class="n">FormatType</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.structured</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.extraction</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">visualize_annotations</span><span class="p">,</span> <span class="n">annotations_to_markdown</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>
 </code></pre></div>
@@ -1648,7 +1648,7 @@ Model: gpt-4o-mini
 <hr />
 <h2 id="structure-resources-directly-no-long-text-extraction">Structure resources directly (no long text extraction)<a class="headerlink" href="#structure-resources-directly-no-long-text-extraction" title="Permanent link">&para;</a></h2>
 <p>Use <code>structure()</code> when you want the model to produce a typed object from concise instructions and context (not chunking). This is useful for generating plans, orders, or summaries given known values.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.structured</span><span class="w"> </span><span class="kn">import</span> <span class="n">structure</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.extraction</span><span class="w"> </span><span class="kn">import</span> <span class="n">structure</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CarePlan</span>
 
 <span class="n">patient_ref</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Patient/</span><span class="si">{</span><span class="n">patient_id</span><span class="si">}</span><span class="s2">&quot;</span>

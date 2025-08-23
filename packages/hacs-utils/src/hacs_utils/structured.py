@@ -14,6 +14,9 @@ from pydantic import BaseModel, create_model
 """
 Structured output generation utilities for HACS applications.
 
+Deprecated: Prefer importing from `hacs_utils.extraction`.
+This module remains as a compatibility shim and re-exports the stable APIs.
+
 Core responsibilities:
 - Generate Pydantic models from LLM responses (single object or list)
 - Parse fenced JSON/YAML reliably

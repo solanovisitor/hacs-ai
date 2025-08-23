@@ -111,7 +111,7 @@ async def cmd_extract(args: argparse.Namespace) -> int:
     """Execute the extract command."""
     try:
         from langchain_openai import ChatOpenAI
-        from hacs_utils.structured import ExtractionRunner, ExtractionConfig
+        from hacs_utils.extraction import ExtractionRunner, ExtractionConfig
     except ImportError as e:
         print(f"Error: Missing dependencies for extraction: {e}")
         print("Install with: pip install langchain-openai hacs-utils")

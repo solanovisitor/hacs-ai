@@ -16,7 +16,7 @@ from typing import Any, Dict, List
 
 import pytest
 
-from hacs_utils.structured import (
+from hacs_utils.extraction import (
     ExtractionRunner,
     ExtractionConfig,
     extract_hacs_resources_with_citations,
@@ -337,7 +337,7 @@ class TestPromptShapeValidation:
     async def test_window_prompts_are_compact(self, mock_fast_provider):
         """Test that window-specific prompts are compact and focused."""
         # Use citation-guided extraction to trigger window prompts
-        from hacs_utils.structured import extract_hacs_document_with_citation_guidance
+        from hacs_utils.extraction import extract_hacs_document_with_citation_guidance
         
         sample_text = "Patient has hypertension. BP 140/90. Given lisinopril 10mg daily."
         

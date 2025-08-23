@@ -26,7 +26,7 @@ load_dotenv()  # Load API keys from .env file
 import asyncio
 from hacs_models import MedicationRequest, AnnotatedDocument, Observation, Condition
 from hacs_models.annotation import FormatType
-from hacs_utils.structured import extract
+from hacs_utils.extraction import extract
 from hacs_utils.visualization import visualize_annotations, annotations_to_markdown
 from langchain_openai import ChatOpenAI
 ```
@@ -494,7 +494,7 @@ meds = asyncio.run(extract(
 Use `structure()` when you want the model to produce a typed object from concise instructions and context (not chunking). This is useful for generating plans, orders, or summaries given known values.
 
 ```python
-from hacs_utils.structured import structure
+from hacs_utils.extraction import structure
 from hacs_models import CarePlan
 
 patient_ref = f"Patient/{patient_id}"

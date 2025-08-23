@@ -92,7 +92,7 @@ The following snippets illustrate common extensions to the minimal setup.
 # Prereq: uv pip install -U hacs-utils[langchain]; set OPENAI_API_KEY
 
 from hacs_models import Patient
-from hacs_utils.structured import extract
+from hacs_utils.extraction import extract
 from langchain_openai import ChatOpenAI
 
 PatientInfo = Patient.pick("full_name", "birth_date", "gender")
@@ -109,7 +109,7 @@ See `docs/tutorials/medication_extraction.md` and API reference (structured extr
 ```python
 # Prereq: uv pip install -U hacs-utils[langchain]; set OPENAI_API_KEY
 from langchain_openai import ChatOpenAI
-from hacs_utils.structured import ExtractionRunner, ExtractionConfig
+from hacs_utils.extraction import ExtractionRunner, ExtractionConfig
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1, timeout=60)
 config = ExtractionConfig(concurrency_limit=3, window_timeout_sec=45, total_timeout_sec=600, max_extractable_fields=4)
@@ -124,7 +124,7 @@ print({rtype: len(items) for rtype, items in results.items()})
 
 ```python
 from langchain_openai import ChatOpenAI
-from hacs_utils.structured import extract_hacs_multi_with_citations
+from hacs_utils.extraction import extract_hacs_multi_with_citations
 from hacs_models import Observation, Patient, MedicationStatement, ServiceRequest, DiagnosticReport, Condition, Immunization, Procedure
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1, timeout=60)
