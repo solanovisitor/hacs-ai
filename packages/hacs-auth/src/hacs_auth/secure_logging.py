@@ -1,5 +1,4 @@
-"""
-HACS Secure Logging - PHI-Safe Logging System
+"""HACS Secure Logging - PHI-Safe Logging System.
 
 This module provides HIPAA-compliant logging that automatically
 sanitizes PHI data from log messages and error outputs.
@@ -16,20 +15,20 @@ License: MIT
 Version: 1.0.0
 """
 
-import re
-import logging
-import json
 import hashlib
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Union
-from pathlib import Path
+import logging
+import re
+from datetime import UTC, datetime
 from enum import Enum
+from pathlib import Path
+from typing import Any
 
-from .security import PHIEncryption, SecurityLevel
+from .security import PHIEncryption
 
 
 class LogLevel(str, Enum):
     """Secure log levels with PHI considerations."""
+
     DEBUG = "DEBUG"
     INFO = "INFO"
     WARNING = "WARNING"
@@ -41,47 +40,88 @@ class LogLevel(str, Enum):
 class PHIDetector:
     """Detects and redacts PHI from log messages."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize PHI detector with patterns."""
         # PHI patterns (compiled for performance)
         self.patterns = {
-            "ssn": re.compile(r'\b\d{3}-\d{2}-\d{4}\b|\b\d{9}\b'),
-            "phone": re.compile(r'(\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}'),
-            "email": re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'),
-            "date_of_birth": re.compile(r'\b(0[1-9]|1[0-2])/(0[1-9]|[12][0-9]|3[01])/(19|20)\d{2}\b|\b(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])\b'),
-            "medical_record_number": re.compile(r'\bMRN[-:\s]*\d+\b|\bMR[-:\s]*\d+\b', re.IGNORECASE),
-            "patient_id": re.compile(r'\bpatient[-_\s]*id[-:\s]*[A-Za-z0-9]+\b', re.IGNORECASE),
-            "account_number": re.compile(r'\baccount[-_\s]*(?:num|number)[-:\s]*[A-Za-z0-9]+\b', re.IGNORECASE),
-            "insurance_id": re.compile(r'\binsurance[-_\s]*(?:id|number)[-:\s]*[A-Za-z0-9]+\b', re.IGNORECASE),
-            "credit_card": re.compile(r'\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|3[0-9]{13}|6(?:011|5[0-9]{2})[0-9]{12})\b'),
+            "ssn": re.compile(r"\b\d{3}-\d{2}-\d{4}\b|\b\d{9}\b"),
+            "phone": re.compile(r"(\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}"),
+            "email": re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"),
+            "date_of_birth": re.compile(
+                r"\b(0[1-9]|1[0-2])/(0[1-9]|[12][0-9]|3[01])/(19|20)\d{2}\b|\b(19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])\b"
+            ),
+            "medical_record_number": re.compile(
+                r"\bMRN[-:\s]*\d+\b|\bMR[-:\s]*\d+\b", re.IGNORECASE
+            ),
+            "patient_id": re.compile(r"\bpatient[-_\s]*id[-:\s]*[A-Za-z0-9]+\b", re.IGNORECASE),
+            "account_number": re.compile(
+                r"\baccount[-_\s]*(?:num|number)[-:\s]*[A-Za-z0-9]+\b", re.IGNORECASE
+            ),
+            "insurance_id": re.compile(
+                r"\binsurance[-_\s]*(?:id|number)[-:\s]*[A-Za-z0-9]+\b", re.IGNORECASE
+            ),
+            "credit_card": re.compile(
+                r"\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|3[0-9]{13}|6(?:011|5[0-9]{2})[0-9]{12})\b"
+            ),
         }
 
         # Common PHI keywords to watch for
         self.phi_keywords = {
-            "patient_name", "first_name", "last_name", "full_name",
-            "address", "street", "city", "zip", "zipcode", "postal_code",
-            "diagnosis", "condition", "medication", "prescription",
-            "doctor", "physician", "provider", "clinician",
-            "birth_date", "dob", "date_of_birth", "age",
-            "gender", "sex", "race", "ethnicity",
-            "next_of_kin", "emergency_contact", "guardian",
-            "insurance", "coverage", "policy_number",
-            "treatment", "procedure", "surgery", "therapy"
+            "patient_name",
+            "first_name",
+            "last_name",
+            "full_name",
+            "address",
+            "street",
+            "city",
+            "zip",
+            "zipcode",
+            "postal_code",
+            "diagnosis",
+            "condition",
+            "medication",
+            "prescription",
+            "doctor",
+            "physician",
+            "provider",
+            "clinician",
+            "birth_date",
+            "dob",
+            "date_of_birth",
+            "age",
+            "gender",
+            "sex",
+            "race",
+            "ethnicity",
+            "next_of_kin",
+            "emergency_contact",
+            "guardian",
+            "insurance",
+            "coverage",
+            "policy_number",
+            "treatment",
+            "procedure",
+            "surgery",
+            "therapy",
         }
 
         # Injection attack patterns
         self.injection_patterns = {
-            "sql_injection": re.compile(r"(\bDROP\b|\bDELETE\b|\bINSERT\b|\bUPDATE\b).*\b(TABLE|FROM|INTO|SET)\b|'.*OR.*'.*=.*'|--|\||;", re.IGNORECASE),
+            "sql_injection": re.compile(
+                r"(\bDROP\b|\bDELETE\b|\bINSERT\b|\bUPDATE\b).*\b(TABLE|FROM|INTO|SET)\b|'.*OR.*'.*=.*'|--|\||;",
+                re.IGNORECASE,
+            ),
             "xss": re.compile(r"<script.*?>.*?</script>|javascript:|on\w+\s*=", re.IGNORECASE),
             "path_traversal": re.compile(r"\.\./|\.\.\\\|%2e%2e%2f|%2e%2e%5c", re.IGNORECASE),
-            "command_injection": re.compile(r"[;&|`$(){}]|nc\s+|wget\s+|curl\s+|bash\s+|sh\s+", re.IGNORECASE),
+            "command_injection": re.compile(
+                r"[;&|`$(){}]|nc\s+|wget\s+|curl\s+|bash\s+|sh\s+", re.IGNORECASE
+            ),
             "ldap_injection": re.compile(r"\$\{jndi:|ldap://|rmi://", re.IGNORECASE),
             "template_injection": re.compile(r"\{\{.*\}\}|\${.*}|<%.*%>", re.IGNORECASE),
         }
 
-    def detect_phi(self, text: str) -> List[Dict[str, Any]]:
-        """
-        Detect potential PHI in text.
+    def detect_phi(self, text: str) -> list[dict[str, Any]]:
+        """Detect potential PHI in text.
 
         Args:
             text: Text to analyze for PHI
@@ -94,30 +134,28 @@ class PHIDetector:
         # Check patterns
         for phi_type, pattern in self.patterns.items():
             for match in pattern.finditer(text):
-                detections.append({
-                    "type": phi_type,
-                    "value": match.group(),
-                    "start": match.start(),
-                    "end": match.end(),
-                    "confidence": "high"
-                })
+                detections.append(
+                    {
+                        "type": phi_type,
+                        "value": match.group(),
+                        "start": match.start(),
+                        "end": match.end(),
+                        "confidence": "high",
+                    }
+                )
 
         # Check keywords (lower confidence)
         words = text.lower().split()
         for i, word in enumerate(words):
             if word in self.phi_keywords:
-                detections.append({
-                    "type": "keyword",
-                    "value": word,
-                    "position": i,
-                    "confidence": "medium"
-                })
+                detections.append(
+                    {"type": "keyword", "value": word, "position": i, "confidence": "medium"}
+                )
 
         return detections
 
     def redact_phi(self, text: str, replacement: str = "[REDACTED]") -> str:
-        """
-        Redact PHI and injection attacks from text.
+        """Redact PHI and injection attacks from text.
 
         Args:
             text: Text to redact
@@ -132,7 +170,7 @@ class PHIDetector:
         redacted_text = text
 
         # Redact PHI pattern matches
-        for phi_type, pattern in self.patterns.items():
+        for pattern in self.patterns.values():
             redacted_text = pattern.sub(replacement, redacted_text)
 
         # Redact injection attack patterns
@@ -141,16 +179,13 @@ class PHIDetector:
 
         # Redact based on common PHI field names in JSON/dict-like structures
         json_phi_pattern = re.compile(
-            r'("(?:' + '|'.join(self.phi_keywords) + r')"\s*:\s*)"[^"]*"',
-            re.IGNORECASE
+            r'("(?:' + "|".join(self.phi_keywords) + r')"\s*:\s*)"[^"]*"', re.IGNORECASE
         )
-        redacted_text = json_phi_pattern.sub(r'\1"[REDACTED]"', redacted_text)
+        return json_phi_pattern.sub(r'\1"[REDACTED]"', redacted_text)
 
-        return redacted_text
 
     def create_phi_hash(self, text: str) -> str:
-        """
-        Create a hash of PHI for tracking without exposing actual values.
+        """Create a hash of PHI for tracking without exposing actual values.
 
         Args:
             text: Text containing PHI
@@ -158,13 +193,13 @@ class PHIDetector:
         Returns:
             SHA-256 hash of the text
         """
-        return hashlib.sha256(text.encode('utf-8')).hexdigest()[:16]
+        return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
 class SecureLogFormatter(logging.Formatter):
     """Secure log formatter that redacts PHI and structures logs for compliance."""
 
-    def __init__(self, phi_detector: Optional[PHIDetector] = None):
+    def __init__(self, phi_detector: PHIDetector | None = None) -> None:
         """Initialize secure formatter."""
         super().__init__()
         self.phi_detector = phi_detector or PHIDetector()
@@ -178,11 +213,11 @@ class SecureLogFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         """Format log record with PHI redaction."""
         # Redact PHI from the message
-        if hasattr(record, 'msg') and record.msg:
+        if hasattr(record, "msg") and record.msg:
             record.msg = self.phi_detector.redact_phi(str(record.msg))
 
         # Redact PHI from arguments
-        if hasattr(record, 'args') and record.args:
+        if hasattr(record, "args") and record.args:
             redacted_args = []
             for arg in record.args:
                 if isinstance(arg, str):
@@ -192,22 +227,21 @@ class SecureLogFormatter(logging.Formatter):
             record.args = tuple(redacted_args)
 
         # Add security context if available
-        if not hasattr(record, 'session_id'):
-            record.session_id = getattr(record, 'session_id', 'unknown')
-        if not hasattr(record, 'user_id'):
-            record.user_id = getattr(record, 'user_id', 'system')
+        if not hasattr(record, "session_id"):
+            record.session_id = getattr(record, "session_id", "unknown")
+        if not hasattr(record, "user_id"):
+            record.user_id = getattr(record, "user_id", "system")
 
         # Ensure message is available
-        if not hasattr(record, 'message') or not record.message:
+        if not hasattr(record, "message") or not record.message:
             record.message = record.getMessage()
 
         # Format timestamp in ISO format
-        record.asctime = datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat()
+        record.asctime = datetime.fromtimestamp(record.created, tz=UTC).isoformat()
 
         # Apply template formatting
-        formatted = self.format_template % record.__dict__
+        return self.format_template % record.__dict__
 
-        return formatted
 
 
 class SecureLogger:
@@ -216,12 +250,11 @@ class SecureLogger:
     def __init__(
         self,
         name: str,
-        log_path: Optional[Path] = None,
-        encryption: Optional[PHIEncryption] = None,
-        min_level: LogLevel = LogLevel.INFO
-    ):
-        """
-        Initialize secure logger.
+        log_path: Path | None = None,
+        encryption: PHIEncryption | None = None,
+        min_level: LogLevel = LogLevel.INFO,
+    ) -> None:
+        """Initialize secure logger.
 
         Args:
             name: Logger name
@@ -246,7 +279,7 @@ class SecureLogger:
 
         # Create secure file handler
         log_file = self.log_path / f"{name}_{datetime.now().strftime('%Y%m%d')}.log"
-        handler = logging.FileHandler(log_file, encoding='utf-8')
+        handler = logging.FileHandler(log_file, encoding="utf-8")
         handler.setLevel(getattr(logging, min_level.value))
 
         # Set secure formatter
@@ -256,13 +289,14 @@ class SecureLogger:
 
         # Set restrictive permissions
         import os
+
         os.chmod(log_file, 0o600)
 
         # Add audit handler for audit-level logs
         audit_file = self.log_path / f"{name}_audit_{datetime.now().strftime('%Y%m%d')}.log"
-        audit_handler = logging.FileHandler(audit_file, encoding='utf-8')
+        audit_handler = logging.FileHandler(audit_file, encoding="utf-8")
         audit_handler.setLevel(logging.INFO)
-        audit_handler.addFilter(lambda record: record.levelname == 'AUDIT')
+        audit_handler.addFilter(lambda record: record.levelname == "AUDIT")
         audit_handler.setFormatter(formatter)
         self.logger.addHandler(audit_handler)
         os.chmod(audit_file, 0o600)
@@ -271,22 +305,18 @@ class SecureLogger:
         self,
         level: LogLevel,
         message: str,
-        user_id: Optional[str] = None,
-        session_id: Optional[str] = None,
-        **kwargs
+        user_id: str | None = None,
+        session_id: str | None = None,
+        **kwargs,
     ) -> None:
         """Log message with security context."""
-        extra = {
-            'user_id': user_id or 'system',
-            'session_id': session_id or 'none',
-            **kwargs
-        }
+        extra = {"user_id": user_id or "system", "session_id": session_id or "none", **kwargs}
 
         # Convert LogLevel to logging level
         if level == LogLevel.AUDIT:
             log_level = logging.INFO
-            extra['audit_event'] = True
-            extra['levelname'] = 'AUDIT'
+            extra["audit_event"] = True
+            extra["levelname"] = "AUDIT"
         else:
             log_level = getattr(logging, level.value)
 
@@ -320,12 +350,11 @@ class SecureLogger:
         self,
         exception: Exception,
         message: str = "Exception occurred",
-        user_id: Optional[str] = None,
-        session_id: Optional[str] = None,
-        **kwargs
+        user_id: str | None = None,
+        session_id: str | None = None,
+        **kwargs,
     ) -> None:
-        """
-        Log exception with PHI redaction.
+        """Log exception with PHI redaction.
 
         Args:
             exception: Exception to log
@@ -341,7 +370,7 @@ class SecureLogger:
         exc_info = {
             "type": type(exception).__name__,
             "message": redacted_exc_msg,
-            "module": getattr(exception, '__module__', 'unknown')
+            "module": getattr(exception, "__module__", "unknown"),
         }
 
         full_message = f"{message}: {exc_info}"
@@ -351,21 +380,20 @@ class SecureLogger:
             user_id=user_id,
             session_id=session_id,
             exception_type=type(exception).__name__,
-            **kwargs
+            **kwargs,
         )
 
     def log_phi_access(
         self,
         action: str,
         resource_type: str,
-        resource_id: Optional[str] = None,
-        user_id: Optional[str] = None,
-        session_id: Optional[str] = None,
+        resource_id: str | None = None,
+        user_id: str | None = None,
+        session_id: str | None = None,
         success: bool = True,
-        **kwargs
+        **kwargs,
     ) -> None:
-        """
-        Log PHI access event for HIPAA compliance.
+        """Log PHI access event for HIPAA compliance.
 
         Args:
             action: Action performed
@@ -392,20 +420,19 @@ class SecureLogger:
             user_id=user_id,
             session_id=session_id,
             phi_access=True,
-            **kwargs
+            **kwargs,
         )
 
 
 class ErrorSanitizer:
     """Sanitizes error messages to remove PHI before display."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize error sanitizer."""
         self.phi_detector = PHIDetector()
 
-    def sanitize_error(self, error: Exception) -> Dict[str, Any]:
-        """
-        Sanitize error for safe display/logging.
+    def sanitize_error(self, error: Exception) -> dict[str, Any]:
+        """Sanitize error for safe display/logging.
 
         Args:
             error: Exception to sanitize
@@ -416,14 +443,13 @@ class ErrorSanitizer:
         return {
             "type": type(error).__name__,
             "message": self.phi_detector.redact_phi(str(error)),
-            "module": getattr(error, '__module__', 'unknown'),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "safe_for_display": True
+            "module": getattr(error, "__module__", "unknown"),
+            "timestamp": datetime.now(UTC).isoformat(),
+            "safe_for_display": True,
         }
 
     def create_user_safe_message(self, error: Exception) -> str:
-        """
-        Create user-safe error message.
+        """Create user-safe error message.
 
         Args:
             error: Exception to create message for
@@ -443,7 +469,9 @@ class ErrorSanitizer:
             "TimeoutError": "Request timed out. Please try again.",
         }
 
-        return safe_messages.get(sanitized["type"], "An error occurred. Please contact support if the problem persists.")
+        return safe_messages.get(
+            sanitized["type"], "An error occurred. Please contact support if the problem persists."
+        )
 
 
 # Global secure logger instance
@@ -460,9 +488,9 @@ def get_secure_logger(name: str = "hacs") -> SecureLogger:
 
 # Export public API
 __all__ = [
+    "ErrorSanitizer",
     "LogLevel",
     "PHIDetector",
     "SecureLogger",
-    "ErrorSanitizer",
     "get_secure_logger",
 ]

@@ -45,7 +45,7 @@ class AuditLogger:
         event_type: str,
         actor_id: Optional[str],
         resource_id: Optional[str],
-        details: Optional[Dict[str, Any]] = None
+        details: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Log an audit event."""
         try:
@@ -54,7 +54,7 @@ class AuditLogger:
                 "event_type": event_type,
                 "actor_id": actor_id,
                 "resource_id": resource_id,
-                "details": details or {}
+                "details": details or {},
             }
 
             self.logger.info(f"AUDIT: {audit_entry}")

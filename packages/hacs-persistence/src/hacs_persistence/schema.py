@@ -1,7 +1,7 @@
 """
 PostgreSQL Schema Management for HACS Resources
 
-This module provides comprehensive schema management for creating dedicated
+This module providesschema management for creating dedicated
 tables for each HACS resource type with proper relational structure.
 """
 

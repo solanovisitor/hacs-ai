@@ -27,6 +27,9 @@ from .resource_registry import (
     HACSResourceRegistry,
     get_global_registry,
     register_hacs_resource,
+    register_resource,
+    get_pending_resource_registrations,
+    consume_pending_resource_registrations,
 )
 
 # Agent configuration and management
@@ -40,37 +43,34 @@ from .agent_registry import (
     get_global_agent_registry,
 )
 
-# IAM and access control
-from .iam_registry import (
-    AccessLevel,
-    PermissionScope,
-    ComplianceRule,
-    AuditEventType,
-    ActorIdentity,
-    Permission,
-    AuditEntry,
-    PermissionMatrix,
-    HACSIAMRegistry,
-    get_global_iam_registry,
-    iam_context,
-    require_permission,
-)
+# IAM and access control (optional; avoid import errors if core not present)
+try:
+    from .iam_registry import (
+        AccessLevel,
+        PermissionScope,
+        ComplianceRule,
+        AuditEventType,
+        ActorIdentity,
+        Permission,
+        AuditEntry,
+        PermissionMatrix,
+        HACSIAMRegistry,
+        get_global_iam_registry,
+        iam_context,
+        require_permission,
+    )
+except Exception:
+    AccessLevel = PermissionScope = ComplianceRule = AuditEventType = None
+    ActorIdentity = Permission = AuditEntry = PermissionMatrix = None
+    HACSIAMRegistry = get_global_iam_registry = iam_context = require_permission = None
 
 # Tool registry (existing)
+# Unified tool registry and plugin discovery
 from .tool_registry import (
     HACSToolRegistry,
-    get_global_registry as get_global_tool_registry,
-    discover_hacs_tools
-)
-
-# Plugin discovery system
-from .plugin_discovery import (
-    PluginRegistry,
-    ToolPlugin,
-    PluginMetadata,
     register_tool,
-    discover_hacs_plugins,
-    plugin_registry
+    get_global_registry as get_global_tool_registry,
+    discover_hacs_tools,
 )
 
 # Versioning system
@@ -82,15 +82,25 @@ from .versioning import (
     version_manager,
     check_tool_version,
     register_tool_version,
-    get_tool_version_info
+    get_tool_version_info,
 )
 
 # Persistence integration
 from .persistence_integration import (
-    RegistryPersistenceService, RegistryPersistenceIntegration,
-    configure_registry_persistence, get_registry_integration,
-    get_persistent_resource_registry, get_persistent_agent_registry,
-    get_persistent_iam_registry, get_persistent_tool_registry
+    RegistryPersistenceService,
+    RegistryPersistenceIntegration,
+    configure_registry_persistence,
+    get_registry_integration,
+    get_persistent_resource_registry,
+    get_persistent_agent_registry,
+    get_persistent_iam_registry,
+    get_persistent_tool_registry,
+)
+
+# Migrations and catalog registration
+from .migrations import (
+    discover_and_import_plugins,
+    register_catalog,
 )
 
 # Integration framework (existing)
@@ -103,7 +113,7 @@ from .integration import (
     ToolExecutionResult,
     get_langchain_tools,
     get_mcp_tools,
-    execute_hacs_tool
+    execute_hacs_tool,
 )
 
 # Validation framework (updated to work with registered resources)
@@ -135,7 +145,6 @@ __all__ = [
     "HACSResourceRegistry",
     "get_global_registry",
     "register_hacs_resource",
-
     # Agent registry - Agent management
     "AgentStatus",
     "AgentConfigurationType",
@@ -144,8 +153,8 @@ __all__ = [
     "AgentTemplate",
     "HACSAgentRegistry",
     "get_global_agent_registry",
-
     # IAM registry - Access control
+    # IAM exports (may be None if unavailable)
     "AccessLevel",
     "PermissionScope",
     "ComplianceRule",
@@ -158,20 +167,16 @@ __all__ = [
     "get_global_iam_registry",
     "iam_context",
     "require_permission",
-
     # Tool registry - Tool management
     "HACSToolRegistry",
     "get_global_tool_registry",
     "discover_hacs_tools",
-
     # Plugin discovery system
     "PluginRegistry",
     "ToolPlugin",
-    "PluginMetadata",
     "register_tool",
     "discover_hacs_plugins",
     "plugin_registry",
-
     # Versioning system
     "VersionStatus",
     "VersionInfo",
@@ -181,7 +186,6 @@ __all__ = [
     "check_tool_version",
     "register_tool_version",
     "get_tool_version_info",
-
     # Integration framework - Tool execution
     "HACSToolIntegrationManager",
     "get_integration_manager",
@@ -192,7 +196,6 @@ __all__ = [
     "get_langchain_tools",
     "get_mcp_tools",
     "execute_hacs_tool",
-
     # Validation framework - Resource validation
     "ValidationResult",
     "ValidationReport",
@@ -205,7 +208,6 @@ __all__ = [
     "validate_agent_config",
     "validate_all_configs",
     "create_custom_validator",
-
     # Persistence integration
     "RegistryPersistenceService",
     "RegistryPersistenceIntegration",
@@ -215,26 +217,33 @@ __all__ = [
     "get_persistent_agent_registry",
     "get_persistent_iam_registry",
     "get_persistent_tool_registry",
-
     # Exceptions
     "RegistryError",
 ]
 
+
 # Registry convenience functions
-def register_patient_template(name: str, version: str = "1.0.0", **kwargs) -> RegisteredResource:
+def register_patient_template(
+    name: str, version: str = "1.0.0", **kwargs
+) -> RegisteredResource:
     """Convenience function to register a Patient resource template."""
     try:
         from hacs_models import Patient
     except ImportError:
         from hacs_core import Patient
     return register_hacs_resource(
-        Patient, name, version,
+        Patient,
+        name,
+        version,
         f"Patient template: {name}",
         ResourceCategory.CLINICAL,
-        **kwargs
+        **kwargs,
     )
 
-def register_workflow_template(name: str, version: str = "1.0.0", **kwargs) -> RegisteredResource:
+
+def register_workflow_template(
+    name: str, version: str = "1.0.0", **kwargs
+) -> RegisteredResource:
     """Convenience function to register a WorkflowDefinition template."""
     try:
         from hacs_models import WorkflowDefinition
@@ -243,14 +252,19 @@ def register_workflow_template(name: str, version: str = "1.0.0", **kwargs) -> R
         WorkflowDefinition = None
 
     if WorkflowDefinition is None:
-        raise ValueError("WorkflowDefinition not available - workflow templates not supported")
+        raise ValueError(
+            "WorkflowDefinition not available - workflow templates not supported"
+        )
 
     return register_hacs_resource(
-        WorkflowDefinition, name, version,
+        WorkflowDefinition,
+        name,
+        version,
         f"Workflow template: {name}",
         ResourceCategory.WORKFLOW,
-        **kwargs
+        **kwargs,
     )
+
 
 def create_cardiology_agent(name: str, **config) -> AgentConfiguration:
     """Convenience function to create a cardiology agent."""
@@ -263,17 +277,18 @@ def create_cardiology_agent(name: str, **config) -> AgentConfiguration:
         version="1.0.0",
         description=f"Cardiology agent: {name}",
         domain=HealthcareDomain.CARDIOLOGY,
-        role=AgentRole.CLINICAL_ASSISTANT
+        role=AgentRole.CLINICAL_ASSISTANT,
     )
 
     agent_config = AgentConfiguration(
         agent_id=f"cardiology-{name.lower().replace(' ', '-')}",
         metadata=metadata,
-        **config
+        **config,
     )
 
     agent_registry.register_agent(agent_config)
     return agent_config
+
 
 def create_emergency_agent(name: str, **config) -> AgentConfiguration:
     """Convenience function to create an emergency medicine agent."""
@@ -286,22 +301,179 @@ def create_emergency_agent(name: str, **config) -> AgentConfiguration:
         version="1.0.0",
         description=f"Emergency medicine agent: {name}",
         domain=HealthcareDomain.EMERGENCY,
-        role=AgentRole.TRIAGE_SPECIALIST
+        role=AgentRole.TRIAGE_SPECIALIST,
     )
 
     agent_config = AgentConfiguration(
         agent_id=f"emergency-{name.lower().replace(' ', '-')}",
         metadata=metadata,
-        **config
+        **config,
     )
 
     agent_registry.register_agent(agent_config)
     return agent_config
 
+
 # Add convenience functions to __all__
-__all__.extend([
-    "register_patient_template",
-    "register_workflow_template",
-    "create_cardiology_agent",
-    "create_emergency_agent",
-])
+__all__.extend(
+    [
+        "register_patient_template",
+        "register_workflow_template",
+        "create_cardiology_agent",
+        "create_emergency_agent",
+    ]
+)
+
+# Stack template convenience (registry-facing, deprecated)
+from typing import Dict, Any
+
+try:
+    from hacs_models import StackTemplate, instantiate_stack_template
+except Exception:
+    StackTemplate = None
+    instantiate_stack_template = None
+
+
+def register_stack_template(template: "StackTemplate", **kwargs) -> RegisteredResource:
+    """Register a StackTemplate as a versioned resource bundle template.
+
+    Stores template metadata in the registry so it can be referenced by name/version.
+    """
+    if StackTemplate is None:
+        raise ValueError("StackTemplate not available")
+
+    metadata = ResourceMetadata(
+        name=template.name,
+        version=template.version,
+        description=template.description or f"StackTemplate: {template.name}",
+        category=ResourceCategory.CLINICAL,
+        tags=["template", "stack"],
+    )
+    # Persist the template structure in instance_data
+    instance_data = {
+        "variables": template.variables,
+        "layers": [layer.model_dump() for layer in template.layers],
+    }
+    registry = get_global_registry()
+    return registry.register_resource(
+        StackTemplate, metadata, instance_data=instance_data
+    )
+
+
+def instantiate_registered_stack(
+    name: str, variables: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Instantiate a previously registered StackTemplate by name and variables."""
+    if StackTemplate is None or instantiate_stack_template is None:
+        raise ValueError("StackTemplate not available")
+
+    registry = get_global_registry()
+    # naive lookup by name (latest version)
+    stacks = [
+        r
+        for r in registry._resources.values()
+        if r.metadata.name == name
+        and getattr(r, "resource_class", "") == "StackTemplate"
+    ]
+    if not stacks:
+        raise ValueError(f"Stack template not found: {name}")
+    # take most recent
+    stack_res = sorted(stacks, key=lambda r: r.metadata.version, reverse=True)[0]
+    # rebuild StackTemplate model
+    data = getattr(stack_res, "resource_instance", {}) or {}
+    tmpl = StackTemplate(
+        name=stack_res.metadata.name,
+        version=stack_res.metadata.version.as_string()
+        if hasattr(stack_res.metadata.version, "as_string")
+        else stack_res.metadata.version,
+        description=stack_res.metadata.description,
+        variables=data.get("variables", {}),
+        layers=data.get("layers", []),
+    )
+    return instantiate_stack_template(tmpl, variables)
+
+
+# Annotation registry conveniences
+try:
+    from hacs_models import (
+        PromptTemplateResource,
+        ExtractionSchemaResource,
+        AnnotationWorkflowResource,
+    )
+except Exception:
+    PromptTemplateResource = ExtractionSchemaResource = AnnotationWorkflowResource = (
+        None
+    )
+
+
+def register_prompt_template(
+    name: str,
+    template_text: str,
+    *,
+    version: str = "1.0.0",
+    variables: list[str] | None = None,
+    format: str = "json",
+    fenced_output: bool = True,
+    **kwargs,
+) -> RegisteredResource:
+    if PromptTemplateResource is None:
+        raise ValueError("PromptTemplateResource not available")
+    metadata = ResourceMetadata(
+        name=name,
+        version=version,
+        description=f"Prompt template: {name}",
+        category=ResourceCategory.WORKFLOW,
+        tags=["prompt", "annotation"],
+    )
+    instance = PromptTemplateResource(
+        name=name,
+        version=version,
+        template_text=template_text,
+        variables=variables or [],
+        format=format,
+        fenced_output=fenced_output,
+    )
+    return get_global_registry().register_resource(
+        PromptTemplateResource, metadata, instance_data=instance.model_dump()
+    )
+
+
+def register_extraction_schema(
+    name: str,
+    response_schema: dict,
+    *,
+    version: str = "1.0.0",
+    **kwargs,
+) -> RegisteredResource:
+    if ExtractionSchemaResource is None:
+        raise ValueError("ExtractionSchemaResource not available")
+    metadata = ResourceMetadata(
+        name=name,
+        version=version,
+        description=f"Extraction schema: {name}",
+        category=ResourceCategory.WORKFLOW,
+        tags=["schema", "annotation"],
+    )
+    instance = ExtractionSchemaResource(
+        name=name, version=version, response_schema=response_schema
+    )
+    return get_global_registry().register_resource(
+        ExtractionSchemaResource, metadata, instance_data=instance.model_dump()
+    )
+
+
+def register_annotation_workflow(
+    workflow: "AnnotationWorkflowResource",
+) -> RegisteredResource:
+    if AnnotationWorkflowResource is None:
+        raise ValueError("AnnotationWorkflowResource not available")
+    metadata = ResourceMetadata(
+        name=workflow.name,
+        version=workflow.version,
+        description=f"Annotation workflow: {workflow.name}",
+        category=ResourceCategory.WORKFLOW,
+        tags=["workflow", "annotation"],
+    )
+    return get_global_registry().register_resource(
+        AnnotationWorkflowResource, metadata, instance_data=workflow.model_dump()
+    )

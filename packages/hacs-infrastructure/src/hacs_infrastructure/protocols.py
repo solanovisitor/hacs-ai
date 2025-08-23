@@ -1,13 +1,12 @@
-"""
-Protocols and interfaces for HACS infrastructure components.
+"""Protocols and interfaces for HACS infrastructure components.
 
 This module defines the fundamental protocols that establish contracts
 for infrastructure components, following SOLID design principles.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 from enum import Enum
+from typing import Any, Protocol, runtime_checkable
 
 
 class ComponentStatus(str, Enum):
@@ -25,11 +24,11 @@ class ComponentStatus(str, Enum):
 class Configurable(Protocol):
     """Protocol for components that can be configured."""
 
-    def configure(self, config: Dict[str, Any]) -> None:
+    def configure(self, config: dict[str, Any]) -> None:
         """Configure the component with settings."""
         ...
 
-    def get_config(self) -> Dict[str, Any]:
+    def get_config(self) -> dict[str, Any]:
         """Get current configuration."""
         ...
 
@@ -39,17 +38,15 @@ class HealthCheckable(Protocol):
     """Protocol for components that support health checking."""
 
     def health_check(self) -> bool:
-        """
-        Perform health check.
+        """Perform health check.
 
         Returns:
             True if component is healthy, False otherwise
         """
         ...
 
-    def get_health_details(self) -> Dict[str, Any]:
-        """
-        Get detailed health information.
+    def get_health_details(self) -> dict[str, Any]:
+        """Get detailed health information.
 
         Returns:
             Dictionary with health details
@@ -91,7 +88,7 @@ class Injectable(Protocol):
         """Inject dependencies into the component."""
         ...
 
-    def get_dependencies(self) -> List[type]:
+    def get_dependencies(self) -> list[type]:
         """Get list of required dependency types."""
         ...
 
@@ -109,11 +106,11 @@ class Disposable(Protocol):
 class Observable(Protocol):
     """Protocol for components that can be observed/monitored."""
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Get component metrics."""
         ...
 
-    def get_events(self) -> List[Dict[str, Any]]:
+    def get_events(self) -> list[dict[str, Any]]:
         """Get recent events from the component."""
         ...
 
@@ -126,7 +123,7 @@ class Cacheable(Protocol):
         """Get value from cache."""
         ...
 
-    def cache_set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
+    def cache_set(self, key: str, value: Any, ttl: int | None = None) -> None:
         """Set value in cache with optional TTL."""
         ...
 
@@ -145,22 +142,18 @@ class ServiceProvider(ABC):
     @abstractmethod
     def get_name(self) -> str:
         """Get service provider name."""
-        pass
 
     @abstractmethod
     def get_version(self) -> str:
         """Get service provider version."""
-        pass
 
     @abstractmethod
-    def initialize(self, config: Dict[str, Any]) -> None:
+    def initialize(self, config: dict[str, Any]) -> None:
         """Initialize the service provider."""
-        pass
 
     @abstractmethod
     def health_check(self) -> bool:
         """Check if service provider is healthy."""
-        pass
 
 
 class LLMProvider(ServiceProvider):
@@ -170,28 +163,22 @@ class LLMProvider(ServiceProvider):
     async def generate_text(
         self,
         prompt: str,
-        model: Optional[str] = None,
+        model: str | None = None,
         temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
-        **kwargs: Any
+        max_tokens: int | None = None,
+        **kwargs: Any,
     ) -> str:
         """Generate text using the LLM."""
-        pass
 
     @abstractmethod
     async def generate_embeddings(
-        self,
-        texts: List[str],
-        model: Optional[str] = None,
-        **kwargs: Any
-    ) -> List[List[float]]:
+        self, texts: list[str], model: str | None = None, **kwargs: Any
+    ) -> list[list[float]]:
         """Generate embeddings for texts."""
-        pass
 
     @abstractmethod
-    def get_available_models(self) -> List[str]:
+    def get_available_models(self) -> list[str]:
         """Get list of available models."""
-        pass
 
 
 class VectorStore(ServiceProvider):
@@ -199,44 +186,33 @@ class VectorStore(ServiceProvider):
 
     @abstractmethod
     async def create_collection(
-        self,
-        name: str,
-        dimension: int,
-        distance_metric: str = "cosine"
+        self, name: str, dimension: int, distance_metric: str = "cosine"
     ) -> None:
         """Create a new collection."""
-        pass
 
     @abstractmethod
     async def insert_vectors(
         self,
         collection: str,
-        vectors: List[List[float]],
-        ids: List[str],
-        metadata: Optional[List[Dict[str, Any]]] = None
+        vectors: list[list[float]],
+        ids: list[str],
+        metadata: list[dict[str, Any]] | None = None,
     ) -> None:
         """Insert vectors into collection."""
-        pass
 
     @abstractmethod
     async def search_vectors(
         self,
         collection: str,
-        query_vector: List[float],
+        query_vector: list[float],
         limit: int = 10,
-        filter_expr: Optional[Dict[str, Any]] = None
-    ) -> List[Dict[str, Any]]:
+        filter_expr: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
         """Search for similar vectors."""
-        pass
 
     @abstractmethod
-    async def delete_vectors(
-        self,
-        collection: str,
-        ids: List[str]
-    ) -> None:
+    async def delete_vectors(self, collection: str, ids: list[str]) -> None:
         """Delete vectors by IDs."""
-        pass
 
 
 class PersistenceProvider(ServiceProvider):
@@ -245,78 +221,58 @@ class PersistenceProvider(ServiceProvider):
     @abstractmethod
     async def save(self, key: str, data: Any) -> None:
         """Save data with key."""
-        pass
 
     @abstractmethod
     async def load(self, key: str) -> Any:
         """Load data by key."""
-        pass
 
     @abstractmethod
     async def delete(self, key: str) -> None:
         """Delete data by key."""
-        pass
 
     @abstractmethod
     async def exists(self, key: str) -> bool:
         """Check if key exists."""
-        pass
 
     @abstractmethod
-    async def list_keys(self, prefix: Optional[str] = None) -> List[str]:
+    async def list_keys(self, prefix: str | None = None) -> list[str]:
         """List all keys with optional prefix filter."""
-        pass
 
 
 class EventBusProvider(ServiceProvider):
     """Abstract base class for event bus providers."""
 
     @abstractmethod
-    async def publish(self, topic: str, event: Dict[str, Any]) -> None:
+    async def publish(self, topic: str, event: dict[str, Any]) -> None:
         """Publish event to topic."""
-        pass
 
     @abstractmethod
     async def subscribe(self, topic: str, handler: callable) -> str:
         """Subscribe to topic with handler. Returns subscription ID."""
-        pass
 
     @abstractmethod
     async def unsubscribe(self, subscription_id: str) -> None:
         """Unsubscribe from topic."""
-        pass
 
 
 class AgentFramework(ServiceProvider):
     """Abstract base class for agent frameworks."""
 
     @abstractmethod
-    async def create_agent(
-        self,
-        name: str,
-        config: Dict[str, Any]
-    ) -> str:
+    async def create_agent(self, name: str, config: dict[str, Any]) -> str:
         """Create new agent. Returns agent ID."""
-        pass
 
     @abstractmethod
-    async def execute_agent(
-        self,
-        agent_id: str,
-        input_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def execute_agent(self, agent_id: str, input_data: dict[str, Any]) -> dict[str, Any]:
         """Execute agent with input data."""
-        pass
 
     @abstractmethod
-    async def get_agent_status(self, agent_id: str) -> Dict[str, Any]:
+    async def get_agent_status(self, agent_id: str) -> dict[str, Any]:
         """Get agent status and metadata."""
-        pass
 
     @abstractmethod
     async def delete_agent(self, agent_id: str) -> None:
         """Delete agent."""
-        pass
 
 
 @runtime_checkable
@@ -337,7 +293,7 @@ class AdapterProtocol(Protocol):
         """Check adapter health."""
         ...
 
-    def get_config(self) -> Dict[str, Any]:
+    def get_config(self) -> dict[str, Any]:
         """Get adapter configuration."""
         ...
 
@@ -363,9 +319,8 @@ class MiddlewareProtocol(Protocol):
 class ValidatorProtocol(Protocol):
     """Protocol for validators."""
 
-    def validate(self, data: Any) -> List[str]:
-        """
-        Validate data and return list of errors.
+    def validate(self, data: Any) -> list[str]:
+        """Validate data and return list of errors.
 
         Args:
             data: Data to validate
@@ -376,8 +331,7 @@ class ValidatorProtocol(Protocol):
         ...
 
     def is_valid(self, data: Any) -> bool:
-        """
-        Check if data is valid.
+        """Check if data is valid.
 
         Args:
             data: Data to validate

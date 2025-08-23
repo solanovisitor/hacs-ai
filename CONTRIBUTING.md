@@ -233,7 +233,7 @@ uv run pytest tests/ -m performance
 ## 📚 **Documentation Standards**
 
 ### **Code Documentation**
-- Use comprehensive docstrings for all public functions
+- Usedocstrings for all public functions
 - Include healthcare context and FHIR compliance notes
 - Provide usage examples with clinical scenarios
 - Document security and privacy considerations
@@ -284,7 +284,7 @@ uv run python publish.py --test
 ### **Types of Contributions We Value**
 - 🏥 **Clinical Expertise**: Healthcare workflow improvements
 - 💻 **Technical Development**: Core platform enhancements  
-- 📚 **Documentation**: Clear, comprehensive guides
+- 📚 **Documentation**: Clear,guides
 - 🧪 **Testing**: Robust test coverage and quality assurance
 - 🔐 **Security**: Healthcare compliance and data protection
 - 🌍 **Community**: Helping other contributors and users

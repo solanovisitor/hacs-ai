@@ -1,0 +1,55 @@
+site_name: HACS
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand  # Re-enable to show resources under categories
+plugins:
+  - search
+  - mermaid2
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: false
+            docstring_style: google
+            inherited_members: false
+            show_if_no_docstring: false
+            filters:
+              - '!^_'
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+      toc_depth: 3  # Show h1, h2, and h3 headings (categories and resources)
+  - pymdownx.superfences
+  - attr_list
+  - pymdownx.tabbed:
+      alternate_style: true
+nav:
+  - Overview: index.md
+  - Quick Start: quick-start.md
+  - API Reference: api-reference.md
+  - HACS Tools: hacs-tools.md
+  - How-to:
+      - Authenticate an Actor: how-to/authenticate_actor.md
+      - Connect to database: how-to/connect_postgres.md
+      - Generate structured data: how-to/extract_annotations.md
+      - Extract citations: how-to/grounded_extraction.md
+      - Validate HACS models: how-to/validate_hacs_models.md
+      - Visualize data: how-to/visualize_resources.md
+      - Persist Resources: how-to/persist_resources.md
+      - Use & Register Tools: how-to/use_register_tools.md
+      - Create a simple agent (LangGraph): how-to/create_langgraph_agent.md
+  - Advanced:
+      - Creating a private Registry: how-to/creating_private_registry.md
+      - Manage context with agentic tools: how-to/manage_context_tools.md
+  - Tutorials:
+      - Complete Context Engineering: tutorials/complete_context_engineering.md
+      - Medication Extraction: tutorials/medication_extraction.md
+  - Gallery: gallery.md
+  - Testing: testing.md
+  - API (Resources): api-reference.md
+

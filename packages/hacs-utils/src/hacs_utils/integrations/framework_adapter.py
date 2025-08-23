@@ -13,20 +13,21 @@ Key Features:
 - Framework detection and automatic configuration
 """
 
-import importlib
 import logging
-from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
-from abc import ABC, abstractmethod
+from typing import Any, Callable, Dict, List, Optional, TypeVar
 
 from hacs_core.tool_protocols import (
     FrameworkAdapter,
     ToolDecorator,
     ToolRegistry,
     ToolMetadata,
-    InMemoryToolRegistry
+    InMemoryToolRegistry,
+    ToolCategory,
 )
+from hacs_registry.tool_registry import get_global_registry as get_global_tool_registry
+from hacs_models import ToolDefinition
 
-F = TypeVar('F', bound=Callable[..., Any])
+F = TypeVar("F", bound=Callable[..., Any])
 logger = logging.getLogger(__name__)
 
 
@@ -53,6 +54,7 @@ class LangChainAdapter(FrameworkAdapter):
 
         try:
             import langchain_core
+
             return langchain_core.__version__
         except (ImportError, AttributeError):
             return "unknown"
@@ -64,8 +66,8 @@ class LangChainAdapter(FrameworkAdapter):
         return self._tool_decorator
 
     def create_tool_registry(self) -> ToolRegistry:
-        """Create LangChain-aware tool registry."""
-        return LangChainToolRegistry()
+        """Create LangChain-aware tool registry that sources catalog from hacs-registry."""
+        return HACSLangChainRegistry(self)
 
     def is_available(self) -> bool:
         return self._available
@@ -74,6 +76,7 @@ class LangChainAdapter(FrameworkAdapter):
         """Check if LangChain is available."""
         try:
             import langchain_core.tools
+
             return True
         except ImportError:
             logger.debug("LangChain not available")
@@ -94,7 +97,7 @@ class LangChainAdapter(FrameworkAdapter):
                 decorated = tool(func)
 
                 # Preserve function metadata for HACS
-                if hasattr(func, '__hacs_metadata__'):
+                if hasattr(func, "__hacs_metadata__"):
                     decorated.__hacs_metadata__ = func.__hacs_metadata__
 
                 return decorated
@@ -106,26 +109,102 @@ class LangChainAdapter(FrameworkAdapter):
             return lambda func: func
 
 
-class LangChainToolRegistry(InMemoryToolRegistry):
-    """LangChain-aware tool registry with framework-specific features."""
+class HACSLangChainRegistry(InMemoryToolRegistry):
+    """LangChain-aware registry that reads the canonical catalog from hacs-registry.
 
-    def __init__(self):
+    - list_tools/get_tool route through hacs-registry's HACSToolRegistry
+    - register_tool still supported for ad-hoc session tools (in-memory only)
+    """
+
+    def __init__(self, adapter: LangChainAdapter):
         super().__init__()
+        self._adapter = adapter
         self._langchain_tools: Dict[str, Any] = {}
+        self._catalog = get_global_tool_registry()
 
-    def register_tool(self, func: Callable, metadata: ToolMetadata) -> None:
-        """Register tool with both HACS and LangChain registries."""
-        # Register with base registry
-        super().register_tool(func, metadata)
+    # ---- Catalog-backed lookups ----
+    def list_tools(self, category: Optional[ToolCategory] = None) -> List[str]:  # type: ignore[name-defined]
+        tools = self._catalog.get_all_tools()
+        if category is not None:
+            cat_str = getattr(category, "value", str(category))
+            tools = [
+                t
+                for t in tools
+                if (t.category == cat_str or f"category:{cat_str}" in (t.tags or []))
+            ]
+        return [t.name for t in tools if t.supports_langchain]
 
-        # Store LangChain-specific tool if available
-        if hasattr(func, 'name') and hasattr(func, 'description'):
-            # This is a LangChain tool
-            self._langchain_tools[metadata.name] = func
+    def get_tool(self, name: str) -> Optional[Callable]:
+        # Return cached LC tool if available
+        if name in self._langchain_tools:
+            return self._langchain_tools[name]
+
+        # Look up ToolDefinition in canonical catalog
+        tool_def: Optional[ToolDefinition] = self._catalog.get_tool(name)
+        if not tool_def or not tool_def.function:
+            return super().get_tool(name)
+
+        lc_tool = self._to_langchain_tool(tool_def)
+        if lc_tool is not None:
+            self._langchain_tools[name] = lc_tool
+            return lc_tool
+
+        # Fallback to raw callable
+        return tool_def.function
+
+    def get_tool_metadata(self, name: str) -> Optional[ToolMetadata]:
+        tool_def: Optional[ToolDefinition] = self._catalog.get_tool(name)
+        if not tool_def:
+            return super().get_tool_metadata(name)
+        return self._to_tool_metadata(tool_def)
 
     def get_langchain_tools(self) -> List[Any]:
-        """Get list of LangChain tool objects for agent configuration."""
-        return list(self._langchain_tools.values())
+        names = self.list_tools()
+        return [self.get_tool(n) for n in names if self.get_tool(n) is not None]
+
+    # ---- Registration (session-local) ----
+    def register_tool(self, func: Callable, metadata: ToolMetadata) -> None:
+        """Register tool in-memory for this adapter session (does not persist to catalog)."""
+        super().register_tool(func, metadata)
+        # If LangChain decorated, cache it for get_langchain_tools
+        if hasattr(func, "name") and hasattr(func, "description"):
+            self._langchain_tools[metadata.name] = func
+
+    # ---- Helpers ----
+    def _to_langchain_tool(self, tool: ToolDefinition) -> Optional[Any]:
+        """Create a LangChain tool object from a ToolDefinition."""
+        if not self._adapter.is_available():
+            return None
+        try:
+            from langchain_core.tools import tool as lc_tool_decorator
+        except ImportError:
+            return None
+
+        func = tool.function or (lambda *a, **k: None)
+        decorated = lc_tool_decorator(func)
+
+        # Try to attach schema if available
+        try:
+            if hasattr(decorated, "args_schema") and tool.args_schema:
+                # Not all LC versions accept setting args_schema dynamically; best-effort
+                setattr(decorated, "args_schema", tool.args_schema)
+        except Exception:
+            pass
+
+        return decorated
+
+    def _to_tool_metadata(self, tool: ToolDefinition) -> ToolMetadata:
+        return ToolMetadata(
+            name=tool.name,
+            description=tool.description,
+            category=getattr(
+                ToolCategory, str(tool.category).upper(), ToolCategory.DEVELOPMENT_TOOLS
+            ),  # type: ignore[name-defined]
+            version=tool.version,
+            author="HACS",
+            tags=tool.tags,
+            domains=[tool.domain] if tool.domain else [],
+        )
 
 
 class MCPAdapter(FrameworkAdapter):
@@ -162,6 +241,7 @@ class MCPAdapter(FrameworkAdapter):
         """Check if MCP dependencies are available."""
         try:
             import fastapi
+
             return True
         except ImportError:
             logger.debug("MCP dependencies not available")
@@ -169,6 +249,7 @@ class MCPAdapter(FrameworkAdapter):
 
     def _create_mcp_decorator(self) -> ToolDecorator:
         """Create MCP tool decorator."""
+
         def mcp_tool_decorator(func: F) -> F:
             """MCP tool decorator wrapper."""
             # Add MCP-specific metadata to function
@@ -176,11 +257,14 @@ class MCPAdapter(FrameworkAdapter):
 
             # Extract parameters for MCP schema
             import inspect
+
             sig = inspect.signature(func)
             func.__mcp_parameters__ = {
                 name: {
-                    "type": param.annotation.__name__ if hasattr(param.annotation, '__name__') else "str",
-                    "required": param.default == inspect.Parameter.empty
+                    "type": param.annotation.__name__
+                    if hasattr(param.annotation, "__name__")
+                    else "str",
+                    "required": param.default == inspect.Parameter.empty,
                 }
                 for name, param in sig.parameters.items()
             }
@@ -202,13 +286,13 @@ class MCPToolRegistry(InMemoryToolRegistry):
         super().register_tool(func, metadata)
 
         # Create MCP tool schema
-        if hasattr(func, '__mcp_tool__'):
+        if hasattr(func, "__mcp_tool__"):
             self._mcp_tools[metadata.name] = {
                 "name": metadata.name,
                 "description": metadata.description,
-                "parameters": getattr(func, '__mcp_parameters__', {}),
+                "parameters": getattr(func, "__mcp_parameters__", {}),
                 "function": func,
-                "metadata": metadata
+                "metadata": metadata,
             }
 
     def get_mcp_tools_schema(self) -> List[Dict[str, Any]]:
@@ -221,10 +305,11 @@ class MCPToolRegistry(InMemoryToolRegistry):
                     "type": "object",
                     "properties": tool_data["parameters"],
                     "required": [
-                        name for name, param in tool_data["parameters"].items()
+                        name
+                        for name, param in tool_data["parameters"].items()
                         if param.get("required", False)
-                    ]
-                }
+                    ],
+                },
             }
             for tool_data in self._mcp_tools.values()
         ]
@@ -252,6 +337,7 @@ class CrewAIAdapter(FrameworkAdapter):
 
         try:
             import crewai
+
             return crewai.__version__
         except (ImportError, AttributeError):
             return "unknown"
@@ -271,6 +357,7 @@ class CrewAIAdapter(FrameworkAdapter):
         """Check if CrewAI is available."""
         try:
             import crewai
+
             return True
         except ImportError:
             logger.debug("CrewAI not available")
@@ -290,7 +377,7 @@ class CrewAIAdapter(FrameworkAdapter):
                 decorated = tool(func)
 
                 # Preserve HACS metadata
-                if hasattr(func, '__hacs_metadata__'):
+                if hasattr(func, "__hacs_metadata__"):
                     decorated.__hacs_metadata__ = func.__hacs_metadata__
 
                 return decorated
@@ -314,7 +401,7 @@ class CrewAIToolRegistry(InMemoryToolRegistry):
         super().register_tool(func, metadata)
 
         # Store CrewAI tool objects
-        if hasattr(func, '__wrapped__'):  # CrewAI decorated function
+        if hasattr(func, "__wrapped__"):  # CrewAI decorated function
             self._crewai_tools.append(func)
 
     def get_crewai_tools(self) -> List[Any]:
@@ -338,6 +425,7 @@ class FrameworkDetector:
         # Check LangChain
         try:
             import langchain_core
+
             frameworks.append("langchain")
         except ImportError:
             pass
@@ -345,6 +433,7 @@ class FrameworkDetector:
         # Check MCP dependencies
         try:
             import fastapi
+
             frameworks.append("mcp")
         except ImportError:
             pass
@@ -352,6 +441,7 @@ class FrameworkDetector:
         # Check CrewAI
         try:
             import crewai
+
             frameworks.append("crewai")
         except ImportError:
             pass
@@ -374,6 +464,7 @@ class FrameworkDetector:
         if not available:
             logger.warning("No AI frameworks detected, using no-op adapter")
             from hacs_core.tool_protocols import NoOpAdapter
+
             return NoOpAdapter()
 
         # Use preferred framework if available
@@ -447,7 +538,9 @@ def configure_global_framework(framework: Optional[str] = None) -> None:
     adapter = create_framework_adapter(framework)
     set_global_framework_adapter(adapter)
 
-    logger.info(f"Configured global framework adapter: {adapter.framework_name} v{adapter.framework_version}")
+    logger.info(
+        f"Configured global framework adapter: {adapter.framework_name} v{adapter.framework_version}"
+    )
 
 
 # Validation utilities
@@ -461,7 +554,7 @@ def validate_framework_integration() -> Dict[str, Any]:
     report = {
         "available_frameworks": FrameworkDetector.detect_available_frameworks(),
         "adapters": {},
-        "errors": []
+        "errors": [],
     }
 
     # Test each available adapter
@@ -478,7 +571,7 @@ def validate_framework_integration() -> Dict[str, Any]:
                 "version": adapter.framework_version,
                 "available": adapter.is_available(),
                 "decorator_created": decorator is not None,
-                "registry_created": registry is not None
+                "registry_created": registry is not None,
             }
 
         except Exception as e:

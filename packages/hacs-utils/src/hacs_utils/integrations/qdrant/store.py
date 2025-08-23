@@ -44,7 +44,9 @@ class QdrantVectorStore:
             delete_if_exists: Whether to delete existing collection (for testing)
         """
         if QdrantClient is None:
-            raise ImportError("Qdrant client not available. Install with: pip install qdrant-client")
+            raise ImportError(
+                "Qdrant client not available. Install with: pip install qdrant-client"
+            )
 
         # Initialize client
         if client is not None:
@@ -186,10 +188,7 @@ class QdrantVectorStore:
                 query_filter=filter_dict,
             )
 
-            return [
-                (str(result.id), result.score, result.payload)
-                for result in results
-            ]
+            return [(str(result.id), result.score, result.payload) for result in results]
 
         except Exception as e:
             print(f"Error searching in Qdrant: {e}")

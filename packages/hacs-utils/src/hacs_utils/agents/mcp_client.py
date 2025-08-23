@@ -5,6 +5,7 @@ import json
 from typing import Any, Dict, List, Optional
 
 import aiohttp
+import os
 import anthropic
 
 
@@ -13,17 +14,31 @@ class HACSMCPClient:
 
     def __init__(
         self,
-        mcp_server_url: str = "http://localhost:8000",
+        mcp_server_url: str = "http://127.0.0.1:8000/mcp/",
         anthropic_api_key: Optional[str] = None,
     ):
-        self.mcp_server_url = mcp_server_url
+        self.mcp_server_url = self._normalize_url(mcp_server_url)
         self.anthropic_client = None
         if anthropic_api_key:
             self.anthropic_client = anthropic.Anthropic(api_key=anthropic_api_key)
 
-    async def use_tool(
-        self, tool_name: str, arguments: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    @staticmethod
+    def _normalize_url(url: str) -> str:
+        try:
+            u = url.strip()
+        except Exception:
+            return "http://127.0.0.1:8000/mcp/"
+        if "/mcp" not in u:
+            u = u.rstrip("/") + "/mcp/"
+        elif not u.rstrip("/").endswith("/mcp"):
+            # If contains /mcp/ anywhere but not suffix, keep as-is
+            pass
+        else:
+            # endswith /mcp → add trailing slash for consistency
+            u = u + "/" if not u.endswith("/") else u
+        return u
+
+    async def use_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Call a tool on the MCP server."""
         payload = {
             "jsonrpc": "2.0",
@@ -32,13 +47,22 @@ class HACSMCPClient:
                 "name": tool_name,
                 "arguments": arguments,
             },
-            "id": 1,
+            "id": os.getenv("HACS_SESSION_ID", "hf-ingestion"),
         }
 
+        import uuid
+
+        headers = {}
+        token = os.getenv("HACS_API_KEY")
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        headers["Content-Type"] = "application/json"
+        headers["Accept"] = "application/json, text/event-stream"
+        session_id = os.getenv("HACS_SESSION_ID") or f"sess-{uuid.uuid4().hex}"
+        headers["X-Session-Id"] = session_id
+
         async with aiohttp.ClientSession() as session:
-            async with session.post(
-                self.mcp_server_url, json=payload
-            ) as response:
+            async with session.post(self.mcp_server_url, json=payload, headers=headers) as response:
                 result = await response.json()
                 if "error" in result:
                     raise Exception(f"MCP Error: {result['error']}")
@@ -50,13 +74,22 @@ class HACSMCPClient:
             "jsonrpc": "2.0",
             "method": "tools/list",
             "params": {},
-            "id": 1,
+            "id": os.getenv("HACS_SESSION_ID", "hf-ingestion"),
         }
 
+        import uuid
+
+        headers = {}
+        token = os.getenv("HACS_API_KEY")
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        headers["Content-Type"] = "application/json"
+        headers["Accept"] = "application/json, text/event-stream"
+        session_id = os.getenv("HACS_SESSION_ID") or f"sess-{uuid.uuid4().hex}"
+        headers["X-Session-Id"] = session_id
+
         async with aiohttp.ClientSession() as session:
-            async with session.post(
-                self.mcp_server_url, json=payload
-            ) as response:
+            async with session.post(self.mcp_server_url, json=payload, headers=headers) as response:
                 result = await response.json()
                 if "error" in result:
                     raise Exception(f"MCP Error: {result['error']}")
@@ -73,11 +106,13 @@ class HACSMCPClient:
         # Format tools for Anthropic
         anthropic_tools = []
         for tool in tools:
-            anthropic_tools.append({
-                "name": tool["name"],
-                "description": tool["description"],
-                "input_schema": tool.get("inputSchema", {}),
-            })
+            anthropic_tools.append(
+                {
+                    "name": tool["name"],
+                    "description": tool["description"],
+                    "input_schema": tool.get("inputSchema", {}),
+                }
+            )
 
         # Create system prompt
         system_prompt = """You are a HACS (Healthcare Agent Communication Standard) developer assistant.
@@ -88,7 +123,7 @@ Use the available HACS tools to:
 - Generate sample resources and model stacks
 - Provide implementation guidance and best practices
 
-When a developer asks a question, use the tools to provide comprehensive guidance."""
+When a developer asks a question, use the tools to provideguidance."""
 
         # Call Anthropic with tools
         response = self.anthropic_client.messages.create(
@@ -113,8 +148,7 @@ When a developer asks a question, use the tools to provide comprehensive guidanc
                         content_block.input,
                     )
                     result_parts.append(
-                        f"\n🔧 Used {content_block.name}:\n"
-                        f"{json.dumps(tool_result, indent=2)}"
+                        f"\n🔧 Used {content_block.name}:\n{json.dumps(tool_result, indent=2)}"
                     )
                 except Exception as e:
                     result_parts.append(f"\n❌ Tool error: {str(e)}")

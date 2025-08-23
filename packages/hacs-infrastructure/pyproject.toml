@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "hacs-infrastructure"
 version = "0.4.3"
-description = "Infrastructure components for HACS (Healthcare Agent Communication Standard) - DI container, configuration, and service management"
+description = "Dependency injection, configuration management, service discovery, and monitoring for healthcare systems"
 readme = "README.md"  
 license = { text = "MIT" }
 authors = [
@@ -101,7 +101,7 @@ extend-exclude = [
 ]
 
 [tool.ruff.lint]
-# Enable comprehensive linting ruleset
+# Enablelinting ruleset
 select = [
     "E",      # pycodestyle errors
     "W",      # pycodestyle warnings  

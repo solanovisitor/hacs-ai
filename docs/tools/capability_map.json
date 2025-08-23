@@ -1,0 +1,93 @@
+{
+  "resource_to_tools": {
+    "EpisodicMemory": [
+      "retrieve_memories",
+      "store_memory"
+    ],
+    "MemoryBlock": [
+      "retrieve_memories",
+      "store_memory"
+    ],
+    "SemanticMemory": [
+      "retrieve_memories",
+      "store_memory"
+    ],
+    "WorkingMemory": [
+      "prune_state",
+      "retrieve_memories",
+      "store_memory"
+    ],
+    "ActorPreference": [
+      "inject_preferences"
+    ]
+  },
+  "domain_to_tools": {
+    "database": [
+      "delete_record",
+      "delete_resource",
+      "get_db_status",
+      "get_resource_definition",
+      "list_preferences",
+      "list_resource_definitions",
+      "read_preferences",
+      "read_record",
+      "read_resource",
+      "register_model_version",
+      "register_resource_definition",
+      "run_migrations",
+      "save_preference",
+      "save_record",
+      "save_resource",
+      "search_evidence",
+      "search_knowledge_items",
+      "search_memories",
+      "update_record",
+      "update_resource",
+      "update_resource_definition_status"
+    ],
+    "agents": [
+      "complete_todo",
+      "create_todo",
+      "inject_preferences",
+      "list_todos",
+      "prune_state",
+      "read_scratchpad",
+      "retrieve_memories",
+      "select_tools_for_task",
+      "store_memory",
+      "summarize_state",
+      "write_scratchpad"
+    ]
+  },
+  "generic_tools": [
+    "complete_todo",
+    "create_todo",
+    "delete_record",
+    "delete_resource",
+    "get_db_status",
+    "get_resource_definition",
+    "list_preferences",
+    "list_resource_definitions",
+    "list_todos",
+    "read_preferences",
+    "read_record",
+    "read_resource",
+    "read_scratchpad",
+    "register_model_version",
+    "register_resource_definition",
+    "run_migrations",
+    "save_preference",
+    "save_record",
+    "save_resource",
+    "search_evidence",
+    "search_knowledge_items",
+    "search_memories",
+    "select_tools_for_task",
+    "summarize_state",
+    "update_record",
+    "update_resource",
+    "update_resource_definition_status",
+    "write_scratchpad"
+  ],
+  "generated_at": "2025-08-18T18:23:28.541920Z"
+}

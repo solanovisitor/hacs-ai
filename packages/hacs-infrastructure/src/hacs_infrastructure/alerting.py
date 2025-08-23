@@ -1,7 +1,6 @@
-"""
-HACS Alerting and Notification Framework
+"""HACS Alerting and Notification Framework.
 
-This module provides comprehensive alerting and notification capabilities
+This module providesalerting and notification capabilities
 for healthcare AI systems with multi-channel delivery and escalation support.
 
 Features:
@@ -19,18 +18,21 @@ Version: 1.0.0
 """
 
 import asyncio
+import hashlib
 import json
 import time
-import hashlib
-from datetime import datetime, timezone, timedelta
-from typing import Any, Dict, List, Optional, Callable, Union
+from collections.abc import Callable
 from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
 from enum import Enum
-import logging
+from typing import Any
+
+
 try:
     import smtplib
-    from email.mime.text import MimeText
     from email.mime.multipart import MimeMultipart
+    from email.mime.text import MimeText
+
     EMAIL_AVAILABLE = True
 except ImportError:
     EMAIL_AVAILABLE = False
@@ -38,12 +40,18 @@ except ImportError:
     MimeMultipart = None
     smtplib = None
 
-from .healthcare_monitoring import ClinicalAlert, ComplianceEvent, ClinicalSeverity, ComplianceStatus
+from .healthcare_monitoring import (
+    ClinicalAlert,
+    ClinicalSeverity,
+    ComplianceEvent,
+    ComplianceStatus,
+)
 from .observability import get_observability_manager
 
 
 class AlertChannel(str, Enum):
     """Alert delivery channels."""
+
     EMAIL = "email"
     SMS = "sms"
     SLACK = "slack"
@@ -55,6 +63,7 @@ class AlertChannel(str, Enum):
 
 class AlertType(str, Enum):
     """Types of alerts."""
+
     CLINICAL = "clinical"
     SECURITY = "security"
     COMPLIANCE = "compliance"
@@ -65,6 +74,7 @@ class AlertType(str, Enum):
 
 class AlertStatus(str, Enum):
     """Alert status."""
+
     ACTIVE = "active"
     ACKNOWLEDGED = "acknowledged"
     RESOLVED = "resolved"
@@ -74,35 +84,38 @@ class AlertStatus(str, Enum):
 
 class AlertPriority(str, Enum):
     """Alert priority levels."""
-    P1_CRITICAL = "p1_critical"    # < 5 minutes
-    P2_HIGH = "p2_high"            # < 15 minutes
-    P3_MEDIUM = "p3_medium"        # < 1 hour
-    P4_LOW = "p4_low"              # < 24 hours
-    P5_INFO = "p5_info"            # No SLA
+
+    P1_CRITICAL = "p1_critical"  # < 5 minutes
+    P2_HIGH = "p2_high"  # < 15 minutes
+    P3_MEDIUM = "p3_medium"  # < 1 hour
+    P4_LOW = "p4_low"  # < 24 hours
+    P5_INFO = "p5_info"  # No SLA
 
 
 @dataclass
 class AlertRule:
     """Alert rule configuration."""
+
     id: str
     name: str
     description: str
     alert_type: AlertType
     priority: AlertPriority
     condition: str  # Expression to evaluate
-    threshold: Optional[float] = None
+    threshold: float | None = None
     duration_minutes: int = 5
-    channels: List[AlertChannel] = field(default_factory=list)
-    recipients: List[str] = field(default_factory=list)
+    channels: list[AlertChannel] = field(default_factory=list)
+    recipients: list[str] = field(default_factory=list)
     escalation_minutes: int = 15
     enabled: bool = True
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     suppress_similar_minutes: int = 60
 
 
 @dataclass
 class Alert:
     """Alert instance."""
+
     id: str
     rule_id: str
     alert_type: AlertType
@@ -112,16 +125,16 @@ class Alert:
     status: AlertStatus
     created_at: datetime
     updated_at: datetime
-    acknowledged_at: Optional[datetime] = None
-    acknowledged_by: Optional[str] = None
-    resolved_at: Optional[datetime] = None
-    resolved_by: Optional[str] = None
-    escalated_at: Optional[datetime] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    tags: List[str] = field(default_factory=list)
-    channels_notified: List[AlertChannel] = field(default_factory=list)
+    acknowledged_at: datetime | None = None
+    acknowledged_by: str | None = None
+    resolved_at: datetime | None = None
+    resolved_by: str | None = None
+    escalated_at: datetime | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+    tags: list[str] = field(default_factory=list)
+    channels_notified: list[AlertChannel] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "id": self.id,
@@ -140,16 +153,17 @@ class Alert:
             "escalated_at": self.escalated_at.isoformat() if self.escalated_at else None,
             "metadata": self.metadata,
             "tags": self.tags,
-            "channels_notified": [c.value for c in self.channels_notified]
+            "channels_notified": [c.value for c in self.channels_notified],
         }
 
 
 @dataclass
 class NotificationChannel:
     """Notification channel configuration."""
+
     channel_type: AlertChannel
     name: str
-    config: Dict[str, Any]
+    config: dict[str, Any]
     enabled: bool = True
     retry_attempts: int = 3
     retry_delay_seconds: int = 30
@@ -158,45 +172,46 @@ class NotificationChannel:
 @dataclass
 class OnCallSchedule:
     """On-call schedule configuration."""
+
     name: str
     rotation_hours: int = 24
     escalation_minutes: int = 15
-    participants: List[str] = field(default_factory=list)
-    alert_types: List[AlertType] = field(default_factory=list)
+    participants: list[str] = field(default_factory=list)
+    alert_types: list[AlertType] = field(default_factory=list)
     active: bool = True
 
 
 class AlertManager:
     """Healthcare alert management system."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize alert manager."""
         self.observability = get_observability_manager()
         self.logger = self.observability.get_logger("hacs.alerting")
 
         # Alert storage
-        self._alerts: Dict[str, Alert] = {}
-        self._alert_rules: Dict[str, AlertRule] = {}
-        self._notification_channels: Dict[str, NotificationChannel] = {}
-        self._on_call_schedules: List[OnCallSchedule] = []
+        self._alerts: dict[str, Alert] = {}
+        self._alert_rules: dict[str, AlertRule] = {}
+        self._notification_channels: dict[str, NotificationChannel] = {}
+        self._on_call_schedules: list[OnCallSchedule] = []
 
         # Alert processing
         self._alert_queue: asyncio.Queue = asyncio.Queue()
-        self._suppression_cache: Dict[str, datetime] = {}
+        self._suppression_cache: dict[str, datetime] = {}
 
         # Background tasks
         self._running = False
-        self._processing_task: Optional[asyncio.Task] = None
-        self._escalation_task: Optional[asyncio.Task] = None
+        self._processing_task: asyncio.Task | None = None
+        self._escalation_task: asyncio.Task | None = None
 
         # Event handlers
-        self._alert_handlers: List[Callable[[Alert], None]] = []
+        self._alert_handlers: list[Callable[[Alert], None]] = []
 
         # Initialize default rules and channels
         self._setup_default_rules()
         self._setup_default_channels()
 
-    def _setup_default_rules(self):
+    def _setup_default_rules(self) -> None:
         """Setup default healthcare alert rules."""
         default_rules = [
             AlertRule(
@@ -208,7 +223,7 @@ class AlertManager:
                 condition="severity in ['critical', 'life_threatening']",
                 channels=[AlertChannel.EMAIL, AlertChannel.SMS, AlertChannel.PAGERDUTY],
                 escalation_minutes=5,
-                tags=["clinical", "patient_safety"]
+                tags=["clinical", "patient_safety"],
             ),
             AlertRule(
                 id="hipaa_compliance_violation",
@@ -219,7 +234,7 @@ class AlertManager:
                 condition="status in ['violation', 'critical_violation']",
                 channels=[AlertChannel.EMAIL, AlertChannel.SLACK],
                 escalation_minutes=10,
-                tags=["compliance", "hipaa", "violation"]
+                tags=["compliance", "hipaa", "violation"],
             ),
             AlertRule(
                 id="security_incident",
@@ -230,7 +245,7 @@ class AlertManager:
                 condition="threat_level == 'high' or attack_detected == true",
                 channels=[AlertChannel.EMAIL, AlertChannel.PAGERDUTY],
                 escalation_minutes=15,
-                tags=["security", "incident"]
+                tags=["security", "incident"],
             ),
             AlertRule(
                 id="system_failure",
@@ -241,7 +256,7 @@ class AlertManager:
                 condition="service_status == 'down' or error_rate > 50",
                 channels=[AlertChannel.EMAIL, AlertChannel.SMS],
                 escalation_minutes=10,
-                tags=["system", "failure", "downtime"]
+                tags=["system", "failure", "downtime"],
             ),
             AlertRule(
                 id="performance_degradation",
@@ -252,14 +267,14 @@ class AlertManager:
                 condition="response_time > 5000 or throughput < baseline * 0.5",
                 channels=[AlertChannel.EMAIL, AlertChannel.SLACK],
                 escalation_minutes=30,
-                tags=["performance", "latency"]
-            )
+                tags=["performance", "latency"],
+            ),
         ]
 
         for rule in default_rules:
             self._alert_rules[rule.id] = rule
 
-    def _setup_default_channels(self):
+    def _setup_default_channels(self) -> None:
         """Setup default notification channels."""
         # Email channel
         email_channel = NotificationChannel(
@@ -270,19 +285,15 @@ class AlertManager:
                 "smtp_port": 587,
                 "username": "",
                 "password": "",
-                "from_address": "alerts@hacs.healthcare"
-            }
+                "from_address": "alerts@hacs.healthcare",
+            },
         )
 
         # Slack channel
         slack_channel = NotificationChannel(
             channel_type=AlertChannel.SLACK,
             name="Default Slack",
-            config={
-                "webhook_url": "",
-                "channel": "#alerts",
-                "username": "HACS Alerts"
-            }
+            config={"webhook_url": "", "channel": "#alerts", "username": "HACS Alerts"},
         )
 
         # Webhook channel
@@ -292,17 +303,19 @@ class AlertManager:
             config={
                 "url": "",
                 "headers": {"Content-Type": "application/json"},
-                "timeout_seconds": 30
+                "timeout_seconds": 30,
+            },
+        )
+
+        self._notification_channels.update(
+            {
+                "email_default": email_channel,
+                "slack_default": slack_channel,
+                "webhook_default": webhook_channel,
             }
         )
 
-        self._notification_channels.update({
-            "email_default": email_channel,
-            "slack_default": slack_channel,
-            "webhook_default": webhook_channel
-        })
-
-    async def start(self):
+    async def start(self) -> None:
         """Start alert processing."""
         if self._running:
             return
@@ -313,7 +326,7 @@ class AlertManager:
 
         self.logger.info("Alert manager started")
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop alert processing."""
         if not self._running:
             return
@@ -338,13 +351,14 @@ class AlertManager:
         rule_id: str,
         title: str,
         description: str,
-        metadata: Optional[Dict[str, Any]] = None,
-        tags: Optional[List[str]] = None
+        metadata: dict[str, Any] | None = None,
+        tags: list[str] | None = None,
     ) -> Alert:
         """Create a new alert."""
         rule = self._alert_rules.get(rule_id)
         if not rule:
-            raise ValueError(f"Unknown alert rule: {rule_id}")
+            msg = f"Unknown alert rule: {rule_id}"
+            raise ValueError(msg)
 
         # Check suppression
         suppression_key = self._get_suppression_key(rule_id, title, metadata or {})
@@ -354,7 +368,7 @@ class AlertManager:
 
         # Create alert
         alert_id = self._generate_alert_id(rule_id, title)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         alert = Alert(
             id=alert_id,
@@ -367,7 +381,7 @@ class AlertManager:
             created_at=now,
             updated_at=now,
             metadata=metadata or {},
-            tags=(tags or []) + rule.tags
+            tags=(tags or []) + rule.tags,
         )
 
         # Store alert
@@ -390,11 +404,14 @@ class AlertManager:
             ClinicalSeverity.HIGH: AlertPriority.P2_HIGH,
             ClinicalSeverity.MODERATE: AlertPriority.P3_MEDIUM,
             ClinicalSeverity.LOW: AlertPriority.P4_LOW,
-            ClinicalSeverity.INFORMATIONAL: AlertPriority.P5_INFO
+            ClinicalSeverity.INFORMATIONAL: AlertPriority.P5_INFO,
         }
 
         # Determine rule based on severity
-        if clinical_alert.severity in [ClinicalSeverity.CRITICAL, ClinicalSeverity.LIFE_THREATENING]:
+        if clinical_alert.severity in [
+            ClinicalSeverity.CRITICAL,
+            ClinicalSeverity.LIFE_THREATENING,
+        ]:
             rule_id = "clinical_critical_alert"
         else:
             rule_id = "clinical_moderate_alert"
@@ -406,9 +423,11 @@ class AlertManager:
                 name="Clinical Alert",
                 description="Clinical workflow alert",
                 alert_type=AlertType.CLINICAL,
-                priority=severity_priority_map.get(clinical_alert.severity, AlertPriority.P3_MEDIUM),
+                priority=severity_priority_map.get(
+                    clinical_alert.severity, AlertPriority.P3_MEDIUM
+                ),
                 condition="clinical_alert",
-                channels=[AlertChannel.EMAIL, AlertChannel.IN_APP]
+                channels=[AlertChannel.EMAIL, AlertChannel.IN_APP],
             )
 
         return self.create_alert(
@@ -420,9 +439,9 @@ class AlertManager:
                 "severity": clinical_alert.severity.value,
                 "alert_type": clinical_alert.alert_type,
                 "clinical_context": clinical_alert.clinical_context,
-                "recommended_actions": clinical_alert.recommended_actions
+                "recommended_actions": clinical_alert.recommended_actions,
             },
-            tags=["clinical", "patient_safety", clinical_alert.severity.value]
+            tags=["clinical", "patient_safety", clinical_alert.severity.value],
         )
 
     def create_compliance_alert(self, compliance_event: ComplianceEvent) -> Alert:
@@ -431,10 +450,13 @@ class AlertManager:
             ComplianceStatus.CRITICAL_VIOLATION: AlertPriority.P1_CRITICAL,
             ComplianceStatus.VIOLATION: AlertPriority.P2_HIGH,
             ComplianceStatus.WARNING: AlertPriority.P3_MEDIUM,
-            ComplianceStatus.COMPLIANT: AlertPriority.P5_INFO
+            ComplianceStatus.COMPLIANT: AlertPriority.P5_INFO,
         }
 
-        if compliance_event.status in [ComplianceStatus.VIOLATION, ComplianceStatus.CRITICAL_VIOLATION]:
+        if compliance_event.status in [
+            ComplianceStatus.VIOLATION,
+            ComplianceStatus.CRITICAL_VIOLATION,
+        ]:
             rule_id = "hipaa_compliance_violation"
         else:
             rule_id = "compliance_warning"
@@ -448,7 +470,7 @@ class AlertManager:
                 alert_type=AlertType.COMPLIANCE,
                 priority=status_priority_map.get(compliance_event.status, AlertPriority.P3_MEDIUM),
                 condition="compliance_event",
-                channels=[AlertChannel.EMAIL, AlertChannel.SLACK]
+                channels=[AlertChannel.EMAIL, AlertChannel.SLACK],
             )
 
         return self.create_alert(
@@ -461,9 +483,9 @@ class AlertManager:
                 "affected_resources": compliance_event.affected_resources,
                 "remediation_required": compliance_event.remediation_required,
                 "remediation_steps": compliance_event.remediation_steps,
-                "risk_level": compliance_event.risk_level
+                "risk_level": compliance_event.risk_level,
             },
-            tags=["compliance", "hipaa", compliance_event.status.value]
+            tags=["compliance", "hipaa", compliance_event.status.value],
         )
 
     async def acknowledge_alert(self, alert_id: str, acknowledged_by: str) -> bool:
@@ -476,9 +498,9 @@ class AlertManager:
             return False
 
         alert.status = AlertStatus.ACKNOWLEDGED
-        alert.acknowledged_at = datetime.now(timezone.utc)
+        alert.acknowledged_at = datetime.now(UTC)
         alert.acknowledged_by = acknowledged_by
-        alert.updated_at = datetime.now(timezone.utc)
+        alert.updated_at = datetime.now(UTC)
 
         self.logger.info(f"Alert acknowledged: {alert_id} by {acknowledged_by}")
 
@@ -487,20 +509,22 @@ class AlertManager:
             try:
                 handler(alert)
             except Exception as e:
-                self.logger.error(f"Error in alert handler: {e}")
+                self.logger.exception(f"Error in alert handler: {e}")
 
         return True
 
-    async def resolve_alert(self, alert_id: str, resolved_by: str, resolution_note: str = "") -> bool:
+    async def resolve_alert(
+        self, alert_id: str, resolved_by: str, resolution_note: str = ""
+    ) -> bool:
         """Resolve an alert."""
         alert = self._alerts.get(alert_id)
         if not alert:
             return False
 
         alert.status = AlertStatus.RESOLVED
-        alert.resolved_at = datetime.now(timezone.utc)
+        alert.resolved_at = datetime.now(UTC)
         alert.resolved_by = resolved_by
-        alert.updated_at = datetime.now(timezone.utc)
+        alert.updated_at = datetime.now(UTC)
 
         if resolution_note:
             alert.metadata["resolution_note"] = resolution_note
@@ -512,21 +536,21 @@ class AlertManager:
             try:
                 handler(alert)
             except Exception as e:
-                self.logger.error(f"Error in alert handler: {e}")
+                self.logger.exception(f"Error in alert handler: {e}")
 
         return True
 
-    def get_alert(self, alert_id: str) -> Optional[Alert]:
+    def get_alert(self, alert_id: str) -> Alert | None:
         """Get alert by ID."""
         return self._alerts.get(alert_id)
 
     def list_alerts(
         self,
-        status: Optional[AlertStatus] = None,
-        alert_type: Optional[AlertType] = None,
-        priority: Optional[AlertPriority] = None,
-        limit: int = 100
-    ) -> List[Alert]:
+        status: AlertStatus | None = None,
+        alert_type: AlertType | None = None,
+        priority: AlertPriority | None = None,
+        limit: int = 100,
+    ) -> list[Alert]:
         """List alerts with filters."""
         alerts = list(self._alerts.values())
 
@@ -543,9 +567,9 @@ class AlertManager:
 
         return alerts[:limit]
 
-    def get_alert_statistics(self, hours: int = 24) -> Dict[str, Any]:
+    def get_alert_statistics(self, hours: int = 24) -> dict[str, Any]:
         """Get alert statistics."""
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        cutoff = datetime.now(UTC) - timedelta(hours=hours)
         recent_alerts = [a for a in self._alerts.values() if a.created_at >= cutoff]
 
         # Count by various dimensions
@@ -568,8 +592,7 @@ class AlertManager:
         avg_resolution_time = 0
         if resolved_alerts:
             total_resolution_time = sum(
-                (a.resolved_at - a.created_at).total_seconds()
-                for a in resolved_alerts
+                (a.resolved_at - a.created_at).total_seconds() for a in resolved_alerts
             )
             avg_resolution_time = total_resolution_time / len(resolved_alerts) / 60  # minutes
 
@@ -583,28 +606,28 @@ class AlertManager:
             "resolution_rate": (resolved_count / max(total_alerts, 1)) * 100,
             "average_resolution_time_minutes": avg_resolution_time,
             "active_alerts": by_status.get("active", 0),
-            "critical_alerts": by_priority.get("p1_critical", 0)
+            "critical_alerts": by_priority.get("p1_critical", 0),
         }
 
-    def register_alert_handler(self, handler: Callable[[Alert], None]):
+    def register_alert_handler(self, handler: Callable[[Alert], None]) -> None:
         """Register alert event handler."""
         self._alert_handlers.append(handler)
 
-    async def _process_alerts(self):
+    async def _process_alerts(self) -> None:
         """Background alert processing loop."""
         while self._running:
             try:
                 # Wait for alerts
                 alert = await asyncio.wait_for(self._alert_queue.get(), timeout=1)
                 await self._send_notifications(alert)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 continue
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Error processing alert: {e}")
+                self.logger.exception(f"Error processing alert: {e}")
 
-    async def _send_notifications(self, alert: Alert):
+    async def _send_notifications(self, alert: Alert) -> None:
         """Send notifications for an alert."""
         rule = self._alert_rules.get(alert.rule_id)
         if not rule or not rule.enabled:
@@ -616,16 +639,16 @@ class AlertManager:
                 await self._send_to_channel(alert, channel, rule.recipients)
                 alert.channels_notified.append(channel)
             except Exception as e:
-                self.logger.error(f"Failed to send alert {alert.id} to {channel}: {e}")
+                self.logger.exception(f"Failed to send alert {alert.id} to {channel}: {e}")
 
         # Notify handlers
         for handler in self._alert_handlers:
             try:
                 handler(alert)
             except Exception as e:
-                self.logger.error(f"Error in alert handler: {e}")
+                self.logger.exception(f"Error in alert handler: {e}")
 
-    async def _send_to_channel(self, alert: Alert, channel: AlertChannel, recipients: List[str]):
+    async def _send_to_channel(self, alert: Alert, channel: AlertChannel, recipients: list[str]) -> None:
         """Send alert to specific channel."""
         if channel == AlertChannel.EMAIL:
             await self._send_email(alert, recipients)
@@ -635,7 +658,7 @@ class AlertManager:
             await self._send_webhook(alert)
         # Add more channels as needed
 
-    async def _send_email(self, alert: Alert, recipients: List[str]):
+    async def _send_email(self, alert: Alert, recipients: list[str]) -> None:
         """Send email notification."""
         channel = self._notification_channels.get("email_default")
         if not channel or not channel.enabled:
@@ -674,7 +697,7 @@ This is an automated message from HACS Healthcare Monitoring System.
         # Send email (mock implementation)
         self.logger.info(f"Email notification sent for alert {alert.id}")
 
-    async def _send_slack(self, alert: Alert):
+    async def _send_slack(self, alert: Alert) -> None:
         """Send Slack notification."""
         channel = self._notification_channels.get("slack_default")
         if not channel or not channel.enabled:
@@ -686,30 +709,32 @@ This is an automated message from HACS Healthcare Monitoring System.
             AlertPriority.P2_HIGH: "warning",
             AlertPriority.P3_MEDIUM: "good",
             AlertPriority.P4_LOW: "#439FE0",
-            AlertPriority.P5_INFO: "#9E9E9E"
+            AlertPriority.P5_INFO: "#9E9E9E",
         }
 
-        message = {
+        {
             "username": channel.config["username"],
             "channel": channel.config["channel"],
-            "attachments": [{
-                "color": color_map.get(alert.priority, "good"),
-                "title": alert.title,
-                "text": alert.description,
-                "fields": [
-                    {"title": "Priority", "value": alert.priority.value, "short": True},
-                    {"title": "Type", "value": alert.alert_type.value, "short": True},
-                    {"title": "Status", "value": alert.status.value, "short": True},
-                    {"title": "Alert ID", "value": alert.id, "short": True}
-                ],
-                "ts": int(alert.created_at.timestamp())
-            }]
+            "attachments": [
+                {
+                    "color": color_map.get(alert.priority, "good"),
+                    "title": alert.title,
+                    "text": alert.description,
+                    "fields": [
+                        {"title": "Priority", "value": alert.priority.value, "short": True},
+                        {"title": "Type", "value": alert.alert_type.value, "short": True},
+                        {"title": "Status", "value": alert.status.value, "short": True},
+                        {"title": "Alert ID", "value": alert.id, "short": True},
+                    ],
+                    "ts": int(alert.created_at.timestamp()),
+                }
+            ],
         }
 
         # Send to Slack (mock implementation)
         self.logger.info(f"Slack notification sent for alert {alert.id}")
 
-    async def _send_webhook(self, alert: Alert):
+    async def _send_webhook(self, alert: Alert) -> None:
         """Send webhook notification."""
         channel = self._notification_channels.get("webhook_default")
         if not channel or not channel.enabled:
@@ -718,7 +743,7 @@ This is an automated message from HACS Healthcare Monitoring System.
         # Send webhook (mock implementation)
         self.logger.info(f"Webhook notification sent for alert {alert.id}")
 
-    async def _handle_escalations(self):
+    async def _handle_escalations(self) -> None:
         """Handle alert escalations."""
         while self._running:
             try:
@@ -727,11 +752,11 @@ This is an automated message from HACS Healthcare Monitoring System.
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                self.logger.error(f"Error handling escalations: {e}")
+                self.logger.exception(f"Error handling escalations: {e}")
 
-    async def _check_escalations(self):
+    async def _check_escalations(self) -> None:
         """Check for alerts that need escalation."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         for alert in self._alerts.values():
             if alert.status != AlertStatus.ACTIVE:
@@ -746,11 +771,11 @@ This is an automated message from HACS Healthcare Monitoring System.
             if now >= escalation_threshold and not alert.escalated_at:
                 await self._escalate_alert(alert)
 
-    async def _escalate_alert(self, alert: Alert):
+    async def _escalate_alert(self, alert: Alert) -> None:
         """Escalate an alert."""
         alert.status = AlertStatus.ESCALATED
-        alert.escalated_at = datetime.now(timezone.utc)
-        alert.updated_at = datetime.now(timezone.utc)
+        alert.escalated_at = datetime.now(UTC)
+        alert.updated_at = datetime.now(UTC)
 
         # Send escalation notifications
         rule = self._alert_rules.get(alert.rule_id)
@@ -767,7 +792,7 @@ This is an automated message from HACS Healthcare Monitoring System.
         hash_digest = hashlib.md5(hash_source.encode()).hexdigest()[:8]
         return f"alert_{timestamp}_{hash_digest}"
 
-    def _get_suppression_key(self, rule_id: str, title: str, metadata: Dict[str, Any]) -> str:
+    def _get_suppression_key(self, rule_id: str, title: str, metadata: dict[str, Any]) -> str:
         """Generate suppression key for deduplication."""
         # Include relevant metadata fields for suppression
         suppression_fields = ["patient_id_hash", "user_id", "resource_type"]
@@ -784,11 +809,11 @@ This is an automated message from HACS Healthcare Monitoring System.
         last_alert_time = self._suppression_cache[suppression_key]
         suppression_window = timedelta(minutes=60)  # Default suppression window
 
-        return datetime.now(timezone.utc) - last_alert_time < suppression_window
+        return datetime.now(UTC) - last_alert_time < suppression_window
 
 
 # Global alert manager
-_alert_manager: Optional[AlertManager] = None
+_alert_manager: AlertManager | None = None
 
 
 def get_alert_manager() -> AlertManager:
@@ -808,13 +833,13 @@ def initialize_alerting() -> AlertManager:
 
 # Export public API
 __all__ = [
-    "AlertManager",
     "Alert",
-    "AlertRule",
     "AlertChannel",
-    "AlertType",
-    "AlertStatus",
+    "AlertManager",
     "AlertPriority",
+    "AlertRule",
+    "AlertStatus",
+    "AlertType",
     "NotificationChannel",
     "OnCallSchedule",
     "get_alert_manager",

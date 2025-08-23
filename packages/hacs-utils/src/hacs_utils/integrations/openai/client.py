@@ -3,9 +3,9 @@ OpenAI Client Implementation for HACS
 """
 
 import json
-import os
 from collections.abc import Callable
 from typing import Any
+from dotenv import load_dotenv, dotenv_values
 
 try:
     import openai
@@ -27,7 +27,7 @@ class OpenAIClient:
 
     def __init__(
         self,
-        model: str = "gpt-4.1-mini",
+        model: str = "gpt-4.1",
         api_key: str | None = None,
         base_url: str | None = None,
         organization: str | None = None,
@@ -50,12 +50,37 @@ class OpenAIClient:
         self.frequency_penalty = frequency_penalty
         self.presence_penalty = presence_penalty
 
+        load_dotenv()
+        resolved_key = api_key or dotenv_values().get("OPENAI_API_KEY")
         self.client = OpenAI(
-            api_key=api_key or os.getenv("OPENAI_API_KEY"),
+            api_key=resolved_key,
             base_url=base_url,
             organization=organization,
             timeout=timeout,
             max_retries=max_retries,
+        )
+
+    # ---- Adapters ----
+    def to_langchain(self):
+        """Return a LangChain ChatOpenAI instance configured like this client.
+
+        Skips if langchain_openai is not installed.
+        """
+        try:
+            from langchain_openai import ChatOpenAI  # type: ignore
+        except Exception as e:  # pragma: no cover - optional dep
+            raise ImportError(f"langchain-openai not available: {e}")
+
+        load_dotenv()
+        kv = dotenv_values()
+        api_key = kv.get("OPENAI_API_KEY")
+        # Map basic params
+        return ChatOpenAI(
+            model=self.model,
+            temperature=self.temperature,
+            max_retries=self.client.max_retries if hasattr(self.client, "max_retries") else 1,
+            timeout=self.client.timeout if hasattr(self.client, "timeout") else 30,
+            api_key=api_key,
         )
 
         # Setup instructor if available
@@ -73,19 +98,33 @@ class OpenAIClient:
         tool_choice: str | None = None,
         **kwargs,
     ) -> "openai.types.chat.ChatCompletion":
-        """Standard chat completion."""
-        return self.client.chat.completions.create(
-            model=model or self.model,
-            messages=messages,
-            temperature=temperature or self.temperature,
-            max_tokens=max_tokens or self.max_tokens,
-            top_p=self.top_p,
-            frequency_penalty=self.frequency_penalty,
-            presence_penalty=self.presence_penalty,
-            tools=tools,
-            tool_choice=tool_choice,
-            **kwargs,
-        )
+        """Standard chat completion with graceful param fallbacks for newer models."""
+        params: dict[str, Any] = {
+            "model": model or self.model,
+            "messages": messages,
+            "max_completion_tokens": max_tokens or self.max_tokens,
+            "top_p": self.top_p,
+            "frequency_penalty": self.frequency_penalty,
+            "presence_penalty": self.presence_penalty,
+        }
+        if tools is not None:
+            params["tools"] = tools
+        if tool_choice is not None:
+            params["tool_choice"] = tool_choice
+        # Try with temperature; some models reject non-default temperature
+        if temperature is not None:
+            params["temperature"] = temperature
+        elif self.temperature is not None:
+            params["temperature"] = self.temperature
+        try:
+            return self.client.chat.completions.create(**params)
+        except Exception as e:
+            # Retry without temperature if model rejects it
+            msg = str(e)
+            if "temperature" in msg and ("unsupported" in msg or "does not support" in msg):
+                params.pop("temperature", None)
+                return self.client.chat.completions.create(**params)
+            raise
 
     def structured_output(
         self,
@@ -123,7 +162,7 @@ class OpenAIClient:
             model=model or self.model,
             messages=messages,
             temperature=temperature or self.temperature,
-            max_tokens=max_tokens or self.max_tokens,
+            max_completion_tokens=max_tokens or self.max_tokens,
             top_p=self.top_p,
             frequency_penalty=self.frequency_penalty,
             presence_penalty=self.presence_penalty,
@@ -135,6 +174,46 @@ class OpenAIClient:
         )
 
         return json.loads(response.choices[0].message.content)
+
+    def responses_parse(
+        self,
+        input_messages: list[dict[str, str]],
+        response_model: type[BaseModel],
+        *,
+        model: str | None = None,
+        temperature: float | None = None,
+        max_output_tokens: int | None = None,
+        **kwargs,
+    ) -> BaseModel:
+        """Use OpenAI Responses API structured outputs parser with a Pydantic model.
+
+        Falls back to instructor-based structured_output if Responses.parse is unavailable.
+        """
+        # Prefer native Responses.parse when available
+        try:
+            responses = getattr(self.client, "responses", None)
+            if responses and hasattr(responses, "parse"):
+                resp = responses.parse(
+                    model=model or self.model,
+                    input=input_messages,
+                    text_format=response_model,
+                    temperature=temperature or self.temperature,
+                    max_output_tokens=max_output_tokens or self.max_tokens,
+                    **kwargs,
+                )
+                return getattr(resp, "output_parsed")
+        except Exception:
+            pass
+
+        # Fallback to instructor (chat.completions with response_model)
+        return self.structured_output(
+            messages=input_messages,  # instructor uses chat.completions under the hood
+            response_model=response_model,
+            model=model or self.model,
+            temperature=temperature or self.temperature,
+            max_tokens=max_output_tokens or self.max_tokens,
+            **kwargs,
+        )
 
     def function_call(
         self,
@@ -153,7 +232,7 @@ class OpenAIClient:
             functions=functions,
             function_call=function_call,
             temperature=temperature or self.temperature,
-            max_tokens=max_tokens or self.max_tokens,
+            max_completion_tokens=max_tokens or self.max_tokens,
             **kwargs,
         )
 
@@ -174,72 +253,26 @@ class OpenAIClient:
             tools=tools,
             tool_choice=tool_choice,
             temperature=temperature or self.temperature,
-            max_tokens=max_tokens or self.max_tokens,
+            max_completion_tokens=max_tokens or self.max_tokens,
             **kwargs,
         )
 
+    # Generic interface for hacs_utils.structured fallback path
+    def invoke(self, prompt: str) -> str:
+        """Synchronous invoke: send a single user prompt and return content string."""
+        resp = self.chat(messages=[{"role": "user", "content": prompt}], model=self.model)
+        try:
+            return resp.choices[0].message.content or ""
+        except Exception:
+            # Best effort stringify
+            return (
+                json.dumps(resp.model_dump(mode="json"))
+                if hasattr(resp, "model_dump")
+                else str(resp)
+            )
 
-class OpenAIStructuredGenerator:
-    """Specialized class for generating HACS models with OpenAI."""
 
-    def __init__(
-        self,
-        client: OpenAIClient | None = None,
-        model: str = "gpt-4.1-mini",
-        temperature: float = 0.3,  # Lower temperature for structured output
-        system_prompt: str | None = None,
-    ):
-        """Initialize structured generator."""
-        self.client = client or OpenAIClient(model=model, temperature=temperature)
-        self.system_prompt = system_prompt or self._default_system_prompt()
-
-    def _default_system_prompt(self) -> str:
-        """Default system prompt for healthcare AI."""
-        return """You are a healthcare AI assistant that generates structured,
-        FHIR-compliant healthcare data. Always use proper medical terminology
-        and follow healthcare data standards. Ensure all generated data is
-        realistic and clinically appropriate."""
-
-    def generate_hacs_resource(
-        self,
-        resource_type: type[BaseModel],
-        user_prompt: str,
-        system_prompt: str | None = None,
-        **kwargs,
-    ) -> BaseModel:
-        """Generate a HACS resource from natural language."""
-        messages = [
-            {"role": "system", "content": system_prompt or self.system_prompt},
-            {"role": "user", "content": user_prompt},
-        ]
-
-        return self.client.structured_output(
-            messages=messages, response_model=resource_type, **kwargs
-        )
-
-    def generate_batch_resources(
-        self,
-        resource_type: type[BaseModel],
-        prompts: list[str],
-        system_prompt: str | None = None,
-        **kwargs,
-    ) -> list[BaseModel]:
-        """Generate multiple HACS resources."""
-        results = []
-        for prompt in prompts:
-            try:
-                resource = self.generate_hacs_resource(
-                    resource_type=resource_type,
-                    user_prompt=prompt,
-                    system_prompt=system_prompt,
-                    **kwargs,
-                )
-                results.append(resource)
-            except Exception as e:
-                print(f"Error generating resource for prompt '{prompt}': {e}")
-                results.append(None)
-
-        return results
+"""Deprecated: OpenAIStructuredGenerator removed. Use hacs_utils.structured instead."""
 
 
 class OpenAIToolRegistry:

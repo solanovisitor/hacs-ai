@@ -1,0 +1,1734 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../connect_postgres/">
+      
+      
+        <link rel="next" href="../grounded_extraction/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.17">
+    
+    
+      
+        <title>Generate structured data - HACS</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e37652d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#create-hacs-records-from-unstructured-data" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="HACS" class="md-header__button md-logo" aria-label="HACS" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            HACS
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Generate structured data
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="HACS" class="md-nav__button md-logo" aria-label="HACS" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    HACS
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quick-start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quick Start
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Reference
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../hacs-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    HACS Tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    How-to
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            How-to
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authenticate_actor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Authenticate an Actor
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../connect_postgres/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Connect to database
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Generate structured data
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Generate structured data
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#create-hacs-records-from-unstructured-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Create HACS records from unstructured data
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Create HACS records from unstructured data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#about-annotateddocument-composition-and-document" class="md-nav__link">
+    <span class="md-ellipsis">
+      About AnnotatedDocument, Composition, and Document
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extract-typed-hacs-models-from-annotateddocument" class="md-nav__link">
+    <span class="md-ellipsis">
+      Extract typed HACS models from AnnotatedDocument
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Extract typed HACS models from AnnotatedDocument">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-import-and-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 1: Import and setup
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-create-an-annotateddocument" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 2: Create an AnnotatedDocument
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-define-hacs-model-schemas-and-introspect-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 3: Define HACS model schemas and introspect fields
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-configure-the-llm" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 4: Configure the LLM
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-5-extract-structured-hacs-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 5: Extract structured HACS models
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#extract-multiple-resource-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Extract multiple resource types
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-clinical-document-from-extracted-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Create a clinical document from extracted resources
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Next steps
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alternative-approaches" class="md-nav__link">
+    <span class="md-ellipsis">
+      Alternative approaches
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Alternative approaches">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#extract-with-citations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Extract with citations
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guide-llm-outputs-with-injected-fields-highly-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      Guide LLM outputs with injected fields (highly recommended)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Guide LLM outputs with injected fields (highly recommended)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#injecting-larger-templates-advanced" class="md-nav__link">
+    <span class="md-ellipsis">
+      Injecting larger templates (advanced)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structure-resources-directly-no-long-text-extraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Structure resources directly (no long text extraction)
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../grounded_extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Extract citations
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../validate_hacs_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Validate HACS models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualize_resources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Visualize data
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../persist_resources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Persist Resources
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use_register_tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Use & Register Tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../create_langgraph_agent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Create a simple agent (LangGraph)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Advanced
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Advanced
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../creating_private_registry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Creating a private Registry
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../manage_context_tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Manage context with agentic tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Tutorials
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/complete_context_engineering/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Complete Context Engineering
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/medication_extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Medication Extraction
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gallery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Gallery
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Testing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Reference
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#create-hacs-records-from-unstructured-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Create HACS records from unstructured data
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Create HACS records from unstructured data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#about-annotateddocument-composition-and-document" class="md-nav__link">
+    <span class="md-ellipsis">
+      About AnnotatedDocument, Composition, and Document
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extract-typed-hacs-models-from-annotateddocument" class="md-nav__link">
+    <span class="md-ellipsis">
+      Extract typed HACS models from AnnotatedDocument
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Extract typed HACS models from AnnotatedDocument">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-import-and-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 1: Import and setup
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-create-an-annotateddocument" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 2: Create an AnnotatedDocument
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-define-hacs-model-schemas-and-introspect-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 3: Define HACS model schemas and introspect fields
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-configure-the-llm" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 4: Configure the LLM
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-5-extract-structured-hacs-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      Step 5: Extract structured HACS models
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#extract-multiple-resource-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Extract multiple resource types
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-clinical-document-from-extracted-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Create a clinical document from extracted resources
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Next steps
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alternative-approaches" class="md-nav__link">
+    <span class="md-ellipsis">
+      Alternative approaches
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Alternative approaches">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#extract-with-citations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Extract with citations
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guide-llm-outputs-with-injected-fields-highly-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      Guide LLM outputs with injected fields (highly recommended)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Guide LLM outputs with injected fields (highly recommended)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#injecting-larger-templates-advanced" class="md-nav__link">
+    <span class="md-ellipsis">
+      Injecting larger templates (advanced)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structure-resources-directly-no-long-text-extraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Structure resources directly (no long text extraction)
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+  <h1>Generate structured data</h1>
+
+<h2 id="create-hacs-records-from-unstructured-data">Create HACS records from unstructured data<a class="headerlink" href="#create-hacs-records-from-unstructured-data" title="Permanent link">&para;</a></h2>
+<p>This guide shows how to extract clinical data as typed HACS Resources.</p>
+<h3 id="about-annotateddocument-composition-and-document">About AnnotatedDocument, Composition, and Document<a class="headerlink" href="#about-annotateddocument-composition-and-document" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>AnnotatedDocument</code> is a working container for raw clinical text plus intermediate artifacts (extractions, spans). It’s ideal for grounded extraction and analysis.</li>
+<li><code>Composition</code>/<code>Document</code> represent the finalized clinical note. Use them to assemble the human-readable record from validated structured resources and/or grounded spans. The <code>Composition</code> holds metadata (title, type, subject, status, confidentiality) and hierarchical sections; <code>Document</code> overlays convenience utilities on top of <code>Composition</code>.</li>
+<li>Typical flow: start with <code>AnnotatedDocument</code> → extract typed models with <code>extract()</code> (and citations when needed) → write the final note as a <code>Document</code> with sections summarizing or referencing those models.</li>
+</ul>
+<p>Prerequisites:</p>
+<ul>
+<li><code>uv pip install -U hacs-utils[langchain]</code></li>
+<li>An LLM provider (OpenAI, Anthropic, or a client exposing <code>ainvoke</code>/<code>invoke</code>)</li>
+</ul>
+<h2 id="extract-typed-hacs-models-from-annotateddocument">Extract typed HACS models from AnnotatedDocument<a class="headerlink" href="#extract-typed-hacs-models-from-annotateddocument" title="Permanent link">&para;</a></h2>
+<p>Let's start with the recommended approach: extracting medication information as validated HACS models from clinical text in an AnnotatedDocument.</p>
+<h3 id="step-1-import-and-setup">Step 1: Import and setup<a class="headerlink" href="#step-1-import-and-setup" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span>
+<span class="n">load_dotenv</span><span class="p">()</span>  <span class="c1"># Load API keys from .env file</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">MedicationRequest</span><span class="p">,</span> <span class="n">AnnotatedDocument</span><span class="p">,</span> <span class="n">Observation</span><span class="p">,</span> <span class="n">Condition</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models.annotation</span><span class="w"> </span><span class="kn">import</span> <span class="n">FormatType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.structured</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">visualize_annotations</span><span class="p">,</span> <span class="n">annotations_to_markdown</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>
+</code></pre></div>
+<h3 id="step-2-create-an-annotateddocument">Step 2: Create an AnnotatedDocument<a class="headerlink" href="#step-2-create-an-annotateddocument" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Start with clinical text in an AnnotatedDocument</span>
+<span class="n">clinical_text</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Patient was prescribed Lisinopril 10mg daily for hypertension management.</span>
+<span class="s2">Started Metformin 500mg twice daily for type 2 diabetes control.</span>
+<span class="s2">Continue current Aspirin 81mg daily for cardioprotection.</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+<span class="c1"># Create the annotated document (this could come from a previous annotation step)</span>
+<span class="n">annotated_doc</span> <span class="o">=</span> <span class="n">AnnotatedDocument</span><span class="p">(</span>
+    <span class="n">text</span><span class="o">=</span><span class="n">clinical_text</span><span class="p">,</span>
+    <span class="n">document_id</span><span class="o">=</span><span class="s2">&quot;clinical_note_001&quot;</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Created AnnotatedDocument:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  ID: </span><span class="si">{</span><span class="n">annotated_doc</span><span class="o">.</span><span class="n">document_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Text length: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">annotated_doc</span><span class="o">.</span><span class="n">text</span><span class="p">)</span><span class="si">}</span><span class="s2"> characters&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Content preview: </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">annotated_doc</span><span class="o">.</span><span class="n">text</span><span class="p">[:</span><span class="mi">50</span><span class="p">]</span><span class="si">}</span><span class="s2">...</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>Output:
+<div class="highlight"><pre><span></span><code>✓ Created AnnotatedDocument:
+  ID: clinical_note_001
+  Text length: 196 characters
+  Content preview: &quot;Patient was prescribed Lisinopril 10mg daily for h...&quot;
+</code></pre></div></p>
+<h3 id="step-3-define-hacs-model-schemas-and-introspect-fields">Step 3: Define HACS model schemas and introspect fields<a class="headerlink" href="#step-3-define-hacs-model-schemas-and-introspect-fields" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_markdown</span>
+
+<span class="c1"># Use to_markdown to show HACS model specifications with field descriptions</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">to_markdown</span><span class="p">(</span><span class="n">MedicationRequest</span><span class="p">))</span>
+</code></pre></div>
+<p>Output:
+<div class="highlight"><pre><span></span><code>#### MedicationRequest Specifications
+
+**Scope &amp; Usage**
+
+Order or authorization for supply and administration of medication to a patient. Represents prescriptions, medication orders, and medication authorizations with detailed dosing instructions, quantity, refills, and substitution rules. Supports complex dosing regimens, conditional orders, and medication reconciliation workflows. Includes prescriber information, pharmacy instructions, and administration context.
+
+**Boundaries**
+
+Do not use for actual medication taking/administration (use MedicationStatement/MedicationAdministration), medication definitions (use Medication), or medication dispensing (use MedicationDispense). Focus on the intent/order, not the fulfillment. Do not use for medication history or adherence tracking.
+
+**Relationships**
+
+- References: Patient via subject, Practitioner via requester, Medication via medicationReference, Encounter via encounter
+- Based on: CarePlan via basedOn, ServiceRequest via basedOn
+- Supports: MedicationDispense.authorizingPrescription, MedicationAdministration.request
+- Groups: priorPrescription (medication changes), groupIdentifier (related orders)
+
+**References**
+
+- Patient.subject
+- Practitioner.requester
+- Medication.medicationReference
+- Encounter.encounter
+
+**Tools**
+
+- validate_prescription_tool
+- route_prescription_tool
+- check_contraindications_tool
+- check_drug_interactions_tool
+
+| Field | Type | Description |
+|---|---|---|
+| status | &lt;enum &#39;MedicationRequestStatus&#39;&gt; | Status of the medication request (active, completed, cancelled, etc.) |
+| intent | &lt;enum &#39;MedicationRequestIntent&#39;&gt; | Intent of the medication request (proposal, plan, order, etc.) |
+| medication_codeable_concept | hacs_models.observation.CodeableConcept | Medication to be taken (coded) |
+| dosage_instruction | list[hacs_models.medication_request.Dosage] | How medication should be taken |
+| subject | &lt;class &#39;str&#39;&gt; | Who or group medication request is for |
+[... additional fields truncated for brevity ...]
+</code></pre></div></p>
+<h3 id="step-4-configure-the-llm">Step 4: Configure the LLM<a class="headerlink" href="#step-4-configure-the-llm" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Initialize the language model for HACS model extraction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>
+
+<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✓ LLM configured for HACS model extraction&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Model: gpt-4o-mini&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>Output:
+<div class="highlight"><pre><span></span><code>✓ LLM configured for HACS model extraction
+Model: gpt-4o-mini
+</code></pre></div></p>
+<h3 id="step-5-extract-structured-hacs-models">Step 5: Extract structured HACS models<a class="headerlink" href="#step-5-extract-structured-hacs-models" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_markdown</span>
+
+<span class="c1"># One-call structured extraction using LangChain with descriptive schema context</span>
+<span class="n">medication_requests</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">extract</span><span class="p">(</span>
+    <span class="n">llm_provider</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
+    <span class="n">prompt</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Extract MedicationRequest objects from this clinical text:</span><span class="se">\n\n</span><span class="si">{</span><span class="n">annotated_doc</span><span class="o">.</span><span class="n">text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="n">output_model</span><span class="o">=</span><span class="n">MedicationRequest</span><span class="p">,</span>
+    <span class="n">many</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">max_items</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">format_type</span><span class="o">=</span><span class="n">FormatType</span><span class="o">.</span><span class="n">JSON</span><span class="p">,</span>
+    <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">max_retries</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">use_descriptive_schema</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">to_markdown</span><span class="p">(</span><span class="n">medication_requests</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Example Extraction Record&quot;</span><span class="p">))</span>
+</code></pre></div>
+<p>Output:</p>
+<div class="highlight"><pre><span></span><code><span class="gu">### Example Extraction Record</span>
+
+<span class="gu">#### MedicationRequest</span>
+
+| Field | Value |
+|---|---|
+| resource_type | MedicationRequest |
+| id | medicationrequest-c921d3cc |
+| status | active |
+| subject | Patient/UNKNOWN |
+| medication_codeable_concept | Lisinopril 10mg |
+| dosage_instruction | Take 10mg daily for hypertension management. |
+| intent | order |
+| created_at | 2025-08-23T18:07:02.401678Z |
+| updated_at | 2025-08-23T18:07:02.401689Z |
+
+<span class="gu">#### MedicationRequest</span>
+
+| Field | Value |
+|---|---|
+| resource_type | MedicationRequest |
+| id | medicationrequest-4c3f55dc |
+| status | active |
+| subject | Patient/UNKNOWN |
+| medication_codeable_concept | Metformin 500mg |
+| dosage_instruction | Take 500mg twice daily for type 2 diabetes control. |
+| intent | order |
+| created_at | 2025-08-23T18:07:02.401940Z |
+| updated_at | 2025-08-23T18:07:02.401941Z |
+
+<span class="gu">#### MedicationRequest</span>
+
+| Field | Value |
+|---|---|
+| resource_type | MedicationRequest |
+| id | medicationrequest-22d00c68 |
+| status | active |
+| subject | Patient/UNKNOWN |
+| medication_codeable_concept | Aspirin 81mg |
+| dosage_instruction | Continue taking 81mg daily for cardioprotection. |
+| intent | order |
+| created_at | 2025-08-23T18:07:02.401974Z |
+| updated_at | 2025-08-23T18:07:02.401974Z |
+</code></pre></div>
+<p><strong>What happens during HACS model extraction:</strong></p>
+<ol>
+<li>HACS descriptive schema provides field descriptions, enum values, and examples to the LLM</li>
+<li>LangChain's structured output (function calling) ensures strict schema adherence</li>
+<li>The AnnotatedDocument text is processed with rich schema context</li>
+<li>LLM returns valid HACS model instances with proper enum values (status=active, intent=order)</li>
+<li>Each instance has full BaseResource functionality and FHIR compliance</li>
+<li>Result is a list of validated HACS resources ready for persistence</li>
+</ol>
+<p><strong>Provider integrations</strong>: This example uses LangChain with OpenAI. For other approaches and adapters, see the <a href="../use_register_tools/">Use &amp; Register Tools</a> guide.</p>
+<h3 id="extract-multiple-resource-types">Extract multiple resource types<a class="headerlink" href="#extract-multiple-resource-types" title="Permanent link">&para;</a></h3>
+<p>You can call <code>extract()</code> multiple times to build a bundle of different resource types from the same text. Example for <code>MedicationRequest</code> and <code>Condition</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">MedicationRequest</span><span class="p">,</span> <span class="n">Condition</span><span class="p">,</span>
+    <span class="n">MedicationRequestStatus</span><span class="p">,</span> <span class="n">MedicationRequestIntent</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConditionClinicalStatus</span><span class="p">,</span> <span class="n">ConditionVerificationStatus</span>
+
+<span class="n">med_prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Extract MedicationRequest objects for each medication order in the text.</span>
+<span class="s2">- Set medication_codeable_concept.text and dosage_instruction[0].text</span>
+<span class="s2">- Do not invent fields you cannot infer.</span>
+<span class="s2">Text:</span>
+<span class="si">{</span><span class="n">annotated_doc</span><span class="o">.</span><span class="n">text</span><span class="si">}</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+<span class="n">cond_prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Extract Condition objects for each condition mentioned.</span>
+<span class="s2">- Set code.text (e.g., &quot;hypertension&quot;)</span>
+<span class="s2">- Set clinical_status and verification_status</span>
+<span class="s2">Text:</span>
+<span class="si">{</span><span class="n">annotated_doc</span><span class="o">.</span><span class="n">text</span><span class="si">}</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+<span class="n">meds</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">extract</span><span class="p">(</span>
+    <span class="n">llm_provider</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
+    <span class="n">prompt</span><span class="o">=</span><span class="n">med_prompt</span><span class="p">,</span>
+    <span class="n">output_model</span><span class="o">=</span><span class="n">MedicationRequest</span><span class="p">,</span>
+    <span class="n">many</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">use_descriptive_schema</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">injected_fields</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">MedicationRequestStatus</span><span class="o">.</span><span class="n">ACTIVE</span><span class="p">,</span>
+        <span class="s2">&quot;intent&quot;</span><span class="p">:</span> <span class="n">MedicationRequestIntent</span><span class="o">.</span><span class="n">ORDER</span><span class="p">,</span>
+        <span class="s2">&quot;subject&quot;</span><span class="p">:</span> <span class="s2">&quot;Patient/123&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">))</span>
+
+<span class="n">conds</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">extract</span><span class="p">(</span>
+    <span class="n">llm_provider</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
+    <span class="n">prompt</span><span class="o">=</span><span class="n">cond_prompt</span><span class="p">,</span>
+    <span class="n">output_model</span><span class="o">=</span><span class="n">Condition</span><span class="p">,</span>
+    <span class="n">many</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">use_descriptive_schema</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">injected_fields</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;clinical_status&quot;</span><span class="p">:</span> <span class="n">ConditionClinicalStatus</span><span class="o">.</span><span class="n">ACTIVE</span><span class="p">,</span>
+        <span class="s2">&quot;verification_status&quot;</span><span class="p">:</span> <span class="n">ConditionVerificationStatus</span><span class="o">.</span><span class="n">CONFIRMED</span><span class="p">,</span>
+        <span class="s2">&quot;subject&quot;</span><span class="p">:</span> <span class="s2">&quot;Patient/123&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">to_markdown</span><span class="p">(</span><span class="n">meds</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Extracted MedicationRequests&quot;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">to_markdown</span><span class="p">(</span><span class="n">conds</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Extracted Conditions&quot;</span><span class="p">))</span>
+</code></pre></div>
+<p>Output (MedicationRequest):</p>
+<div class="highlight"><pre><span></span><code><span class="gu">### Extracted MedicationRequests</span>
+
+<span class="gu">#### MedicationRequest</span>
+
+| Field | Value |
+|---|---|
+| resource_type | MedicationRequest |
+| id | medicationrequest-54fe2fc5 |
+| status | active |
+| subject | Patient/123 |
+| medication_codeable_concept | Lisinopril |
+| dosage_instruction | 10mg daily |
+| intent | order |
+| created_at | 2025-08-23T18:07:26.327782Z |
+| updated_at | 2025-08-23T18:07:26.327786Z |
+
+<span class="gu">#### MedicationRequest</span>
+
+| Field | Value |
+|---|---|
+| resource_type | MedicationRequest |
+| id | medicationrequest-b9211585 |
+| status | active |
+| subject | Patient/123 |
+| medication_codeable_concept | Metformin |
+| dosage_instruction | 500mg twice daily |
+| intent | order |
+| created_at | 2025-08-23T18:07:26.327883Z |
+| updated_at | 2025-08-23T18:07:26.327884Z |
+
+<span class="gu">#### MedicationRequest</span>
+
+| Field | Value |
+|---|---|
+| resource_type | MedicationRequest |
+| id | medicationrequest-2653a3d8 |
+| status | active |
+| subject | Patient/123 |
+| medication_codeable_concept | Aspirin |
+| dosage_instruction | 81mg daily |
+| intent | order |
+| created_at | 2025-08-23T18:07:26.327915Z |
+| updated_at | 2025-08-23T18:07:26.327915Z |
+</code></pre></div>
+<p>Output (Condition):</p>
+<div class="highlight"><pre><span></span><code><span class="gu">### Extracted Conditions</span>
+
+<span class="gu">#### Condition</span>
+
+| Field | Value |
+|---|---|
+| resource_type | Condition |
+| id | condition-5ad26285 |
+| status | active |
+| code | hypertension |
+| subject | Patient/123 |
+| created_at | 2025-08-23T18:07:28.884472Z |
+| updated_at | 2025-08-23T18:07:28.884475Z |
+
+<span class="gu">#### Condition</span>
+
+| Field | Value |
+|---|---|
+| resource_type | Condition |
+| id | condition-56b673eb |
+| status | active |
+| code | type 2 diabetes |
+| subject | Patient/123 |
+| created_at | 2025-08-23T18:07:28.884555Z |
+| updated_at | 2025-08-23T18:07:28.884556Z |
+
+<span class="gu">#### Condition</span>
+
+| Field | Value |
+|---|---|
+| resource_type | Condition |
+| id | condition-9358471e |
+| status | active |
+| code | cardioprotection |
+| subject | Patient/123 |
+| created_at | 2025-08-23T18:07:28.884567Z |
+| updated_at | 2025-08-23T18:07:28.884568Z |
+</code></pre></div>
+<h2 id="create-a-clinical-document-from-extracted-resources">Create a clinical document from extracted resources<a class="headerlink" href="#create-a-clinical-document-from-extracted-resources" title="Permanent link">&para;</a></h2>
+<p>Once you have extracted HACS models, assemble them into a structured clinical document:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Document</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">DocumentType</span><span class="p">,</span> <span class="n">DocumentStatus</span><span class="p">,</span> <span class="n">ConfidentialityLevel</span>
+
+<span class="c1"># Create a structured clinical document (preliminary until sections are added)</span>
+<span class="n">clinical_doc</span> <span class="o">=</span> <span class="n">Document</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Medication Review Note&quot;</span><span class="p">,</span>
+    <span class="n">document_type</span><span class="o">=</span><span class="n">DocumentType</span><span class="o">.</span><span class="n">PROGRESS_NOTE</span><span class="p">,</span>
+    <span class="n">status</span><span class="o">=</span><span class="n">DocumentStatus</span><span class="o">.</span><span class="n">PRELIMINARY</span><span class="p">,</span>
+    <span class="n">subject_name</span><span class="o">=</span><span class="s2">&quot;Patient&quot;</span><span class="p">,</span>
+    <span class="n">confidentiality</span><span class="o">=</span><span class="n">ConfidentialityLevel</span><span class="o">.</span><span class="n">NORMAL</span>
+<span class="p">)</span>
+
+<span class="c1"># Add a medications section summarizing the extracted data</span>
+<span class="n">med_summary</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Extracted </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">medication_requests</span><span class="p">)</span><span class="si">}</span><span class="s2"> medication orders:&quot;</span>
+<span class="k">for</span> <span class="n">mr</span> <span class="ow">in</span> <span class="n">medication_requests</span><span class="p">:</span>
+    <span class="n">med_name</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">medication_codeable_concept</span><span class="o">.</span><span class="n">text</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">mr</span><span class="o">.</span><span class="n">medication_codeable_concept</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;Unknown&#39;</span>
+    <span class="n">dosage</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">dosage_instruction</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">text</span> <span class="k">if</span> <span class="n">mr</span><span class="o">.</span><span class="n">dosage_instruction</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">mr</span><span class="o">.</span><span class="n">dosage_instruction</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;text&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;No dosage specified&#39;</span>
+    <span class="n">med_summary</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">- </span><span class="si">{</span><span class="n">med_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">dosage</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">mr</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+<span class="n">clinical_doc</span><span class="o">.</span><span class="n">add_section</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Current Medications&quot;</span><span class="p">,</span>
+    <span class="n">text</span><span class="o">=</span><span class="n">med_summary</span><span class="p">,</span>
+    <span class="n">code</span><span class="o">=</span><span class="s2">&quot;10160-0&quot;</span><span class="p">,</span>  <span class="c1"># LOINC code for medication list</span>
+    <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;extracted_resource_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">medication_requests</span><span class="p">)}</span>
+<span class="p">)</span>
+
+<span class="c1"># Update status to final after adding sections</span>
+<span class="n">clinical_doc</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">DocumentStatus</span><span class="o">.</span><span class="n">FINAL</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Created clinical document: </span><span class="si">{</span><span class="n">clinical_doc</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Status: </span><span class="si">{</span><span class="n">clinical_doc</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Sections: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">clinical_doc</span><span class="o">.</span><span class="n">sections</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Word count: </span><span class="si">{</span><span class="n">clinical_doc</span><span class="o">.</span><span class="n">get_word_count</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>Output:
+<div class="highlight"><pre><span></span><code>✓ Created clinical document: Medication Review Note
+  Status: DocumentStatus.FINAL
+  Sections: 1
+  Word count: 47
+</code></pre></div></p>
+<h2 id="next-steps">Next steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
+<p>Now that you have extracted HACS models and assembled a clinical document, you can:</p>
+<ul>
+<li><strong><a href="../validate_hacs_models/">Validate models</a></strong>: Examine structure and verify clinical data quality</li>
+<li><strong><a href="../persist_resources/">Persist resources</a></strong>: Save models to database with proper validation</li>
+<li><strong><a href="../visualize_resources/">Visualize data</a></strong>: Create rich visualizations and reports</li>
+<li><strong><a href="../grounded_extraction/">Extract citations</a></strong>: Extract mentions with character positions for text analysis</li>
+</ul>
+<h2 id="alternative-approaches">Alternative approaches<a class="headerlink" href="#alternative-approaches" title="Permanent link">&para;</a></h2>
+<h3 id="extract-with-citations">Extract with citations<a class="headerlink" href="#extract-with-citations" title="Permanent link">&para;</a></h3>
+<p>For cases where you need precise character positions instead of structured models, see the <a href="../grounded_extraction/">Extract with citations guide</a>.</p>
+<h2 id="guide-llm-outputs-with-injected-fields-highly-recommended">Guide LLM outputs with injected fields (highly recommended)<a class="headerlink" href="#guide-llm-outputs-with-injected-fields-highly-recommended" title="Permanent link">&para;</a></h2>
+<p>Most healthcare resources have required enums and references. To keep the model focused on clinical content while guaranteeing validity, use <code>injected_fields</code> to pre‑fill stable fields and let the LLM fill the rest.</p>
+<ul>
+<li>What it does: merges your fields into the LLM result, then re‑validates the object</li>
+<li>Priority: injected_instance &gt; injected_fields &gt; LLM generated values</li>
+<li>Unknown keys are ignored by validation</li>
+<li>Works for both single and list outputs</li>
+</ul>
+<p>Common examples:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 1) MedicationRequest: lock status, intent, and patient reference</span>
+<span class="n">meds</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">extract</span><span class="p">(</span>
+    <span class="n">llm_provider</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
+    <span class="n">prompt</span><span class="o">=</span><span class="n">med_prompt</span><span class="p">,</span>
+    <span class="n">output_model</span><span class="o">=</span><span class="n">MedicationRequest</span><span class="p">,</span>
+    <span class="n">many</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">injected_fields</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">MedicationRequestStatus</span><span class="o">.</span><span class="n">ACTIVE</span><span class="p">,</span>
+        <span class="s2">&quot;intent&quot;</span><span class="p">:</span> <span class="n">MedicationRequestIntent</span><span class="o">.</span><span class="n">ORDER</span><span class="p">,</span>
+        <span class="s2">&quot;subject&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Patient/</span><span class="si">{</span><span class="n">patient_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">))</span>
+
+<span class="c1"># 2) Condition: ensure clinical and verification statuses are valid</span>
+<span class="n">conds</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">extract</span><span class="p">(</span>
+    <span class="n">llm_provider</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
+    <span class="n">prompt</span><span class="o">=</span><span class="n">cond_prompt</span><span class="p">,</span>
+    <span class="n">output_model</span><span class="o">=</span><span class="n">Condition</span><span class="p">,</span>
+    <span class="n">many</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">injected_fields</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;clinical_status&quot;</span><span class="p">:</span> <span class="n">ConditionClinicalStatus</span><span class="o">.</span><span class="n">ACTIVE</span><span class="p">,</span>
+        <span class="s2">&quot;verification_status&quot;</span><span class="p">:</span> <span class="n">ConditionVerificationStatus</span><span class="o">.</span><span class="n">CONFIRMED</span><span class="p">,</span>
+        <span class="s2">&quot;subject&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Patient/</span><span class="si">{</span><span class="n">patient_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">))</span>
+</code></pre></div>
+<p>Notes:
+- Prefer enums from <code>hacs_models</code> for clarity and validation.
+- You can inject any field the model supports (strings, enums, nested structures).
+- This is the easiest way to fix flaky enum/literal fields while keeping the LLM’s job simple.</p>
+<h3 id="injecting-larger-templates-advanced">Injecting larger templates (advanced)<a class="headerlink" href="#injecting-larger-templates-advanced" title="Permanent link">&para;</a></h3>
+<p>You can also pass a partial object via <code>injected_instance</code> when you already have a resource to merge from. Use this when you want to carry forward system‑generated IDs or shared metadata.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Example: carry an existing subject reference and intent from a prior step</span>
+<span class="n">base_fields</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;subject&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Patient/</span><span class="si">{</span><span class="n">patient_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;intent&quot;</span><span class="p">:</span> <span class="n">MedicationRequestIntent</span><span class="o">.</span><span class="n">ORDER</span><span class="p">}</span>
+<span class="n">meds</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">extract</span><span class="p">(</span>
+    <span class="n">llm_provider</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
+    <span class="n">prompt</span><span class="o">=</span><span class="n">med_prompt</span><span class="p">,</span>
+    <span class="n">output_model</span><span class="o">=</span><span class="n">MedicationRequest</span><span class="p">,</span>
+    <span class="n">many</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">injected_fields</span><span class="o">=</span><span class="n">base_fields</span><span class="p">,</span>
+    <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">))</span>
+</code></pre></div>
+<hr />
+<h2 id="structure-resources-directly-no-long-text-extraction">Structure resources directly (no long text extraction)<a class="headerlink" href="#structure-resources-directly-no-long-text-extraction" title="Permanent link">&para;</a></h2>
+<p>Use <code>structure()</code> when you want the model to produce a typed object from concise instructions and context (not chunking). This is useful for generating plans, orders, or summaries given known values.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.structured</span><span class="w"> </span><span class="kn">import</span> <span class="n">structure</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CarePlan</span>
+
+<span class="n">patient_ref</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Patient/</span><span class="si">{</span><span class="n">patient_id</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="n">ctx</span> <span class="o">=</span> <span class="s2">&quot;Patient has hypertension; reduce BP over 3 months with medication and lifestyle changes.&quot;</span>
+
+<span class="n">cp</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">structure</span><span class="p">(</span>
+    <span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
+    <span class="n">prompt</span><span class="o">=</span><span class="p">(</span>
+        <span class="s2">&quot;Generate a CarePlan object.</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Subject: </span><span class="si">{</span><span class="n">patient_ref</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="s2">&quot;Include: title, description_text, at least one activity_text item, and one goal_refs placeholder.</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Context: </span><span class="si">{</span><span class="n">ctx</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">),</span>
+    <span class="n">output_model</span><span class="o">=</span><span class="n">CarePlan</span><span class="p">,</span>
+    <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">))</span>
+</code></pre></div>
+<p>Synchronous convenience wrappers are also available for scripts/CLI:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract_sync</span><span class="p">,</span> <span class="n">structure_sync</span>
+
+<span class="n">subset</span> <span class="o">=</span> <span class="n">extract_sync</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;Extract: Jane Doe (1985-03-20)&quot;</span><span class="p">,</span> <span class="n">output_model</span><span class="o">=</span><span class="n">Patient</span><span class="o">.</span><span class="n">pick</span><span class="p">(</span><span class="s2">&quot;full_name&quot;</span><span class="p">,</span><span class="s2">&quot;birth_date&quot;</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">plan</span> <span class="o">=</span> <span class="n">structure_sync</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;Return a CarePlan for Patient/123 with a title and one activity_text&quot;</span><span class="p">,</span> <span class="n">output_model</span><span class="o">=</span><span class="n">CarePlan</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div>
+<p>Implementation details:
+- Descriptive schema is enabled by default; field descriptions and allowed values are injected into prompts.
+- Provider‑native structured outputs (OpenAI Responses.parse, Anthropic tool JSON) are preferred when available; otherwise LangChain function calling is used.
+- Injected fields are merged after parsing, then the object is re‑validated.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand"], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.92b07e13.min.js"></script>
+      
+    
+  </body>
+</html>

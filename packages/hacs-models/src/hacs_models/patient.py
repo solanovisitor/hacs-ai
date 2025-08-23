@@ -1,16 +1,16 @@
 """
 Patient model for healthcare data representation.
 
-This module provides a comprehensive, FHIR-compliant Patient model optimized
+This module provides a FHIR-compliant Patient model optimized
 for AI agent communication and healthcare workflows. Features automatic data
-parsing, flexible name handling, and comprehensive validation.
+parsing, flexible name handling, and validation.
 
 Key Features:
     - FHIR R4/R5 compliant structure
     - Automatic name parsing from full_name
     - Smart contact information handling
     - Age calculation and validation
-    - Comprehensive identifier management
+    -identifier management
     - AI-optimized field structure
 
 Design Philosophy:
@@ -23,10 +23,10 @@ Design Philosophy:
 from datetime import date
 from typing import Any, Literal
 
-from pydantic import Field, computed_field, field_validator
+from pydantic import Field, computed_field, field_validator, model_validator
 
 from .base_resource import DomainResource
-from .types import Gender, ContactPointSystem, ContactPointUse, IdentifierUse, AddressUse, NameUse
+from .types import AddressUse, ContactPointSystem, ContactPointUse, Gender, IdentifierUse, NameUse
 
 
 class HumanName(DomainResource):
@@ -39,42 +39,41 @@ class HumanName(DomainResource):
     """
 
     resource_type: Literal["HumanName"] = Field(
-        default="HumanName",
-        description="Resource type identifier"
+        default="HumanName", description="Resource type identifier"
     )
 
     use: NameUse | None = Field(
         default=None,
         description="Purpose of this name (usual, official, nickname, etc.)",
-        examples=["usual", "official", "maiden"]
+        examples=["usual", "official", "maiden"],
     )
 
     family: str | None = Field(
         default=None,
         description="Family name (surname, last name)",
         examples=["Smith", "Johnson", "García", "O'Connor"],
-        max_length=100
+        max_length=100,
     )
 
     given: list[str] = Field(
         default_factory=list,
         description="Given names (first, middle names)",
         examples=[["John"], ["Mary", "Jane"], ["José", "María"]],
-        max_length=5  # Reasonable limit on given names
+        max_length=5,  # Reasonable limit on given names
     )
 
     prefix: list[str] = Field(
         default_factory=list,
         description="Parts that come before the name (titles, prefixes)",
         examples=[["Dr."], ["Mr.", "Prof."], ["Ms.", "PhD"]],
-        max_length=3
+        max_length=3,
     )
 
     suffix: list[str] = Field(
         default_factory=list,
         description="Parts that come after the name (suffixes)",
         examples=[["Jr."], ["III"], ["MD", "PhD"]],
-        max_length=3
+        max_length=3,
     )
 
     @field_validator("given", "prefix", "suffix")
@@ -157,33 +156,29 @@ class ContactPoint(DomainResource):
     """
 
     resource_type: Literal["ContactPoint"] = Field(
-        default="ContactPoint",
-        description="Resource type identifier"
+        default="ContactPoint", description="Resource type identifier"
     )
 
     system: ContactPointSystem = Field(
         description="Contact method type (phone, email, fax, etc.)",
-        examples=["phone", "email", "fax"]
+        examples=["phone", "email", "fax"],
     )
 
     value: str = Field(
         description="The actual contact point value",
         examples=["+1-555-123-4567", "patient@example.com", "https://example.com"],
         min_length=1,
-        max_length=255
+        max_length=255,
     )
 
     use: ContactPointUse | None = Field(
         default=None,
         description="Purpose of this contact point",
-        examples=["home", "work", "mobile"]
+        examples=["home", "work", "mobile"],
     )
 
     rank: int | None = Field(
-        default=None,
-        description="Preference order (1 = highest priority)",
-        ge=1,
-        le=10
+        default=None, description="Preference order (1 = highest priority)", ge=1, le=10
     )
 
     @field_validator("value")
@@ -220,70 +215,67 @@ class Address(DomainResource):
     """
 
     resource_type: Literal["Address"] = Field(
-        default="Address",
-        description="Resource type identifier"
+        default="Address", description="Resource type identifier"
     )
 
     use: AddressUse | None = Field(
-        default=None,
-        description="Purpose of this address",
-        examples=["home", "work", "billing"]
+        default=None, description="Purpose of this address", examples=["home", "work", "billing"]
     )
 
     type_: str | None = Field(
         default=None,
         alias="type",
         description="Type of address (postal, physical, both)",
-        examples=["postal", "physical", "both"]
+        examples=["postal", "physical", "both"],
     )
 
     text: str | None = Field(
         default=None,
         description="Full address as a single string",
         examples=["123 Main St, Anytown, CA 12345, USA"],
-        max_length=500
+        max_length=500,
     )
 
     line: list[str] = Field(
         default_factory=list,
         description="Street address lines",
         examples=[["123 Main Street"], ["456 Oak Ave", "Suite 200"]],
-        max_length=4  # FHIR allows up to 4 lines
+        max_length=4,  # FHIR allows up to 4 lines
     )
 
     city: str | None = Field(
         default=None,
         description="City name",
         examples=["New York", "Los Angeles", "Boston"],
-        max_length=100
+        max_length=100,
     )
 
     district: str | None = Field(
         default=None,
         description="District/county name",
         examples=["Manhattan", "Orange County", "Suffolk"],
-        max_length=100
+        max_length=100,
     )
 
     state: str | None = Field(
         default=None,
         description="State/province code or name",
         examples=["CA", "NY", "Texas", "Ontario"],
-        max_length=50
+        max_length=50,
     )
 
     postal_code: str | None = Field(
         default=None,
         description="Postal/ZIP code",
         examples=["12345", "90210", "SW1A 1AA"],
-        max_length=20
+        max_length=20,
     )
 
     country: str | None = Field(
         default=None,
         description="Country code or name",
         examples=["US", "CA", "GB", "United States"],
-        max_length=50
+        max_length=50,
     )
 
     @field_validator("line")
@@ -344,42 +336,41 @@ class Identifier(DomainResource):
     """
 
     resource_type: Literal["Identifier"] = Field(
-        default="Identifier",
-        description="Resource type identifier"
+        default="Identifier", description="Resource type identifier"
     )
 
     use: IdentifierUse | None = Field(
         default=None,
         description="Purpose of this identifier",
-        examples=["usual", "official", "secondary"]
+        examples=["usual", "official", "secondary"],
     )
 
     type_code: str | None = Field(
         default=None,
         description="Type of identifier (MR, SSN, DL, etc.)",
         examples=["MR", "SSN", "DL", "PPN"],
-        max_length=10
+        max_length=10,
     )
 
     system: str | None = Field(
         default=None,
         description="System that assigned the identifier",
         examples=["http://hospital.example.com/mrn", "http://hl7.org/fhir/sid/us-ssn"],
-        max_length=255
+        max_length=255,
     )
 
     value: str = Field(
         description="The identifier value",
         examples=["123456789", "555-12-3456", "DL123456"],
         min_length=1,
-        max_length=100
+        max_length=100,
     )
 
     assigner: str | None = Field(
         default=None,
         description="Organization that assigned the identifier",
         examples=["Example Hospital", "DMV", "Social Security Administration"],
-        max_length=200
+        max_length=200,
     )
 
     @field_validator("value")
@@ -396,15 +387,20 @@ class Patient(DomainResource):
     """
     Patient demographics and administrative information.
 
-    Comprehensive patient model following FHIR Patient resource structure
+    Patient model following FHIR Patient resource structure
     with AI-optimized features for flexible data input and automatic parsing.
 
     Key Features:
         - Automatic name parsing from full_name string
         - Flexible contact information handling
         - Age calculation and validation
-        - Comprehensive identifier management
+        -identifier management
         - Care team tracking
+        - Patient linkage and family relationships
+        - Enhanced communication preferences and accessibility
+        - Multiple birth tracking (twins, triplets)
+        - Photo attachments support
+        - Deceased patient tracking with date
         - Agent context for AI workflows
 
     Example:
@@ -420,15 +416,14 @@ class Patient(DomainResource):
     """
 
     resource_type: Literal["Patient"] = Field(
-        default="Patient",
-        description="Resource type identifier"
+        default="Patient", description="Resource type identifier"
     )
 
     # Name information - flexible input options
     name: list[HumanName] = Field(
         default_factory=list,
         description="Patient names (structured format)",
-        max_length=5  # Reasonable limit on names
+        max_length=5,  # Reasonable limit on names
     )
 
     # AI-friendly convenience fields for name input
@@ -436,20 +431,20 @@ class Patient(DomainResource):
         default=None,
         description="Complete name as single string (auto-parsed into structured format)",
         examples=["Dr. John Michael Smith Jr.", "Mary Jane Johnson", "José María García"],
-        max_length=200
+        max_length=200,
     )
 
     # Demographics
     gender: Gender | None = Field(
         default=None,
         description="Administrative gender",
-        examples=["male", "female", "other", "unknown"]
+        examples=["male", "female", "other", "unknown"],
     )
 
-    birth_date: date | None = Field(
+    birth_date: date | str | None = Field(
         default=None,
         description="Date of birth",
-        examples=["1985-03-15", "1992-12-01"]
+        examples=["1985-03-15", "1992-12-01", "{{birth_date}}"],
     )
 
     # AI-friendly age input (will calculate birth_date if not provided)
@@ -458,24 +453,41 @@ class Patient(DomainResource):
         description="Age in years (will estimate birth_date if not provided)",
         examples=[39, 25, 67],
         ge=0,
-        le=150
+        le=150,
     )
 
-    deceased_boolean: bool = Field(
-        default=False,
-        description="Whether the patient is deceased"
-    )
+    deceased_boolean: bool = Field(default=False, description="Whether the patient is deceased")
 
-    deceased_date_time: date | None = Field(
+    deceased_date_time: date | None = Field(default=None, description="Date of death if deceased")
+
+    # FHIR R4 Enhanced Demographics
+    multiple_birth_boolean: bool | None = Field(
         default=None,
-        description="Date of death if deceased"
+        description="Whether patient is part of a multiple birth (twins, triplets, etc.)",
+        examples=[True, False],
+    )
+
+    multiple_birth_integer: int | None = Field(
+        default=None,
+        description="Birth order for multiple births (1 for first twin, 2 for second, etc.)",
+        examples=[1, 2, 3],
+        ge=1,
+        le=10,
+    )
+
+    # Photo attachments
+    photo: list[str] = Field(
+        default_factory=list,
+        description="Patient photos (base64 encoded images or URLs)",
+        examples=[["data:image/jpeg;base64,/9j/4AAQ...", "https://example.com/patient-photo.jpg"]],
+        max_length=5,
     )
 
     # Contact information
     telecom: list[ContactPoint] = Field(
         default_factory=list,
         description="Contact points (phone, email, etc.)",
-        max_length=10  # Reasonable limit
+        max_length=10,  # Reasonable limit
     )
 
     # AI-friendly convenience fields for contact input
@@ -483,21 +495,21 @@ class Patient(DomainResource):
         default=None,
         description="Primary phone number (auto-added to telecom)",
         examples=["+1-555-123-4567", "555-123-4567", "(555) 123-4567"],
-        max_length=50
+        max_length=50,
     )
 
     email: str | None = Field(
         default=None,
         description="Primary email address (auto-added to telecom)",
         examples=["patient@example.com", "john.smith@email.com"],
-        max_length=255
+        max_length=255,
     )
 
     # Address information
     address: list[Address] = Field(
         default_factory=list,
         description="Patient addresses",
-        max_length=5  # Reasonable limit
+        max_length=5,  # Reasonable limit
     )
 
     # AI-friendly convenience field for address input
@@ -505,7 +517,7 @@ class Patient(DomainResource):
         default=None,
         description="Simple address as text (auto-parsed into structured format)",
         examples=["123 Main St, Anytown, CA 12345", "456 Oak Ave, Suite 200, Boston, MA 02101"],
-        max_length=500
+        max_length=500,
     )
 
     # Marital status
@@ -513,14 +525,14 @@ class Patient(DomainResource):
         default=None,
         description="Marital status code (M=Married, S=Single, D=Divorced, W=Widowed, U=Unknown)",
         examples=["M", "S", "D", "W", "U"],
-        max_length=10
+        max_length=10,
     )
 
     # Language and communication preferences
     communication: list[dict[str, Any]] = Field(
         default_factory=list,
         description="Languages and communication preferences",
-        examples=[[{"language": "en-US", "preferred": True}]]
+        examples=[[{"language": "en-US", "preferred": True}]],
     )
 
     # AI-friendly language input
@@ -528,14 +540,14 @@ class Patient(DomainResource):
         default=None,
         description="Primary language (auto-added to communication)",
         examples=["English", "Spanish", "en-US", "es-ES"],
-        max_length=50
+        max_length=50,
     )
 
     # Identifiers
     identifier: list[Identifier] = Field(
         default_factory=list,
         description="Patient identifiers (MRN, SSN, etc.)",
-        max_length=10  # Reasonable limit
+        max_length=10,  # Reasonable limit
     )
 
     # Care management
@@ -543,37 +555,79 @@ class Patient(DomainResource):
         default_factory=list,
         description="References to care providers and team members",
         examples=[["Practitioner/dr-smith", "Organization/hospital-main"]],
-        max_length=20
+        max_length=20,
+    )
+
+    # FHIR R4 Patient Linkage and Relationships
+    link: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Links to other related Patient resources (family members, care partners, etc.)",
+        examples=[
+            [
+                {
+                    "other": "Patient/mother-123",
+                    "type": "seealso",  # replace | replaces | refer | seealso
+                }
+            ]
+        ],
+        max_length=10,
+    )
+
+    # Enhanced Communication Preferences
+    communication_preference: dict[str, Any] | None = Field(
+        default=None,
+        description="Specific communication preferences and accessibility needs",
+        examples=[
+            {
+                "preferred_method": "email",
+                "accessible_communication": ["sign-language"],
+                "interpreter_required": True,
+                "contact_person": "Patient/spouse-456",
+            }
+        ],
     )
 
     # Emergency contacts
     contact: list[dict[str, Any]] = Field(
         default_factory=list,
         description="Emergency contact information",
-        examples=[[{
-            "relationship": "spouse",
-            "name": {"family": "Smith", "given": ["Jane"]},
-            "telecom": [{"system": "phone", "value": "+1-555-123-4568"}]
-        }]]
+        examples=[
+            [
+                {
+                    "relationship": "spouse",
+                    "name": {"family": "Smith", "given": ["Jane"]},
+                    "telecom": [{"system": "phone", "value": "+1-555-123-4568"}],
+                }
+            ]
+        ],
     )
 
     # Administrative
-    active: bool = Field(
-        default=True,
-        description="Whether this patient record is active"
-    )
+    active: bool = Field(default=True, description="Whether this patient record is active")
 
     # AI agent context
     agent_context: dict[str, Any] = Field(
         default_factory=dict,
         description="Agent-specific context and metadata for AI workflows",
-        examples=[{
-            "last_interaction": "2024-08-03T12:00:00Z",
-            "preferred_agent": "primary-care-assistant",
-            "interaction_count": 5,
-            "care_plan_status": "active"
-        }]
+        examples=[
+            {
+                "last_interaction": "2024-08-03T12:00:00Z",
+                "preferred_agent": "primary-care-assistant",
+                "interaction_count": 5,
+                "care_plan_status": "active",
+            }
+        ],
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _allow_templated_birth_date(cls, values):  # type: ignore[override]
+        if isinstance(values, dict):
+            bd = values.get("birth_date")
+            if isinstance(bd, str) and "{{" in bd and "}}" in bd:
+                # Leave as string; later templating will resolve
+                return values
+        return values
 
     def model_post_init(self, __context: Any) -> None:
         """Post-initialization processing for AI-friendly features."""
@@ -596,23 +650,13 @@ class Patient(DomainResource):
 
         # Add convenience contact info to structured format
         if self.phone:
-            phone_contact = ContactPoint(
-                system="phone",
-                value=self.phone,
-                use="home",
-                rank=1
-            )
+            phone_contact = ContactPoint(system="phone", value=self.phone, use="home", rank=1)
             # Check if phone already exists
             if not any(cp.system == "phone" and cp.value == self.phone for cp in self.telecom):
                 self.telecom.append(phone_contact)
 
         if self.email:
-            email_contact = ContactPoint(
-                system="email",
-                value=self.email,
-                use="home",
-                rank=1
-            )
+            email_contact = ContactPoint(system="email", value=self.email, use="home", rank=1)
             # Check if email already exists
             if not any(cp.system == "email" and cp.value == self.email for cp in self.telecom):
                 self.telecom.append(email_contact)
@@ -635,14 +679,11 @@ class Patient(DomainResource):
                 "portuguese": "pt-BR",
                 "italian": "it-IT",
                 "russian": "ru-RU",
-                "arabic": "ar-SA"
+                "arabic": "ar-SA",
             }
 
             lang_code = lang_map.get(self.language.lower(), self.language)
-            self.communication.append({
-                "language": lang_code,
-                "preferred": True
-            })
+            self.communication.append({"language": lang_code, "preferred": True})
 
     def _parse_full_name(self, full_name: str) -> HumanName:
         """Parse full name string into structured HumanName."""
@@ -659,11 +700,15 @@ class Patient(DomainResource):
         parsed_suffix = []
 
         # Extract prefixes
-        while name_parts and any(name_parts[0].rstrip(".").lower() == p.rstrip(".").lower() for p in prefixes):
+        while name_parts and any(
+            name_parts[0].rstrip(".").lower() == p.rstrip(".").lower() for p in prefixes
+        ):
             parsed_prefix.append(name_parts.pop(0))
 
         # Extract suffixes
-        while name_parts and any(name_parts[-1].rstrip(".").upper() == s.rstrip(".").upper() for s in suffixes):
+        while name_parts and any(
+            name_parts[-1].rstrip(".").upper() == s.rstrip(".").upper() for s in suffixes
+        ):
             parsed_suffix.insert(0, name_parts.pop())  # Insert at beginning to maintain order
 
         if not name_parts:
@@ -678,17 +723,14 @@ class Patient(DomainResource):
             family=family_name,
             given=given_names,
             prefix=parsed_prefix,
-            suffix=parsed_suffix
+            suffix=parsed_suffix,
         )
 
     def _parse_address_text(self, address_text: str) -> Address:
         """Parse address text into structured Address."""
         parts = [part.strip() for part in address_text.split(",")]
 
-        address = Address(
-            use="home",
-            text=address_text
-        )
+        address = Address(use="home", text=address_text)
 
         if len(parts) >= 1:
             address.line = [parts[0]]
@@ -730,10 +772,14 @@ class Patient(DomainResource):
         if self.age is not None:
             return self.age
 
-        if self.birth_date is None:
+        if self.birth_date is None or isinstance(self.birth_date, str):
             return None
 
-        end_date = self.deceased_date_time if self.deceased_boolean and self.deceased_date_time else date.today()
+        end_date = (
+            self.deceased_date_time
+            if self.deceased_boolean and self.deceased_date_time
+            else date.today()
+        )
         age = end_date.year - self.birth_date.year
 
         # Adjust if birthday hasn't occurred this year
@@ -744,15 +790,15 @@ class Patient(DomainResource):
 
         return max(0, age)
 
-    def add_identifier(self, value: str, type_code: str | None = None,
-                      use: IdentifierUse = "usual", system: str | None = None) -> None:
+    def add_identifier(
+        self,
+        value: str,
+        type_code: str | None = None,
+        use: IdentifierUse = "usual",
+        system: str | None = None,
+    ) -> None:
         """Add an identifier to the patient."""
-        identifier = Identifier(
-            use=use,
-            type_code=type_code,
-            value=value,
-            system=system
-        )
+        identifier = Identifier(use=use, type_code=type_code, value=value, system=system)
         self.identifier.append(identifier)
         self.update_timestamp()
 
@@ -785,3 +831,22 @@ class Patient(DomainResource):
         """Human-readable string representation."""
         age_str = f", age {self.age_years}" if self.age_years is not None else ""
         return f"Patient('{self.display_name}'{age_str}, {self.gender or 'unknown gender'})"
+
+    # --- LLM-friendly extractable facade overrides ---
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
+        # Minimal, LLM-safe fields
+        return [
+            "full_name",
+            "name",
+            "birth_date",
+            "age",
+            "gender",
+        ]
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:  # type: ignore[override]
+        return [
+            "- Accept simple textual name (full_name) when structured name is not available",
+            "- Age can be extracted as a number (age) or date (birth_date)",
+        ]

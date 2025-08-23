@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "hacs-auth"
 version = "0.4.3"
-description = "Authentication and authorization components for HACS (Healthcare Agent Communication Standard)"
+description = "JWT authentication, role-based permissions, and healthcare-compliant security for HACS"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
@@ -90,7 +90,7 @@ extend-exclude = [
 ]
 
 [tool.ruff.lint]
-# Enable comprehensive linting ruleset
+# Enablelinting ruleset
 select = [
     "E",      # pycodestyle errors
     "W",      # pycodestyle warnings  

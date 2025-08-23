@@ -1,7 +1,6 @@
-"""
-Dependency Injection Container for HACS Infrastructure
+"""Dependency Injection Container for HACS Infrastructure.
 
-This module provides a comprehensive dependency injection container designed
+This module provides adependency injection container designed
 for healthcare AI systems with type safety, lifecycle management, and
 advanced injection patterns.
 
@@ -15,13 +14,20 @@ Key Features:
 import inspect
 import logging
 import threading
-import weakref
-from abc import ABC, abstractmethod
-from contextlib import contextmanager
+from collections.abc import Callable
+from contextlib import contextmanager, suppress
 from enum import Enum
-from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union, get_args, get_origin
+from typing import (
+    Any,
+    Optional,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+)
 
 from pydantic import BaseModel, Field
+
 
 logger = logging.getLogger(__name__)
 
@@ -35,36 +41,42 @@ class ServiceLifetime(str, Enum):
 
     TRANSIENT = "transient"  # New instance every time
     SINGLETON = "singleton"  # Single instance for entire application
-    SCOPED = "scoped"        # Single instance per scope (e.g., request)
+    SCOPED = "scoped"  # Single instance per scope (e.g., request)
 
 
 class ServiceError(Exception):
     """Base exception for service-related errors."""
 
-    def __init__(self, message: str, service_type: Optional[Type] = None):
+    def __init__(self, message: str, service_type: type | None = None) -> None:
         super().__init__(message)
         self.service_type = service_type
 
 
 class DependencyError(ServiceError):
     """Exception raised when dependency resolution fails."""
-    pass
+
 
 
 class CircularDependencyError(DependencyError):
     """Exception raised when circular dependencies are detected."""
-    pass
+
 
 
 class ServiceDescriptor(BaseModel):
     """Describes how to construct and manage a service."""
 
-    service_type: Type = Field(..., description="The service type/class")
-    implementation_type: Optional[Type] = Field(None, description="Implementation type if different from service type")
-    factory: Optional[Callable[..., Any]] = Field(None, description="Factory function for service creation")
-    instance: Optional[Any] = Field(None, description="Pre-created instance for singleton")
-    lifetime: ServiceLifetime = Field(ServiceLifetime.TRANSIENT, description="Service lifetime scope")
-    dependencies: List[Type] = Field(default_factory=list, description="Required dependencies")
+    service_type: type = Field(..., description="The service type/class")
+    implementation_type: type | None = Field(
+        None, description="Implementation type if different from service type"
+    )
+    factory: Callable[..., Any] | None = Field(
+        None, description="Factory function for service creation"
+    )
+    instance: Any | None = Field(None, description="Pre-created instance for singleton")
+    lifetime: ServiceLifetime = Field(
+        ServiceLifetime.TRANSIENT, description="Service lifetime scope"
+    )
+    dependencies: list[type] = Field(default_factory=list, description="Required dependencies")
 
     class Config:
         arbitrary_types_allowed = True
@@ -73,19 +85,20 @@ class ServiceDescriptor(BaseModel):
 class InjectionContext:
     """Context for dependency injection resolution."""
 
-    def __init__(self):
-        self._resolving: set[Type] = set()
+    def __init__(self) -> None:
+        self._resolving: set[type] = set()
 
-    def is_resolving(self, service_type: Type) -> bool:
+    def is_resolving(self, service_type: type) -> bool:
         """Check if a service type is currently being resolved."""
         return service_type in self._resolving
 
     @contextmanager
-    def resolving(self, service_type: Type):
+    def resolving(self, service_type: type):
         """Context manager for tracking service resolution."""
         if service_type in self._resolving:
+            msg = f"Circular dependency detected: {service_type.__name__} is already being resolved"
             raise CircularDependencyError(
-                f"Circular dependency detected: {service_type.__name__} is already being resolved"
+                msg
             )
 
         self._resolving.add(service_type)
@@ -98,17 +111,17 @@ class InjectionContext:
 class Scope:
     """Represents a dependency injection scope."""
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         self.name = name
-        self._instances: Dict[Type, Any] = {}
+        self._instances: dict[type, Any] = {}
         self._lock = threading.RLock()
 
-    def get_scoped_instance(self, service_type: Type) -> Optional[Any]:
+    def get_scoped_instance(self, service_type: type) -> Any | None:
         """Get scoped instance if it exists."""
         with self._lock:
             return self._instances.get(service_type)
 
-    def set_scoped_instance(self, service_type: Type, instance: Any) -> None:
+    def set_scoped_instance(self, service_type: type, instance: Any) -> None:
         """Set scoped instance."""
         with self._lock:
             self._instances[service_type] = instance
@@ -118,7 +131,7 @@ class Scope:
         with self._lock:
             # Dispose instances if they have a dispose method
             for instance in self._instances.values():
-                if hasattr(instance, 'dispose'):
+                if hasattr(instance, "dispose"):
                     try:
                         instance.dispose()
                     except Exception:
@@ -133,10 +146,9 @@ class Scope:
 
 
 class Container:
-    """
-    Dependency injection container with healthcare-specific optimizations.
+    """Dependency injection container with healthcare-specific optimizations.
 
-    Provides comprehensive dependency injection with support for:
+    Providesdependency injection with support for:
     - Multiple service lifetimes (transient, singleton, scoped)
     - Automatic constructor injection
     - Factory functions
@@ -145,29 +157,27 @@ class Container:
     - Scope management for request/session-based services
     """
 
-    def __init__(self, parent: Optional["Container"] = None):
-        """
-        Initialize container.
+    def __init__(self, parent: Optional["Container"] = None) -> None:
+        """Initialize container.
 
         Args:
             parent: Parent container for hierarchical DI
         """
-        self._services: Dict[Type, ServiceDescriptor] = {}
-        self._singletons: Dict[Type, Any] = {}
+        self._services: dict[type, ServiceDescriptor] = {}
+        self._singletons: dict[type, Any] = {}
         self._parent = parent
         self._lock = threading.RLock()
-        self._current_scope: Optional[Scope] = None
+        self._current_scope: Scope | None = None
 
     def register(
         self,
-        service_type: Type[T],
-        implementation_type: Optional[Type[T]] = None,
-        factory: Optional[Callable[..., T]] = None,
-        instance: Optional[T] = None,
-        lifetime: ServiceLifetime = ServiceLifetime.TRANSIENT
+        service_type: type[T],
+        implementation_type: type[T] | None = None,
+        factory: Callable[..., T] | None = None,
+        instance: T | None = None,
+        lifetime: ServiceLifetime = ServiceLifetime.TRANSIENT,
     ) -> "Container":
-        """
-        Register a service with the container.
+        """Register a service with the container.
 
         Args:
             service_type: The service type/interface
@@ -196,32 +206,35 @@ class Container:
                 factory=factory,
                 instance=instance,
                 lifetime=lifetime,
-                dependencies=dependencies
+                dependencies=dependencies,
             )
 
             self._services[service_type] = descriptor
 
         return self
 
-    def register_singleton(self, service_type: Type[T], implementation_type: Optional[Type[T]] = None) -> "Container":
+    def register_singleton(
+        self, service_type: type[T], implementation_type: type[T] | None = None
+    ) -> "Container":
         """Register service as singleton."""
         return self.register(service_type, implementation_type, lifetime=ServiceLifetime.SINGLETON)
 
-    def register_scoped(self, service_type: Type[T], implementation_type: Optional[Type[T]] = None) -> "Container":
+    def register_scoped(
+        self, service_type: type[T], implementation_type: type[T] | None = None
+    ) -> "Container":
         """Register service as scoped."""
         return self.register(service_type, implementation_type, lifetime=ServiceLifetime.SCOPED)
 
-    def register_factory(self, service_type: Type[T], factory: Callable[..., T]) -> "Container":
+    def register_factory(self, service_type: type[T], factory: Callable[..., T]) -> "Container":
         """Register service with factory function."""
         return self.register(service_type, factory=factory)
 
-    def register_instance(self, service_type: Type[T], instance: T) -> "Container":
+    def register_instance(self, service_type: type[T], instance: T) -> "Container":
         """Register pre-created instance."""
         return self.register(service_type, instance=instance)
 
-    def get(self, service_type: Type[T]) -> T:
-        """
-        Get service instance from container.
+    def get(self, service_type: type[T]) -> T:
+        """Get service instance from container.
 
         Args:
             service_type: Type of service to retrieve
@@ -235,29 +248,31 @@ class Container:
         context = InjectionContext()
         return self._resolve_service(service_type, context)
 
-    def _resolve_service(self, service_type: Type[T], context: InjectionContext) -> T:
+    def _resolve_service(self, service_type: type[T], context: InjectionContext) -> T:
         """Resolve service with dependency injection context."""
-        with context.resolving(service_type):
-            with self._lock:
-                # Check if service is registered in this container
-                if service_type in self._services:
-                    descriptor = self._services[service_type]
-                    return self._create_instance(descriptor, context)
+        with context.resolving(service_type), self._lock:
+            # Check if service is registered in this container
+            if service_type in self._services:
+                descriptor = self._services[service_type]
+                return self._create_instance(descriptor, context)
 
-                # Check parent container
-                if self._parent is not None:
-                    try:
-                        return self._parent._resolve_service(service_type, context)
-                    except DependencyError:
-                        pass
+            # Check parent container
+            if self._parent is not None:
+                try:
+                    return self._parent._resolve_service(service_type, context)
+                except DependencyError:
+                    pass
 
-                # Try to auto-register if it's a concrete class
-                if self._can_auto_register(service_type):
-                    self.register(service_type)
-                    descriptor = self._services[service_type]
-                    return self._create_instance(descriptor, context)
+            # Try to auto-register if it's a concrete class
+            if self._can_auto_register(service_type):
+                self.register(service_type)
+                descriptor = self._services[service_type]
+                return self._create_instance(descriptor, context)
 
-                raise DependencyError(f"Service {service_type.__name__} is not registered", service_type)
+            msg = f"Service {service_type.__name__} is not registered"
+            raise DependencyError(
+                msg, service_type
+            )
 
     def _create_instance(self, descriptor: ServiceDescriptor, context: InjectionContext) -> Any:
         """Create service instance based on descriptor."""
@@ -282,9 +297,8 @@ class Container:
                 instance = self._construct_instance(descriptor, context)
                 self._current_scope.set_scoped_instance(service_type, instance)
                 return instance
-            else:
-                # No scope, treat as transient
-                return self._construct_instance(descriptor, context)
+            # No scope, treat as transient
+            return self._construct_instance(descriptor, context)
 
         # Handle transient lifetime (default)
         return self._construct_instance(descriptor, context)
@@ -307,12 +321,14 @@ class Container:
         try:
             return impl_type(**constructor_args)
         except Exception as e:
+            msg = f"Failed to create instance of {impl_type.__name__}: {e}"
             raise DependencyError(
-                f"Failed to create instance of {impl_type.__name__}: {e}",
-                impl_type
+                msg, impl_type
             ) from e
 
-    def _resolve_constructor_args(self, service_type: Type, context: InjectionContext) -> Dict[str, Any]:
+    def _resolve_constructor_args(
+        self, service_type: type, context: InjectionContext
+    ) -> dict[str, Any]:
         """Resolve constructor arguments through dependency injection."""
         args = {}
 
@@ -331,8 +347,9 @@ class Container:
             # Skip parameters without type annotations
             if param_type == inspect.Parameter.empty:
                 if param.default == inspect.Parameter.empty:
+                    msg = f"Parameter '{param.name}' in {service_type.__name__} has no type annotation and no default value"
                     raise DependencyError(
-                        f"Parameter '{param.name}' in {service_type.__name__} has no type annotation and no default value"
+                        msg
                     )
                 continue
 
@@ -347,7 +364,9 @@ class Container:
             # Handle Optional types
             elif self._is_optional_type(param_type):
                 try:
-                    args[param.name] = self._resolve_service(self._get_optional_inner_type(param_type), context)
+                    args[param.name] = self._resolve_service(
+                        self._get_optional_inner_type(param_type), context
+                    )
                 except DependencyError:
                     # Optional dependency not available, use default or None
                     if param.default != inspect.Parameter.empty:
@@ -366,7 +385,7 @@ class Container:
 
         return args
 
-    def _resolve_factory_args(self, factory: Callable, context: InjectionContext) -> Dict[str, Any]:
+    def _resolve_factory_args(self, factory: Callable, context: InjectionContext) -> dict[str, Any]:
         """Resolve factory function arguments."""
         args = {}
 
@@ -380,7 +399,10 @@ class Container:
 
             if param_type == inspect.Parameter.empty:
                 if param.default == inspect.Parameter.empty:
-                    raise DependencyError(f"Factory parameter '{param.name}' has no type annotation and no default value")
+                    msg = f"Factory parameter '{param.name}' has no type annotation and no default value"
+                    raise DependencyError(
+                        msg
+                    )
                 continue
 
             try:
@@ -393,7 +415,7 @@ class Container:
 
         return args
 
-    def _analyze_dependencies(self, service_type: Type) -> List[Type]:
+    def _analyze_dependencies(self, service_type: type) -> list[type]:
         """Analyze service dependencies from constructor."""
         dependencies = []
 
@@ -415,12 +437,12 @@ class Container:
 
         return dependencies
 
-    def _can_auto_register(self, service_type: Type) -> bool:
+    def _can_auto_register(self, service_type: type) -> bool:
         """Check if service can be auto-registered."""
         return (
-            inspect.isclass(service_type) and
-            not inspect.isabstract(service_type) and
-            hasattr(service_type, '__init__')
+            inspect.isclass(service_type)
+            and not inspect.isabstract(service_type)
+            and hasattr(service_type, "__init__")
         )
 
     def _is_optional_type(self, type_hint: Any) -> bool:
@@ -431,7 +453,7 @@ class Container:
             return len(args) == 2 and type(None) in args
         return False
 
-    def _get_optional_inner_type(self, type_hint: Any) -> Type:
+    def _get_optional_inner_type(self, type_hint: Any) -> type:
         """Get inner type from Optional[T]."""
         args = get_args(type_hint)
         return next(arg for arg in args if arg is not type(None))
@@ -449,7 +471,7 @@ class Container:
             self._current_scope = old_scope
             scope.clear()
 
-    def is_registered(self, service_type: Type) -> bool:
+    def is_registered(self, service_type: type) -> bool:
         """Check if service type is registered."""
         with self._lock:
             if service_type in self._services:
@@ -458,7 +480,7 @@ class Container:
                 return self._parent.is_registered(service_type)
             return False
 
-    def get_registered_services(self) -> List[Type]:
+    def get_registered_services(self) -> list[type]:
         """Get list of all registered service types."""
         with self._lock:
             services = list(self._services.keys())
@@ -470,9 +492,8 @@ class Container:
         """Create child container for hierarchical dependency injection."""
         return Container(parent=self)
 
-    def configure_framework_adapter(self, adapter_or_name: Union[str, Any]) -> "Container":
-        """
-        Configure framework adapter for HACS tools.
+    def configure_framework_adapter(self, adapter_or_name: str | Any) -> "Container":
+        """Configure framework adapter for HACS tools.
 
         Args:
             adapter_or_name: Framework adapter instance or name ('langchain', 'mcp', 'crewai')
@@ -485,9 +506,14 @@ class Container:
             from hacs_core.tool_protocols import set_global_framework_adapter
 
             if isinstance(adapter_or_name, str):
-                # Create adapter by name
-                from hacs_utils.integrations.framework_adapter import create_framework_adapter
-                adapter = create_framework_adapter(adapter_or_name)
+                # Create adapter by name (prefer LangGraph; deprecate legacy adapters gracefully)
+                try:
+                    from hacs_utils.integrations.framework_adapter import create_framework_adapter
+
+                    adapter = create_framework_adapter(adapter_or_name)
+                except Exception:
+                    # Fallback: try langgraph builtin if available via tool loader
+                    adapter = adapter_or_name
             else:
                 # Use provided adapter instance
                 adapter = adapter_or_name
@@ -504,10 +530,13 @@ class Container:
 
             # Import protocols for type registration
             from hacs_core.tool_protocols import ToolDecorator, ToolRegistry
+
             self.register_instance(ToolDecorator, tool_decorator)
             self.register_instance(ToolRegistry, tool_registry)
 
-            logger.info(f"Configured framework adapter: {adapter.framework_name} v{adapter.framework_version}")
+            logger.info(
+                f"Configured framework adapter: {adapter.framework_name} v{adapter.framework_version}"
+            )
 
         except ImportError as e:
             logger.warning(f"Failed to configure framework adapter: {e}")
@@ -516,8 +545,7 @@ class Container:
         return self
 
     def register_healthcare_services(self) -> "Container":
-        """
-        Register common healthcare services and patterns.
+        """Register common healthcare services and patterns.
 
         Returns:
             Self for method chaining
@@ -532,7 +560,8 @@ class Container:
 
             # Try to register additional healthcare services if available
             try:
-                from hacs_models import Patient, Observation, Encounter
+                from hacs_models import Encounter, Observation, Patient
+
                 self.register(Patient, lifetime=ServiceLifetime.SCOPED)
                 self.register(Observation, lifetime=ServiceLifetime.TRANSIENT)
                 self.register(Encounter, lifetime=ServiceLifetime.SCOPED)
@@ -541,6 +570,7 @@ class Container:
 
             try:
                 from hacs_persistence import MemoryManager
+
                 self.register(MemoryManager, lifetime=ServiceLifetime.SINGLETON)
             except ImportError:
                 logger.debug("hacs-persistence not available, skipping persistence registration")
@@ -552,9 +582,8 @@ class Container:
 
         return self
 
-    def validate_framework_integration(self) -> Dict[str, Any]:
-        """
-        Validate framework integration setup.
+    def validate_framework_integration(self) -> dict[str, Any]:
+        """Validate framework integration setup.
 
         Returns:
             Validation report with status and recommendations
@@ -565,18 +594,19 @@ class Container:
             "singleton_instances": len(self._singletons),
             "framework_adapter": None,
             "tool_services": {},
-            "recommendations": []
+            "recommendations": [],
         }
 
         try:
             # Check for framework adapter
             from hacs_core.tool_protocols import get_global_framework_adapter
+
             adapter = get_global_framework_adapter()
 
             report["framework_adapter"] = {
                 "name": adapter.framework_name,
                 "version": adapter.framework_version,
-                "available": adapter.is_available()
+                "available": adapter.is_available(),
             }
 
             # Check tool services
@@ -593,7 +623,7 @@ class Container:
                 report["tool_services"]["registry"] = str(type(registry))
 
                 # Get registry info if available
-                if hasattr(registry, 'list_tools'):
+                if hasattr(registry, "list_tools"):
                     try:
                         tools = registry.list_tools()
                         report["tool_services"]["registered_tools"] = len(tools)
@@ -604,7 +634,9 @@ class Container:
 
         except ImportError:
             report["framework_adapter"] = "not_configured"
-            report["recommendations"].append("Configure framework adapter using configure_framework_adapter()")
+            report["recommendations"].append(
+                "Configure framework adapter using configure_framework_adapter()"
+            )
         except Exception as e:
             report["container_status"] = "warning"
             report["recommendations"].append(f"Framework integration issue: {e}")
@@ -616,11 +648,9 @@ class Container:
         with self._lock:
             # Dispose singleton instances
             for instance in self._singletons.values():
-                if hasattr(instance, 'dispose'):
-                    try:
+                if hasattr(instance, "dispose"):
+                    with suppress(Exception):
                         instance.dispose()
-                    except Exception:
-                        pass
 
             self._singletons.clear()
             self._services.clear()
@@ -631,9 +661,9 @@ class Container:
 
 # Decorators for dependency injection
 
-def Injectable(cls: Type[T]) -> Type[T]:
-    """
-    Decorator to mark a class as injectable.
+
+def Injectable(cls: type[T]) -> type[T]:
+    """Decorator to mark a class as injectable.
 
     This is primarily for documentation and future tooling support.
     The container can inject any class with proper type annotations.
@@ -642,9 +672,8 @@ def Injectable(cls: Type[T]) -> Type[T]:
     return cls
 
 
-def Singleton(cls: Type[T]) -> Type[T]:
-    """
-    Decorator to mark a class as singleton.
+def Singleton(cls: type[T]) -> type[T]:
+    """Decorator to mark a class as singleton.
 
     Classes marked with this decorator will be automatically registered
     as singletons when first resolved.
@@ -653,9 +682,8 @@ def Singleton(cls: Type[T]) -> Type[T]:
     return cls
 
 
-def Scoped(cls: Type[T]) -> Type[T]:
-    """
-    Decorator to mark a class as scoped.
+def Scoped(cls: type[T]) -> type[T]:
+    """Decorator to mark a class as scoped.
 
     Classes marked with this decorator will be automatically registered
     as scoped when first resolved.
@@ -665,13 +693,12 @@ def Scoped(cls: Type[T]) -> Type[T]:
 
 
 # Global container instance
-_global_container: Optional[Container] = None
+_global_container: Container | None = None
 _container_lock = threading.RLock()
 
 
 def get_container() -> Container:
-    """
-    Get the global container instance.
+    """Get the global container instance.
 
     Returns:
         Global container instance
@@ -684,8 +711,7 @@ def get_container() -> Container:
 
 
 def set_container(container: Container) -> None:
-    """
-    Set the global container instance.
+    """Set the global container instance.
 
     Args:
         container: Container instance to set as global
@@ -705,11 +731,9 @@ def reset_container() -> None:
 
 
 def configure_hacs_container(
-    framework: Optional[str] = None,
-    register_healthcare_services: bool = True
+    framework: str | None = None, register_healthcare_services: bool = True
 ) -> Container:
-    """
-    Configure HACS container with framework adapter and healthcare services.
+    """Configure HACS container with framework adapter and healthcare services.
 
     Args:
         framework: Framework name ('langchain', 'mcp', 'crewai') or None for auto-detection
@@ -731,6 +755,7 @@ def configure_hacs_container(
         # Auto-detect and configure best available framework
         try:
             from hacs_utils.integrations.framework_adapter import FrameworkDetector
+
             available = FrameworkDetector.detect_available_frameworks()
             if available:
                 best_framework = available[0]  # Use first available
@@ -749,12 +774,11 @@ def configure_hacs_container(
     return container
 
 
-def validate_hacs_setup() -> Dict[str, Any]:
-    """
-    Validate complete HACS container and framework setup.
+def validate_hacs_setup() -> dict[str, Any]:
+    """Validate complete HACS container and framework setup.
 
     Returns:
-        Comprehensive validation report
+       validation report
     """
     container = get_container()
 
@@ -764,25 +788,30 @@ def validate_hacs_setup() -> Dict[str, Any]:
     # Add framework adapter validation
     try:
         from hacs_utils.integrations.framework_adapter import validate_framework_integration
+
         framework_report = validate_framework_integration()
 
         report = {
-            "overall_status": "healthy" if container_report["container_status"] == "healthy" else "warning",
+            "overall_status": "healthy"
+            if container_report["container_status"] == "healthy"
+            else "warning",
             "container": container_report,
             "framework_integration": framework_report,
             "summary": {
                 "container_services": container_report["registered_services"],
                 "available_frameworks": framework_report.get("available_frameworks", []),
-                "active_framework": container_report.get("framework_adapter", {}).get("name", "none"),
-                "recommendations": container_report["recommendations"]
-            }
+                "active_framework": container_report.get("framework_adapter", {}).get(
+                    "name", "none"
+                ),
+                "recommendations": container_report["recommendations"],
+            },
         }
 
         # Add framework-specific recommendations
         if framework_report.get("errors"):
-            report["summary"]["recommendations"].extend([
-                f"Framework error: {error}" for error in framework_report["errors"]
-            ])
+            report["summary"]["recommendations"].extend(
+                [f"Framework error: {error}" for error in framework_report["errors"]]
+            )
 
         return report
 
@@ -795,8 +824,7 @@ def validate_hacs_setup() -> Dict[str, Any]:
                 "container_services": container_report["registered_services"],
                 "available_frameworks": [],
                 "active_framework": "unknown",
-                "recommendations": container_report["recommendations"] + [
-                    "Install hacs-utils for framework integration"
-                ]
-            }
+                "recommendations": container_report["recommendations"]
+                + ["Install hacs-utils for framework integration"],
+            },
         }

@@ -1,7 +1,6 @@
-"""
-HACS Security Module - HIPAA-Compliant Security Controls
+"""HACS Security Module - HIPAA-Compliant Security Controls.
 
-This module implements comprehensive security controls required for HIPAA
+This module implementssecurity controls required for HIPAA
 compliance and healthcare data protection, including encryption, audit
 logging, and threat detection.
 
@@ -17,25 +16,24 @@ License: MIT
 Version: 1.0.0
 """
 
+import base64
+import logging
 import os
 import secrets
-import hashlib
-import logging
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Union
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import rsa, padding
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from pydantic import BaseModel, Field
-import base64
 
 
 class SecurityLevel(str, Enum):
     """Security levels for healthcare data classification."""
+
     PUBLIC = "public"
     INTERNAL = "internal"
     CONFIDENTIAL = "confidential"
@@ -45,6 +43,7 @@ class SecurityLevel(str, Enum):
 
 class EncryptionType(str, Enum):
     """Supported encryption types."""
+
     SYMMETRIC = "symmetric"
     ASYMMETRIC = "asymmetric"
     HYBRID = "hybrid"
@@ -52,6 +51,7 @@ class EncryptionType(str, Enum):
 
 class AuditEventType(str, Enum):
     """HIPAA-compliant audit event types."""
+
     ACCESS_ATTEMPT = "access_attempt"
     PHI_ACCESS = "phi_access"
     PHI_MODIFICATION = "phi_modification"
@@ -69,7 +69,9 @@ class SecurityConfig(BaseModel):
 
     # Encryption settings
     encryption_key_size: int = Field(default=256, description="Encryption key size in bits")
-    encryption_algorithm: str = Field(default="AES-256-GCM", description="Primary encryption algorithm")
+    encryption_algorithm: str = Field(
+        default="AES-256-GCM", description="Primary encryption algorithm"
+    )
     key_rotation_days: int = Field(default=90, description="Days between key rotation")
 
     # Authentication security
@@ -88,7 +90,9 @@ class SecurityConfig(BaseModel):
     # Security monitoring
     enable_intrusion_detection: bool = Field(default=True, description="Enable intrusion detection")
     log_security_events: bool = Field(default=True, description="Log all security events")
-    alert_on_suspicious_activity: bool = Field(default=True, description="Alert on suspicious activity")
+    alert_on_suspicious_activity: bool = Field(
+        default=True, description="Alert on suspicious activity"
+    )
 
     # Network security
     require_https: bool = Field(default=True, description="Require HTTPS for all connections")
@@ -102,9 +106,8 @@ class SecurityConfig(BaseModel):
 class PHIEncryption:
     """PHI (Protected Health Information) encryption utilities."""
 
-    def __init__(self, encryption_key: Optional[bytes] = None):
-        """
-        Initialize PHI encryption.
+    def __init__(self, encryption_key: bytes | None = None) -> None:
+        """Initialize PHI encryption.
 
         Args:
             encryption_key: Optional encryption key, generates new if None
@@ -123,9 +126,10 @@ class PHIEncryption:
         )
         self.public_key = self.private_key.public_key()
 
-    def encrypt_phi_data(self, data: Union[str, dict], security_level: SecurityLevel = SecurityLevel.RESTRICTED) -> Dict[str, Any]:
-        """
-        Encrypt PHI data with appropriate security level.
+    def encrypt_phi_data(
+        self, data: str | dict, security_level: SecurityLevel = SecurityLevel.RESTRICTED
+    ) -> dict[str, Any]:
+        """Encrypt PHI data with appropriate security level.
 
         Args:
             data: Data to encrypt (PHI)
@@ -135,9 +139,9 @@ class PHIEncryption:
             Encrypted data package with metadata
         """
         if isinstance(data, dict):
-            data_str = str(data).encode('utf-8')
+            data_str = str(data).encode("utf-8")
         else:
-            data_str = str(data).encode('utf-8')
+            data_str = str(data).encode("utf-8")
 
         # Use hybrid encryption for PHI
         if security_level in [SecurityLevel.RESTRICTED, SecurityLevel.TOP_SECRET]:
@@ -150,32 +154,30 @@ class PHIEncryption:
                 padding.OAEP(
                     mgf=padding.MGF1(algorithm=hashes.SHA256()),
                     algorithm=hashes.SHA256(),
-                    label=None
-                )
+                    label=None,
+                ),
             )
 
             return {
-                "encrypted_data": base64.b64encode(encrypted_data).decode('utf-8'),
-                "encrypted_key": base64.b64encode(encrypted_key).decode('utf-8'),
+                "encrypted_data": base64.b64encode(encrypted_data).decode("utf-8"),
+                "encrypted_key": base64.b64encode(encrypted_key).decode("utf-8"),
                 "encryption_type": "hybrid",
                 "security_level": security_level.value,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "algorithm": "AES-256-GCM + RSA-2048"
+                "timestamp": datetime.now(UTC).isoformat(),
+                "algorithm": "AES-256-GCM + RSA-2048",
             }
-        else:
-            # Use symmetric encryption for lower security levels
-            encrypted_data = self.fernet.encrypt(data_str)
-            return {
-                "encrypted_data": base64.b64encode(encrypted_data).decode('utf-8'),
-                "encryption_type": "symmetric",
-                "security_level": security_level.value,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "algorithm": "AES-256-GCM"
-            }
+        # Use symmetric encryption for lower security levels
+        encrypted_data = self.fernet.encrypt(data_str)
+        return {
+            "encrypted_data": base64.b64encode(encrypted_data).decode("utf-8"),
+            "encryption_type": "symmetric",
+            "security_level": security_level.value,
+            "timestamp": datetime.now(UTC).isoformat(),
+            "algorithm": "AES-256-GCM",
+        }
 
-    def decrypt_phi_data(self, encrypted_package: Dict[str, Any]) -> str:
-        """
-        Decrypt PHI data package.
+    def decrypt_phi_data(self, encrypted_package: dict[str, Any]) -> str:
+        """Decrypt PHI data package.
 
         Args:
             encrypted_package: Encrypted data package from encrypt_phi_data
@@ -197,8 +199,8 @@ class PHIEncryption:
                     padding.OAEP(
                         mgf=padding.MGF1(algorithm=hashes.SHA256()),
                         algorithm=hashes.SHA256(),
-                        label=None
-                    )
+                        label=None,
+                    ),
                 )
 
                 # Decrypt data with symmetric key
@@ -210,22 +212,24 @@ class PHIEncryption:
                 encrypted_data = base64.b64decode(encrypted_package["encrypted_data"])
                 decrypted_data = self.fernet.decrypt(encrypted_data)
             else:
-                raise ValueError(f"Unsupported encryption type: {encryption_type}")
+                msg = f"Unsupported encryption type: {encryption_type}"
+                raise ValueError(msg)
 
-            return decrypted_data.decode('utf-8')
+            return decrypted_data.decode("utf-8")
 
         except Exception as e:
-            raise ValueError(f"PHI decryption failed: {e}") from e
+            msg = f"PHI decryption failed: {e}"
+            raise ValueError(msg) from e
 
     def get_public_key_pem(self) -> str:
         """Get public key in PEM format for sharing."""
         pem = self.public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
-        return pem.decode('utf-8')
+        return pem.decode("utf-8")
 
-    def get_private_key_pem(self, password: Optional[bytes] = None) -> str:
+    def get_private_key_pem(self, password: bytes | None = None) -> str:
         """Get private key in PEM format (use with caution)."""
         encryption_algorithm = serialization.NoEncryption()
         if password:
@@ -234,17 +238,16 @@ class PHIEncryption:
         pem = self.private_key.private_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.PKCS8,
-            encryption_algorithm=encryption_algorithm
+            encryption_algorithm=encryption_algorithm,
         )
-        return pem.decode('utf-8')
+        return pem.decode("utf-8")
 
 
 class SecureSecretsManager:
     """Secure secrets management for HACS system."""
 
-    def __init__(self, secrets_path: Optional[Path] = None):
-        """
-        Initialize secrets manager.
+    def __init__(self, secrets_path: Path | None = None) -> None:
+        """Initialize secrets manager.
 
         Args:
             secrets_path: Path to secrets storage directory
@@ -258,8 +261,7 @@ class SecureSecretsManager:
         self.phi_encryption = PHIEncryption()
 
     def generate_secure_secret(self, length: int = 32) -> str:
-        """
-        Generate cryptographically secure secret.
+        """Generate cryptographically secure secret.
 
         Args:
             length: Length of secret in bytes
@@ -267,15 +269,16 @@ class SecureSecretsManager:
         Returns:
             Base64-encoded secure secret
         """
-        return base64.b64encode(secrets.token_bytes(length)).decode('utf-8')
+        return base64.b64encode(secrets.token_bytes(length)).decode("utf-8")
 
     def generate_jwt_secret(self) -> str:
         """Generate secure JWT secret key."""
         return self.generate_secure_secret(64)  # 512-bit key
 
-    def store_secret(self, name: str, value: str, security_level: SecurityLevel = SecurityLevel.RESTRICTED) -> None:
-        """
-        Store secret with encryption.
+    def store_secret(
+        self, name: str, value: str, security_level: SecurityLevel = SecurityLevel.RESTRICTED
+    ) -> None:
+        """Store secret with encryption.
 
         Args:
             name: Secret name
@@ -285,16 +288,16 @@ class SecureSecretsManager:
         encrypted_package = self.phi_encryption.encrypt_phi_data(value, security_level)
 
         secret_file = self.secrets_path / f"{name}.secret"
-        with open(secret_file, 'w') as f:
+        with open(secret_file, "w") as f:
             import json
+
             json.dump(encrypted_package, f)
 
         # Set restrictive permissions
         os.chmod(secret_file, 0o600)
 
     def get_secret(self, name: str) -> str:
-        """
-        Retrieve and decrypt secret.
+        """Retrieve and decrypt secret.
 
         Args:
             name: Secret name
@@ -309,10 +312,12 @@ class SecureSecretsManager:
         secret_file = self.secrets_path / f"{name}.secret"
 
         if not secret_file.exists():
-            raise FileNotFoundError(f"Secret '{name}' not found")
+            msg = f"Secret '{name}' not found"
+            raise FileNotFoundError(msg)
 
-        with open(secret_file, 'r') as f:
+        with open(secret_file) as f:
             import json
+
             encrypted_package = json.load(f)
 
         return self.phi_encryption.decrypt_phi_data(encrypted_package)
@@ -326,7 +331,7 @@ class SecureSecretsManager:
         secret_file = self.secrets_path / f"{name}.secret"
         if secret_file.exists():
             # Overwrite file with random data before deletion
-            with open(secret_file, 'rb+') as f:
+            with open(secret_file, "rb+") as f:
                 size = f.seek(0, 2)  # Get file size
                 f.seek(0)
                 f.write(secrets.token_bytes(size))
@@ -335,7 +340,7 @@ class SecureSecretsManager:
 
             secret_file.unlink()
 
-    def rotate_secrets(self) -> Dict[str, str]:
+    def rotate_secrets(self) -> dict[str, str]:
         """Rotate all secrets and return new values."""
         rotated = {}
 
@@ -350,7 +355,7 @@ class SecureSecretsManager:
                 rotated[name] = new_value
 
             except Exception as e:
-                logging.error(f"Failed to rotate secret '{name}': {e}")
+                logging.exception(f"Failed to rotate secret '{name}': {e}")
 
         return rotated
 
@@ -358,9 +363,8 @@ class SecureSecretsManager:
 class HIPAAAuditLogger:
     """HIPAA-compliant audit logging system."""
 
-    def __init__(self, log_path: Optional[Path] = None, encryption: Optional[PHIEncryption] = None):
-        """
-        Initialize HIPAA audit logger.
+    def __init__(self, log_path: Path | None = None, encryption: PHIEncryption | None = None) -> None:
+        """Initialize HIPAA audit logger.
 
         Args:
             log_path: Path to audit log storage
@@ -382,8 +386,7 @@ class HIPAAAuditLogger:
 
         # HIPAA-compliant log format
         formatter = logging.Formatter(
-            '%(asctime)s|%(levelname)s|AUDIT|%(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S UTC'
+            "%(asctime)s|%(levelname)s|AUDIT|%(message)s", datefmt="%Y-%m-%d %H:%M:%S UTC"
         )
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
@@ -396,15 +399,14 @@ class HIPAAAuditLogger:
         user_id: str,
         action: str,
         resource_type: str,
-        resource_id: Optional[str] = None,
-        patient_id: Optional[str] = None,
+        resource_id: str | None = None,
+        patient_id: str | None = None,
         success: bool = True,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        additional_data: Optional[Dict[str, Any]] = None
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+        additional_data: dict[str, Any] | None = None,
     ) -> None:
-        """
-        Log PHI access event (HIPAA requirement).
+        """Log PHI access event (HIPAA requirement).
 
         Args:
             user_id: User accessing PHI
@@ -419,7 +421,7 @@ class HIPAAAuditLogger:
         """
         audit_data = {
             "event_type": AuditEventType.PHI_ACCESS.value,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "user_id": user_id,
             "action": action,
             "resource_type": resource_type,
@@ -444,12 +446,11 @@ class HIPAAAuditLogger:
         user_id: str,
         event_type: str,
         success: bool,
-        ip_address: Optional[str] = None,
-        failure_reason: Optional[str] = None,
-        additional_data: Optional[Dict[str, Any]] = None
+        ip_address: str | None = None,
+        failure_reason: str | None = None,
+        additional_data: dict[str, Any] | None = None,
     ) -> None:
-        """
-        Log authentication event.
+        """Log authentication event.
 
         Args:
             user_id: User ID attempting authentication
@@ -461,7 +462,7 @@ class HIPAAAuditLogger:
         """
         audit_data = {
             "event_type": AuditEventType.AUTHENTICATION.value,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "user_id": user_id,
             "auth_event_type": event_type,
             "success": success,
@@ -479,12 +480,11 @@ class HIPAAAuditLogger:
         alert_type: str,
         severity: str,
         description: str,
-        user_id: Optional[str] = None,
-        ip_address: Optional[str] = None,
-        additional_data: Optional[Dict[str, Any]] = None
+        user_id: str | None = None,
+        ip_address: str | None = None,
+        additional_data: dict[str, Any] | None = None,
     ) -> None:
-        """
-        Log security alert.
+        """Log security alert.
 
         Args:
             alert_type: Type of security alert
@@ -496,7 +496,7 @@ class HIPAAAuditLogger:
         """
         audit_data = {
             "event_type": AuditEventType.SECURITY_ALERT.value,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "alert_type": alert_type,
             "severity": severity,
             "description": description,
@@ -509,7 +509,7 @@ class HIPAAAuditLogger:
 
         self.logger.warning(f"SECURITY_ALERT|{self._format_audit_data(audit_data)}")
 
-    def _format_audit_data(self, data: Dict[str, Any]) -> str:
+    def _format_audit_data(self, data: dict[str, Any]) -> str:
         """Format audit data for logging."""
         return "|".join([f"{k}:{v}" for k, v in data.items() if v is not None])
 
@@ -517,24 +517,18 @@ class HIPAAAuditLogger:
 class SecurityValidator:
     """Validates security configuration and compliance."""
 
-    def __init__(self, config: SecurityConfig):
+    def __init__(self, config: SecurityConfig) -> None:
         """Initialize security validator."""
         self.config = config
         self.secrets_manager = SecureSecretsManager()
 
-    def validate_hipaa_compliance(self) -> Dict[str, Any]:
-        """
-        Validate HIPAA compliance requirements.
+    def validate_hipaa_compliance(self) -> dict[str, Any]:
+        """Validate HIPAA compliance requirements.
 
         Returns:
             Compliance validation results
         """
-        results = {
-            "compliant": True,
-            "violations": [],
-            "warnings": [],
-            "recommendations": []
-        }
+        results = {"compliant": True, "violations": [], "warnings": [], "recommendations": []}
 
         # Check encryption requirements
         if not self.config.phi_encryption_required:
@@ -585,7 +579,7 @@ class SecurityValidator:
                     "secret",
                     "password",
                     "change-me",
-                    "development-key"
+                    "development-key",
                 ]
                 if jwt_secret in weak_secrets or len(jwt_secret) < 32:
                     results["violations"].append("Default or weak JWT secret detected")
@@ -596,19 +590,13 @@ class SecurityValidator:
 
         return results
 
-    def check_security_configuration(self) -> Dict[str, Any]:
-        """
-        Check overall security configuration.
+    def check_security_configuration(self) -> dict[str, Any]:
+        """Check overall security configuration.
 
         Returns:
             Security configuration assessment
         """
-        results = {
-            "security_score": 0,
-            "max_score": 100,
-            "issues": [],
-            "recommendations": []
-        }
+        results = {"security_score": 0, "max_score": 100, "issues": [], "recommendations": []}
 
         score = 0
 
@@ -648,9 +636,13 @@ class SecurityValidator:
 
         # Generate recommendations based on score
         if score < 70:
-            results["recommendations"].append("Security configuration needs significant improvement")
+            results["recommendations"].append(
+                "Security configuration needs significant improvement"
+            )
         elif score < 85:
-            results["recommendations"].append("Security configuration is good but has room for improvement")
+            results["recommendations"].append(
+                "Security configuration is good but has room for improvement"
+            )
         else:
             results["recommendations"].append("Security configuration meets high standards")
 
@@ -658,7 +650,7 @@ class SecurityValidator:
 
 
 # Secure initialization functions
-def generate_production_secrets() -> Dict[str, str]:
+def generate_production_secrets() -> dict[str, str]:
     """Generate secure production secrets."""
     secrets_manager = SecureSecretsManager()
 
@@ -686,7 +678,7 @@ def generate_production_secrets() -> Dict[str, str]:
     return secrets_generated
 
 
-def validate_production_security() -> Dict[str, Any]:
+def validate_production_security() -> dict[str, Any]:
     """Validate production security configuration."""
     config = SecurityConfig()
     validator = SecurityValidator(config)
@@ -700,19 +692,19 @@ def validate_production_security() -> Dict[str, Any]:
     return {
         "hipaa_compliance": hipaa_results,
         "security_configuration": security_results,
-        "production_ready": hipaa_results["compliant"] and security_results["security_score"] >= 85
+        "production_ready": hipaa_results["compliant"] and security_results["security_score"] >= 85,
     }
 
 
 # Export public API
 __all__ = [
-    "SecurityLevel",
-    "EncryptionType",
     "AuditEventType",
-    "SecurityConfig",
+    "EncryptionType",
+    "HIPAAAuditLogger",
     "PHIEncryption",
     "SecureSecretsManager",
-    "HIPAAAuditLogger",
+    "SecurityConfig",
+    "SecurityLevel",
     "SecurityValidator",
     "generate_production_secrets",
     "validate_production_security",

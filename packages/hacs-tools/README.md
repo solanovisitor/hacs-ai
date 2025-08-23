@@ -1,45 +1,16 @@
 # HACS Tools
 
-**42+ Hacs Tools for healthcare agents**
+**4-domain HACS tools for healthcare agents**
 
 Production-ready tools for clinical workflows, resource management, and healthcare AI operations. HACS tools can be used directly from agent frameworks (e.g., LangGraph, LangChain) or exposed over MCP via `hacs-utils`.
 
 ## 🛠️ **Tool Categories**
 
-### 🔍 **Resource Discovery & Development** (5+ tools)
-- `discover_hacs_resources` - Explore healthcare resource schemas with metadata
-- `analyze_resource_fields` - Field analysis with validation rules
-- `compare_resource_schemas` - Schema comparison and integration
-- `create_clinical_template` - Generate clinical workflow templates
-- `create_model_stack` - Compose complex data structures
-
-### 📋 **Record Management** (8+ tools)
-- `create_hacs_record` / `get_hacs_record_by_id` / `update_hacs_record` / `delete_hacs_record` - Full CRUD
-- `validate_hacs_record_data` - Comprehensive validation
-- `list_available_hacs_resources` - Resource schema catalog
-- `find_hacs_records` - Advanced semantic search
-- `search_hacs_records` - Filtered record search
-
-### 🧠 **Memory Management** (5+ tools)
-- `create_hacs_memory` - Store episodic/procedural/executive memories
-- `search_hacs_memories` - Semantic memory retrieval
-- `consolidate_memories` - Merge related memories
-- `retrieve_context` - Context-aware memory access
-- `analyze_memory_patterns` - Usage pattern analysis
-
-### ✅ **Validation & Schema** (3+ tools)
-- `get_hacs_resource_schema` - JSON schema exploration
-- `create_view_resource_schema` - Custom view creation
-- `suggest_view_fields` - Intelligent field suggestions
-
-### 🎨 **Advanced Tools** (Multiple tools)
-- `optimize_resource_for_llm` - LLM-specific optimizations
-- `version_hacs_resource` - Resource versioning and tracking
-- `execute_clinical_workflow` - Clinical protocol execution
-
-### 📚 **Knowledge Management** (Multiple tools)
-- `create_knowledge_item` - Clinical guidelines and protocols
-- `search_knowledge_base` - Medical knowledge retrieval
+### ✅ Canonical domains
+- **Modeling**: instantiate/validate resources, compose bundles, references, graph traversal
+- **Extraction**: synthesize mapping, extract variables from text, apply mapping, context summarization
+- **Database**: typed/generic CRUD, registry definitions, migrations/status
+- **Agents**: todos, delegation, preferences/memory utilities
 
 ## 📦 **Installation**
 
@@ -47,15 +18,15 @@ Production-ready tools for clinical workflows, resource management, and healthca
 pip install hacs-tools
 ```
 
-## 🚀 **Quick Start (bind tools to an agent)**
+## 🚀 **Quick Start**
 
 ```python
 from langgraph.prebuilt import create_react_agent
-from hacs_utils.integrations.langgraph.hacs_agent_tools import get_hacs_agent_tools
+from hacs_utils.integrations.langchain.tools import langchain_tools
 
-tools = get_hacs_agent_tools()
+tools = langchain_tools()
 agent = create_react_agent(
-    model="anthropic:claude-3-7-sonnet-latest",
+    model="provider:model-name",  # OpenAI, Anthropic, Google, Azure, Bedrock, etc.
     tools=tools,
     prompt="You are a healthcare assistant using HACS tools."
 )
@@ -105,10 +76,9 @@ schema = use_hacs_tool("get_hacs_resource_schema", {
 ## 🔗 **Integration**
 
 HACS Tools integrate with:
-- **LangGraph / LangChain** — bind tools directly to models/agents
-- **MCP Protocol (via hacs-utils)** — expose tools over JSON‑RPC / streamable HTTP
-- **PostgreSQL (via hacs-persistence)** — persistent healthcare data storage
-- **Healthcare Systems** — FHIR‑compliant data exchange
+- **LangChain / LangGraph** — single tool set, reused across frameworks
+- **MCP Protocol (via hacs-utils)** — JSON‑RPC / streamable HTTP tool access
+- **PostgreSQL (via hacs-persistence)** — typed and JSONB storage with pgvector option
 
 ## 📊 **Performance**
 

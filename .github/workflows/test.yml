@@ -23,45 +23,45 @@ jobs:
         run: |
           uv sync --all-extras --dev
 
-      - name: Set up comprehensive test environment
+      - name: Set uptest environment
         run: |
-          # Set up comprehensive test environment variables
+          # Set uptest environment variables
           echo "DATABASE_URL=sqlite:///test_comprehensive.db" >> $GITHUB_ENV
           echo "HACS_ORGANIZATION=comprehensive-test-org" >> $GITHUB_ENV
           echo "HEALTHCARE_SYSTEM_NAME=Comprehensive Test Healthcare" >> $GITHUB_ENV
           echo "VECTOR_STORE=pgvector" >> $GITHUB_ENV
           echo "HACS_ENVIRONMENT=testing" >> $GITHUB_ENV
 
-          # Mock API keys for comprehensive testing
+          # Mock API keys fortesting
           echo "ANTHROPIC_API_KEY=test-anthropic-comprehensive" >> $GITHUB_ENV
           echo "OPENAI_API_KEY=test-openai-comprehensive" >> $GITHUB_ENV
           echo "PINECONE_API_KEY=test-pinecone-comprehensive" >> $GITHUB_ENV
           echo "QDRANT_URL=http://localhost:6333" >> $GITHUB_ENV
 
-      - name: Run comprehensive unit tests with coverage
+      - name: Rununit tests with coverage
         run: |
-          # Run comprehensive unit tests for all HACS packages with coverage
-          echo "🧬 Running HACS Core comprehensive unit tests..."
+          # Rununit tests for all HACS packages with coverage
+          echo "🧬 Running HACS Coreunit tests..."
           uv run pytest tests/test_hacs_core_unit.py -v --tb=short --durations=10 \
             --cov=hacs_core --cov-report=xml:coverage-core.xml \
             --cov-report=term-missing --cov-fail-under=60
 
-          echo "🛠️ Running HACS Tools comprehensive unit tests..."
+          echo "🛠️ Running HACS Toolsunit tests..."
           uv run pytest tests/test_hacs_tools_unit.py -v --tb=short --durations=10 \
             --cov=hacs_tools --cov-report=xml:coverage-tools.xml \
             --cov-report=term-missing || echo "⚠️ HACS Tools tests completed with issues"
 
-          echo "🔧 Running HACS Utils comprehensive unit tests..."
+          echo "🔧 Running HACS Utilsunit tests..."
           uv run pytest tests/test_hacs_utils_unit.py -v --tb=short --durations=10 \
             --cov=hacs_utils --cov-report=xml:coverage-utils.xml \
             --cov-report=term-missing || echo "⚠️ HACS Utils tests completed with issues"
 
-          echo "🗄️ Running HACS Persistence comprehensive unit tests..."
+          echo "🗄️ Running HACS Persistenceunit tests..."
           uv run pytest tests/test_hacs_persistence_unit.py -v --tb=short --durations=10 \
             --cov=hacs_persistence --cov-report=xml:coverage-persistence.xml \
             --cov-report=term-missing || echo "⚠️ HACS Persistence tests completed with issues"
 
-          echo "📋 Running HACS Registry comprehensive unit tests..."
+          echo "📋 Running HACS Registryunit tests..."
           uv run pytest tests/test_hacs_registry_unit.py -v --tb=short --durations=10 \
             --cov=hacs_registry --cov-report=xml:coverage-registry.xml \
             --cov-report=term-missing || echo "⚠️ HACS Registry tests completed with issues"
@@ -108,17 +108,17 @@ jobs:
             cd - > /dev/null
           done
 
-      - name: Generate comprehensive test report
+      - name: Generatetest report
         if: always()
         run: |
-          echo "## 📊 Comprehensive Test Report" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊Test Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🧪 Unit Test Coverage by Package" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Package | Status | Coverage |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|--------|----------|" >> $GITHUB_STEP_SUMMARY
           echo "| HACS Core | ✅ Must Pass | 60%+ required |" >> $GITHUB_STEP_SUMMARY
-          echo "| HACS Tools | ⚠️ Best Effort | Comprehensive |" >> $GITHUB_STEP_SUMMARY
+          echo "| HACS Tools | ⚠️ Best Effort ||" >> $GITHUB_STEP_SUMMARY
           echo "| HACS Utils | ⚠️ Best Effort | With API Mocking |" >> $GITHUB_STEP_SUMMARY
           echo "| HACS Persistence | ⚠️ Best Effort | Database Mocked |" >> $GITHUB_STEP_SUMMARY
           echo "| HACS Registry | ⚠️ Best Effort | Version Management |" >> $GITHUB_STEP_SUMMARY

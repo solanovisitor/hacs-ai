@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "hacs-cli"
 version = "0.4.3"
-description = "Command-line interface for Healthcare Agent Communication Standard (HACS)"
+description = "Command-line interface for HACS healthcare resource management and AI agent operations"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"

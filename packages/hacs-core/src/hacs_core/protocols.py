@@ -13,13 +13,22 @@ SOLID Compliance:
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Protocol, TypeVar, Generic, runtime_checkable
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Protocol,
+    TypeVar,
+    Generic,
+    runtime_checkable,
+)
 from datetime import datetime
 
 # Type variables for generic protocols
-T = TypeVar('T')
-TResource = TypeVar('TResource')
-TContext = TypeVar('TContext')
+T = TypeVar("T")
+TResource = TypeVar("TResource")
+TContext = TypeVar("TContext")
 
 
 @runtime_checkable
@@ -66,7 +75,7 @@ class Serializable(Protocol):
         ...
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Serializable':
+    def from_dict(cls, data: Dict[str, Any]) -> "Serializable":
         """Create object from dictionary representation."""
         ...
 
@@ -128,7 +137,9 @@ class ClinicalReasoning(Protocol):
         """Suggest potential diagnoses."""
         ...
 
-    def recommend_treatments(self, diagnosis: str, patient_data: Dict[str, Any]) -> List[str]:
+    def recommend_treatments(
+        self, diagnosis: str, patient_data: Dict[str, Any]
+    ) -> List[str]:
         """Recommend treatments for a diagnosis."""
         ...
 
@@ -150,7 +161,9 @@ class EvidenceProvider(Protocol):
 class WorkflowEngine(Protocol):
     """Protocol for workflow execution engines."""
 
-    def execute_workflow(self, workflow_id: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    def execute_workflow(
+        self, workflow_id: str, context: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Execute a clinical workflow."""
         ...
 
@@ -213,6 +226,7 @@ class ConfigurationProvider(Protocol):
 
 
 # Abstract base classes for common patterns
+
 
 class BaseResourceProcessor(ABC):
     """
@@ -284,6 +298,7 @@ class BaseWorkflowStep(ABC):
 
 # Framework integration protocols
 
+
 @runtime_checkable
 class AgentFramework(Protocol):
     """Protocol for agent framework integrations."""
@@ -347,19 +362,23 @@ class VectorStore(Protocol):
 
 # Composite protocols for complex behaviors
 
+
 @runtime_checkable
 class ClinicalEntity(Identifiable, Timestamped, Versioned, ClinicalResource, Protocol):
     """Composite protocol for clinical entities."""
+
     pass
 
 
 @runtime_checkable
 class ProcessableResource(ClinicalResource, Serializable, Validatable, Protocol):
     """Composite protocol for resources that can be processed."""
+
     pass
 
 
 @runtime_checkable
 class ConfigurableActor(ActorCapability, ConfigurationProvider, Protocol):
     """Composite protocol for configurable actors."""
+
     pass

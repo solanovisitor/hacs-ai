@@ -9,15 +9,15 @@ Configuration via environment variables:
   - HACS_MCP_SERVER_NAME: Name identifier for the server (default: hacs-mcp)
 
 Notes:
-  - The langchain-mcp-adapters prefer a streamable HTTP path such as 
-    "http(s)://host:port/mcp/". If HACS_MCP_SERVER_URL does not include 
+  - The langchain-mcp-adapters prefer a streamable HTTP path such as
+    "http(s)://host:port/mcp/". If HACS_MCP_SERVER_URL does not include
     "/mcp" or "/mcp/", we will append "/mcp/" automatically.
   - If your HACS MCP server currently exposes only a root JSON-RPC endpoint ("/"),
     you should enable a proper MCP streamable HTTP endpoint at "/mcp/" for full compatibility.
 """
 
 import os
-from typing import Dict, Any
+from typing import Any, Dict
 
 from langgraph.prebuilt import create_react_agent
 
@@ -49,13 +49,19 @@ async def make_graph():
 
     def _fallback_agent():
         from langgraph.graph import StateGraph
+
         from hacs_state import HACSAgentState
+
         workflow = StateGraph(HACSAgentState)
 
         def basic_node(state):
             return {
-                "messages": state.get("messages", []) + [
-                    {"role": "assistant", "content": "MCP agent is initializing. Please try again shortly."}
+                "messages": state.get("messages", [])
+                + [
+                    {
+                        "role": "assistant",
+                        "content": "MCP agent is initializing. Please try again shortly.",
+                    }
                 ]
             }
 
@@ -92,7 +98,9 @@ async def make_graph():
             server_cfg["headers"] = headers
         # Debug: print final connection info
         try:
-            print(f"[MCP Graph] transport=streamable_http url={url} headers={'set' if headers else 'none'}")
+            print(
+                f"[MCP Graph] transport=streamable_http url={url} headers={'set' if headers else 'none'}"
+            )
         except Exception:
             pass
     elif transport == "sse":
@@ -104,18 +112,24 @@ async def make_graph():
         if headers:
             server_cfg["headers"] = headers
         try:
-            print(f"[MCP Graph] transport=sse url={base_url} headers={'set' if headers else 'none'}")
+            print(
+                f"[MCP Graph] transport=sse url={base_url} headers={'set' if headers else 'none'}"
+            )
         except Exception:
             pass
     elif transport == "stdio":
         # Spawn a local FastMCP server over stdio using our HACS tools adapter
         # Allows fully local dev without HTTP transport
-        server_cfg.update({
-            "command": "python",
-            "args": ["-m", "hacs_utils.mcp.fastmcp_server", "--transport", "stdio"],
-        })
+        server_cfg.update(
+            {
+                "command": "python",
+                "args": ["-m", "hacs_utils.mcp.fastmcp_server", "--transport", "stdio"],
+            }
+        )
         try:
-            print("[MCP Graph] transport=stdio command=python -m hacs_utils.mcp.fastmcp_server --transport stdio")
+            print(
+                "[MCP Graph] transport=stdio command=python -m hacs_utils.mcp.fastmcp_server --transport stdio"
+            )
         except Exception:
             pass
     else:
@@ -135,5 +149,3 @@ async def make_graph():
     except Exception:
         # Any runtime/IO/import issue → return safe fallback
         return _fallback_agent()
-
-

@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any
 # Import core dependencies with graceful degradation
 try:
     from pinecone import Pinecone, ServerlessSpec
+
     _has_pinecone_sdk = True
 except ImportError as e:
     # Handle pinecone package naming conflicts
@@ -142,7 +143,7 @@ class PineconeVectorStore:
             print("Auto-embedding is disabled. Use store_vector() directly.")
             return False
 
-        if not hasattr(self, 'embedding_model_instance'):
+        if not hasattr(self, "embedding_model_instance"):
             print("Embedding model not initialized. Cannot store resources.")
             return False
 
@@ -285,7 +286,7 @@ class PineconeVectorStore:
         Returns:
             List of (resource_id, score, metadata) tuples
         """
-        if not hasattr(self, 'embedding_model_instance'):
+        if not hasattr(self, "embedding_model_instance"):
             print("Warning: Embedding model not available for query embedding.")
             return []
 

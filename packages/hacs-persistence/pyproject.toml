@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "hacs-persistence"
 version = "0.4.3"
-description = "Database and vector store persistence adapters for HACS"
+description = "PostgreSQL and pgvector persistence with healthcare schema migrations and repository patterns"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [

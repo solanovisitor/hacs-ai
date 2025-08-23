@@ -1,3 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  echo "Usage: $0 [--local|--db|--llm|--all]";
+}
+
+target="local"
+if [[ "${1:-}" == "--local" ]]; then target=local; fi
+if [[ "${1:-}" == "--db" ]]; then target=db; fi
+if [[ "${1:-}" == "--llm" ]]; then target=llm; fi
+if [[ "${1:-}" == "--all" ]]; then target=all; fi
+
+case "$target" in
+  local)
+    uv run pytest -q -m "unit" --maxfail=1 ;;
+  db)
+    export DATABASE_URL=${DATABASE_URL:-"postgresql://postgres:postgres@localhost:5432/hacs"}
+    uv run pytest -q -m "db" --maxfail=1 ;;
+  llm)
+    if [[ -z "${OPENAI_API_KEY:-}" ]]; then echo "OPENAI_API_KEY is required"; exit 1; fi
+    uv run --env-file .env -- pytest -q -m "llm" --maxfail=1 ;;
+  all)
+    $0 --local
+    $0 --db
+    $0 --llm ;;
+  *) usage; exit 1 ;;
+esac
+
 #!/bin/bash
 
 # HACS Test Runner Script
@@ -81,11 +110,11 @@ run_local_tests() {
             ;;
         "integration")
             print_status "Running integration tests..."
-            python3 -m pytest tests/test_phase2_integration.py -v
+            python3 -m pytest tests/test_facades.py tests/test_registry_extractables.py -v
             ;;
         "phase2")
             print_status "Running Phase 2 integration tests..."
-            python3 -m pytest tests/test_phase2_integration.py -v --tb=short
+            python3 -m pytest tests/test_facades.py tests/test_registry_extractables.py -v --tb=short
             ;;
         "all"|*)
             print_status "Running all available tests..."
@@ -134,7 +163,7 @@ validate_environment() {
         "packages/hacs-models/pyproject.toml"
         "packages/hacs-tools/pyproject.toml"
         "tests/test_ci_essential.py"
-        "tests/test_phase2_integration.py"
+        "tests/test_facades.py"
     )
     
     for file in "${required_files[@]}"; do

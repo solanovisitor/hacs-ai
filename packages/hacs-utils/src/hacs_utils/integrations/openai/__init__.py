@@ -8,25 +8,19 @@ OpenAI's GPT models for structured healthcare AI applications.
 
 from .client import (
     OpenAIClient,
-    OpenAIStructuredGenerator,
     OpenAIToolRegistry,
 )
 from .embedding import OpenAIEmbedding
 from .factory import (
     create_openai_client,
     create_openai_embedding,
-    create_structured_generator,
-    create_openai_vectorizer,
 )
 
 __version__ = "0.2.0"
 __all__ = [
     "OpenAIEmbedding",
     "OpenAIClient",
-    "OpenAIStructuredGenerator",
     "OpenAIToolRegistry",
     "create_openai_client",
     "create_openai_embedding",
-    "create_structured_generator",
-    "create_openai_vectorizer",
 ]

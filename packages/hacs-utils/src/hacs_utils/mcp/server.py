@@ -12,21 +12,18 @@ from hacs_core import get_settings
 from hacs_core.auth import AuthManager, get_auth_manager
 
 from .messages import CallToolParams, MCPRequest, MCPResponse
-from .tools import execute_tool
 
 # Enhanced persistence imports
 try:
-    from hacs_persistence import (
-        PostgreSQLAdapter,
-        initialize_hacs_database,
-        get_migration_status
-    )
+    from hacs_persistence import PostgreSQLAdapter, initialize_hacs_database, get_migration_status
+
     PERSISTENCE_AVAILABLE = True
 except ImportError:
     PERSISTENCE_AVAILABLE = False
 
 try:
     from hacs_utils.integrations.qdrant.store import QdrantVectorStore
+
     QDRANT_AVAILABLE = True
 except ImportError:
     QDRANT_AVAILABLE = False
@@ -35,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 class HacsMCPServer:
-    """Enhanced HACS MCP Server with security, persistence, and comprehensive tool integration."""
+    """Enhanced HACS MCP Server with security, persistence, andtool integration."""
 
     def __init__(self):
         """Initialize the enhanced HACS MCP server with security and persistence."""
@@ -43,7 +40,7 @@ class HacsMCPServer:
         self.server_info = {
             "name": "HACS MCP Server",
             "version": self.version,
-            "description": "Healthcare Agent Communication Standard Model Context Protocol Server"
+            "description": "Healthcare Agent Communication Standard Model Context Protocol Server",
         }
 
         # Initialize auth and settings
@@ -67,18 +64,18 @@ class HacsMCPServer:
 
                 # Use connection factory for robust initialization
                 from hacs_persistence import HACSConnectionFactory
-                
+
                 # Get adapter with automatic migration and connection pooling
                 self.db_adapter = HACSConnectionFactory.get_adapter(
-                    database_url=database_url,
-                    auto_migrate=True,
-                    pool_size=10
+                    database_url=database_url, auto_migrate=True, pool_size=10
                 )
                 logger.info("✅ PostgreSQL adapter initialized via connection factory")
 
             except Exception as e:
                 self.db_adapter = None
-                logger.warning(f"Could not initialize PostgreSQL adapter: {e}. CRUD operations will be mocked.")
+                logger.warning(
+                    f"Could not initialize PostgreSQL adapter: {e}. CRUD operations will be mocked."
+                )
         else:
             self.db_adapter = None
             logger.info("PostgreSQL not available - CRUD operations will be mocked")
@@ -91,12 +88,14 @@ class HacsMCPServer:
                     url=qdrant_url,
                     collection_name="hacs_vectors",
                     dimension=1536,
-                    create_if_not_exists=True
+                    create_if_not_exists=True,
                 )
                 logger.info(f"Qdrant vector store initialized at {qdrant_url}")
             except Exception as e:
                 self.vector_store = None
-                logger.warning(f"Could not initialize Qdrant vector store: {e}. Vector operations will be disabled.")
+                logger.warning(
+                    f"Could not initialize Qdrant vector store: {e}. Vector operations will be disabled."
+                )
 
     async def _handle_use_tool(self, request: MCPRequest) -> MCPResponse:
         """Handle tools/call request with enhanced persistence-enabled execution."""
@@ -105,22 +104,24 @@ class HacsMCPServer:
 
             # Create enhanced actor context
             from hacs_models import Actor
+
             actor = Actor(
                 id="mcp-server",
                 name="HACS MCP Server",
                 role="system",
                 permissions=["admin:*", "audit:*"],
-                session_status="active"
+                session_status="active",
             )
 
             # Execute via integration manager (async) with context injection
             from hacs_registry import execute_hacs_tool
+
             tool_result = await execute_hacs_tool(
                 tool_name=params.name,
                 params=params.arguments,
                 actor_name=actor.name,
                 db_adapter=self.db_adapter,
-                vector_store=self.vector_store
+                vector_store=self.vector_store,
             )
 
             return MCPResponse(id=request.id, result=tool_result.to_dict())
@@ -137,7 +138,7 @@ class HacsMCPServer:
             )
 
     async def _handle_list_tools(self, request: MCPRequest) -> MCPResponse:
-        """Handle tools/list requests with comprehensive HACS tool coverage organized in blocks."""
+        """Handle tools/list requests withHACS tool coverage organized in blocks."""
         try:
             # Import all available tools from hacs-tools
             try:
@@ -149,72 +150,34 @@ class HacsMCPServer:
             # BLOCK 1: MODEL DISCOVERY & DEVELOPMENT TOOLS
             model_tools = [
                 {
-                    "name": "discover_hacs_resources",
-                    "description": "🔍 **Model Discovery**: Explore all available HACS models with comprehensive metadata, field analysis, and usage patterns for development planning",
+                    "name": "describe_models",
+                    "description": "🔍 Describe HACS models with examples and usage",
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "category_filter": {"type": "string", "description": "Filter by model category (clinical, administrative, workflow)"},
-                            "include_field_counts": {"type": "boolean", "description": "Include detailed field statistics", "default": True},
-                            "include_examples": {"type": "boolean", "description": "Include usage examples", "default": True}
+                            "resource_types": {"type": "array", "items": {"type": "string"}},
+                            "include_examples": {"type": "boolean", "default": True},
                         },
                     },
                 },
                 {
-                    "name": "get_hacs_resource_schema",
-                    "description": "📋 **Schema Inspector**: Get detailed schema information for HACS models including field types, validation rules, examples, and FHIR mappings",
+                    "name": "list_model_fields",
+                    "description": "📋 List fields for a HACS model",
                     "inputSchema": {
                         "type": "object",
-                        "properties": {
-                            "resource_type": {"type": "string", "description": "HACS resource type to inspect"},
-                            "include_examples": {"type": "boolean", "description": "Include field examples", "default": True},
-                            "include_validation_rules": {"type": "boolean", "description": "Include validation information", "default": True},
-                        },
+                        "properties": {"resource_type": {"type": "string"}},
                         "required": ["resource_type"],
                     },
                 },
                 {
-                    "name": "create_clinical_template",
-                    "description": "🏥 **Template Generator**: Create pre-configured clinical templates for common healthcare scenarios with FHIR compliance and workflow integration",
+                    "name": "plan_bundle_schema",
+                    "description": "🧩 Plan a bundle schema across resource types",
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "template_type": {"type": "string", "enum": ["assessment", "intake", "discharge", "monitoring", "referral"], "description": "Type of clinical template"},
-                            "focus_area": {"type": "string", "description": "Clinical focus area (cardiology, general, emergency, mental_health, pediatric)"},
-                            "complexity_level": {"type": "string", "enum": ["minimal", "standard", "comprehensive"], "description": "Detail level", "default": "standard"},
-                            "include_workflow_fields": {"type": "boolean", "description": "Include workflow management fields", "default": True},
+                            "resource_types": {"type": "array", "items": {"type": "string"}}
                         },
-                        "required": ["template_type", "focus_area"],
-                    },
-                },
-                {
-                    "name": "create_model_stack",
-                    "description": "🏗️ **Model Composer**: Build complex data structures by stacking multiple HACS models with intelligent field merging and conflict resolution",
-                    "inputSchema": {
-                        "type": "object",
-                        "properties": {
-                            "base_model": {"type": "string", "description": "Base HACS model name"},
-                            "stack_name": {"type": "string", "description": "Name for the composed model"},
-                            "extensions": {"type": "array", "items": {"type": "object"}, "description": "Extension model specifications"},
-                            "merge_strategy": {"type": "string", "enum": ["overlay", "prefix", "namespace"], "description": "Field conflict resolution", "default": "overlay"},
-                        },
-                        "required": ["base_model", "stack_name"],
-                    },
-                },
-                {
-                    "name": "version_hacs_resource",
-                    "description": "📦 **Version Manager**: Create and manage versions of HACS models with schema tracking, change logs, and deployment status",
-                    "inputSchema": {
-                        "type": "object",
-                        "properties": {
-                            "model_name": {"type": "string", "description": "Model to version"},
-                            "version": {"type": "string", "description": "Version identifier (e.g., '1.0.0')"},
-                            "description": {"type": "string", "description": "Change description"},
-                            "schema_definition": {"type": "object", "description": "Schema definition"},
-                            "tags": {"type": "array", "items": {"type": "string"}, "description": "Version tags"},
-                            "status": {"type": "string", "enum": ["draft", "published", "deprecated"], "default": "published"},
-                        },
-                        "required": ["model_name", "version", "description", "schema_definition"],
+                        "required": ["resource_types"],
                     },
                 },
             ]
@@ -222,77 +185,52 @@ class HacsMCPServer:
             # BLOCK 2: REGISTRY & CRUD TOOLS
             registry_tools = [
                 {
-                    "name": "create_resource",
-                    "description": "➕ **Resource Creator**: Create new HACS resources with comprehensive validation, auto-ID generation, FHIR compliance, and persistent storage",
+                    "name": "save_record",
+                    "description": "➕ Save a HACS resource record (typed CRUD)",
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "resource_type": {"type": "string", "description": "Type of HACS resource to create"},
-                            "resource_data": {"type": "object", "description": "Resource data following HACS schema"},
-                            "validate_fhir": {"type": "boolean", "description": "Perform FHIR validation", "default": True},
-                            "auto_generate_id": {"type": "boolean", "description": "Auto-generate unique ID", "default": True},
+                            "resource_type": {"type": "string"},
+                            "resource_data": {"type": "object"},
                         },
                         "required": ["resource_type", "resource_data"],
                     },
                 },
                 {
-                    "name": "get_resource",
-                    "description": "📖 **Resource Reader**: Retrieve HACS resources by ID with related data, audit information, and security validation",
+                    "name": "read_record",
+                    "description": "📖 Read a HACS record by ID",
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "resource_type": {"type": "string", "description": "Type of HACS resource"},
-                            "resource_id": {"type": "string", "description": "Unique resource identifier"},
-                            "include_related": {"type": "boolean", "description": "Include related resources", "default": False},
+                            "resource_type": {"type": "string"},
+                            "resource_id": {"type": "string"},
                         },
                         "required": ["resource_type", "resource_id"],
                     },
                 },
                 {
-                    "name": "update_resource",
-                    "description": "✏️ **Resource Updater**: Update existing HACS resources with validation, conflict detection, and audit tracking",
+                    "name": "update_record",
+                    "description": "✏️ Update a HACS record",
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "resource_type": {"type": "string", "description": "Type of HACS resource"},
-                            "resource_id": {"type": "string", "description": "Resource identifier"},
-                            "updates": {"type": "object", "description": "Fields to update"},
-                            "validate_before_update": {"type": "boolean", "description": "Validate before applying", "default": True},
+                            "resource_type": {"type": "string"},
+                            "resource_id": {"type": "string"},
+                            "patch": {"type": "object"},
                         },
-                        "required": ["resource_type", "resource_id", "updates"],
+                        "required": ["resource_type", "resource_id", "patch"],
                     },
                 },
                 {
-                    "name": "delete_resource",
-                    "description": "🗑️ **Resource Deleter**: Delete HACS resources with security validation, audit logging, and soft delete options",
+                    "name": "delete_record",
+                    "description": "🗑️ Delete a HACS record",
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "resource_type": {"type": "string", "description": "Type of HACS resource"},
-                            "resource_id": {"type": "string", "description": "Resource identifier"},
-                            "soft_delete": {"type": "boolean", "description": "Soft delete (recoverable)", "default": True},
+                            "resource_type": {"type": "string"},
+                            "resource_id": {"type": "string"},
                         },
                         "required": ["resource_type", "resource_id"],
-                    },
-                },
-                {
-                    "name": "validate_resource_data",
-                    "description": "✅ **Data Validator**: Validate resource data against HACS schemas with detailed error reporting and suggestions",
-                    "inputSchema": {
-                        "type": "object",
-                        "properties": {
-                            "resource_type": {"type": "string", "description": "HACS resource type"},
-                            "data": {"type": "object", "description": "Data to validate"},
-                        },
-                        "required": ["resource_type", "data"],
-                    },
-                },
-                {
-                    "name": "list_available_resources",
-                    "description": "📋 **Resource Catalog**: List all available HACS resource types with descriptions and capabilities",
-                    "inputSchema": {
-                        "type": "object",
-                        "properties": {},
                     },
                 },
             ]
@@ -300,36 +238,17 @@ class HacsMCPServer:
             # BLOCK 3: SEARCH & DISCOVERY TOOLS
             search_tools = [
                 {
-                    "name": "find_resources",
-                    "description": "🔍 **Smart Search**: Advanced resource search with semantic similarity, filters, faceted search, and relevance scoring",
-                    "inputSchema": {
-                        "type": "object",
-                        "properties": {
-                            "resource_type": {"type": "string", "description": "Type of resource to search"},
-                            "filters": {"type": "object", "description": "Field-based filters"},
-                            "semantic_query": {"type": "string", "description": "Natural language search query"},
-                            "limit": {"type": "integer", "minimum": 1, "maximum": 100, "description": "Max results", "default": 10},
-                            "include_score": {"type": "boolean", "description": "Include relevance scores", "default": True},
-                        },
-                        "required": ["resource_type"],
-                    },
-                },
-                {
                     "name": "search_hacs_records",
-                    "description": "📊 **Record Search**: Search HACS records with advanced filtering, sorting, and aggregation capabilities",
+                    "description": "📊 Search HACS records with filtering",
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "resource_type": {"type": "string", "description": "Resource type to search"},
-                            "filters": {"type": "object", "description": "Search filters"},
-                            "semantic_query": {"type": "string", "description": "Semantic search query"},
+                            "query": {"type": "string"},
+                            "resource_types": {"type": "array", "items": {"type": "string"}},
                             "limit": {"type": "integer", "default": 10},
-                            "sort_by": {"type": "string", "description": "Sort field"},
-                            "sort_order": {"type": "string", "enum": ["asc", "desc"], "default": "desc"},
                         },
-                        "required": ["resource_type"],
                     },
-                },
+                }
             ]
 
             # BLOCK 4: MEMORY MANAGEMENT TOOLS
@@ -341,9 +260,24 @@ class HacsMCPServer:
                         "type": "object",
                         "properties": {
                             "content": {"type": "string", "description": "Memory content to store"},
-                            "memory_type": {"type": "string", "enum": ["episodic", "procedural", "executive", "semantic"], "description": "Memory classification", "default": "episodic"},
-                            "importance_score": {"type": "number", "minimum": 0.0, "maximum": 1.0, "description": "Importance (0.0-1.0)", "default": 0.5},
-                            "tags": {"type": "array", "items": {"type": "string"}, "description": "Categorization tags"},
+                            "memory_type": {
+                                "type": "string",
+                                "enum": ["episodic", "procedural", "executive", "semantic"],
+                                "description": "Memory classification",
+                                "default": "episodic",
+                            },
+                            "importance_score": {
+                                "type": "number",
+                                "minimum": 0.0,
+                                "maximum": 1.0,
+                                "description": "Importance (0.0-1.0)",
+                                "default": 0.5,
+                            },
+                            "tags": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "Categorization tags",
+                            },
                             "session_id": {"type": "string", "description": "Session grouping ID"},
                         },
                         "required": ["content"],
@@ -356,11 +290,30 @@ class HacsMCPServer:
                         "type": "object",
                         "properties": {
                             "query": {"type": "string", "description": "Search query"},
-                            "memory_type": {"type": "string", "enum": ["episodic", "procedural", "executive", "semantic"], "description": "Memory type filter"},
+                            "memory_type": {
+                                "type": "string",
+                                "enum": ["episodic", "procedural", "executive", "semantic"],
+                                "description": "Memory type filter",
+                            },
                             "session_id": {"type": "string", "description": "Session filter"},
-                            "min_importance": {"type": "number", "minimum": 0.0, "maximum": 1.0, "default": 0.0},
-                            "limit": {"type": "integer", "minimum": 1, "maximum": 50, "default": 10},
-                            "similarity_threshold": {"type": "number", "minimum": 0.0, "maximum": 1.0, "default": 0.7},
+                            "min_importance": {
+                                "type": "number",
+                                "minimum": 0.0,
+                                "maximum": 1.0,
+                                "default": 0.0,
+                            },
+                            "limit": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 50,
+                                "default": 10,
+                            },
+                            "similarity_threshold": {
+                                "type": "number",
+                                "minimum": 0.0,
+                                "maximum": 1.0,
+                                "default": 0.7,
+                            },
                         },
                     },
                 },
@@ -370,10 +323,26 @@ class HacsMCPServer:
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "session_id": {"type": "string", "description": "Session to consolidate"},
-                            "memory_type": {"type": "string", "enum": ["episodic", "procedural", "executive"], "default": "episodic"},
-                            "strategy": {"type": "string", "enum": ["temporal", "importance", "semantic"], "default": "temporal"},
-                            "min_memories": {"type": "integer", "minimum": 2, "maximum": 20, "default": 3},
+                            "session_id": {
+                                "type": "string",
+                                "description": "Session to consolidate",
+                            },
+                            "memory_type": {
+                                "type": "string",
+                                "enum": ["episodic", "procedural", "executive"],
+                                "default": "episodic",
+                            },
+                            "strategy": {
+                                "type": "string",
+                                "enum": ["temporal", "importance", "semantic"],
+                                "default": "temporal",
+                            },
+                            "min_memories": {
+                                "type": "integer",
+                                "minimum": 2,
+                                "maximum": 20,
+                                "default": 3,
+                            },
                         },
                         "required": ["session_id"],
                     },
@@ -385,8 +354,17 @@ class HacsMCPServer:
                         "type": "object",
                         "properties": {
                             "query": {"type": "string", "description": "Context query"},
-                            "context_type": {"type": "string", "enum": ["general", "clinical", "procedural", "executive"], "default": "general"},
-                            "max_memories": {"type": "integer", "minimum": 1, "maximum": 20, "default": 5},
+                            "context_type": {
+                                "type": "string",
+                                "enum": ["general", "clinical", "procedural", "executive"],
+                                "default": "general",
+                            },
+                            "max_memories": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 20,
+                                "default": 5,
+                            },
                             "session_id": {"type": "string", "description": "Session scope"},
                         },
                         "required": ["query"],
@@ -398,9 +376,18 @@ class HacsMCPServer:
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "analysis_type": {"type": "string", "enum": ["comprehensive", "temporal", "importance", "connections"], "default": "comprehensive"},
+                            "analysis_type": {
+                                "type": "string",
+                                "enum": ["comprehensive", "temporal", "importance", "connections"],
+                                "default": "comprehensive",
+                            },
                             "session_id": {"type": "string", "description": "Session to analyze"},
-                            "time_window_days": {"type": "integer", "minimum": 1, "maximum": 365, "default": 30},
+                            "time_window_days": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 365,
+                                "default": 30,
+                            },
                         },
                     },
                 },
@@ -414,8 +401,15 @@ class HacsMCPServer:
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "resource_type": {"type": "string", "description": "HACS resource type"},
-                            "simplified": {"type": "boolean", "description": "Return simplified schema", "default": False},
+                            "resource_type": {
+                                "type": "string",
+                                "description": "HACS resource type",
+                            },
+                            "simplified": {
+                                "type": "boolean",
+                                "description": "Return simplified schema",
+                                "default": False,
+                            },
                         },
                         "required": ["resource_type"],
                     },
@@ -426,10 +420,13 @@ class HacsMCPServer:
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "model_name": {"type": "string", "description": "Model to analyze"},
-                            "field_category_filter": {"type": "string", "description": "Filter by field category"},
+                            "resource_name": {"type": "string", "description": "Model to analyze"},
+                            "field_category_filter": {
+                                "type": "string",
+                                "description": "Filter by field category",
+                            },
                         },
-                        "required": ["model_name"],
+                        "required": ["resource_name"],
                     },
                 },
                 {
@@ -438,10 +435,18 @@ class HacsMCPServer:
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "model_names": {"type": "array", "items": {"type": "string"}, "description": "Models to compare"},
-                            "comparison_focus": {"type": "string", "enum": ["fields", "types", "validation"], "default": "fields"},
+                            "resource_names": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "Models to compare",
+                            },
+                            "comparison_focus": {
+                                "type": "string",
+                                "enum": ["fields", "types", "validation"],
+                                "default": "fields",
+                            },
                         },
-                        "required": ["model_names"],
+                        "required": ["resource_names"],
                     },
                 },
             ]
@@ -454,12 +459,16 @@ class HacsMCPServer:
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "model_name": {"type": "string", "description": "Base model name"},
-                            "fields": {"type": "array", "items": {"type": "string"}, "description": "Fields to include"},
+                            "resource_name": {"type": "string", "description": "Base model name"},
+                            "fields": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "Fields to include",
+                            },
                             "view_name": {"type": "string", "description": "Custom view name"},
                             "include_optional": {"type": "boolean", "default": True},
                         },
-                        "required": ["model_name", "fields"],
+                        "required": ["resource_name", "fields"],
                     },
                 },
                 {
@@ -468,11 +477,16 @@ class HacsMCPServer:
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "model_name": {"type": "string", "description": "Base model"},
+                            "resource_name": {"type": "string", "description": "Base model"},
                             "use_case": {"type": "string", "description": "Intended use case"},
-                            "max_fields": {"type": "integer", "minimum": 1, "maximum": 50, "default": 10},
+                            "max_fields": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 50,
+                                "default": 10,
+                            },
                         },
-                        "required": ["model_name", "use_case"],
+                        "required": ["resource_name", "use_case"],
                     },
                 },
                 {
@@ -481,12 +495,30 @@ class HacsMCPServer:
                     "inputSchema": {
                         "type": "object",
                         "properties": {
-                            "model_name": {"type": "string", "description": "Model to optimize"},
-                            "optimization_goal": {"type": "string", "enum": ["token_efficiency", "accuracy", "completeness", "simplicity"], "default": "token_efficiency"},
-                            "target_use_case": {"type": "string", "enum": ["structured_output", "classification", "extraction", "validation"], "default": "structured_output"},
+                            "resource_name": {"type": "string", "description": "Model to optimize"},
+                            "optimization_goal": {
+                                "type": "string",
+                                "enum": [
+                                    "token_efficiency",
+                                    "accuracy",
+                                    "completeness",
+                                    "simplicity",
+                                ],
+                                "default": "token_efficiency",
+                            },
+                            "target_use_case": {
+                                "type": "string",
+                                "enum": [
+                                    "structured_output",
+                                    "classification",
+                                    "extraction",
+                                    "validation",
+                                ],
+                                "default": "structured_output",
+                            },
                             "preserve_validation": {"type": "boolean", "default": True},
                         },
-                        "required": ["model_name"],
+                        "required": ["resource_name"],
                     },
                 },
             ]
@@ -501,8 +533,16 @@ class HacsMCPServer:
                         "properties": {
                             "title": {"type": "string", "description": "Knowledge item title"},
                             "content": {"type": "string", "description": "Knowledge content"},
-                            "knowledge_type": {"type": "string", "enum": ["fact", "rule", "guideline", "protocol"], "default": "fact"},
-                            "tags": {"type": "array", "items": {"type": "string"}, "description": "Categorization tags"},
+                            "knowledge_type": {
+                                "type": "string",
+                                "enum": ["fact", "rule", "guideline", "protocol"],
+                                "default": "fact",
+                            },
+                            "tags": {
+                                "type": "array",
+                                "items": {"type": "string"},
+                                "description": "Categorization tags",
+                            },
                             "metadata": {"type": "object", "description": "Additional metadata"},
                         },
                         "required": ["title", "content"],
@@ -560,7 +600,9 @@ class HacsMCPServer:
                     "persistence_status": persistence_status,
                     "tool_organization": {
                         "blocks": [block_name for block_name, _ in tool_blocks],
-                        "total_tools_per_block": {block_name: len(tools) for block_name, tools in tool_blocks}
+                        "total_tools_per_block": {
+                            block_name: len(tools) for block_name, tools in tool_blocks
+                        },
                     },
                     "server_info": {
                         "name": "Enhanced HACS MCP Server",
@@ -572,10 +614,10 @@ class HacsMCPServer:
                             "Semantic search & discovery",
                             "FHIR-compliant validation",
                             "Enterprise security",
-                            "Audit trails & versioning"
-                        ]
-                    }
-                }
+                            "Audit trails & versioning",
+                        ],
+                    },
+                },
             )
 
         except Exception as e:
@@ -635,7 +677,7 @@ class HacsMCPServer:
                 "qdrant_available": QDRANT_AVAILABLE,
                 "crud_operations": self.db_adapter is not None,
                 "vector_search": self.vector_store is not None,
-            }
+            },
         }
 
         # Add migration status if database is available

@@ -23,7 +23,6 @@ from .base import (
     AggregateRoot,
     Repository,
     UnitOfWork,
-
     # Registry-specific abstractions
     ValueObject,
     DomainEvent,
@@ -35,7 +34,6 @@ from .base import (
     QueryRepository,
     Specification,
     RegistryAggregateRoot,
-
     # Type aliases
     RepositoryType,
     QueryRepositoryType,
@@ -70,7 +68,6 @@ __all__ = [
     "AggregateRoot",
     "Repository",
     "UnitOfWork",
-
     # Registry-specific abstractions
     "ValueObject",
     "DomainEvent",
@@ -84,19 +81,16 @@ __all__ = [
     "RegistryAggregateRoot",
     "RepositoryType",
     "QueryRepositoryType",
-
     # Event system
     "RegistryEvent",
     "ResourceEvent",
     "AgentEvent",
     "IAMEvent",
     "EventBus",
-
     # Lifecycle management
     "LifecycleState",
     "LifecycleManager",
     "LifecycleTransition",
-
     # Exceptions
     "RegistryException",
     "DomainException",

@@ -4,6 +4,7 @@ HACS Vector Store with pgvector (Async - Simplified)
 This module provides asynchronous vector database operations for HACS using PostgreSQL with the pgvector extension.
 Uses direct async connections for simplicity and reliability.
 """
+
 import json
 import logging
 from datetime import datetime
@@ -16,6 +17,7 @@ from psycopg.rows import dict_row
 
 logger = logging.getLogger(__name__)
 
+
 class HACSVectorStore:
     """
     Asynchronous vector store implementation using PostgreSQL with pgvector extension.
@@ -27,7 +29,7 @@ class HACSVectorStore:
         database_url: str,
         schema_name: str = "hacs_registry",
         table_name: str = "knowledge_items",
-        embedding_dimension: int = 1536
+        embedding_dimension: int = 1536,
     ):
         self.database_url = database_url
         self.schema_name = schema_name
@@ -44,8 +46,7 @@ class HACSVectorStore:
 
         try:
             self._connection = await psycopg.AsyncConnection.connect(
-                self.database_url,
-                autocommit=True
+                self.database_url, autocommit=True
             )
 
             # Register vector types for async connection
@@ -97,7 +98,7 @@ class HACSVectorStore:
         content: str,
         embedding: list[float],
         metadata: dict[str, Any] | None = None,
-        source: str | None = None
+        source: str | None = None,
     ) -> str:
         """Store a single embedding with associated content and metadata asynchronously."""
         if not self._connection:
@@ -117,14 +118,17 @@ class HACSVectorStore:
             """
 
             async with self._connection.cursor() as cursor:
-                await cursor.execute(insert_query, (
-                    embedding_id,
-                    f"Embedding {embedding_id}",
-                    content,
-                    json.dumps(metadata or {}),
-                    source,
-                    embedding_array
-                ))
+                await cursor.execute(
+                    insert_query,
+                    (
+                        embedding_id,
+                        f"Embedding {embedding_id}",
+                        content,
+                        json.dumps(metadata or {}),
+                        source,
+                        embedding_array,
+                    ),
+                )
 
                 result = await cursor.fetchone()
                 logger.info(f"Stored embedding with ID: {result[0]}")
@@ -140,7 +144,7 @@ class HACSVectorStore:
         top_k: int = 5,
         distance_metric: str = "cosine",
         metadata_filter: dict[str, Any] | None = None,
-        source_filter: str | None = None
+        source_filter: str | None = None,
     ) -> list[dict[str, Any]]:
         """Perform similarity search using vector embeddings asynchronously."""
         if not self._connection:
@@ -151,11 +155,7 @@ class HACSVectorStore:
             query_array = np.array(query_embedding)
 
             # Choose distance operator based on metric
-            distance_ops = {
-                "cosine": "<=>",
-                "l2": "<->",
-                "inner_product": "<#>"
-            }
+            distance_ops = {"cosine": "<=>", "l2": "<->", "inner_product": "<#>"}
             distance_op = distance_ops.get(distance_metric, "<=>")
 
             # Build query with optional filters
@@ -213,12 +213,14 @@ class HACSVectorStore:
                 result = await cursor.fetchone()
 
                 stats = dict(result) if result else {}
-                stats.update({
-                    "schema_name": self.schema_name,
-                    "table_name": self.table_name,
-                    "embedding_dimension": self.embedding_dimension,
-                    "distance_metrics": ["cosine", "l2", "inner_product"]
-                })
+                stats.update(
+                    {
+                        "schema_name": self.schema_name,
+                        "table_name": self.table_name,
+                        "embedding_dimension": self.embedding_dimension,
+                        "distance_metrics": ["cosine", "l2", "inner_product"],
+                    }
+                )
 
                 logger.info(f"Collection stats: {stats['total_embeddings']} total embeddings")
                 return stats
@@ -227,18 +229,19 @@ class HACSVectorStore:
             logger.error(f"Failed to get collection stats: {e}")
             raise
 
+
 async def create_vector_store(
     database_url: str,
     schema_name: str = "hacs_registry",
     table_name: str = "knowledge_items",
-    embedding_dimension: int = 1536
+    embedding_dimension: int = 1536,
 ) -> HACSVectorStore:
     """Factory function to create and connect a HACSVectorStore instance."""
     vector_store = HACSVectorStore(
         database_url=database_url,
         schema_name=schema_name,
         table_name=table_name,
-        embedding_dimension=embedding_dimension
+        embedding_dimension=embedding_dimension,
     )
     await vector_store.connect()
     return vector_store

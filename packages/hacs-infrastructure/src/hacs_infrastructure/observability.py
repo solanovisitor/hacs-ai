@@ -1,7 +1,6 @@
-"""
-HACS Observability Framework - OpenTelemetry-based Monitoring
+"""HACS Observability Framework - OpenTelemetry-based Monitoring.
 
-This module provides comprehensive observability for healthcare AI systems
+This module providesobservability for healthcare AI systems
 including distributed tracing, metrics collection, structured logging,
 and healthcare-specific monitoring capabilities.
 
@@ -18,31 +17,33 @@ License: MIT
 Version: 1.0.0
 """
 
-import os
-import time
 import json
 import logging
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Union, Callable
+import os
+import time
+from collections.abc import Callable
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
+from typing import Any
+
 
 # OpenTelemetry imports
 try:
-    from opentelemetry import trace, metrics
-    from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import BatchSpanProcessor
-    from opentelemetry.sdk.metrics import MeterProvider
-    from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
-    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+    from opentelemetry import metrics, trace
     from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
-    from opentelemetry.instrumentation.requests import RequestsInstrumentor
+    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
     from opentelemetry.instrumentation.logging import LoggingInstrumentor
-    from opentelemetry.semantic_conventions.trace import SpanAttributes
+    from opentelemetry.instrumentation.requests import RequestsInstrumentor
     from opentelemetry.propagate import set_global_textmap
     from opentelemetry.propagators.b3 import B3MultiFormat
+    from opentelemetry.sdk.metrics import MeterProvider
+    from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor
+    from opentelemetry.semantic_conventions.trace import SpanAttributes
 
     OTEL_AVAILABLE = True
 except ImportError:
@@ -53,6 +54,7 @@ except ImportError:
 
 class LogLevel(str, Enum):
     """Structured log levels."""
+
     DEBUG = "debug"
     INFO = "info"
     WARN = "warn"
@@ -63,6 +65,7 @@ class LogLevel(str, Enum):
 
 class MetricType(str, Enum):
     """Types of metrics to collect."""
+
     COUNTER = "counter"
     HISTOGRAM = "histogram"
     GAUGE = "gauge"
@@ -72,15 +75,16 @@ class MetricType(str, Enum):
 @dataclass
 class HealthcareSpanAttributes:
     """Healthcare-specific span attributes."""
-    patient_id_hash: Optional[str] = None
-    organization: Optional[str] = None
-    care_team: Optional[str] = None
-    workflow_type: Optional[str] = None
+
+    patient_id_hash: str | None = None
+    organization: str | None = None
+    care_team: str | None = None
+    workflow_type: str | None = None
     phi_accessed: bool = False
-    fhir_resource_type: Optional[str] = None
-    clinical_domain: Optional[str] = None
-    tool_category: Optional[str] = None
-    compliance_level: Optional[str] = None
+    resource_type: str | None = None
+    clinical_domain: str | None = None
+    tool_category: str | None = None
+    compliance_level: str | None = None
 
 
 @dataclass
@@ -94,13 +98,13 @@ class ObservabilityConfig:
 
     # Tracing configuration
     enable_tracing: bool = True
-    trace_endpoint: Optional[str] = None
-    trace_headers: Dict[str, str] = field(default_factory=dict)
+    trace_endpoint: str | None = None
+    trace_headers: dict[str, str] = field(default_factory=dict)
 
     # Metrics configuration
     enable_metrics: bool = True
-    metrics_endpoint: Optional[str] = None
-    metrics_headers: Dict[str, str] = field(default_factory=dict)
+    metrics_endpoint: str | None = None
+    metrics_headers: dict[str, str] = field(default_factory=dict)
 
     # Logging configuration
     enable_structured_logging: bool = True
@@ -126,7 +130,7 @@ class ObservabilityConfig:
 class StructuredLogger:
     """PHI-safe structured logger with healthcare context."""
 
-    def __init__(self, name: str, config: ObservabilityConfig):
+    def __init__(self, name: str, config: ObservabilityConfig) -> None:
         """Initialize structured logger."""
         self.name = name
         self.config = config
@@ -138,10 +142,10 @@ class StructuredLogger:
         # Healthcare context
         self.healthcare_context = {}
 
-    def _configure_logger(self):
+    def _configure_logger(self) -> None:
         """Configure structured logging format."""
         # Handle both enum and string log levels
-        if hasattr(self.config.log_level, 'value'):
+        if hasattr(self.config.log_level, "value"):
             log_level = self.config.log_level.value.upper()
         else:
             log_level = str(self.config.log_level).upper()
@@ -153,10 +157,7 @@ class StructuredLogger:
             self.logger.removeHandler(handler)
 
         # Create structured formatter
-        if self.config.log_format == "json":
-            formatter = JSONFormatter()
-        else:
-            formatter = StructuredFormatter()
+        formatter = JSONFormatter() if self.config.log_format == "json" else StructuredFormatter()
 
         # Console handler
         console_handler = logging.StreamHandler()
@@ -176,69 +177,105 @@ class StructuredLogger:
 
     def set_healthcare_context(
         self,
-        patient_id_hash: Optional[str] = None,
-        organization: Optional[str] = None,
-        care_team: Optional[str] = None,
-        workflow_type: Optional[str] = None
-    ):
+        patient_id_hash: str | None = None,
+        organization: str | None = None,
+        care_team: str | None = None,
+        workflow_type: str | None = None,
+    ) -> None:
         """Set healthcare context for all subsequent logs."""
-        self.healthcare_context.update({
-            k: v for k, v in {
-                "patient_id_hash": patient_id_hash,
-                "organization": organization,
-                "care_team": care_team,
-                "workflow_type": workflow_type
-            }.items() if v is not None
-        })
+        self.healthcare_context.update(
+            {
+                k: v
+                for k, v in {
+                    "patient_id_hash": patient_id_hash,
+                    "organization": organization,
+                    "care_team": care_team,
+                    "workflow_type": workflow_type,
+                }.items()
+                if v is not None
+            }
+        )
 
-    def _log(self, level: LogLevel, message: str, **kwargs):
+    def _log(self, level: LogLevel, message: str, **kwargs) -> None:
         """Internal logging method with healthcare context."""
         log_data = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "level": level.value,
             "service": self.config.service_name,
             "environment": self.config.environment,
             "message": message,
             **self.healthcare_context,
-            **kwargs
+            **kwargs,
         }
 
         # Add trace context if available
         if OTEL_AVAILABLE and trace.get_current_span().is_recording():
             span_context = trace.get_current_span().get_span_context()
-            log_data.update({
-                "trace_id": format(span_context.trace_id, "032x"),
-                "span_id": format(span_context.span_id, "016x")
-            })
+            log_data.update(
+                {
+                    "trace_id": format(span_context.trace_id, "032x"),
+                    "span_id": format(span_context.span_id, "016x"),
+                }
+            )
 
         # Remove reserved fields that conflict with LogRecord
-        extra_data = {k: v for k, v in log_data.items() if k not in ['message', 'msg', 'args', 'levelname', 'levelno', 'pathname', 'filename', 'module', 'lineno', 'funcName', 'created', 'msecs', 'relativeCreated', 'thread', 'threadName', 'processName', 'process', 'name']}
+        extra_data = {
+            k: v
+            for k, v in log_data.items()
+            if k
+            not in [
+                "message",
+                "msg",
+                "args",
+                "levelname",
+                "levelno",
+                "pathname",
+                "filename",
+                "module",
+                "lineno",
+                "funcName",
+                "created",
+                "msecs",
+                "relativeCreated",
+                "thread",
+                "threadName",
+                "processName",
+                "process",
+                "name",
+            ]
+        }
 
         # Log with appropriate level
-        log_level = getattr(logging, level.value.upper()) if level != LogLevel.AUDIT else logging.INFO
-        self.logger.log(log_level, json.dumps(log_data) if self.config.log_format == "json" else message, extra=extra_data)
+        log_level = (
+            getattr(logging, level.value.upper()) if level != LogLevel.AUDIT else logging.INFO
+        )
+        self.logger.log(
+            log_level,
+            json.dumps(log_data) if self.config.log_format == "json" else message,
+            extra=extra_data,
+        )
 
-    def debug(self, message: str, **kwargs):
+    def debug(self, message: str, **kwargs) -> None:
         """Log debug message."""
         self._log(LogLevel.DEBUG, message, **kwargs)
 
-    def info(self, message: str, **kwargs):
+    def info(self, message: str, **kwargs) -> None:
         """Log info message."""
         self._log(LogLevel.INFO, message, **kwargs)
 
-    def warn(self, message: str, **kwargs):
+    def warn(self, message: str, **kwargs) -> None:
         """Log warning message."""
         self._log(LogLevel.WARN, message, **kwargs)
 
-    def error(self, message: str, **kwargs):
+    def error(self, message: str, **kwargs) -> None:
         """Log error message."""
         self._log(LogLevel.ERROR, message, **kwargs)
 
-    def fatal(self, message: str, **kwargs):
+    def fatal(self, message: str, **kwargs) -> None:
         """Log fatal message."""
         self._log(LogLevel.FATAL, message, **kwargs)
 
-    def audit(self, message: str, **kwargs):
+    def audit(self, message: str, **kwargs) -> None:
         """Log audit event for HIPAA compliance."""
         kwargs["audit_event"] = True
         self._log(LogLevel.AUDIT, message, **kwargs)
@@ -250,21 +287,37 @@ class JSONFormatter(logging.Formatter):
     def format(self, record):
         """Format log record as JSON."""
         log_obj = {
-            "timestamp": datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat(),
+            "timestamp": datetime.fromtimestamp(record.created, tz=UTC).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
             "module": record.module,
             "function": record.funcName,
-            "line": record.lineno
+            "line": record.lineno,
         }
 
         # Add extra fields
         for key, value in record.__dict__.items():
-            if key not in ["name", "msg", "args", "levelname", "levelno", "pathname",
-                          "filename", "module", "lineno", "funcName", "created",
-                          "msecs", "relativeCreated", "thread", "threadName",
-                          "processName", "process", "getMessage"]:
+            if key not in [
+                "name",
+                "msg",
+                "args",
+                "levelname",
+                "levelno",
+                "pathname",
+                "filename",
+                "module",
+                "lineno",
+                "funcName",
+                "created",
+                "msecs",
+                "relativeCreated",
+                "thread",
+                "threadName",
+                "processName",
+                "process",
+                "getMessage",
+            ]:
                 log_obj[key] = value
 
         return json.dumps(log_obj)
@@ -275,16 +328,32 @@ class StructuredFormatter(logging.Formatter):
 
     def format(self, record):
         """Format log record with structure."""
-        formatted = f"{datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat()} "
+        formatted = f"{datetime.fromtimestamp(record.created, tz=UTC).isoformat()} "
         formatted += f"[{record.levelname}] {record.name}: {record.getMessage()}"
 
         # Add structured fields
         extras = []
         for key, value in record.__dict__.items():
-            if key not in ["name", "msg", "args", "levelname", "levelno", "pathname",
-                          "filename", "module", "lineno", "funcName", "created",
-                          "msecs", "relativeCreated", "thread", "threadName",
-                          "processName", "process", "getMessage"]:
+            if key not in [
+                "name",
+                "msg",
+                "args",
+                "levelname",
+                "levelno",
+                "pathname",
+                "filename",
+                "module",
+                "lineno",
+                "funcName",
+                "created",
+                "msecs",
+                "relativeCreated",
+                "thread",
+                "threadName",
+                "processName",
+                "process",
+                "getMessage",
+            ]:
                 extras.append(f"{key}={value}")
 
         if extras:
@@ -296,7 +365,7 @@ class StructuredFormatter(logging.Formatter):
 class HealthcareTracer:
     """Healthcare-specific distributed tracing."""
 
-    def __init__(self, config: ObservabilityConfig):
+    def __init__(self, config: ObservabilityConfig) -> None:
         """Initialize healthcare tracer."""
         self.config = config
         self.tracer = None
@@ -304,7 +373,7 @@ class HealthcareTracer:
         if OTEL_AVAILABLE and config.enable_tracing:
             self._setup_tracing()
 
-    def _setup_tracing(self):
+    def _setup_tracing(self) -> None:
         """Setup OpenTelemetry tracing."""
         # Configure tracer provider
         tracer_provider = TracerProvider()
@@ -313,8 +382,7 @@ class HealthcareTracer:
         # Configure OTLP exporter if endpoint provided
         if self.config.trace_endpoint:
             otlp_exporter = OTLPSpanExporter(
-                endpoint=self.config.trace_endpoint,
-                headers=self.config.trace_headers
+                endpoint=self.config.trace_endpoint, headers=self.config.trace_headers
             )
             span_processor = BatchSpanProcessor(otlp_exporter)
             tracer_provider.add_span_processor(span_processor)
@@ -323,10 +391,7 @@ class HealthcareTracer:
         set_global_textmap(B3MultiFormat())
 
         # Get tracer
-        self.tracer = trace.get_tracer(
-            self.config.service_name,
-            self.config.service_version
-        )
+        self.tracer = trace.get_tracer(self.config.service_name, self.config.service_version)
 
         # Auto-instrument common libraries
         RequestsInstrumentor().instrument()
@@ -334,10 +399,7 @@ class HealthcareTracer:
 
     @contextmanager
     def start_healthcare_span(
-        self,
-        name: str,
-        attributes: Optional[HealthcareSpanAttributes] = None,
-        **kwargs
+        self, name: str, attributes: HealthcareSpanAttributes | None = None, **kwargs
     ):
         """Start a healthcare-specific trace span."""
         if not self.tracer:
@@ -358,8 +420,8 @@ class HealthcareTracer:
                 span_attributes["healthcare.workflow_type"] = attributes.workflow_type
             if attributes.phi_accessed:
                 span_attributes["healthcare.phi_accessed"] = str(attributes.phi_accessed)
-            if attributes.fhir_resource_type:
-                span_attributes["healthcare.fhir_resource_type"] = attributes.fhir_resource_type
+            if attributes.resource_type:
+                span_attributes["healthcare.resource_type"] = attributes.resource_type
             if attributes.clinical_domain:
                 span_attributes["healthcare.clinical_domain"] = attributes.clinical_domain
             if attributes.tool_category:
@@ -368,11 +430,13 @@ class HealthcareTracer:
                 span_attributes["healthcare.compliance_level"] = attributes.compliance_level
 
         # Add service attributes
-        span_attributes.update({
-            SpanAttributes.SERVICE_NAME: self.config.service_name,
-            SpanAttributes.SERVICE_VERSION: self.config.service_version,
-            "environment": self.config.environment
-        })
+        span_attributes.update(
+            {
+                SpanAttributes.SERVICE_NAME: self.config.service_name,
+                SpanAttributes.SERVICE_VERSION: self.config.service_version,
+                "environment": self.config.environment,
+            }
+        )
 
         # Add custom attributes
         span_attributes.update(kwargs)
@@ -380,7 +444,7 @@ class HealthcareTracer:
         with self.tracer.start_as_current_span(name, attributes=span_attributes) as span:
             yield span
 
-    def add_event(self, name: str, attributes: Optional[Dict[str, Any]] = None):
+    def add_event(self, name: str, attributes: dict[str, Any] | None = None) -> None:
         """Add event to current span."""
         if not self.tracer:
             return
@@ -389,7 +453,7 @@ class HealthcareTracer:
         if current_span.is_recording():
             current_span.add_event(name, attributes or {})
 
-    def set_attribute(self, key: str, value: Any):
+    def set_attribute(self, key: str, value: Any) -> None:
         """Set attribute on current span."""
         if not self.tracer:
             return
@@ -398,7 +462,7 @@ class HealthcareTracer:
         if current_span.is_recording():
             current_span.set_attribute(key, value)
 
-    def record_exception(self, exception: Exception):
+    def record_exception(self, exception: Exception) -> None:
         """Record exception in current span."""
         if not self.tracer:
             return
@@ -412,7 +476,7 @@ class HealthcareTracer:
 class HealthcareMetrics:
     """Healthcare-specific metrics collection."""
 
-    def __init__(self, config: ObservabilityConfig):
+    def __init__(self, config: ObservabilityConfig) -> None:
         """Initialize healthcare metrics."""
         self.config = config
         self.meter = None
@@ -421,16 +485,15 @@ class HealthcareMetrics:
         if OTEL_AVAILABLE and config.enable_metrics:
             self._setup_metrics()
 
-    def _setup_metrics(self):
+    def _setup_metrics(self) -> None:
         """Setup OpenTelemetry metrics."""
         # Configure OTLP exporter if endpoint provided
         if self.config.metrics_endpoint:
             metric_reader = PeriodicExportingMetricReader(
                 OTLPMetricExporter(
-                    endpoint=self.config.metrics_endpoint,
-                    headers=self.config.metrics_headers
+                    endpoint=self.config.metrics_endpoint, headers=self.config.metrics_headers
                 ),
-                export_interval_millis=30000  # 30 seconds
+                export_interval_millis=30000,  # 30 seconds
             )
             meter_provider = MeterProvider(metric_readers=[metric_reader])
         else:
@@ -439,15 +502,12 @@ class HealthcareMetrics:
         metrics.set_meter_provider(meter_provider)
 
         # Get meter
-        self.meter = metrics.get_meter(
-            self.config.service_name,
-            self.config.service_version
-        )
+        self.meter = metrics.get_meter(self.config.service_name, self.config.service_version)
 
         # Create common healthcare metrics
         self._create_healthcare_metrics()
 
-    def _create_healthcare_metrics(self):
+    def _create_healthcare_metrics(self) -> None:
         """Create healthcare-specific metrics."""
         if not self.meter:
             return
@@ -456,79 +516,73 @@ class HealthcareMetrics:
         self.metrics["patient_workflows_total"] = self.meter.create_counter(
             "hacs_patient_workflows_total",
             description="Total number of patient workflows processed",
-            unit="1"
+            unit="1",
         )
 
         self.metrics["patient_workflows_duration"] = self.meter.create_histogram(
             "hacs_patient_workflows_duration_seconds",
             description="Duration of patient workflows",
-            unit="s"
+            unit="s",
         )
 
         # PHI access metrics
         self.metrics["phi_access_total"] = self.meter.create_counter(
-            "hacs_phi_access_total",
-            description="Total PHI access events",
-            unit="1"
+            "hacs_phi_access_total", description="Total PHI access events", unit="1"
         )
 
         # Tool execution metrics
         self.metrics["tool_executions_total"] = self.meter.create_counter(
-            "hacs_tool_executions_total",
-            description="Total healthcare tool executions",
-            unit="1"
+            "hacs_tool_executions_total", description="Total healthcare tool executions", unit="1"
         )
 
         self.metrics["tool_execution_duration"] = self.meter.create_histogram(
             "hacs_tool_execution_duration_seconds",
             description="Healthcare tool execution duration",
-            unit="s"
+            unit="s",
         )
 
         # FHIR operations metrics
         self.metrics["fhir_operations_total"] = self.meter.create_counter(
-            "hacs_fhir_operations_total",
-            description="Total FHIR operations",
-            unit="1"
+            "hacs_fhir_operations_total", description="Total FHIR operations", unit="1"
         )
 
         # Authentication metrics
         self.metrics["auth_attempts_total"] = self.meter.create_counter(
-            "hacs_auth_attempts_total",
-            description="Total authentication attempts",
-            unit="1"
+            "hacs_auth_attempts_total", description="Total authentication attempts", unit="1"
         )
 
         # System performance metrics
         self.metrics["memory_usage"] = self.meter.create_gauge(
-            "hacs_memory_usage_bytes",
-            description="Memory usage in bytes",
-            unit="bytes"
+            "hacs_memory_usage_bytes", description="Memory usage in bytes", unit="bytes"
         )
 
         self.metrics["active_sessions"] = self.meter.create_gauge(
-            "hacs_active_sessions",
-            description="Number of active user sessions",
-            unit="1"
+            "hacs_active_sessions", description="Number of active user sessions", unit="1"
         )
 
-    def increment_counter(self, metric_name: str, value: int = 1, attributes: Optional[Dict[str, str]] = None):
+    def increment_counter(
+        self, metric_name: str, value: int = 1, attributes: dict[str, str] | None = None
+    ) -> None:
         """Increment a counter metric."""
         if metric_name in self.metrics:
             self.metrics[metric_name].add(value, attributes or {})
 
-    def record_histogram(self, metric_name: str, value: float, attributes: Optional[Dict[str, str]] = None):
+    def record_histogram(
+        self, metric_name: str, value: float, attributes: dict[str, str] | None = None
+    ) -> None:
         """Record a histogram value."""
         if metric_name in self.metrics:
             self.metrics[metric_name].record(value, attributes or {})
 
-    def set_gauge(self, metric_name: str, value: float, attributes: Optional[Dict[str, str]] = None):
+    def set_gauge(
+        self, metric_name: str, value: float, attributes: dict[str, str] | None = None
+    ) -> None:
         """Set a gauge value."""
         if metric_name in self.metrics:
             self.metrics[metric_name].set(value, attributes or {})
 
     @contextmanager
-    def time_histogram(self, metric_name: str, attributes: Optional[Dict[str, str]] = None):
+    def time_histogram(self, metric_name: str, attributes: dict[str, str] | None = None):
         """Time a block of code and record to histogram."""
         start_time = time.time()
         try:
@@ -541,7 +595,7 @@ class HealthcareMetrics:
 class ObservabilityManager:
     """Central manager for HACS observability."""
 
-    def __init__(self, config: Optional[ObservabilityConfig] = None):
+    def __init__(self, config: ObservabilityConfig | None = None) -> None:
         """Initialize observability manager."""
         self.config = config or self._create_default_config()
 
@@ -553,10 +607,12 @@ class ObservabilityManager:
         # Health check status
         self.health_checks = {}
 
-        self.logger.info("Observability framework initialized",
-                        service=self.config.service_name,
-                        version=self.config.service_version,
-                        environment=self.config.environment)
+        self.logger.info(
+            "Observability framework initialized",
+            service=self.config.service_name,
+            version=self.config.service_version,
+            environment=self.config.environment,
+        )
 
     def _create_default_config(self) -> ObservabilityConfig:
         """Create default configuration from environment."""
@@ -568,7 +624,8 @@ class ObservabilityManager:
             metrics_endpoint=os.getenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"),
             enable_tracing=os.getenv("HACS_ENABLE_TRACING", "true").lower() == "true",
             enable_metrics=os.getenv("HACS_ENABLE_METRICS", "true").lower() == "true",
-            enable_structured_logging=os.getenv("HACS_ENABLE_STRUCTURED_LOGGING", "true").lower() == "true"
+            enable_structured_logging=os.getenv("HACS_ENABLE_STRUCTURED_LOGGING", "true").lower()
+            == "true",
         )
 
     def get_logger(self, name: str) -> StructuredLogger:
@@ -578,30 +635,29 @@ class ObservabilityManager:
     def trace_healthcare_workflow(
         self,
         workflow_name: str,
-        patient_id_hash: Optional[str] = None,
-        organization: Optional[str] = None,
-        care_team: Optional[str] = None
+        patient_id_hash: str | None = None,
+        organization: str | None = None,
+        care_team: str | None = None,
     ):
         """Decorator to trace healthcare workflows."""
+
         def decorator(func: Callable) -> Callable:
             def wrapper(*args, **kwargs):
                 attributes = HealthcareSpanAttributes(
                     patient_id_hash=patient_id_hash,
                     organization=organization,
                     care_team=care_team,
-                    workflow_type=workflow_name
+                    workflow_type=workflow_name,
                 )
 
                 with self.tracer.start_healthcare_span(
-                    f"healthcare.workflow.{workflow_name}",
-                    attributes=attributes
+                    f"healthcare.workflow.{workflow_name}", attributes=attributes
                 ) as span:
                     start_time = time.time()
 
                     # Record workflow start
                     self.metrics.increment_counter(
-                        "patient_workflows_total",
-                        attributes={"workflow_type": workflow_name}
+                        "patient_workflows_total", attributes={"workflow_type": workflow_name}
                     )
 
                     try:
@@ -617,11 +673,11 @@ class ObservabilityManager:
                             span.record_exception(e)
                             span.set_attribute("workflow.success", False)
 
-                        self.logger.error(
+                        self.logger.exception(
                             f"Healthcare workflow failed: {workflow_name}",
                             workflow_type=workflow_name,
                             error=str(e),
-                            patient_id_hash=patient_id_hash
+                            patient_id_hash=patient_id_hash,
                         )
                         raise
 
@@ -631,35 +687,34 @@ class ObservabilityManager:
                         self.metrics.record_histogram(
                             "patient_workflows_duration",
                             duration,
-                            attributes={"workflow_type": workflow_name}
+                            attributes={"workflow_type": workflow_name},
                         )
 
             return wrapper
+
         return decorator
 
     def trace_tool_execution(self, tool_name: str, category: str):
         """Decorator to trace healthcare tool execution."""
+
         def decorator(func: Callable) -> Callable:
             def wrapper(*args, **kwargs):
                 attributes = HealthcareSpanAttributes(
-                    tool_category=category,
-                    clinical_domain=category
+                    tool_category=category, clinical_domain=category
                 )
 
                 with self.tracer.start_healthcare_span(
-                    f"healthcare.tool.{tool_name}",
-                    attributes=attributes
+                    f"healthcare.tool.{tool_name}", attributes=attributes
                 ) as span:
-
                     # Record tool execution start
                     self.metrics.increment_counter(
                         "tool_executions_total",
-                        attributes={"tool_name": tool_name, "category": category}
+                        attributes={"tool_name": tool_name, "category": category},
                     )
 
                     with self.metrics.time_histogram(
                         "tool_execution_duration",
-                        attributes={"tool_name": tool_name, "category": category}
+                        attributes={"tool_name": tool_name, "category": category},
                     ):
                         try:
                             result = func(*args, **kwargs)
@@ -674,15 +729,16 @@ class ObservabilityManager:
                                 span.record_exception(e)
                                 span.set_attribute("tool.success", False)
 
-                            self.logger.error(
+                            self.logger.exception(
                                 f"Healthcare tool execution failed: {tool_name}",
                                 tool_name=tool_name,
                                 category=category,
-                                error=str(e)
+                                error=str(e),
                             )
                             raise
 
             return wrapper
+
         return decorator
 
     def log_phi_access(
@@ -691,8 +747,8 @@ class ObservabilityManager:
         patient_id_hash: str,
         resource_type: str,
         action: str,
-        organization: Optional[str] = None
-    ):
+        organization: str | None = None,
+    ) -> None:
         """Log PHI access for HIPAA compliance."""
         self.logger.audit(
             "PHI access event",
@@ -701,7 +757,7 @@ class ObservabilityManager:
             resource_type=resource_type,
             action=action,
             organization=organization,
-            phi_accessed=True
+            phi_accessed=True,
         )
 
         # Record PHI access metric
@@ -710,18 +766,14 @@ class ObservabilityManager:
             attributes={
                 "resource_type": resource_type,
                 "action": action,
-                "organization": organization or "unknown"
-            }
+                "organization": organization or "unknown",
+            },
         )
 
         # Add trace event
         self.tracer.add_event(
             "phi_access",
-            {
-                "resource_type": resource_type,
-                "action": action,
-                "patient_id_hash": patient_id_hash
-            }
+            {"resource_type": resource_type, "action": action, "patient_id_hash": patient_id_hash},
         )
 
     def record_authentication_attempt(
@@ -729,37 +781,33 @@ class ObservabilityManager:
         user_id: str,
         success: bool,
         method: str = "password",
-        ip_address: Optional[str] = None
-    ):
+        ip_address: str | None = None,
+    ) -> None:
         """Record authentication attempt."""
         self.logger.info(
             "Authentication attempt",
             user_id=user_id,
             success=success,
             method=method,
-            ip_address=ip_address
+            ip_address=ip_address,
         )
 
         self.metrics.increment_counter(
-            "auth_attempts_total",
-            attributes={
-                "success": str(success),
-                "method": method
-            }
+            "auth_attempts_total", attributes={"success": str(success), "method": method}
         )
 
-    def register_health_check(self, name: str, check_func: Callable[[], bool]):
+    def register_health_check(self, name: str, check_func: Callable[[], bool]) -> None:
         """Register a health check function."""
         self.health_checks[name] = check_func
 
-    def get_health_status(self) -> Dict[str, Any]:
+    def get_health_status(self) -> dict[str, Any]:
         """Get overall health status."""
         health_status = {
             "status": "healthy",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "service": self.config.service_name,
             "version": self.config.service_version,
-            "checks": {}
+            "checks": {},
         }
 
         all_healthy = True
@@ -769,7 +817,7 @@ class ObservabilityManager:
                 is_healthy = check_func()
                 health_status["checks"][name] = {
                     "status": "healthy" if is_healthy else "unhealthy",
-                    "checked_at": datetime.now(timezone.utc).isoformat()
+                    "checked_at": datetime.now(UTC).isoformat(),
                 }
                 if not is_healthy:
                     all_healthy = False
@@ -777,7 +825,7 @@ class ObservabilityManager:
                 health_status["checks"][name] = {
                     "status": "error",
                     "error": str(e),
-                    "checked_at": datetime.now(timezone.utc).isoformat()
+                    "checked_at": datetime.now(UTC).isoformat(),
                 }
                 all_healthy = False
 
@@ -786,23 +834,23 @@ class ObservabilityManager:
 
         return health_status
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Shutdown observability components."""
         self.logger.info("Shutting down observability framework")
 
         # Flush any pending traces and metrics
         if OTEL_AVAILABLE:
-            if hasattr(trace.get_tracer_provider(), 'shutdown'):
+            if hasattr(trace.get_tracer_provider(), "shutdown"):
                 trace.get_tracer_provider().shutdown()
-            if hasattr(metrics.get_meter_provider(), 'shutdown'):
+            if hasattr(metrics.get_meter_provider(), "shutdown"):
                 metrics.get_meter_provider().shutdown()
 
 
 # Global observability manager
-_observability_manager: Optional[ObservabilityManager] = None
+_observability_manager: ObservabilityManager | None = None
 
 
-def get_observability_manager(config: Optional[ObservabilityConfig] = None) -> ObservabilityManager:
+def get_observability_manager(config: ObservabilityConfig | None = None) -> ObservabilityManager:
     """Get or create global observability manager."""
     global _observability_manager
     if _observability_manager is None:
@@ -810,7 +858,7 @@ def get_observability_manager(config: Optional[ObservabilityConfig] = None) -> O
     return _observability_manager
 
 
-def initialize_observability(config: Optional[ObservabilityConfig] = None) -> ObservabilityManager:
+def initialize_observability(config: ObservabilityConfig | None = None) -> ObservabilityManager:
     """Initialize HACS observability framework."""
     global _observability_manager
     _observability_manager = ObservabilityManager(config)
@@ -819,14 +867,14 @@ def initialize_observability(config: Optional[ObservabilityConfig] = None) -> Ob
 
 # Export public API
 __all__ = [
+    "HealthcareMetrics",
+    "HealthcareSpanAttributes",
+    "HealthcareTracer",
+    "LogLevel",
+    "MetricType",
     "ObservabilityConfig",
     "ObservabilityManager",
     "StructuredLogger",
-    "HealthcareTracer",
-    "HealthcareMetrics",
-    "HealthcareSpanAttributes",
-    "LogLevel",
-    "MetricType",
     "get_observability_manager",
     "initialize_observability",
 ]

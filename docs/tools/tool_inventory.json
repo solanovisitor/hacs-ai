@@ -1,0 +1,1532 @@
+[
+  {
+    "name": "save_resource",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(resource: Dict[str, Any], as_typed: bool = True, schema: Optional[str] = None, index_semantic: bool = False) -> hacs_models.results.HACSResult",
+    "doc": "Save a HACS resource to the database using typed tables or generic JSONB storage.\n\nArgs:\n    resource: Dictionary representation of the resource to save\n    as_typed: If True, use typed table; if False, use generic JSONB storage\n    schema: Optional schema name override (defaults to appropriate schema)\n    index_semantic: If True, create semantic embeddings for search\n    \nReturns:\n    HACSResult with saved resource ID and type",
+    "resources": [],
+    "is_async": true,
+    "args_schema": {
+      "properties": {
+        "resource": {
+          "additionalProperties": true,
+          "title": "Resource",
+          "type": "object"
+        },
+        "as_typed": {
+          "default": true,
+          "title": "As Typed",
+          "type": "boolean"
+        },
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Schema"
+        },
+        "index_semantic": {
+          "default": false,
+          "title": "Index Semantic",
+          "type": "boolean"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Config"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "State"
+        }
+      },
+      "required": [
+        "resource"
+      ],
+      "title": "SaveResourceInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "read_resource",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(resource_type: str, resource_id: str, as_typed: bool = True, schema: Optional[str] = None) -> hacs_models.results.HACSResult",
+    "doc": "Read a HACS resource from the database.\n\nArgs:\n    resource_type: The HACS resource type\n    resource_id: The resource ID to retrieve\n    as_typed: If True, use typed table; if False, use generic storage\n    schema: Optional schema name override\n    \nReturns:\n    HACSResult with the retrieved resource",
+    "resources": [],
+    "is_async": true,
+    "args_schema": {
+      "properties": {
+        "resource_type": {
+          "title": "Resource Type",
+          "type": "string"
+        },
+        "resource_id": {
+          "title": "Resource Id",
+          "type": "string"
+        },
+        "as_typed": {
+          "default": true,
+          "title": "As Typed",
+          "type": "boolean"
+        },
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Schema"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Config"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "State"
+        }
+      },
+      "required": [
+        "resource_type",
+        "resource_id"
+      ],
+      "title": "ReadResourceInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "update_resource",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(resource_type: str, resource_id: str, patch: Dict[str, Any], as_typed: bool = True, schema: Optional[str] = None) -> hacs_models.results.HACSResult",
+    "doc": "Update a HACS resource with partial data.\n\nArgs:\n    resource_type: The HACS resource type\n    resource_id: The resource ID to update\n    patch: Dictionary of fields to update\n    as_typed: If True, use typed table; if False, use generic storage\n    schema: Optional schema name override\n    \nReturns:\n    HACSResult with the updated resource",
+    "resources": [],
+    "is_async": true,
+    "args_schema": {
+      "properties": {
+        "resource_type": {
+          "title": "Resource Type",
+          "type": "string"
+        },
+        "resource_id": {
+          "title": "Resource Id",
+          "type": "string"
+        },
+        "patch": {
+          "additionalProperties": true,
+          "title": "Patch",
+          "type": "object"
+        },
+        "as_typed": {
+          "default": true,
+          "title": "As Typed",
+          "type": "boolean"
+        },
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Schema"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Config"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "State"
+        }
+      },
+      "required": [
+        "resource_type",
+        "resource_id",
+        "patch"
+      ],
+      "title": "UpdateResourceInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "delete_resource",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(resource_type: str, resource_id: str, schema: Optional[str] = None) -> hacs_models.results.HACSResult",
+    "doc": "Delete a HACS resource from the database.\n\nArgs:\n    resource_type: The HACS resource type\n    resource_id: The resource ID to delete\n    schema: Optional schema name override\n    \nReturns:\n    HACSResult with deletion status",
+    "resources": [],
+    "is_async": true,
+    "args_schema": {
+      "properties": {
+        "resource_type": {
+          "title": "Resource Type",
+          "type": "string"
+        },
+        "resource_id": {
+          "title": "Resource Id",
+          "type": "string"
+        },
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Schema"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Config"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "State"
+        }
+      },
+      "required": [
+        "resource_type",
+        "resource_id"
+      ],
+      "title": "DeleteResourceInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "save_record",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(resource: Dict[str, Any], as_typed: bool = True, schema: Optional[str] = None, index_semantic: bool = False) -> hacs_models.results.HACSResult",
+    "doc": "Alias for save_resource for clarity that this persists filled records.",
+    "resources": [],
+    "is_async": true
+  },
+  {
+    "name": "read_record",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(resource_type: str, resource_id: str, as_typed: bool = True, schema: Optional[str] = None) -> hacs_models.results.HACSResult",
+    "doc": "Alias for read_resource for clarity that this reads filled records.",
+    "resources": [],
+    "is_async": true
+  },
+  {
+    "name": "update_record",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(resource_type: str, resource_id: str, patch: Dict[str, Any], as_typed: bool = True, schema: Optional[str] = None) -> hacs_models.results.HACSResult",
+    "doc": "Alias for update_resource for clarity that this updates filled records.",
+    "resources": [],
+    "is_async": true
+  },
+  {
+    "name": "delete_record",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(resource_type: str, resource_id: str, schema: Optional[str] = None) -> hacs_models.results.HACSResult",
+    "doc": "Alias for delete_resource for clarity that this deletes filled records.",
+    "resources": [],
+    "is_async": true
+  },
+  {
+    "name": "register_resource_definition",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(resource_type: str, name: str, version: str, description: str, category: str, tags: Optional[List[str]] = None, instance_data: Optional[Dict[str, Any]] = None, actor_id: Optional[str] = None) -> hacs_models.results.HACSResult",
+    "doc": "Register a resource definition (class + metadata) in the HACS registry.\nDistinct from CRUD for filled records in hacs_core/hacs_clinical.",
+    "resources": [],
+    "is_async": false
+  },
+  {
+    "name": "get_resource_definition",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(registry_id: str) -> hacs_models.results.HACSResult",
+    "doc": "Fetch a resource definition and metadata from the registry.",
+    "resources": [],
+    "is_async": false
+  },
+  {
+    "name": "list_resource_definitions",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(category: Optional[str] = None, resource_class: Optional[str] = None, status: Optional[str] = None) -> hacs_models.results.HACSResult",
+    "doc": "List resource definitions with optional filters.",
+    "resources": [],
+    "is_async": false
+  },
+  {
+    "name": "update_resource_definition_status",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(registry_id: str, new_status: str, reason: Optional[str] = None) -> hacs_models.results.HACSResult",
+    "doc": "Update lifecycle status of a resource definition in the registry.",
+    "resources": [],
+    "is_async": false
+  },
+  {
+    "name": "save_preference",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(preference: Dict[str, Any]) -> hacs_models.results.HACSResult",
+    "doc": "Persist an ActorPreference record (schema defaults to hacs_agents).",
+    "resources": [],
+    "is_async": true
+  },
+  {
+    "name": "read_preferences",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(actor_id: str, limit: int = 200) -> hacs_models.results.HACSResult",
+    "doc": "Read ActorPreference records for an actor. Requires adapter.search; returns raw list.",
+    "resources": [],
+    "is_async": true
+  },
+  {
+    "name": "list_preferences",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(actor_id: str, *, organization_id: Optional[str] = None, workflow_id: Optional[str] = None, agent_id: Optional[str] = None, tool_name: Optional[str] = None, session_id: Optional[str] = None, in_memory: Optional[List[Dict[str, Any]]] = None) -> hacs_models.results.HACSResult",
+    "doc": "Return effective preferences and raw list (DB + in-memory).",
+    "resources": [],
+    "is_async": true
+  },
+  {
+    "name": "search_evidence",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(query: str, top_k: int = 10, filters: Optional[Dict[str, Any]] = None, rerank: bool = False) -> hacs_models.results.HACSResult",
+    "doc": "Semantic search for evidence (registry knowledge_items).",
+    "resources": [],
+    "is_async": true
+  },
+  {
+    "name": "register_model_version",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(resource_name: str, version: str, schema_def: Dict[str, Any], tags: Optional[List[str]] = None) -> hacs_models.results.HACSResult",
+    "doc": "Register a model version in the HACS registry.\n\nArgs:\n    resource_name: Name of the model to register\n    version: Version string (e.g., \"1.0.0\")\n    schema_def: JSON schema definition of the model\n    tags: Optional tags for categorization\n    \nReturns:\n    HACSResult with registry ID",
+    "resources": [],
+    "is_async": true
+  },
+  {
+    "name": "search_knowledge_items",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(query: str, top_k: int = 10, filters: Optional[Dict[str, Any]] = None, rerank: bool = False) -> hacs_models.results.HACSResult",
+    "doc": "Search knowledge items using vector similarity search with optional reranking.\n\nArgs:\n    query: Search query text\n    top_k: Number of results to return\n    filters: Optional filters to apply (e.g., {\"source\": \"pubmed\"})\n    rerank: Whether to apply reranking for better relevance\n    \nReturns:\n    HACSResult with search results",
+    "resources": [],
+    "is_async": true
+  },
+  {
+    "name": "search_memories",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(actor_id: Optional[str] = None, query: Optional[str] = None, filters: Optional[Dict[str, Any]] = None, top_k: int = 10) -> hacs_models.results.HACSResult",
+    "doc": "Search agent memories using vector search and database filters.\n\nArgs:\n    actor_id: Optional actor ID to filter memories\n    query: Optional semantic query for vector search\n    filters: Optional additional filters (e.g., {\"memory_type\": \"episodic\"})\n    top_k: Number of results to return\n    \nReturns:\n    HACSResult with memory search results",
+    "resources": [],
+    "is_async": true
+  },
+  {
+    "name": "run_migrations",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(database_url: Optional[str] = None) -> hacs_models.results.HACSResult",
+    "doc": "Run database migrations to ensure the schema is up to date.\n\nArgs:\n    database_url: Optional database URL override (uses environment if not provided)\n    \nReturns:\n    HACSResult with migration status",
+    "resources": [],
+    "is_async": true
+  },
+  {
+    "name": "get_db_status",
+    "domain": "database",
+    "module": "hacs_tools.domains.database",
+    "signature": "(database_url: Optional[str] = None) -> hacs_models.results.HACSResult",
+    "doc": "Get database connection status and migration state.\n\nArgs:\n    database_url: Optional database URL override\n    \nReturns:\n    HACSResult with database status information",
+    "resources": [],
+    "is_async": true
+  },
+  {
+    "name": "write_scratchpad",
+    "domain": "agents",
+    "module": "hacs_tools.domains.agents",
+    "signature": "(content: str, entry_type: str = 'note', session_id: Optional[str] = None, tags: Optional[List[str]] = None, messages: Optional[List[Dict[str, Any]]] = None, config: Optional[Dict[str, Any]] = None, state: Optional[Dict[str, Any]] = None) -> hacs_models.results.HACSResult",
+    "doc": "Write an entry to the agent's scratchpad for working memory.\n\nArgs:\n    content: The content to write to scratchpad\n    entry_type: Type of entry (\"note\", \"observation\", \"decision\", \"question\")\n    session_id: Optional session ID for grouping entries\n    tags: Optional tags for categorization\n    \nReturns:\n    HACSResult with entry ID and confirmation",
+    "resources": [],
+    "is_async": false,
+    "args_schema": {
+      "properties": {
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "entry_type": {
+          "default": "note",
+          "title": "Entry Type",
+          "type": "string"
+        },
+        "session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Session Id"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "messages": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Messages"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Config"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "State"
+        }
+      },
+      "required": [
+        "content"
+      ],
+      "title": "WriteScratchpadInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "read_scratchpad",
+    "domain": "agents",
+    "module": "hacs_tools.domains.agents",
+    "signature": "(session_id: Optional[str] = None, entry_type: Optional[str] = None, limit: int = 10, messages: Optional[List[Dict[str, Any]]] = None, config: Optional[Dict[str, Any]] = None, state: Optional[Dict[str, Any]] = None) -> hacs_models.results.HACSResult",
+    "doc": "Read entries from the agent's scratchpad.\n\nArgs:\n    session_id: Optional session ID to filter entries\n    entry_type: Optional entry type to filter by\n    limit: Maximum number of entries to return\n    \nReturns:\n    HACSResult with scratchpad entries",
+    "resources": [],
+    "is_async": false,
+    "args_schema": {
+      "properties": {
+        "session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Session Id"
+        },
+        "entry_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Entry Type"
+        },
+        "limit": {
+          "default": 10,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "messages": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Messages"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Config"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "State"
+        }
+      },
+      "title": "ReadScratchpadInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "create_todo",
+    "domain": "agents",
+    "module": "hacs_tools.domains.agents",
+    "signature": "(content: Optional[str] = None, priority: Union[str, int, NoneType] = None, status: Optional[str] = None, clinical_urgency: Optional[str] = None, task_description: Optional[str] = None, category: Optional[str] = None, due_date: Optional[str] = None, context: Optional[Dict[str, Any]] = None, messages: Optional[List[Dict[str, Any]]] = None, config: Optional[Dict[str, Any]] = None, state: Optional[Dict[str, Any]] = None) -> hacs_models.results.HACSResult",
+    "doc": "Create a todo item for agent task planning.\n\nArgs:\n    content: Actionable item content (preferred). If not provided, falls back to task_description.\n    priority: Priority level as string (preferred) or int (will be coerced to string).\n    status: Todo status (e.g., \"pending\", \"in_progress\", \"completed\"). Defaults to \"pending\".\n    clinical_urgency: Clinical urgency level (e.g., \"routine\"). Optional.\n    task_description: Deprecated alias for content. If provided and content is None, will be used.\n    category: Deprecated; ignored.\n    due_date: Optional due date (ISO format). Stored in clinical_context.\n    context: Optional additional context info. Stored in clinical_context.\n    \nReturns:\n    HACSResult with created todo ID",
+    "resources": [],
+    "is_async": false,
+    "args_schema": {
+      "properties": {
+        "content": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content"
+        },
+        "priority": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Priority"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status"
+        },
+        "clinical_urgency": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Clinical Urgency"
+        },
+        "task_description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Task Description"
+        },
+        "category": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Category"
+        },
+        "due_date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Due Date"
+        },
+        "context": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Context"
+        },
+        "messages": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Messages"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Config"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "State"
+        }
+      },
+      "title": "CreateTodoInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "list_todos",
+    "domain": "agents",
+    "module": "hacs_tools.domains.agents",
+    "signature": "(status: Optional[str] = None, category: Optional[str] = None, priority_min: Optional[int] = None, limit: int = 20, messages: Optional[List[Dict[str, Any]]] = None, config: Optional[Dict[str, Any]] = None, state: Optional[Dict[str, Any]] = None) -> hacs_models.results.HACSResult",
+    "doc": "List agent todo items with optional filtering.\n\nArgs:\n    status: Optional status filter (\"pending\", \"in_progress\", \"completed\")\n    category: Optional category filter\n    priority_min: Optional minimum priority level\n    limit: Maximum number of todos to return\n    \nReturns:\n    HACSResult with filtered todo list",
+    "resources": [],
+    "is_async": false,
+    "args_schema": {
+      "properties": {
+        "status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status"
+        },
+        "category": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Category"
+        },
+        "priority_min": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Priority Min"
+        },
+        "limit": {
+          "default": 20,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "messages": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Messages"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Config"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "State"
+        }
+      },
+      "title": "ListTodosInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "complete_todo",
+    "domain": "agents",
+    "module": "hacs_tools.domains.agents",
+    "signature": "(todo_id: str, completion_notes: Optional[str] = None, messages: Optional[List[Dict[str, Any]]] = None, config: Optional[Dict[str, Any]] = None, state: Optional[Dict[str, Any]] = None) -> hacs_models.results.HACSResult",
+    "doc": "Mark a todo item as completed.\n\nArgs:\n    todo_id: ID of the todo item to complete\n    completion_notes: Optional notes about completion\n    \nReturns:\n    HACSResult with completion confirmation",
+    "resources": [],
+    "is_async": false,
+    "args_schema": {
+      "properties": {
+        "todo_id": {
+          "title": "Todo Id",
+          "type": "string"
+        },
+        "completion_notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Completion Notes"
+        },
+        "messages": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Messages"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Config"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "State"
+        }
+      },
+      "required": [
+        "todo_id"
+      ],
+      "title": "CompleteTodoInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "store_memory",
+    "domain": "agents",
+    "module": "hacs_tools.domains.agents",
+    "signature": "(content: str, memory_type: str = 'episodic', actor_id: Optional[str] = None, context: Optional[Dict[str, Any]] = None, tags: Optional[List[str]] = None, messages: Optional[List[Dict[str, Any]]] = None, config: Optional[Dict[str, Any]] = None, state: Optional[Dict[str, Any]] = None) -> hacs_models.results.HACSResult",
+    "doc": "Store a memory for long-term agent context.\n\nArgs:\n    content: Memory content\n    memory_type: Type of memory (\"episodic\", \"procedural\", \"semantic\")\n    actor_id: Optional actor ID associated with memory\n    context: Optional context information\n    tags: Optional tags for categorization\n    \nReturns:\n    HACSResult with stored memory ID",
+    "resources": [
+      "EpisodicMemory",
+      "MemoryBlock",
+      "SemanticMemory",
+      "WorkingMemory"
+    ],
+    "is_async": false,
+    "args_schema": {
+      "properties": {
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "memory_type": {
+          "default": "episodic",
+          "title": "Memory Type",
+          "type": "string"
+        },
+        "actor_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actor Id"
+        },
+        "context": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Context"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "messages": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Messages"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Config"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "State"
+        }
+      },
+      "required": [
+        "content"
+      ],
+      "title": "StoreMemoryInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "retrieve_memories",
+    "domain": "agents",
+    "module": "hacs_tools.domains.agents",
+    "signature": "(query: Optional[str] = None, actor_id: Optional[str] = None, memory_type: Optional[str] = None, tags: Optional[List[str]] = None, limit: int = 10, messages: Optional[List[Dict[str, Any]]] = None, config: Optional[Dict[str, Any]] = None, state: Optional[Dict[str, Any]] = None) -> hacs_models.results.HACSResult",
+    "doc": "Retrieve relevant memories based on query and context.\n\nArgs:\n    query: Optional semantic query for memory retrieval\n    actor_id: Optional actor ID to filter memories\n    memory_type: Optional memory type filter\n    tags: Optional tags to filter by\n    limit: Maximum number of memories to return\n    \nReturns:\n    HACSResult with retrieved memories",
+    "resources": [
+      "EpisodicMemory",
+      "MemoryBlock",
+      "SemanticMemory",
+      "WorkingMemory"
+    ],
+    "is_async": false,
+    "args_schema": {
+      "properties": {
+        "query": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Query"
+        },
+        "actor_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Actor Id"
+        },
+        "memory_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Memory Type"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "limit": {
+          "default": 10,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "messages": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Messages"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Config"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "State"
+        }
+      },
+      "title": "RetrieveMemoriesInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "inject_preferences",
+    "domain": "agents",
+    "module": "hacs_tools.domains.agents",
+    "signature": "(message: Dict[str, Any], actor_id: str, preference_scope: str = 'response_format', messages: Optional[List[Dict[str, Any]]] = None, config: Optional[Dict[str, Any]] = None, state: Optional[Dict[str, Any]] = None) -> hacs_models.results.HACSResult",
+    "doc": "Inject actor preferences into a message or context.\n\nArgs:\n    message: Message object to inject preferences into\n    actor_id: Actor ID to get preferences for\n    preference_scope: Scope of preferences to inject\n    \nReturns:\n    HACSResult with preference-injected message",
+    "resources": [
+      "ActorPreference"
+    ],
+    "is_async": false,
+    "args_schema": {
+      "properties": {
+        "message": {
+          "additionalProperties": true,
+          "title": "Message",
+          "type": "object"
+        },
+        "actor_id": {
+          "title": "Actor Id",
+          "type": "string"
+        },
+        "preference_scope": {
+          "default": "response_format",
+          "title": "Preference Scope",
+          "type": "string"
+        },
+        "messages": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Messages"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Config"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "State"
+        }
+      },
+      "required": [
+        "message",
+        "actor_id"
+      ],
+      "title": "InjectPreferencesInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "select_tools_for_task",
+    "domain": "agents",
+    "module": "hacs_tools.domains.agents",
+    "signature": "(task_description: str, max_tools: int = 10, domain_filter: Optional[str] = None, exclude_tools: Optional[List[str]] = None, messages: Optional[List[Dict[str, Any]]] = None, config: Optional[Dict[str, Any]] = None, state: Optional[Dict[str, Any]] = None) -> hacs_models.results.HACSResult",
+    "doc": "Select relevant tools for a task using semantic tool loadout.\n\nArgs:\n    task_description: Description of the task to select tools for\n    max_tools: Maximum number of tools to select\n    domain_filter: Optional domain to filter tools by\n    exclude_tools: Optional list of tool names to exclude\n    \nReturns:\n    HACSResult with selected tools",
+    "resources": [],
+    "is_async": false,
+    "args_schema": {
+      "properties": {
+        "task_description": {
+          "title": "Task Description",
+          "type": "string"
+        },
+        "max_tools": {
+          "default": 10,
+          "title": "Max Tools",
+          "type": "integer"
+        },
+        "domain_filter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domain Filter"
+        },
+        "exclude_tools": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exclude Tools"
+        },
+        "messages": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Messages"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Config"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "State"
+        }
+      },
+      "required": [
+        "task_description"
+      ],
+      "title": "SelectToolsForTaskInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "summarize_state",
+    "domain": "agents",
+    "module": "hacs_tools.domains.agents",
+    "signature": "(state_data: Dict[str, Any], focus_areas: Optional[List[str]] = None, compression_ratio: float = 0.3, messages: Optional[List[Dict[str, Any]]] = None, config: Optional[Dict[str, Any]] = None, state: Optional[Dict[str, Any]] = None) -> hacs_models.results.HACSResult",
+    "doc": "Summarize agent state for context compression.\n\nArgs:\n    state_data: Current agent state to summarize\n    focus_areas: Optional areas to focus on in summary\n    compression_ratio: Target compression ratio (0.1-1.0)\n    \nReturns:\n    HACSResult with state summary",
+    "resources": [],
+    "is_async": false,
+    "args_schema": {
+      "properties": {
+        "state_data": {
+          "additionalProperties": true,
+          "title": "State Data",
+          "type": "object"
+        },
+        "focus_areas": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Focus Areas"
+        },
+        "compression_ratio": {
+          "default": 0.3,
+          "title": "Compression Ratio",
+          "type": "number"
+        },
+        "messages": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Messages"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Config"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "State"
+        }
+      },
+      "required": [
+        "state_data"
+      ],
+      "title": "SummarizeStateInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "prune_state",
+    "domain": "agents",
+    "module": "hacs_tools.domains.agents",
+    "signature": "(state_data: Dict[str, Any], keep_fields: Optional[List[str]] = None, max_messages: int = 20, max_tools: int = 30, messages: Optional[List[Dict[str, Any]]] = None, config: Optional[Dict[str, Any]] = None, state: Optional[Dict[str, Any]] = None) -> hacs_models.results.HACSResult",
+    "doc": "Prune agent state by removing low-priority elements.\n\nArgs:\n    state_data: Current agent state to prune\n    keep_fields: Fields that should always be kept\n    max_messages: Maximum number of messages to keep\n    max_tools: Maximum number of tools to keep\n    \nReturns:\n    HACSResult with pruned state",
+    "resources": [
+      "WorkingMemory"
+    ],
+    "is_async": false,
+    "args_schema": {
+      "properties": {
+        "state_data": {
+          "additionalProperties": true,
+          "title": "State Data",
+          "type": "object"
+        },
+        "keep_fields": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Keep Fields"
+        },
+        "max_messages": {
+          "default": 20,
+          "title": "Max Messages",
+          "type": "integer"
+        },
+        "max_tools": {
+          "default": 30,
+          "title": "Max Tools",
+          "type": "integer"
+        },
+        "messages": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Messages"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Config"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "State"
+        }
+      },
+      "required": [
+        "state_data"
+      ],
+      "title": "PruneStateInput",
+      "type": "object"
+    }
+  }
+]

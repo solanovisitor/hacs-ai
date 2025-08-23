@@ -23,53 +23,46 @@ class HACSAgentCLI:
                 "properties": {
                     "guidance_type": {
                         "type": "string",
-                        "description": "Type of HACS guidance provided"
+                        "description": "Type of HACS guidance provided",
                     },
                     "models_suggested": {
                         "type": "array",
                         "items": {"type": "string"},
-                        "description": "HACS models recommended for this use case"
+                        "description": "HACS models recommended for this use case",
                     },
                     "implementation_steps": {
                         "type": "array",
                         "items": {"type": "string"},
-                        "description": "Step-by-step implementation guidance"
+                        "description": "Step-by-step implementation guidance",
                     },
-                    "sample_code": {
-                        "type": "string",
-                        "description": "Sample code or templates"
-                    },
+                    "sample_code": {"type": "string", "description": "Sample code or templates"},
                     "best_practices": {
                         "type": "array",
                         "items": {"type": "string"},
-                        "description": "Best practices and recommendations"
+                        "description": "Best practices and recommendations",
                     },
                     "next_steps": {
                         "type": "array",
                         "items": {"type": "string"},
-                        "description": "Suggested next steps for the developer"
-                    }
-                }
-            }
+                        "description": "Suggested next steps for the developer",
+                    },
+                },
+            },
         }
 
         try:
-            async with aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(total=120)
-            ) as session:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=120)) as session:
                 async with session.post(
                     f"{self.agent_url}/invoke",
                     json=payload,
-                    headers={"Content-Type": "application/json"}
+                    headers={"Content-Type": "application/json"},
                 ) as response:
                     if response.status == 200:
                         result = await response.json()
                         return result
                     else:
                         error_text = await response.text()
-                        return {
-                            "error": f"HTTP {response.status}: {error_text}"
-                        }
+                        return {"error": f"HTTP {response.status}: {error_text}"}
         except asyncio.TimeoutError:
             return {"error": "Request timed out after 120 seconds"}
         except Exception as e:
@@ -78,9 +71,7 @@ class HACSAgentCLI:
     async def health_check(self) -> bool:
         """Check if the agent is healthy."""
         try:
-            async with aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(total=10)
-            ) as session:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
                 async with session.get(f"{self.agent_url}/health") as response:
                     return response.status == 200
         except Exception:

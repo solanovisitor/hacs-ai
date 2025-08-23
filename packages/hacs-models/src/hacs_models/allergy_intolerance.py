@@ -33,51 +33,37 @@ class AllergyIntoleranceReaction(DomainResource):
     """
 
     resource_type: Literal["AllergyIntoleranceReaction"] = Field(
-        default="AllergyIntoleranceReaction",
-        description="Resource type identifier"
+        default="AllergyIntoleranceReaction", description="Resource type identifier"
     )
 
     # Substance that caused the reaction
     substance: CodeableConcept | None = Field(
-        None,
-        description="Specific substance considered to be responsible for event"
+        None, description="Specific substance considered to be responsible for event"
     )
 
     # Clinical manifestation of the reaction
     manifestation: list[CodeableConcept] = Field(
-        default_factory=list,
-        description="Clinical symptoms/signs associated with the event"
+        default_factory=list, description="Clinical symptoms/signs associated with the event"
     )
 
     # Description of the reaction
-    description: str | None = Field(
-        None,
-        description="Description of the adverse reaction"
-    )
+    description: str | None = Field(None, description="Description of the adverse reaction")
 
     # When the reaction occurred
-    onset: TimestampStr | None = Field(
-        None,
-        description="Date(/time) when manifestations showed"
-    )
+    onset: TimestampStr | None = Field(None, description="Date(/time) when manifestations showed")
 
     # Severity of the reaction
     severity: AllergyReactionSeverity | None = Field(
-        None,
-        description="Clinical assessment of the severity of the reaction event"
+        None, description="Clinical assessment of the severity of the reaction event"
     )
 
     # Route of exposure to the substance
     exposure_route: CodeableConcept | None = Field(
-        None,
-        description="How the subject was exposed to the substance"
+        None, description="How the subject was exposed to the substance"
     )
 
     # Additional text note about the reaction
-    note: str | None = Field(
-        None,
-        description="Text about event not captured in other fields"
-    )
+    note: str | None = Field(None, description="Text about event not captured in other fields")
 
 
 class AllergyIntolerance(DomainResource):
@@ -91,107 +77,88 @@ class AllergyIntolerance(DomainResource):
     """
 
     resource_type: Literal["AllergyIntolerance"] = Field(
-        default="AllergyIntolerance",
-        description="Resource type identifier"
+        default="AllergyIntolerance", description="Resource type identifier"
     )
 
     # Business identifiers
     identifier: list[str] = Field(
-        default_factory=list,
-        description="External identifiers for this item"
+        default_factory=list, description="External identifiers for this item"
     )
 
     # Clinical status - REQUIRED for safety
-    clinical_status: AllergyIntoleranceStatus = Field(
-        description="Active | inactive | resolved"
-    )
+    clinical_status: AllergyIntoleranceStatus = Field(description="Active | inactive | resolved")
 
     # Verification status
     verification_status: str | None = Field(
-        None,
-        description="Assertion about certainty associated with the propensity"
+        None, description="Assertion about certainty associated with the propensity"
     )
 
     # Type of allergy/intolerance
     type: AllergyIntoleranceType | None = Field(
         None,
-        description="Allergy or Intolerance (generally food, medication, environment, biologic)"
+        description="Allergy or Intolerance (generally food, medication, environment, biologic)",
     )
 
     # Category of allergy/intolerance
     category: list[AllergyIntoleranceType] = Field(
-        default_factory=list,
-        description="Food | medication | environment | biologic"
+        default_factory=list, description="Food | medication | environment | biologic"
     )
 
     # Estimate of potential clinical harm
     criticality: AllergyCriticality | None = Field(
-        None,
-        description="Estimate of potential clinical harm"
+        None, description="Estimate of potential clinical harm"
     )
 
     # Code for allergy or intolerance
     code: CodeableConcept | None = Field(
-        None,
-        description="Code that identifies the allergy or intolerance"
+        None, description="Code that identifies the allergy or intolerance"
     )
 
     # Patient reference - REQUIRED for safety
-    patient: ResourceReference = Field(
-        description="Who the allergy or intolerance is for"
-    )
+    patient: ResourceReference = Field(description="Who the allergy or intolerance is for")
 
     # Encounter when the allergy was first noted
     encounter: ResourceReference | None = Field(
-        None,
-        description="Encounter when the allergy or intolerance was asserted"
+        None, description="Encounter when the allergy or intolerance was asserted"
     )
 
     # When allergy or intolerance was identified
     onset_datetime: TimestampStr | None = Field(
-        None,
-        description="When allergy or intolerance was identified"
+        None, description="When allergy or intolerance was identified"
     )
 
     # Date(/time) of last known occurrence of a reaction
     last_occurrence: TimestampStr | None = Field(
-        None,
-        description="Date(/time) of last known occurrence of a reaction"
+        None, description="Date(/time) of last known occurrence of a reaction"
     )
 
     # Source of the information about the allergy
     recorder: ResourceReference | None = Field(
-        None,
-        description="Individual who recorded the record and takes responsibility"
+        None, description="Individual who recorded the record and takes responsibility"
     )
 
     # Source of the information about allergy
     asserter: ResourceReference | None = Field(
-        None,
-        description="Source of the information about the allergy"
+        None, description="Source of the information about the allergy"
     )
 
     # Adverse reaction details
     reaction: list[AllergyIntoleranceReaction] = Field(
-        default_factory=list,
-        description="Adverse reaction events linked to exposure to substance"
+        default_factory=list, description="Adverse reaction events linked to exposure to substance"
     )
 
     # Additional text note
-    note: str | None = Field(
-        None,
-        description="Additional text not captured in other fields"
-    )
+    note: str | None = Field(None, description="Additional text not captured in other fields")
 
-    @field_validator('patient')
+    @field_validator("patient")
     @classmethod
     def validate_patient_reference(cls, v):
         """Validate patient reference format."""
-        if v and not v.startswith(('Patient/', 'urn:uuid:')):
+        if v and not v.startswith(("Patient/", "urn:uuid:")):
             raise ValueError("Patient reference must start with 'Patient/' or 'urn:uuid:'")
         return v
 
-    @field_validator('clinical_status')
+    @field_validator("clinical_status")
     @classmethod
     def validate_clinical_status_required(cls, v):
         """Ensure clinical status is provided for safety."""
@@ -220,12 +187,12 @@ class AllergyIntolerance(DomainResource):
 
     def get_display_name(self) -> str:
         """Get a human-readable display name for the allergy."""
-        if self.code and hasattr(self.code, 'text') and self.code.text:
+        if self.code and hasattr(self.code, "text") and self.code.text:
             return self.code.text
-        elif self.code and hasattr(self.code, 'coding') and self.code.coding:
+        elif self.code and hasattr(self.code, "coding") and self.code.coding:
             # Try to get display from first coding
             first_coding = self.code.coding[0] if self.code.coding else None
-            if first_coding and hasattr(first_coding, 'display'):
+            if first_coding and hasattr(first_coding, "display"):
                 return first_coding.display
         return f"Allergy/Intolerance {self.id or 'Unknown'}"
 
@@ -234,7 +201,7 @@ class AllergyIntolerance(DomainResource):
         manifestation: list[CodeableConcept],
         severity: AllergyReactionSeverity | None = None,
         substance: CodeableConcept | None = None,
-        description: str | None = None
+        description: str | None = None,
     ) -> AllergyIntoleranceReaction:
         """Add a new reaction to this allergy/intolerance."""
         reaction = AllergyIntoleranceReaction(
@@ -242,7 +209,7 @@ class AllergyIntolerance(DomainResource):
             severity=severity,
             substance=substance,
             description=description,
-            onset=datetime.now().isoformat()
+            onset=datetime.now().isoformat(),
         )
         self.reaction.append(reaction)
         return reaction
@@ -250,12 +217,13 @@ class AllergyIntolerance(DomainResource):
 
 # Convenience functions for common allergy types
 
+
 def create_food_allergy(
     patient_ref: ResourceReference,
     allergen: CodeableConcept,
     clinical_status: AllergyIntoleranceStatus = AllergyIntoleranceStatus.ACTIVE,
     criticality: AllergyCriticality = AllergyCriticality.HIGH,
-    **kwargs
+    **kwargs,
 ) -> AllergyIntolerance:
     """Create a food allergy/intolerance."""
     return AllergyIntolerance(
@@ -265,7 +233,7 @@ def create_food_allergy(
         category=[AllergyIntoleranceType.FOOD],
         code=allergen,
         criticality=criticality,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -274,7 +242,7 @@ def create_medication_allergy(
     medication: CodeableConcept,
     clinical_status: AllergyIntoleranceStatus = AllergyIntoleranceStatus.ACTIVE,
     criticality: AllergyCriticality = AllergyCriticality.HIGH,
-    **kwargs
+    **kwargs,
 ) -> AllergyIntolerance:
     """Create a medication allergy/intolerance."""
     return AllergyIntolerance(
@@ -284,7 +252,7 @@ def create_medication_allergy(
         category=[AllergyIntoleranceType.MEDICATION],
         code=medication,
         criticality=criticality,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -293,7 +261,7 @@ def create_environmental_allergy(
     allergen: CodeableConcept,
     clinical_status: AllergyIntoleranceStatus = AllergyIntoleranceStatus.ACTIVE,
     criticality: AllergyCriticality = AllergyCriticality.LOW,
-    **kwargs
+    **kwargs,
 ) -> AllergyIntolerance:
     """Create an environmental allergy/intolerance."""
     return AllergyIntolerance(
@@ -303,5 +271,5 @@ def create_environmental_allergy(
         category=[AllergyIntoleranceType.ENVIRONMENT],
         code=allergen,
         criticality=criticality,
-        **kwargs
+        **kwargs,
     )

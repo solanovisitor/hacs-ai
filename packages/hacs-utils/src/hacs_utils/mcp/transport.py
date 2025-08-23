@@ -11,7 +11,7 @@ import sys
 import time
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Dict, Set
+from typing import Dict
 from urllib.parse import urlparse
 
 from .messages import MCPRequest, MCPResponse
@@ -22,26 +22,25 @@ logger = logging.getLogger(__name__)
 
 class RateLimiter:
     """Simple in-memory rate limiter."""
-    
+
     def __init__(self, limit_per_minute: int = 60):
         self.limit_per_minute = limit_per_minute
         self.requests: Dict[str, list] = defaultdict(list)
-    
+
     def is_allowed(self, client_ip: str) -> bool:
         """Check if request is allowed for given IP."""
         now = time.time()
         minute_ago = now - 60
-        
+
         # Clean old requests
         self.requests[client_ip] = [
-            req_time for req_time in self.requests[client_ip] 
-            if req_time > minute_ago
+            req_time for req_time in self.requests[client_ip] if req_time > minute_ago
         ]
-        
+
         # Check limit
         if len(self.requests[client_ip]) >= self.limit_per_minute:
             return False
-            
+
         # Add current request
         self.requests[client_ip].append(now)
         return True
@@ -105,10 +104,7 @@ class StdioTransport(MCPTransport):
                     if "id" in message_data:
                         error_response = MCPResponse(
                             id=message_data["id"],
-                            error={
-                                "code": -32603,
-                                "message": f"Internal error: {str(e)}"
-                            }
+                            error={"code": -32603, "message": f"Internal error: {str(e)}"},
                         )
                         await self._write_response(error_response)
 
@@ -141,11 +137,12 @@ class HTTPTransport(MCPTransport):
         super().__init__(server)
         self.host = host
         self.port = port
-        
+
         # Get settings for security configuration
         from hacs_core import get_settings
+
         self.settings = get_settings()
-        
+
         # Initialize rate limiter
         if not self.settings.dev_mode:
             self.rate_limiter = RateLimiter(self.settings.rate_limit_per_minute)
@@ -158,12 +155,12 @@ class HTTPTransport(MCPTransport):
         forwarded_for = request.headers.get("X-Forwarded-For")
         if forwarded_for:
             return forwarded_for.split(",")[0].strip()
-        
+
         # Check X-Real-IP header
         real_ip = request.headers.get("X-Real-IP")
         if real_ip:
             return real_ip
-            
+
         # Fall back to direct client IP
         return request.client.host if request.client else "unknown"
 
@@ -174,7 +171,7 @@ class HTTPTransport(MCPTransport):
             # Check if API keys were explicitly configured (not auto-generated)
             if not self.settings.api_keys and not self.settings.api_keys_file:
                 return True
-            
+
         # Get valid API keys (excluding auto-generated dev keys for validation)
         if self.settings.api_keys:
             valid_keys = self.settings.api_keys
@@ -185,33 +182,33 @@ class HTTPTransport(MCPTransport):
             if self.settings.dev_mode and self.settings.is_development:
                 return True  # Allow in dev mode without keys
             return False  # Deny in production without keys
-        
+
         if not valid_keys:
             return self.settings.dev_mode and self.settings.is_development
-        
+
         # Check Authorization header (Bearer token)
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header[7:]  # Remove "Bearer " prefix
             if token in valid_keys:
                 return True
-        
+
         # Check X-HACS-API-Key header
         api_key_header = request.headers.get("X-HACS-API-Key")
         if api_key_header and api_key_header in valid_keys:
             return True
-            
+
         return False
 
     def _validate_host(self, request) -> bool:
         """Validate host header against allowed hosts."""
         if self.settings.is_development:
             return True  # Allow all in development
-            
+
         allowed_hosts = self.settings.allowed_hosts
         if not allowed_hosts:
             return True  # No restriction if not configured
-            
+
         host_header = request.headers.get("Host", "")
         return any(host in host_header for host in allowed_hosts)
 
@@ -219,11 +216,11 @@ class HTTPTransport(MCPTransport):
         """Validate origin against allowed origins."""
         if self.settings.is_development:
             return True  # Allow all in development
-            
+
         allowed_origins = self.settings.allowed_origins
         if not allowed_origins:
             return False  # Deny all if not configured in production
-            
+
         return origin in allowed_origins
 
     async def start(self) -> None:
@@ -241,17 +238,19 @@ class HTTPTransport(MCPTransport):
 
         app = FastAPI(
             title="HACS MCP Server",
-            version=getattr(self.server, 'version', '1.0.0'),
+            version=getattr(self.server, "version", "1.0.0"),
             description="Healthcare Agent Communication Standard Model Context Protocol Server",
             docs_url=None if self.settings.is_production else "/docs",
-            redoc_url=None if self.settings.is_production else "/redoc"
+            redoc_url=None if self.settings.is_production else "/redoc",
         )
 
         # Add CORS middleware
         if self.settings.is_development or self.settings.allowed_origins:
             app.add_middleware(
                 CORSMiddleware,
-                allow_origins=self.settings.allowed_origins if not self.settings.is_development else ["*"],
+                allow_origins=self.settings.allowed_origins
+                if not self.settings.is_development
+                else ["*"],
                 allow_credentials=True,
                 allow_methods=["POST", "GET", "OPTIONS"],
                 allow_headers=["*"],
@@ -263,15 +262,12 @@ class HTTPTransport(MCPTransport):
             # Skip security for health endpoints
             if request.url.path in ["/health", "/ready"]:
                 return await call_next(request)
-            
+
             # Host validation
             if not self._validate_host(request):
                 logger.warning(f"Invalid host header: {request.headers.get('Host')}")
-                return JSONResponse(
-                    status_code=400,
-                    content={"error": "Invalid host header"}
-                )
-            
+                return JSONResponse(status_code=400, content={"error": "Invalid host header"})
+
             # Rate limiting
             if self.rate_limiter:
                 client_ip = self._get_client_ip(request)
@@ -281,28 +277,27 @@ class HTTPTransport(MCPTransport):
                         status_code=429,
                         content={
                             "jsonrpc": "2.0",
-                            "error": {
-                                "code": -32000,
-                                "message": "Rate limit exceeded"
-                            }
-                        }
+                            "error": {"code": -32000, "message": "Rate limit exceeded"},
+                        },
                     )
-            
+
             # API key validation for POST requests
             if request.method == "POST":
                 if not self._validate_api_key(request):
-                    logger.warning(f"Unauthorized access attempt from {self._get_client_ip(request)}")
+                    logger.warning(
+                        f"Unauthorized access attempt from {self._get_client_ip(request)}"
+                    )
                     return JSONResponse(
                         status_code=401,
                         content={
                             "jsonrpc": "2.0",
                             "error": {
                                 "code": -32001,
-                                "message": "Unauthorized: Valid API key required"
-                            }
-                        }
+                                "message": "Unauthorized: Valid API key required",
+                            },
+                        },
                     )
-            
+
             return await call_next(request)
 
         @app.get("/health")
@@ -315,17 +310,17 @@ class HTTPTransport(MCPTransport):
             """Readiness check endpoint."""
             status = self.server.get_persistence_status()
             ready = (
-                status["vector_store"]["connected"] or 
-                status["database"]["connected"] or
-                self.settings.is_development
+                status["vector_store"]["connected"]
+                or status["database"]["connected"]
+                or self.settings.is_development
             )
-            
+
             return {
                 "status": "ready" if ready else "not_ready",
                 "timestamp": time.time(),
                 "database_connected": status["database"]["connected"],
                 "vector_store_connected": status["vector_store"]["connected"],
-                "environment": self.settings.environment
+                "environment": self.settings.environment,
             }
 
         async def _handle_mcp_post(request: Request):
@@ -336,10 +331,7 @@ class HTTPTransport(MCPTransport):
                 logger.warning("Invalid JSON payload: %s", exc)
                 return {
                     "jsonrpc": "2.0",
-                    "error": {
-                        "code": -32700,
-                        "message": "Parse error: Invalid JSON"
-                    }
+                    "error": {"code": -32700, "message": "Parse error: Invalid JSON"},
                 }
 
             try:
@@ -388,22 +380,24 @@ class HTTPTransport(MCPTransport):
             self.port = parsed.port or self.port
 
         config = uvicorn.Config(
-            app, 
-            host=self.host, 
-            port=self.port, 
+            app,
+            host=self.host,
+            port=self.port,
             log_level="info",
-            access_log=not self.settings.is_production  # Disable access logs in production
+            access_log=not self.settings.is_production,  # Disable access logs in production
         )
         self._uvicorn_server = uvicorn.Server(config)  # type: ignore[attr-defined]
 
         logger.info("Starting secure HTTP MCP server on http://%s:%d", self.host, self.port)
-        logger.info("Environment: %s | Dev Mode: %s", self.settings.environment, self.settings.dev_mode)
-        
+        logger.info(
+            "Environment: %s | Dev Mode: %s", self.settings.environment, self.settings.dev_mode
+        )
+
         if not self.settings.dev_mode:
             api_keys = self.settings.get_effective_api_keys()
             logger.info("API authentication: %s", "ENABLED" if api_keys else "DISABLED")
             logger.info("Rate limiting: %s req/min", self.settings.rate_limit_per_minute)
-        
+
         await self._uvicorn_server.serve()
 
     async def stop(self) -> None:

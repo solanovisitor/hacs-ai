@@ -5,18 +5,26 @@ Tests all models for proper instantiation, validation, and functionality.
 Ensures world-class quality and compliance with design principles.
 """
 
-import pytest
 from datetime import date, datetime
-from typing import Any
+
+import pytest
 
 from hacs_models import (
-    BaseResource, DomainResource, Patient, Observation, Encounter,
-    HumanName, ContactPoint, Address, Identifier,
-    Coding, CodeableConcept, Quantity, Range,
-    MemoryBlock, EpisodicMemory, SemanticMemory, WorkingMemory,
-    validate_model_compatibility, get_model_registry
+    BaseResource,
+    CodeableConcept,
+    Coding,
+    DomainResource,
+    Encounter,
+    EpisodicMemory,
+    MemoryBlock,
+    Observation,
+    Patient,
+    SemanticMemory,
+    WorkingMemory,
+    get_model_registry,
+    validate_model_compatibility,
 )
-from hacs_models.types import Gender, ObservationStatus, EncounterStatus
+from hacs_models.types import EncounterStatus, Gender, ObservationStatus
 
 
 class TestBaseResource:
@@ -34,10 +42,7 @@ class TestBaseResource:
 
     def test_base_resource_with_explicit_id(self):
         """Test resource creation with explicit ID."""
-        resource = BaseResource(
-            id="custom-id-123",
-            resource_type="TestResource"
-        )
+        resource = BaseResource(id="custom-id-123", resource_type="TestResource")
 
         assert resource.id == "custom-id-123"
         assert resource.resource_type == "TestResource"
@@ -49,6 +54,7 @@ class TestBaseResource:
 
         # Small delay to ensure different timestamp
         import time
+
         time.sleep(0.01)
 
         resource.update_timestamp()
@@ -65,16 +71,14 @@ class TestBaseResource:
 
     def test_reference_generation(self):
         """Test FHIR reference generation."""
-        resource = BaseResource(
-            id="test-123",
-            resource_type="TestResource"
-        )
+        resource = BaseResource(id="test-123", resource_type="TestResource")
 
         ref = resource.to_reference()
         assert ref == "TestResource/test-123"
 
     def test_pick_subset_model(self):
         """Test subset model creation with pick()."""
+
         # Create a subclass for testing
         class TestModel(BaseResource):
             name: str
@@ -85,11 +89,7 @@ class TestBaseResource:
         SubsetModel = TestModel.pick("name", "value")
 
         # Create instance of subset
-        subset = SubsetModel(
-            resource_type="TestModel",
-            name="test",
-            value=100
-        )
+        subset = SubsetModel(resource_type="TestModel", name="test", value=100)
 
         assert subset.name == "test"
         assert subset.value == 100
@@ -102,10 +102,7 @@ class TestDomainResource:
 
     def test_domain_resource_creation(self):
         """Test domain resource with FHIR fields."""
-        resource = DomainResource(
-            resource_type="TestDomain",
-            text="Test domain resource"
-        )
+        resource = DomainResource(resource_type="TestDomain", text="Test domain resource")
 
         assert resource.text == "Test domain resource"
         assert resource._fhir_version == "R4"
@@ -127,9 +124,7 @@ class TestPatientModel:
     def test_patient_with_full_name(self):
         """Test patient creation with full name parsing."""
         patient = Patient(
-            full_name="Dr. John Michael Smith Jr.",
-            birth_date=date(1985, 3, 15),
-            gender="male"
+            full_name="Dr. John Michael Smith Jr.", birth_date=date(1985, 3, 15), gender="male"
         )
 
         assert len(patient.name) == 1
@@ -142,11 +137,7 @@ class TestPatientModel:
 
     def test_patient_with_age_calculation(self):
         """Test patient with age-based birth date calculation."""
-        patient = Patient(
-            full_name="Jane Doe",
-            age=39,
-            gender="female"
-        )
+        patient = Patient(full_name="Jane Doe", age=39, gender="female")
 
         assert patient.age_years == 39
         assert patient.birth_date is not None
@@ -157,11 +148,7 @@ class TestPatientModel:
 
     def test_patient_contact_information(self):
         """Test patient contact info auto-population."""
-        patient = Patient(
-            full_name="Bob Johnson",
-            phone="+1-555-123-4567",
-            email="bob@example.com"
-        )
+        patient = Patient(full_name="Bob Johnson", phone="+1-555-123-4567", email="bob@example.com")
 
         # Check telecom was populated
         assert len(patient.telecom) == 2
@@ -176,10 +163,7 @@ class TestPatientModel:
 
     def test_patient_address_parsing(self):
         """Test patient address parsing."""
-        patient = Patient(
-            full_name="Alice Smith",
-            address_text="123 Main St, Anytown, CA 12345"
-        )
+        patient = Patient(full_name="Alice Smith", address_text="123 Main St, Anytown, CA 12345")
 
         assert len(patient.address) == 1
         address = patient.address[0]
@@ -217,19 +201,11 @@ class TestObservationModel:
         """Test basic observation creation."""
         # Create code for blood pressure
         bp_code = CodeableConcept(
-            coding=[Coding(
-                system="http://loinc.org",
-                code="85354-9",
-                display="Blood pressure"
-            )],
-            text="Blood pressure"
+            coding=[Coding(system="http://loinc.org", code="85354-9", display="Blood pressure")],
+            text="Blood pressure",
         )
 
-        observation = Observation(
-            status="final",
-            code=bp_code,
-            subject="Patient/patient-123"
-        )
+        observation = Observation(status="final", code=bp_code, subject="Patient/patient-123")
 
         assert observation.status == "final"
         assert observation.code.text == "Blood pressure"
@@ -261,7 +237,7 @@ class TestMemoryModels:
             memory_type="episodic",
             content="Patient reported chest pain during visit",
             importance_score=0.8,
-            tags=["chest_pain", "patient_report"]
+            tags=["chest_pain", "patient_report"],
         )
 
         assert memory.memory_type == "episodic"
@@ -276,7 +252,7 @@ class TestMemoryModels:
             content="Patient consultation in ER",
             event_time=datetime.now(),
             location="Emergency Room",
-            participants=["Patient/patient-123", "Practitioner/dr-smith"]
+            participants=["Patient/patient-123", "Practitioner/dr-smith"],
         )
 
         assert memory.memory_type == "episodic"
@@ -289,7 +265,7 @@ class TestMemoryModels:
             content="Normal blood pressure range is 90-120 mmHg systolic",
             knowledge_domain="cardiology",
             source="Clinical guidelines",
-            evidence_level="high"
+            evidence_level="high",
         )
 
         assert memory.memory_type == "semantic"
@@ -301,7 +277,7 @@ class TestMemoryModels:
         memory = WorkingMemory(
             content="Currently analyzing patient vital signs",
             task_context="patient_assessment",
-            ttl_seconds=1  # 1 second TTL
+            ttl_seconds=1,  # 1 second TTL
         )
 
         assert memory.memory_type == "working"
@@ -313,10 +289,7 @@ class TestMemoryModels:
 
     def test_memory_access_tracking(self):
         """Test memory access tracking."""
-        memory = MemoryBlock(
-            memory_type="semantic",
-            content="Test content"
-        )
+        memory = MemoryBlock(memory_type="semantic", content="Test content")
 
         assert memory.access_count == 0
         assert memory.last_accessed_at is None
@@ -335,18 +308,23 @@ class TestModelRegistry:
         registry = get_model_registry()
 
         expected_models = [
-            "Patient", "Observation", "Encounter", "MemoryBlock",
-            "EpisodicMemory", "SemanticMemory", "WorkingMemory"
+            "Patient",
+            "Observation",
+            "Encounter",
+            "MemoryBlock",
+            "EpisodicMemory",
+            "SemanticMemory",
+            "WorkingMemory",
         ]
 
-        for model_name in expected_models:
-            assert model_name in registry
-            assert issubclass(registry[model_name], BaseResource)
+        for resource_name in expected_models:
+            assert resource_name in registry
+            assert issubclass(registry[resource_name], BaseResource)
 
     def test_model_compatibility_validation(self):
         """Test model compatibility validation."""
         # This should pass with all models properly configured
-        assert validate_model_compatibility() == True
+        assert validate_model_compatibility()
 
     def test_model_instantiation_from_registry(self):
         """Test creating models from registry."""
@@ -379,18 +357,12 @@ class TestTypeValidation:
 
     def test_observation_status_validation(self):
         """Test observation status validation."""
-        obs = Observation(
-            status="final",
-            code=CodeableConcept(text="Test")
-        )
+        obs = Observation(status="final", code=CodeableConcept(text="Test"))
         assert obs.status == ObservationStatus.FINAL
 
     def test_encounter_status_validation(self):
         """Test encounter status validation."""
-        encounter = Encounter(
-            status="in-progress",
-            class_="outpatient"
-        )
+        encounter = Encounter(status="in-progress", class_="outpatient")
         assert encounter.status == EncounterStatus.IN_PROGRESS
 
 
@@ -403,27 +375,22 @@ def test_models_integration():
         birth_date=date(1980, 5, 15),
         gender="female",
         phone="+1-555-987-6543",
-        email="alice.johnson@hospital.com"
+        email="alice.johnson@hospital.com",
     )
 
     # Create encounter
-    encounter = Encounter(
-        status="in-progress",
-        class_="outpatient",
-        subject=patient.to_reference()
-    )
+    encounter = Encounter(status="in-progress", class_="outpatient", subject=patient.to_reference())
 
     # Create observation
     bp_code = CodeableConcept(
-        coding=[Coding(code="85354-9", display="Blood pressure")],
-        text="Blood pressure"
+        coding=[Coding(code="85354-9", display="Blood pressure")], text="Blood pressure"
     )
 
     observation = Observation(
         status="final",
         code=bp_code,
         subject=patient.to_reference(),
-        encounter=encounter.to_reference()
+        encounter=encounter.to_reference(),
     )
     observation.set_quantity_value(120, "mmHg")
 
@@ -436,9 +403,9 @@ def test_models_integration():
         context_metadata={
             "patient_id": patient.id,
             "encounter_id": encounter.id,
-            "observation_id": observation.id
+            "observation_id": observation.id,
         },
-        tags=["vital_signs", "blood_pressure", "routine_check"]
+        tags=["vital_signs", "blood_pressure", "routine_check"],
     )
 
     # Verify integration
@@ -450,7 +417,7 @@ def test_models_integration():
     assert memory.memory_type == "episodic"
     assert memory.context_metadata["patient_id"] == patient.id
 
-    print(f"✅ Integration test passed:")
+    print("✅ Integration test passed:")
     print(f"   Patient: {patient}")
     print(f"   Encounter: {encounter}")
     print(f"   Observation: {observation}")

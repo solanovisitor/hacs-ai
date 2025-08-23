@@ -1,7 +1,6 @@
-"""
-Service Lifecycle Management for HACS Infrastructure
+"""Service Lifecycle Management for HACS Infrastructure.
 
-This module provides comprehensive lifecycle management for services
+This module provideslifecycle management for services
 with graceful startup, shutdown, and dependency orchestration.
 """
 
@@ -11,13 +10,10 @@ import signal
 import sys
 import threading
 import time
+from collections.abc import Callable
 from contextlib import asynccontextmanager
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set
-
-from pydantic import BaseModel, Field
-
-from .protocols import Startable, Stoppable
+from typing import Any
 
 
 logger = logging.getLogger(__name__)
@@ -37,8 +33,7 @@ class LifecycleState(str, Enum):
 
 
 class ServiceLifecycle:
-    """
-    Manages the lifecycle of a single service with state tracking
+    """Manages the lifecycle of a single service with state tracking
     and dependency management.
     """
 
@@ -46,12 +41,11 @@ class ServiceLifecycle:
         self,
         name: str,
         service: Any,
-        dependencies: Optional[List[str]] = None,
+        dependencies: list[str] | None = None,
         startup_timeout: float = 30.0,
-        shutdown_timeout: float = 30.0
-    ):
-        """
-        Initialize service lifecycle manager.
+        shutdown_timeout: float = 30.0,
+    ) -> None:
+        """Initialize service lifecycle manager.
 
         Args:
             name: Service name
@@ -67,14 +61,14 @@ class ServiceLifecycle:
         self.shutdown_timeout = shutdown_timeout
 
         self._state = LifecycleState.CREATED
-        self._error: Optional[Exception] = None
-        self._started_at: Optional[float] = None
-        self._stopped_at: Optional[float] = None
+        self._error: Exception | None = None
+        self._started_at: float | None = None
+        self._stopped_at: float | None = None
         self._lock = threading.RLock()
 
         # Lifecycle callbacks
-        self._startup_callbacks: List[Callable[[], None]] = []
-        self._shutdown_callbacks: List[Callable[[], None]] = []
+        self._startup_callbacks: list[Callable[[], None]] = []
+        self._shutdown_callbacks: list[Callable[[], None]] = []
 
     @property
     def state(self) -> LifecycleState:
@@ -88,7 +82,7 @@ class ServiceLifecycle:
         return self.state == LifecycleState.RUNNING
 
     @property
-    def uptime(self) -> Optional[float]:
+    def uptime(self) -> float | None:
         """Get service uptime in seconds."""
         if self._started_at is None:
             return None
@@ -106,7 +100,8 @@ class ServiceLifecycle:
         """Start the service."""
         with self._lock:
             if self._state not in [LifecycleState.CREATED, LifecycleState.STOPPED]:
-                raise RuntimeError(f"Cannot start service in state {self._state}")
+                msg = f"Cannot start service in state {self._state}"
+                raise RuntimeError(msg)
 
             self._state = LifecycleState.STARTING
             self._error = None
@@ -122,11 +117,8 @@ class ServiceLifecycle:
                     logger.warning(f"Startup callback failed for {self.name}: {e}")
 
             # Start the service
-            if hasattr(self.service, 'start') and callable(self.service.start):
-                await asyncio.wait_for(
-                    self.service.start(),
-                    timeout=self.startup_timeout
-                )
+            if hasattr(self.service, "start") and callable(self.service.start):
+                await asyncio.wait_for(self.service.start(), timeout=self.startup_timeout)
 
             with self._lock:
                 self._state = LifecycleState.STARTED
@@ -142,7 +134,7 @@ class ServiceLifecycle:
             logger.info(f"Service started successfully: {self.name}")
 
         except Exception as e:
-            logger.error(f"Failed to start service {self.name}: {e}")
+            logger.exception(f"Failed to start service {self.name}: {e}")
             with self._lock:
                 self._state = LifecycleState.FAILED
                 self._error = e
@@ -164,15 +156,14 @@ class ServiceLifecycle:
             logger.info(f"Stopping service: {self.name}")
 
             # Stop the service
-            if hasattr(self.service, 'stop') and callable(self.service.stop):
-                await asyncio.wait_for(
-                    self.service.stop(),
-                    timeout=self.shutdown_timeout
-                )
-            elif hasattr(self.service, 'graceful_shutdown') and callable(self.service.graceful_shutdown):
+            if hasattr(self.service, "stop") and callable(self.service.stop):
+                await asyncio.wait_for(self.service.stop(), timeout=self.shutdown_timeout)
+            elif hasattr(self.service, "graceful_shutdown") and callable(
+                self.service.graceful_shutdown
+            ):
                 await asyncio.wait_for(
                     self.service.graceful_shutdown(self.shutdown_timeout),
-                    timeout=self.shutdown_timeout + 5.0
+                    timeout=self.shutdown_timeout + 5.0,
                 )
 
             # Execute shutdown callbacks
@@ -189,13 +180,13 @@ class ServiceLifecycle:
             logger.info(f"Service stopped successfully: {self.name}")
 
         except Exception as e:
-            logger.error(f"Failed to stop service {self.name}: {e}")
+            logger.exception(f"Failed to stop service {self.name}: {e}")
             with self._lock:
                 self._state = LifecycleState.ERROR
                 self._error = e
             raise
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Get service status information."""
         with self._lock:
             status = {
@@ -218,20 +209,18 @@ class ServiceLifecycle:
 
 
 class StartupManager:
-    """
-    Manages startup of multiple services with dependency resolution
+    """Manages startup of multiple services with dependency resolution
     and parallel execution where possible.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize startup manager."""
-        self._services: Dict[str, ServiceLifecycle] = {}
-        self._startup_order: List[str] = []
+        self._services: dict[str, ServiceLifecycle] = {}
+        self._startup_order: list[str] = []
         self._lock = threading.RLock()
 
     def add_service(self, service_lifecycle: ServiceLifecycle) -> None:
-        """
-        Add service to startup manager.
+        """Add service to startup manager.
 
         Args:
             service_lifecycle: Service lifecycle manager
@@ -241,8 +230,7 @@ class StartupManager:
             self._startup_order = self._calculate_startup_order()
 
     def remove_service(self, service_name: str) -> None:
-        """
-        Remove service from startup manager.
+        """Remove service from startup manager.
 
         Args:
             service_name: Name of service to remove
@@ -252,16 +240,17 @@ class StartupManager:
                 del self._services[service_name]
                 self._startup_order = self._calculate_startup_order()
 
-    def _calculate_startup_order(self) -> List[str]:
+    def _calculate_startup_order(self) -> list[str]:
         """Calculate service startup order based on dependencies."""
         # Topological sort for dependency resolution
         visited = set()
         temp_visited = set()
         order = []
 
-        def visit(service_name: str):
+        def visit(service_name: str) -> None:
             if service_name in temp_visited:
-                raise RuntimeError(f"Circular dependency detected involving {service_name}")
+                msg = f"Circular dependency detected involving {service_name}"
+                raise RuntimeError(msg)
 
             if service_name not in visited:
                 temp_visited.add(service_name)
@@ -284,8 +273,7 @@ class StartupManager:
         return order
 
     async def start_all(self, parallel: bool = True) -> None:
-        """
-        Start all services in dependency order.
+        """Start all services in dependency order.
 
         Args:
             parallel: Whether to start independent services in parallel
@@ -313,14 +301,14 @@ class StartupManager:
                 for service_name in remaining:
                     service = services[service_name]
                     dependencies_satisfied = all(
-                        dep in started or dep not in services
-                        for dep in service.dependencies
+                        dep in started or dep not in services for dep in service.dependencies
                     )
                     if dependencies_satisfied:
                         ready_to_start.append(service_name)
 
                 if not ready_to_start:
-                    raise RuntimeError("Cannot resolve service dependencies")
+                    msg = "Cannot resolve service dependencies"
+                    raise RuntimeError(msg)
 
                 # Start ready services in parallel
                 tasks = []
@@ -337,27 +325,24 @@ class StartupManager:
 
         logger.info("All services started successfully")
 
-    def get_startup_status(self) -> Dict[str, Any]:
+    def get_startup_status(self) -> dict[str, Any]:
         """Get startup status of all services."""
         with self._lock:
             return {
                 "services": {
-                    name: service.get_status()
-                    for name, service in self._services.items()
+                    name: service.get_status() for name, service in self._services.items()
                 },
-                "startup_order": self._startup_order
+                "startup_order": self._startup_order,
             }
 
 
 class ShutdownManager:
-    """
-    Manages graceful shutdown of services with proper ordering
+    """Manages graceful shutdown of services with proper ordering
     and timeout handling.
     """
 
-    def __init__(self, startup_manager: StartupManager):
-        """
-        Initialize shutdown manager.
+    def __init__(self, startup_manager: StartupManager) -> None:
+        """Initialize shutdown manager.
 
         Args:
             startup_manager: Startup manager to get service information
@@ -365,9 +350,8 @@ class ShutdownManager:
         self._startup_manager = startup_manager
         self._shutdown_timeout = 60.0
 
-    async def shutdown_all(self, timeout: Optional[float] = None) -> None:
-        """
-        Shutdown all services in reverse dependency order.
+    async def shutdown_all(self, timeout: float | None = None) -> None:
+        """Shutdown all services in reverse dependency order.
 
         Args:
             timeout: Total shutdown timeout
@@ -395,29 +379,26 @@ class ShutdownManager:
                     service_timeout = min(remaining_time, service.shutdown_timeout)
                     await asyncio.wait_for(service.stop(), timeout=service_timeout)
 
-                except asyncio.TimeoutError:
-                    logger.error(f"Service {service_name} shutdown timed out")
+                except TimeoutError:
+                    logger.exception(f"Service {service_name} shutdown timed out")
                 except Exception as e:
-                    logger.error(f"Error shutting down service {service_name}: {e}")
+                    logger.exception(f"Error shutting down service {service_name}: {e}")
 
         logger.info("Service shutdown completed")
 
 
 class GracefulShutdown:
-    """
-    Handles graceful shutdown signals and orchestrates cleanup.
-    """
+    """Handles graceful shutdown signals and orchestrates cleanup."""
 
-    def __init__(self, shutdown_manager: ShutdownManager):
-        """
-        Initialize graceful shutdown handler.
+    def __init__(self, shutdown_manager: ShutdownManager) -> None:
+        """Initialize graceful shutdown handler.
 
         Args:
             shutdown_manager: Shutdown manager for service cleanup
         """
         self._shutdown_manager = shutdown_manager
         self._shutdown_event = asyncio.Event()
-        self._cleanup_callbacks: List[Callable[[], None]] = []
+        self._cleanup_callbacks: list[Callable[[], None]] = []
 
     def add_cleanup_callback(self, callback: Callable[[], None]) -> None:
         """Add cleanup callback to be called during shutdown."""
@@ -425,7 +406,8 @@ class GracefulShutdown:
 
     def setup_signal_handlers(self) -> None:
         """Setup signal handlers for graceful shutdown."""
-        def signal_handler(signum, frame):
+
+        def signal_handler(signum, frame) -> None:
             logger.info(f"Received signal {signum}, initiating graceful shutdown")
             asyncio.create_task(self.shutdown())
 
@@ -448,13 +430,13 @@ class GracefulShutdown:
                 try:
                     callback()
                 except Exception as e:
-                    logger.error(f"Cleanup callback failed: {e}")
+                    logger.exception(f"Cleanup callback failed: {e}")
 
             # Shutdown all services
             await self._shutdown_manager.shutdown_all()
 
         except Exception as e:
-            logger.error(f"Error during graceful shutdown: {e}")
+            logger.exception(f"Error during graceful shutdown: {e}")
 
         logger.info("Graceful shutdown completed")
 

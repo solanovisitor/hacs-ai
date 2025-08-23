@@ -1,7 +1,6 @@
-"""
-HACS Authentication - Secure Authentication and Authorization
+"""HACS Authentication - Secure Authentication and Authorization.
 
-This package provides comprehensive authentication and authorization components
+This package providesauthentication and authorization components
 for healthcare AI agent systems, including JWT token management, OAuth2 support,
 role-based access control, and audit logging.
 
@@ -9,7 +8,7 @@ Design Philosophy:
     - Zero-trust security model
     - Healthcare-compliant authentication
     - AI agent-optimized authorization
-    - Comprehensive audit trails
+    -audit trails
     - Production-ready security
 
 Key Features:
@@ -17,7 +16,7 @@ Key Features:
     - OAuth2 integration for enterprise systems
     - Role-based permission system
     - Session management with expiration
-    - Comprehensive audit logging
+    -audit logging
     - Healthcare-specific security levels
 
 Author: HACS Development Team
@@ -26,21 +25,21 @@ Version: 0.1.0
 """
 
 # Core authentication components
-from .auth_manager import AuthManager, AuthConfig, TokenData, AuthError
 from .actor import Actor, ActorRole, PermissionLevel, SessionStatus
-from .permissions import PermissionManager, PermissionSchema, Permission
-from .session import SessionManager, Session, SessionConfig
+from .audit import AuditEvent, AuditLevel, AuditLogger
+from .auth_manager import AuthConfig, AuthError, AuthManager, TokenData
 from .decorators import require_auth, require_permission, require_role
-from .audit import AuditLogger, AuditEvent, AuditLevel
+from .permissions import Permission, PermissionManager, PermissionSchema
+from .session import Session, SessionConfig, SessionManager
 
 # Tool security integration
-from .tool_security import (
-    ToolSecurityContext, secure_tool_execution, create_secure_actor
-)
+from .tool_security import ToolSecurityContext, create_secure_actor, secure_tool_execution
+
 
 # OAuth2 support (optional)
 try:
-    from .oauth2 import OAuth2Config, OAuth2Manager, OAuth2Error
+    from .oauth2 import OAuth2Config, OAuth2Error, OAuth2Manager
+
     _HAS_OAUTH2 = True
 except ImportError:
     _HAS_OAUTH2 = False
@@ -55,47 +54,40 @@ __license__ = "MIT"
 
 # Public API
 __all__ = [
-    # Core authentication
-    "AuthManager",
-    "AuthConfig",
-    "TokenData",
-    "AuthError",
-
     # Actor and roles
     "Actor",
     "ActorRole",
+    "AuditEvent",
+    "AuditLevel",
+    # Audit logging
+    "AuditLogger",
+    "AuthConfig",
+    "AuthError",
+    # Core authentication
+    "AuthManager",
+    # OAuth2 (if available)
+    "OAuth2Config",
+    "OAuth2Error",
+    "OAuth2Manager",
+    "Permission",
     "PermissionLevel",
-    "SessionStatus",
-
     # Permission management
     "PermissionManager",
     "PermissionSchema",
-    "Permission",
-
-    # Session management
-    "SessionManager",
     "Session",
     "SessionConfig",
-
+    # Session management
+    "SessionManager",
+    "SessionStatus",
+    "TokenData",
+    # Tool security integration
+    "ToolSecurityContext",
+    "create_secure_actor",
     # Decorators
     "require_auth",
     "require_permission",
     "require_role",
-
-    # Audit logging
-    "AuditLogger",
-    "AuditEvent",
-    "AuditLevel",
-
-    # OAuth2 (if available)
-    "OAuth2Config",
-    "OAuth2Manager",
-    "OAuth2Error",
-    
-    # Tool security integration
-    "ToolSecurityContext",
     "secure_tool_execution",
-    "create_secure_actor",
 ]
 
 # Package metadata
@@ -107,9 +99,7 @@ PACKAGE_INFO = {
     "license": __license__,
     "python_requires": ">=3.11",
     "dependencies": ["pydantic>=2.11.7", "pyjwt>=2.10.1", "hacs-models>=0.1.0"],
-    "optional_dependencies": {
-        "oauth2": ["authlib>=1.3.0", "httpx>=0.28.0"]
-    },
+    "optional_dependencies": {"oauth2": ["authlib>=1.3.0", "httpx>=0.28.0"]},
     "homepage": "https://github.com/your-org/hacs",
     "documentation": "https://hacs.readthedocs.io/",
     "repository": "https://github.com/your-org/hacs",
@@ -117,8 +107,7 @@ PACKAGE_INFO = {
 
 
 def get_auth_components() -> dict[str, type]:
-    """
-    Get registry of all available authentication components.
+    """Get registry of all available authentication components.
 
     Returns:
         Dictionary mapping component names to component classes
@@ -142,8 +131,7 @@ def get_auth_components() -> dict[str, type]:
 
 
 def validate_auth_setup() -> bool:
-    """
-    Validate that authentication components are properly configured.
+    """Validate that authentication components are properly configured.
 
     Returns:
         True if all components pass validation checks
@@ -158,37 +146,33 @@ def validate_auth_setup() -> bool:
 
         # Test token creation and verification
         test_token = auth_manager.create_access_token(
-            user_id="test-user",
-            role="agent",
-            permissions=["read:patient"]
+            user_id="test-user", role="agent", permissions=["read:patient"]
         )
         token_data = auth_manager.verify_token(test_token)
 
         if token_data.user_id != "test-user":
-            raise ValueError("Token verification failed")
+            msg = "Token verification failed"
+            raise ValueError(msg)
 
         # Test actor creation
-        actor = Actor(
-            name="Test Actor",
-            role=ActorRole.AGENT,
-            permissions=["read:patient"]
-        )
+        actor = Actor(name="Test Actor", role=ActorRole.AGENT, permissions=["read:patient"])
 
         # Start session to enable authentication for permission checking
         actor.start_session("test-session")
 
         if not actor.has_permission("read:patient"):
-            raise ValueError("Actor permission check failed")
+            msg = "Actor permission check failed"
+            raise ValueError(msg)
 
         return True
 
     except Exception as e:
-        raise ValueError(f"Authentication setup validation failed: {e}") from e
+        msg = f"Authentication setup validation failed: {e}"
+        raise ValueError(msg) from e
 
 
 def get_security_info() -> dict[str, str]:
-    """
-    Get information about security features and compliance.
+    """Get information about security features and compliance.
 
     Returns:
         Dictionary with security feature information
@@ -197,7 +181,7 @@ def get_security_info() -> dict[str, str]:
         "jwt_support": "✅ JWT token management with healthcare claims",
         "oauth2_support": "✅ OAuth2 integration" if _HAS_OAUTH2 else "❌ OAuth2 not available",
         "role_based_access": "✅ Healthcare role-based permissions",
-        "audit_logging": "✅ Comprehensive audit trails",
+        "audit_logging": "✅audit trails",
         "session_management": "✅ Secure session handling with expiration",
         "healthcare_compliance": "✅ HIPAA-compatible security patterns",
         "ai_agent_optimized": "✅ AI agent authentication patterns",

@@ -17,44 +17,42 @@ from hacs_models import Actor, BaseResource
 try:
     from hacs_models import (
         AgentMessage,
-        ContextSummary,
         Encounter,
-        KnowledgeItem,
-        Memory,
         Observation,
         Patient,
         ScratchpadEntry,
     )
-except ImportError:
-    # Fallback to hacs_core.models if hacs_models is not available
-    try:
-        from hacs_models import (
-            AgentMessage,
-            ContextSummary,
-            Encounter,
-            KnowledgeItem,
-            Observation,
-            Patient,
-            ScratchpadEntry,
-        )
-        from hacs_models import (
-            MemoryBlock as Memory,
-        )
-    except ImportError:
-        # TODO: Implement proper model imports or create actual model definitions
-        # The following models need proper implementations:
-        class _PlaceholderModel:
-            """Placeholder model - TODO: implement proper model definitions."""
-            pass
 
-        AgentMessage = _PlaceholderModel
-        ContextSummary = _PlaceholderModel
-        Encounter = _PlaceholderModel
-        KnowledgeItem = _PlaceholderModel
-        Memory = _PlaceholderModel
-        Observation = _PlaceholderModel
-        Patient = _PlaceholderModel
-        ScratchpadEntry = _PlaceholderModel
+    try:
+        from hacs_models import MemoryBlock as Memory
+    except Exception:
+        from hacs_models import Memory  # type: ignore
+    # Optional
+    try:
+        from hacs_models import ContextSummary  # type: ignore
+    except Exception:
+        ContextSummary = None  # type: ignore
+    try:
+        from hacs_models import KnowledgeItem  # type: ignore
+    except Exception:
+        KnowledgeItem = None  # type: ignore
+except ImportError:
+    # Fallback minimal imports
+    from hacs_models import AgentMessage, Encounter, Observation, Patient
+    from hacs_models import MemoryBlock as Memory
+
+    try:
+        from hacs_models import ScratchpadEntry  # type: ignore
+    except Exception:
+        ScratchpadEntry = None  # type: ignore
+    try:
+        from hacs_models import ContextSummary  # type: ignore
+    except Exception:
+        ContextSummary = None  # type: ignore
+    try:
+        from hacs_models import KnowledgeItem  # type: ignore
+    except Exception:
+        KnowledgeItem = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -98,16 +96,12 @@ class ResourceMapper:
             # Active status
             "active": getattr(patient, "active", True),
             # Complex fields as JSONB
-            "identifiers": json.dumps(patient.identifiers)
-            if patient.identifiers
-            else "[]",
+            "identifiers": json.dumps(patient.identifiers) if patient.identifiers else "[]",
             "telecom": json.dumps(patient.telecom) if patient.telecom else "[]",
             "address": json.dumps(patient.address) if patient.address else "[]",
             "contact": json.dumps(getattr(patient, "contact", [])),
             "communication": json.dumps(getattr(patient, "communication", [])),
-            "general_practitioner": json.dumps(
-                getattr(patient, "general_practitioner", [])
-            ),
+            "general_practitioner": json.dumps(getattr(patient, "general_practitioner", [])),
             "managing_organization": getattr(patient, "managing_organization", None),
             "photo": json.dumps(getattr(patient, "photo", [])),
             # Agent-specific fields
@@ -120,9 +114,7 @@ class ResourceMapper:
 
         return data
 
-    def map_observation_to_columns(
-        self, observation: Observation, actor: Actor
-    ) -> dict[str, Any]:
+    def map_observation_to_columns(self, observation: Observation, actor: Actor) -> dict[str, Any]:
         """Map an Observation resource to database columns."""
         data = {
             "id": observation.id,
@@ -138,9 +130,7 @@ class ResourceMapper:
             # Observation type
             "code_text": observation.code_text,
             "code": json.dumps(observation.code) if observation.code else None,
-            "category": json.dumps(observation.category)
-            if observation.category
-            else "[]",
+            "category": json.dumps(observation.category) if observation.category else "[]",
             # Timing
             "effective_datetime": observation.effective_datetime,
             "effective_period": json.dumps(observation.effective_period)
@@ -164,23 +154,17 @@ class ResourceMapper:
             "value_codeable_concept": json.dumps(observation.value_codeable_concept)
             if observation.value_codeable_concept
             else None,
-            "value_range": json.dumps(observation.value_range)
-            if observation.value_range
-            else None,
+            "value_range": json.dumps(observation.value_range) if observation.value_range else None,
             "interpretation": json.dumps(observation.interpretation)
             if observation.interpretation
             else "[]",
             "note": json.dumps(observation.note) if observation.note else "[]",
-            "body_site": json.dumps(observation.body_site)
-            if observation.body_site
-            else None,
+            "body_site": json.dumps(observation.body_site) if observation.body_site else None,
             "method": json.dumps(observation.method) if observation.method else None,
             "reference_range": json.dumps(observation.reference_range)
             if observation.reference_range
             else "[]",
-            "component": json.dumps(observation.component)
-            if observation.component
-            else "[]",
+            "component": json.dumps(observation.component) if observation.component else "[]",
             # References
             "specimen": observation.specimen,
             "device": observation.device,
@@ -198,9 +182,7 @@ class ResourceMapper:
 
         return data
 
-    def map_encounter_to_columns(
-        self, encounter: Encounter, actor: Actor
-    ) -> dict[str, Any]:
+    def map_encounter_to_columns(self, encounter: Encounter, actor: Actor) -> dict[str, Any]:
         """Map an Encounter resource to database columns."""
         # Extract period start/end for easier querying
         period_start = None
@@ -212,16 +194,12 @@ class ResourceMapper:
                 # Convert strings to datetime if needed
                 if isinstance(period_start, str):
                     try:
-                        period_start = datetime.fromisoformat(
-                            period_start.replace("Z", "+00:00")
-                        )
+                        period_start = datetime.fromisoformat(period_start.replace("Z", "+00:00"))
                     except (ValueError, TypeError):
                         period_start = None
                 if isinstance(period_end, str):
                     try:
-                        period_end = datetime.fromisoformat(
-                            period_end.replace("Z", "+00:00")
-                        )
+                        period_end = datetime.fromisoformat(period_end.replace("Z", "+00:00"))
                     except (ValueError, TypeError):
                         period_end = None
 
@@ -250,18 +228,14 @@ class ResourceMapper:
             # Complex fields as JSONB
             "type": json.dumps(encounter.type) if encounter.type else "[]",
             "priority": json.dumps(encounter.priority) if encounter.priority else None,
-            "participants": json.dumps(encounter.participants)
-            if encounter.participants
-            else "[]",
+            "participants": json.dumps(encounter.participants) if encounter.participants else "[]",
             "period": json.dumps(encounter.period)
             if hasattr(encounter, "period") and encounter.period
             else "{}",
             "length": json.dumps(encounter.length)
             if hasattr(encounter, "length") and encounter.length
             else None,
-            "reason_code": json.dumps(encounter.reason_code)
-            if encounter.reason_code
-            else "[]",
+            "reason_code": json.dumps(encounter.reason_code) if encounter.reason_code else "[]",
             "reason_reference": encounter.reason_reference,
             "diagnosis": json.dumps(getattr(encounter, "diagnosis", [])),
             "account": getattr(encounter, "account", []),
@@ -278,9 +252,7 @@ class ResourceMapper:
 
         return data
 
-    def map_agent_message_to_columns(
-        self, message: AgentMessage, actor: Actor
-    ) -> dict[str, Any]:
+    def map_agent_message_to_columns(self, message: AgentMessage, actor: Actor) -> dict[str, Any]:
         """Map an AgentMessage resource to database columns."""
         # Generate content hash for deduplication
         content_hash = hashlib.sha256(message.content.encode("utf-8")).hexdigest()
@@ -293,9 +265,7 @@ class ResourceMapper:
             # Core message fields
             "role": message.role.value if message.role else None,
             "content": message.content,
-            "message_type": message.message_type.value
-            if message.message_type
-            else "response",
+            "message_type": message.message_type.value if message.message_type else "response",
             "priority": message.priority.value if message.priority else "normal",
             # Threading
             "parent_message_id": message.parent_message_id,
@@ -309,12 +279,8 @@ class ResourceMapper:
             "evidence_references": message.evidence_references,
             "confidence_score": message.confidence_score,
             # Complex fields as JSONB
-            "provenance": json.dumps(message.provenance)
-            if message.provenance
-            else "{}",
-            "tool_calls": json.dumps(message.tool_calls)
-            if message.tool_calls
-            else "[]",
+            "provenance": json.dumps(message.provenance) if message.provenance else "{}",
+            "tool_calls": json.dumps(message.tool_calls) if message.tool_calls else "[]",
             "reasoning_chain": json.dumps(getattr(message, "reasoning_chain", [])),
             "metadata": json.dumps(getattr(message, "metadata", {})),
             "attachments": json.dumps(getattr(message, "attachments", [])),
@@ -370,9 +336,7 @@ class ResourceMapper:
             "source": knowledge_item.source,
             "content_hash": content_hash,
             # Complex data as JSONB
-            "metadata": json.dumps(knowledge_item.metadata)
-            if knowledge_item.metadata
-            else "{}",
+            "metadata": json.dumps(knowledge_item.metadata) if knowledge_item.metadata else "{}",
             # Full resource preservation
             "full_resource": json.dumps(knowledge_item.model_dump(mode="json")),
         }
@@ -416,18 +380,14 @@ class ResourceMapper:
             "source_resource_ids": context_summary.source_resource_ids,
             "actor_id": context_summary.actor_id,
             # Complex data as JSONB
-            "metadata": json.dumps(context_summary.metadata)
-            if context_summary.metadata
-            else "{}",
+            "metadata": json.dumps(context_summary.metadata) if context_summary.metadata else "{}",
             # Full resource preservation
             "full_resource": json.dumps(context_summary.model_dump(mode="json")),
         }
 
         return data
 
-    def map_columns_to_resource(
-        self, resource_type: str, row_data: dict[str, Any]
-    ) -> BaseResource:
+    def map_columns_to_resource(self, resource_type: str, row_data: dict[str, Any]) -> BaseResource:
         """Convert database row data back to a HACS resource."""
         # Extract the full resource JSONB data
         if isinstance(row_data.get("full_resource"), str):
@@ -565,6 +525,4 @@ class ResourceMapper:
         }
 
         resource_mapping = mappings.get(resource_type, {})
-        return resource_mapping.get(
-            field, field
-        )  # Return field as-is if no mapping found
+        return resource_mapping.get(field, field)  # Return field as-is if no mapping found

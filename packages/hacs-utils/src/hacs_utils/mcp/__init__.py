@@ -17,7 +17,7 @@ __all__ = [
     "CallToolParams",
     "CallToolResult",
     "execute_tool",
-    "get_all_hacs_tools"
+    "get_all_hacs_tools",
 ]
 
 # For backward compatibility

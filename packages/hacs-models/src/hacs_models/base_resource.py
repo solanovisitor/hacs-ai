@@ -3,7 +3,7 @@ Base resource model for all HACS healthcare models.
 
 This module provides the foundational BaseResource and DomainResource classes
 that all HACS models inherit from. Designed for world-class development quality
-with full type safety, comprehensive validation, and AI-optimized features.
+with full type safety,validation, and AI-optimized features.
 
 Key Features:
     - Automatic ID generation with smart defaults
@@ -18,13 +18,14 @@ Design Principles:
     - Pure data models (no business logic)
     - Immutable by design (use copy() for updates)
     - Rich type annotations for perfect IDE support
-    - Comprehensive docstrings for maintainability
+    -docstrings for maintainability
     - Zero external dependencies beyond Pydantic
 """
 
+import inspect
 import uuid
-from datetime import datetime, timezone
-from typing import Any, ClassVar, Type, TypeVar
+from datetime import UTC, datetime
+from typing import Any, ClassVar, Literal, TypeVar, get_args, get_origin
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
@@ -38,6 +39,7 @@ try:
         Validatable,
         Versioned,
     )
+
     _has_protocols = True
 except ImportError:
     # Create dummy protocols for standalone usage
@@ -80,8 +82,36 @@ except ImportError:
         def status(self) -> str: ...
         def get_patient_id(self) -> str | None: ...
 
+
 # Type variable for generic base resource operations
-T = TypeVar('T', bound='BaseResource')
+T = TypeVar("T", bound="BaseResource")
+
+
+class CharInterval(BaseModel):
+    """Character interval in source text for grounding."""
+
+    start_pos: int | None = Field(default=None, description="Start character index")
+    end_pos: int | None = Field(default=None, description="End character index (exclusive)")
+
+
+class AgentMeta(BaseModel):
+    """
+    Standardized agent-derived metadata for reasoning and provenance.
+
+    Keep this focused and typed; use agent_context for app-specific payloads.
+    """
+
+    reasoning: str | None = Field(default=None, description="LLM reasoning or justification text")
+    citations: list[str] | None = Field(default=None, description="Evidence snippets")
+    char_intervals: list[CharInterval] | None = Field(
+        default=None, description="Character spans of evidence in source text"
+    )
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    model_id: str | None = Field(default=None, description="Model identifier used")
+    provider: str | None = Field(default=None, description="Provider name")
+    generated_at: datetime | None = Field(default=None, description="Generation timestamp")
+    recipe_id: str | None = Field(default=None, description="Extraction recipe identifier")
+    window_ids: list[str] | None = Field(default=None, description="IDs of windows used")
 
 
 class BaseResource(BaseModel):
@@ -127,18 +157,15 @@ class BaseResource(BaseModel):
     # Pydantic v2 configuration for optimal performance and validation
     model_config = ConfigDict(
         # Core validation settings
-        validate_assignment=True,           # Validate on field assignment
-        validate_default=True,             # Validate default values
-        use_enum_values=True,              # Serialize enums as values
-
+        validate_assignment=True,  # Validate on field assignment
+        validate_default=True,  # Validate default values
+        use_enum_values=True,  # Serialize enums as values
         # Performance optimizations
-        extra="forbid",                    # Strict field validation (world-class quality)
-        frozen=False,                      # Allow field updates for timestamps
-        str_strip_whitespace=True,         # Auto-strip whitespace
-
+        extra="forbid",  # Strict field validation (world-class quality)
+        frozen=False,  # Allow field updates for timestamps
+        str_strip_whitespace=True,  # Auto-strip whitespace
         # Developer experience
-        arbitrary_types_allowed=False,     # Strict type checking
-
+        arbitrary_types_allowed=False,  # Strict type checking
         # JSON Schema generation
         json_schema_extra={
             "examples": [
@@ -147,10 +174,13 @@ class BaseResource(BaseModel):
                     "resource_type": "BaseResource",
                     "created_at": "2024-08-03T12:00:00Z",
                     "updated_at": "2024-08-03T12:00:00Z",
+                    "language": "pt-BR",
+                    "meta_profile": ["http://example.org/fhir/StructureDefinition/MyProfile"],
+                    "meta_tag": ["llm-context", "summary"],
                 }
             ],
             "title": "Base Healthcare Resource",
-            "description": "Foundation for all HACS healthcare data models",
+            "description": "Foundation for all HACS healthcare data models with FHIR-inspired identity and metadata for LLM context engineering",
         },
     )
 
@@ -166,12 +196,12 @@ class BaseResource(BaseModel):
 
     # Timestamped protocol
     created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="ISO 8601 timestamp when this resource was created",
     )
 
     updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="ISO 8601 timestamp when this resource was last updated",
     )
 
@@ -182,6 +212,49 @@ class BaseResource(BaseModel):
         pattern=r"^\d+\.\d+\.\d+$",
     )
 
+    # FHIR Resource-level identity and metadata (for rich context engineering)
+    identifier: list[str] = Field(
+        default_factory=list,
+        description="External identifiers for the resource (e.g., MRN, accession, system-specific IDs)",
+        examples=[["MRN:12345", "local:abc-001"]],
+    )
+
+    language: str | None = Field(
+        default=None,
+        description="Base language of the resource content (BCP-47, e.g., en, pt-BR)",
+        examples=["en", "pt-BR"],
+    )
+
+    implicit_rules: str | None = Field(
+        default=None,
+        description="Reference to rules followed when constructing the resource (URI)",
+        examples=["http://example.org/implicit-rules/v1"],
+    )
+
+    meta_profile: list[str] = Field(
+        default_factory=list,
+        description="Profiles asserting conformance of this resource (URIs)",
+        examples=[["http://hl7.org/fhir/StructureDefinition/Observation"]],
+    )
+
+    meta_source: str | None = Field(
+        default=None,
+        description="Source system that produced the resource",
+        examples=["ehr-system-x"],
+    )
+
+    meta_security: list[str] = Field(
+        default_factory=list,
+        description="Security labels applicable to this resource (policy/label codes)",
+        examples=[["very-sensitive", "phi"]],
+    )
+
+    meta_tag: list[str] = Field(
+        default_factory=list,
+        description="User or system-defined tags for search and grouping",
+        examples=[["triage", "llm-context", "draft"]],
+    )
+
     # Resource type field (required for all resources)
     resource_type: str = Field(
         description="Type identifier for this resource (Patient, Observation, etc.)",
@@ -190,9 +263,31 @@ class BaseResource(BaseModel):
         max_length=50,
     )
 
+    # Generic agent context for free-form annotations or LLM-structured data
+    agent_context: dict[str, Any] | None = Field(
+        default=None,
+        description="Arbitrary, agent-provided context payload for this resource",
+        examples=[{"section_key": "free text content"}],
+    )
+
+    # Standardized, typed agent metadata
+    agent_meta: AgentMeta | None = Field(
+        default=None, description="Standardized agent reasoning, citations and provenance"
+    )
+
     # Class-level metadata for introspection
     _hacs_version: ClassVar[str] = "0.1.0"
     _fhir_version: ClassVar[str | None] = None  # Override in FHIR resources
+
+    # Optional documentation metadata (class-level), for agent discovery and registry overrides
+    _doc_scope_usage: ClassVar[str | None] = None
+    _doc_boundaries: ClassVar[str | None] = None
+    _doc_relationships: ClassVar[list[str]] = []
+    _doc_references: ClassVar[list[str]] = []
+    _doc_tools: ClassVar[list[str]] = []
+    _doc_examples: ClassVar[list[dict[str, Any]]] = []
+    # Canonical defaults used for extraction prompts and fallbacks
+    _canonical_defaults: ClassVar[dict[str, Any]] = {}
 
     def model_post_init(self, __context: Any) -> None:
         """
@@ -213,7 +308,7 @@ class BaseResource(BaseModel):
 
     def update_timestamp(self) -> None:
         """Update the updated_at timestamp to current time."""
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     # Serializable protocol methods
     def to_dict(self) -> dict[str, Any]:
@@ -221,7 +316,7 @@ class BaseResource(BaseModel):
         return self.model_dump()
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> 'BaseResource':
+    def from_dict(cls, data: dict[str, Any]) -> "BaseResource":
         """Create object from dictionary representation."""
         return cls(**data)
 
@@ -259,50 +354,60 @@ class BaseResource(BaseModel):
         return self.updated_at > other.updated_at
 
     @classmethod
-    def pick(cls: Type[T], *fields: str) -> Type[T]:
+    def pick(cls: type[T], *fields: str) -> type[T]:
         """
-        Create a subset model containing only specified fields.
+        Create a subset Pydantic model containing only specified fields.
 
-        Useful for creating lightweight models for specific use cases,
-        API responses, or when you only need certain fields from a model.
-        Essential fields (id, resource_type, timestamps) are always included.
+        - Always includes essentials: id, resource_type, created_at, updated_at
+        - Allows extra fields (extensions) on the subset for forward-compatibility
+        - Uses the original field annotations and defaults where available
 
-        Args:
-            *fields: Names of fields to include in the subset model
-
-        Returns:
-            New Pydantic model class with only the specified fields
-
-        Example:
-            >>> PatientSummary = Patient.pick("full_name", "birth_date", "gender")
-            >>> summary = PatientSummary(
-            ...     resource_type="Patient",
-            ...     full_name="Jane Doe",
-            ...     birth_date="1990-01-15",
-            ...     gender="female"
-            ... )
-            >>> # summary only has the picked fields plus essentials
+        Returns a new Pydantic model class suitable for schema generation and validation
+        of lightweight payloads (e.g., prompts, APIs).
         """
-        # Essential fields that are always included
+        from pydantic import ConfigDict as PydConfig
+        from pydantic import Field as PydField
+
         essential_fields = {"id", "resource_type", "created_at", "updated_at"}
         selected_fields = set(fields) | essential_fields
 
-        # Get field definitions from the original model
-        model_fields = cls.model_fields
-        config = cls.model_config
+        new_fields: dict[str, tuple[Any, Any]] = {}
+        original_fields = getattr(cls, "model_fields", {})
 
-        # Build new field dictionary with only selected fields
-        new_fields = {}
-        for field_name in selected_fields:
-            if field_name in model_fields:
-                new_fields[field_name] = model_fields[field_name]
+        for name in selected_fields:
+            if name not in original_fields:
+                continue
+            f = original_fields[name]
+            annotation = getattr(f, "annotation", Any) or Any
+            # Determine default: required (ellipsis), explicit default, or default_factory
+            default: Any
+            try:
+                if getattr(f, "default_factory", None) is not None:
+                    default = PydField(
+                        default_factory=f.default_factory,
+                        description=getattr(f, "description", None),
+                    )
+                elif getattr(f, "is_required", False):
+                    # Auto-generate id for subsets; keep resource_type default if present
+                    if name == "id":
+                        default = PydField(
+                            default=None, description=getattr(f, "description", None)
+                        )
+                    else:
+                        default = ...
+                else:
+                    default = getattr(f, "default", None)
+            except Exception:
+                default = getattr(f, "default", None)
+            new_fields[name] = (annotation, default)
 
-        # Create the subset model class
+        # Subset config: allow extras to support extensions while keeping other defaults sane
+        subset_config = PydConfig(extra="allow")
+
         subset_model = create_model(
             f"{cls.__name__}Subset",
+            __config__=subset_config,
             **new_fields,
-            __config__=config,
-            __base__=cls,
         )
 
         return subset_model  # type: ignore[return-value]
@@ -322,7 +427,7 @@ class BaseResource(BaseModel):
         if self.created_at is None:
             return None
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         delta = now - self.created_at
         return delta.total_seconds() / 86400  # Convert seconds to days
 
@@ -338,6 +443,218 @@ class BaseResource(BaseModel):
             >>> ref = patient.to_reference()  # "Patient/patient-a1b2c3d4"
         """
         return f"{self.resource_type}/{self.id}"
+
+    @classmethod
+    def get_descriptive_schema(cls) -> dict[str, Any]:
+        """
+        Lightweight descriptive schema for LLM orchestration and MCP discovery.
+
+        Returns a dict containing title, docstring summary, and field descriptions.
+        """
+        try:
+            doc = inspect.getdoc(cls) or ""
+        except Exception:
+            doc = ""
+        fields: dict[str, Any] = {}
+        try:
+            for name, field in getattr(cls, "model_fields", {}).items():
+                info: dict[str, Any] = {
+                    "type": str(getattr(field, "annotation", "")),
+                    "description": getattr(field, "description", None),
+                    "examples": getattr(field, "examples", None),
+                }
+                # Enums / Literals → list allowed values
+                try:
+                    from enum import Enum
+                    # get_args, get_origin already imported at top
+
+                    ann = getattr(field, "annotation", None)
+                    if ann is not None:
+                        if get_origin(ann) is Literal:  # type: ignore[name-defined]
+                            info["enum_values"] = list(get_args(ann))
+                        elif isinstance(ann, type) and issubclass(ann, Enum):
+                            info["enum_values"] = [getattr(e, "value", e) for e in list(ann)]
+                except Exception:
+                    pass
+                fields[name] = info
+        except Exception:
+            pass
+        # Required fields from JSON schema when available
+        try:
+            required = list((cls.model_json_schema() or {}).get("required", []) or [])
+        except Exception:
+            required = []
+        return {
+            "title": cls.__name__,
+            "description": doc,
+            "fields": fields,
+            "required": required,
+            "canonical_defaults": cls.get_canonical_defaults(),
+        }
+
+    # --- LLM-facing facades and helpers ---
+    @classmethod
+    def get_system_fields(cls) -> list[str]:
+        """Return fields considered system-owned (not LLM-generated)."""
+        return [
+            "id",
+            "created_at",
+            "updated_at",
+            "version",
+            "identifier",
+            "language",
+            "implicit_rules",
+            "meta_profile",
+            "meta_source",
+            "meta_security",
+            "meta_tag",
+        ]
+
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:
+        """Default extractable fields for LLM extraction (override in subclasses)."""
+        system = set(cls.get_system_fields())
+        # Exclude internals, agent containers, and frozen resource_type by default
+        excluded = system | {"agent_context", "agent_meta", "resource_type"}
+        fields: list[str] = []
+        try:
+            for name in getattr(cls, "model_fields", {}) or {}:
+                if name.startswith("_"):
+                    continue
+                if name in excluded:
+                    continue
+                fields.append(name)
+        except Exception:
+            pass
+        return fields
+
+    @classmethod
+    def get_llm_schema(cls, minimal: bool = True) -> dict[str, Any]:
+        """LLM-friendly schema with a compact example of extractable fields."""
+        example: dict[str, Any] = {"resource_type": getattr(cls, "__name__", "Resource")}
+        try:
+            defaults = cls.get_canonical_defaults() or {}
+            extractable = set(cls.get_extractable_fields())
+            # Seed with defaults that intersect extractables
+            for k, v in defaults.items():
+                if k in extractable and v is not None:
+                    example[k] = v
+        except Exception:
+            pass
+        # Keep minimal nested structure if available from extraction examples
+        try:
+            examples = cls.get_extraction_examples() or {}
+            obj = examples.get("object")
+            if isinstance(obj, dict):
+                for k in list(obj.keys()):
+                    if k in ("resource_type",) or k in extractable:
+                        example.setdefault(k, obj[k])
+        except Exception:
+            pass
+        return {"title": getattr(cls, "__name__", "Resource"), "example": example}
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:
+        """Resource-specific guidance for extraction prompts."""
+        return []
+
+    @classmethod
+    def get_required_extractables(cls) -> list[str]:
+        """Fields that must be provided for valid extraction (override in subclasses)."""
+        return []
+
+    @classmethod
+    def get_canonical_defaults(cls) -> dict[str, Any]:
+        """Default values for system/required fields during extraction (override in subclasses)."""
+        return {}
+
+    @classmethod
+    def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
+        """Coerce extractable payload to proper types with relaxed validation (override in subclasses)."""
+        return payload.copy()
+
+    def to_facade(self, view: str = "full") -> dict[str, Any]:
+        """Return a dict view of the resource for a given facade.
+
+        - full: model_dump()
+        - system: only system fields
+        - extractable: only extractable fields (+ resource_type)
+        """
+        data = self.model_dump()
+        if view == "full":
+            return data
+        if view == "system":
+            keys = set(self.get_system_fields()) | {"resource_type"}
+            return {k: v for k, v in data.items() if k in keys}
+        if view == "extractable":
+            keys = set(self.get_extractable_fields()) | {"resource_type"}
+            return {k: v for k, v in data.items() if k in keys}
+        return data
+
+    @classmethod
+    def validate_extractable(cls: type[T], payload: dict[str, Any]) -> T:
+        """Validate a minimal extractable payload into a full model instance.
+
+        - Filters unknown keys
+        - Seeds canonical defaults
+        - Injects resource_type if missing
+        """
+        filtered: dict[str, Any] = {}
+        try:
+            model_fields = getattr(cls, "model_fields", {}) or {}
+            for k, v in (payload or {}).items():
+                if k in model_fields:
+                    filtered[k] = v
+        except Exception:
+            filtered = dict(payload or {})
+        # Resource type
+        filtered.setdefault("resource_type", getattr(cls, "__name__", "Resource"))
+        # Seed defaults
+        try:
+            defaults = cls.get_canonical_defaults() or {}
+            for k, v in defaults.items():
+                filtered.setdefault(k, v)
+        except Exception:
+            pass
+        return cls(**filtered)
+
+    @classmethod
+    def get_specifications(cls, language: str | None = None) -> dict[str, Any]:
+        """
+        Return a structured definition for agents and registries, including docs and field schema.
+        Language parameter reserved for future localization via registry overrides.
+        """
+        base = cls.get_descriptive_schema()
+        docs = {
+            "scope_usage": cls._doc_scope_usage,
+            "boundaries": cls._doc_boundaries,
+            "relationships": list(cls._doc_relationships or []),
+            "references": list(cls._doc_references or []),
+            "tools": list(cls._doc_tools or []),
+            "examples": list(cls._doc_examples or []),
+        }
+        base["documentation"] = docs
+        if language:
+            base["language"] = language
+        return base
+
+    # --- Extraction examples ---
+
+    @classmethod
+    def get_extraction_examples(cls) -> dict[str, Any]:
+        """Return minimal extraction examples: object and array forms.
+
+        The object form is a minimal JSON-like dict using canonical defaults
+        and resource_type; the array form is a single-element list.
+        """
+        example_obj: dict[str, Any] = {"resource_type": getattr(cls, "__name__", "Resource")}
+        try:
+            example_obj.update(
+                {k: v for k, v in cls.get_canonical_defaults().items() if v is not None}
+            )
+        except Exception:
+            pass
+        return {"object": example_obj, "array": [example_obj]}
 
     def __str__(self) -> str:
         """
@@ -380,7 +697,7 @@ class BaseResource(BaseModel):
                 elif field_name == "resource_type":
                     display_name = "type"
 
-                field_strs.append(f"{display_name}={repr(value)}")
+                field_strs.append(f"{display_name}={value!r}")
 
         # Show max 5 fields to keep repr concise
         fields_display = ", ".join(field_strs[:5])
@@ -454,7 +771,7 @@ class DomainResource(BaseResource):
     # Override FHIR version for domain resources
     _fhir_version: ClassVar[str] = "R4"
 
-    def get_text_summary(self) -> str:
+    def summary(self) -> str:
         """
         Get or generate a human-readable text summary.
 
@@ -522,21 +839,21 @@ class DomainResource(BaseResource):
             Patient ID if found, None otherwise
         """
         # Check for direct patient_id field
-        if hasattr(self, 'patient_id'):
-            return getattr(self, 'patient_id')
+        if hasattr(self, "patient_id"):
+            return self.patient_id
 
         # Check for subject field (common in FHIR resources)
-        if hasattr(self, 'subject'):
-            subject = getattr(self, 'subject')
-            if hasattr(subject, 'id'):
+        if hasattr(self, "subject"):
+            subject = self.subject
+            if hasattr(subject, "id"):
                 return subject.id
             elif isinstance(subject, str):
                 return subject
 
         # Check for patient field
-        if hasattr(self, 'patient'):
-            patient = getattr(self, 'patient')
-            if hasattr(patient, 'id'):
+        if hasattr(self, "patient"):
+            patient = self.patient
+            if hasattr(patient, "id"):
                 return patient.id
             elif isinstance(patient, str):
                 return patient

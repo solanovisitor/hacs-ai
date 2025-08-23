@@ -33,104 +33,82 @@ class HACSSettings(BaseSettings):
     environment: str = Field(
         default="development",
         description="Deployment environment (development, staging, production)",
-        env="HACS_ENVIRONMENT"
+        env="HACS_ENVIRONMENT",
     )
 
     dev_mode: bool = Field(
         default=False,
         description="Enable development mode with relaxed security",
-        env="HACS_DEV_MODE"
+        env="HACS_DEV_MODE",
     )
 
     # Core settings
-    debug: bool = Field(
-        default=False,
-        description="Enable debug mode"
-    )
+    debug: bool = Field(default=False, description="Enable debug mode")
 
-    log_level: LogLevel = Field(
-        default=LogLevel.INFO,
-        description="Logging level"
-    )
+    log_level: LogLevel = Field(default=LogLevel.INFO, description="Logging level")
 
     # MCP Server Configuration
     mcp_server_url: str | None = Field(
         default=None,
         description="Complete MCP server URL (overrides host/port if provided)",
-        env="HACS_MCP_SERVER_URL"
+        env="HACS_MCP_SERVER_URL",
     )
 
     # Service URLs - Configurable for deployment flexibility
     mcp_server_host: str = Field(
-        default="localhost",
-        description="MCP server host address"
+        default="localhost", description="MCP server host address"
     )
 
-    mcp_server_port: int = Field(
-        default=8000,
-        description="MCP server port"
-    )
+    mcp_server_port: int = Field(default=8000, description="MCP server port")
 
     # Security Configuration
     api_keys: list[str] = Field(
         default_factory=list,
         description="List of valid API keys for MCP server access",
-        env="HACS_API_KEY"
+        env="HACS_API_KEY",
     )
 
     api_keys_file: str | None = Field(
         default=None,
         description="Path to file containing API keys (one per line)",
-        env="HACS_API_KEY_FILE"
+        env="HACS_API_KEY_FILE",
     )
 
     allowed_origins: list[str] = Field(
         default_factory=list,
         description="Allowed CORS origins",
-        env="HACS_ALLOWED_ORIGINS"
+        env="HACS_ALLOWED_ORIGINS",
     )
 
     allowed_hosts: list[str] = Field(
         default_factory=list,
         description="Allowed host headers",
-        env="HACS_ALLOWED_HOSTS"
+        env="HACS_ALLOWED_HOSTS",
     )
 
     rate_limit_per_minute: int = Field(
         default=60,
         description="Rate limit per minute per IP",
-        env="HACS_RATE_LIMIT_PER_MINUTE"
+        env="HACS_RATE_LIMIT_PER_MINUTE",
     )
 
     langgraph_agent_host: str = Field(
-        default="localhost",
-        description="LangGraph agent host address"
+        default="localhost", description="LangGraph agent host address"
     )
 
-    langgraph_agent_port: int = Field(
-        default=8001,
-        description="LangGraph agent port"
-    )
+    langgraph_agent_port: int = Field(default=8001, description="LangGraph agent port")
 
-    database_host: str = Field(
-        default="localhost",
-        description="Database host address"
-    )
+    database_host: str = Field(default="localhost", description="Database host address")
 
-    database_port: int = Field(
-        default=5432,
-        description="Database port"
-    )
+    database_port: int = Field(default=5432, description="Database port")
 
     # Vector store configuration
     vector_store_host: str = Field(
-        default="localhost",
-        description="Vector store host address (for Qdrant)"
+        default="localhost", description="Vector store host address (for Qdrant)"
     )
 
     vector_store_port: int = Field(
-        default=6333,
-        description="Vector store port (for Qdrant)"
+        default=6333, description="Vector store port (for Qdrant)"
     )
 
     # Computed service URLs
@@ -157,8 +135,9 @@ class HACSSettings(BaseSettings):
             return None
         try:
             import os
+
             if os.path.exists(file_path):
-                with open(file_path, 'r', encoding='utf-8') as f:
+                with open(file_path, "r", encoding="utf-8") as f:
                     return f.read().strip()
         except Exception:
             pass
@@ -170,8 +149,9 @@ class HACSSettings(BaseSettings):
             return []
         try:
             import os
+
             if os.path.exists(file_path):
-                with open(file_path, 'r', encoding='utf-8') as f:
+                with open(file_path, "r", encoding="utf-8") as f:
                     return [line.strip() for line in f if line.strip()]
         except Exception:
             pass
@@ -182,15 +162,16 @@ class HACSSettings(BaseSettings):
         # 1. Explicit env var
         if self.api_keys:
             return self.api_keys
-        
+
         # 2. File-based
         file_keys = self._load_api_keys_from_file(self.api_keys_file)
         if file_keys:
             return file_keys
-        
+
         # 3. Backward-compatible single key via HACS_API_KEY (singular)
         try:
             import os as _os
+
             single_key = _os.getenv("HACS_API_KEY")
             if single_key and single_key.strip():
                 return [single_key.strip()]
@@ -200,29 +181,30 @@ class HACSSettings(BaseSettings):
         # 4. Development fallback
         if self.dev_mode and self.is_development:
             import secrets
+
             return [f"dev-{secrets.token_urlsafe(16)}"]
-        
+
         return []
 
     def get_effective_openai_api_key(self) -> str | None:
         """Get OpenAI API key with file fallback."""
         import os
-        
+
         # 1. Explicit env var
         if self.openai_api_key:
             return self.openai_api_key
-        
+
         # 2. File-based
         return self._load_secret_from_file(os.getenv("OPENAI_API_KEY_FILE"))
 
     def get_effective_anthropic_api_key(self) -> str | None:
         """Get Anthropic API key with file fallback."""
         import os
-        
+
         # 1. Explicit env var
         if self.anthropic_api_key:
             return self.anthropic_api_key
-        
+
         # 2. File-based
         return self._load_secret_from_file(os.getenv("ANTHROPIC_API_KEY_FILE"))
 
@@ -242,13 +224,12 @@ class HACSSettings(BaseSettings):
         return f"http://{self.vector_store_host}:{self.vector_store_port}"
 
     # LLM Provider Settings - OpenAI
-    openai_api_key: str | None = Field(
-        default=None,
-        description="OpenAI API key"
-    )
+    openai_api_key: str | None = Field(default=None, description="OpenAI API key")
 
     openai_model: str = Field(
-        default="gpt-4.1-mini", description="Default OpenAI model", env="HACS_OPENAI_MODEL"
+        default="gpt-4.1-mini",
+        description="Default OpenAI model",
+        env="HACS_OPENAI_MODEL",
     )
 
     openai_embedding_model: str = Field(
@@ -401,7 +382,9 @@ class HACSSettings(BaseSettings):
         if isinstance(v, str):
             env = v.lower()
             if env not in ["development", "staging", "production"]:
-                raise ValueError("Environment must be one of: development, staging, production")
+                raise ValueError(
+                    "Environment must be one of: development, staging, production"
+                )
             return env
         return v
 

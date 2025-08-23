@@ -1,6 +1,8 @@
 # HACS Testing Guide
 
-This guide covers comprehensive testing for HACS, including the new Phase 2 persistence, security, and vector integration features.
+This guide covers testing for HACS, including the new Phase 2 persistence, security, and vector integration features.
+
+For environment setup basics, see the [Quick Start](quick-start.md).
 
 ## Quick Start
 
@@ -39,7 +41,7 @@ We provide a convenient test runner script:
 Run the complete test suite with Docker:
 
 ```bash
-# Start all services and run comprehensive tests
+# Start all services and run tests
 docker-compose --profile test up --build
 
 # View test results
@@ -59,11 +61,11 @@ uv pip install pytest pytest-asyncio
 
 # Run specific test categories
 python -m pytest tests/test_ci_essential.py -v                # Essential CI tests
-python -m pytest tests/test_phase2_integration.py -v         # Phase 2 integration tests
+python -m pytest tests/test_facades.py -v                   # Facade API tests
 python -m pytest tests/test_integration_end_to_end.py -v     # End-to-end tests
 
 # Run specific domain tests
-python -m pytest tests/test_hacs_tools_comprehensive.py::TestResourceManagement -v
+python -m pytest tests/test_hacs_tools_schema.py::TestModeling -v
 ```
 
 #### 3. Manual MCP Integration Test
@@ -90,7 +92,7 @@ python test_hacs_tools_comprehensive.py --mcp
 
 ### Test Data
 
-The test suite uses comprehensive test data including:
+The test suite uses test data including:
 
 - **Patients**: 3 test patients with complete demographics
 - **Observations**: Blood pressure, vital signs, and clinical measurements
@@ -100,71 +102,12 @@ The test suite uses comprehensive test data including:
 - **Vector Data**: Embeddings for semantic search testing
 - **Organizations**: Healthcare systems and provider organizations
 
-### Tool Coverage
+### Tool Coverage (4 domains)
 
-The test suite covers all 42 HACS tools across 10 domains:
-
-#### 🏥 Resource Management (5 tools)
-- `create_hacs_record` - Create healthcare resources
-- `get_hacs_record` - Retrieve resources by ID
-- `update_hacs_record` - Update existing resources
-- `delete_hacs_record` - Delete resources (soft/hard)
-- `search_hacs_records` - Search with advanced filtering
-
-#### 🩺 Clinical Workflows (4 tools)
-- `execute_clinical_workflow` - Run clinical protocols
-- `get_clinical_guidance` - Evidence-based recommendations
-- `query_with_datarequirement` - Data-driven queries
-- `validate_clinical_protocol` - Protocol validation
-
-#### 🧠 Memory Operations (5 tools)
-- `create_hacs_memory` - Store clinical memories
-- `search_hacs_memories` - Semantic memory search
-- `consolidate_memories` - Memory consolidation
-- `retrieve_context` - Context-aware retrieval
-- `analyze_memory_patterns` - Memory pattern analysis
-
-#### 🔍 Vector Search (5 tools)
-- `store_embedding` - Store vector embeddings
-- `vector_similarity_search` - Semantic similarity search
-- `vector_hybrid_search` - Hybrid text/vector search
-- `get_vector_collection_stats` - Collection statistics
-- `optimize_vector_collection` - Performance optimization
-
-#### 📊 Schema Discovery (4 tools)
-- `discover_hacs_resources` - Resource type discovery
-- `get_hacs_resource_schema` - Schema introspection
-- `analyze_resource_fields` - Field analysis
-- `compare_resource_schemas` - Schema comparison
-
-#### 🛠️ Development Tools (3 tools)
-- `create_resource_stack` - Resource composition
-- `create_clinical_template` - Template generation
-- `optimize_resource_for_llm` - LLM optimization
-
-#### 🏥 FHIR Integration (4 tools)
-- `convert_to_fhir` - HACS to FHIR conversion
-- `validate_fhir_compliance` - FHIR validation
-- `process_fhir_bundle` - Bundle processing
-- `lookup_fhir_terminology` - Terminology lookup
-
-#### 📈 Healthcare Analytics (4 tools)
-- `calculate_quality_measures` - Quality metrics
-- `analyze_population_health` - Population analysis
-- `generate_clinical_dashboard` - Dashboard generation
-- `perform_risk_stratification` - Risk assessment
-
-#### 🤖 AI/ML Integration (3 tools)
-- `deploy_healthcare_ai_model` - Model deployment
-- `run_clinical_inference` - AI inference
-- `preprocess_medical_data` - Data preprocessing
-
-#### ⚙️ Admin Operations (5 tools)
-- `run_database_migration` - Schema migrations
-- `check_migration_status` - Migration status
-- `describe_database_schema` - Schema description
-- `get_table_structure` - Table introspection
-- `test_database_connection` - Connection testing
+- Modeling: `describe_models`, `list_model_fields`, `plan_bundle_schema`, `validate_resource`, `add_bundle_entries`
+- Extraction: `suggest_mapping`, `extract_values`, `apply_mapping`, `summarize_context`
+- Database (records): `save_record`, `read_record`, `update_record`, `delete_record`, `search_records`
+- Agents: `write_scratchpad`, `inject_preferences`, `store_memory`, `retrieve_memories`, `select_tools_for_task`
 
 ## Configuration
 
@@ -202,7 +145,7 @@ docker-compose --profile with-qdrant up
 # Run database migrations
 docker-compose --profile migration up
 
-# Run comprehensive tests
+# Run tests
 docker-compose --profile test up
 ```
 
@@ -227,16 +170,16 @@ Test results are available in multiple formats:
 ### Example Test Output
 
 ```
-🚀 HACS Tools Comprehensive Test Suite
+🚀 HACS Tools Test Suite
 =====================================
 
 ✅ MCP Server Health Check
    Server Status: ✅ Online
    MCP Endpoint: ✅ Ready
-   Available Tools: 42
+   Available Tools: 20
 
 📊 Test Results Summary:
-   Total Tools: 42
+   Total Tools: 20
    Successful: 38
    Failed: 2
    Skipped: 2
@@ -329,7 +272,7 @@ jobs:
 
 - **Minimum Coverage**: 85% for all tool domains
 - **Critical Tools**: 95% coverage for resource management and clinical workflows
-- **Integration Tests**: All 42 tools must have at least one integration test
+- **Integration Tests**: All tools must have at least one integration test
 
 ## Contributing
 
@@ -338,7 +281,7 @@ jobs:
 1. **Add Test Data**: Update `examples/hacs_developer_agent/scripts/init-db.sql` with relevant test data
 2. **Create Test Cases**: Add test methods to appropriate test classes
 3. **Update Documentation**: Document new test scenarios in this guide
-4. **Verify Coverage**: Ensure new tools have comprehensive test coverage
+4. **Verify Coverage**: Ensure new tools havetest coverage
 
 ### Test Development Guidelines
 

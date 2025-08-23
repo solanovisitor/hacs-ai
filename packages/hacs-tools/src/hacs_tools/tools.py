@@ -1,7 +1,7 @@
 """
 HACS Tools - Healthcare Agent Communication Standard Tools Module
 
-This module provides a comprehensive suite of specialized Hacs Tools
+This module provides asuite of specialized Hacs Tools
 designed for AI agents working with clinical data, FHIR resources, and healthcare
 workflows. All tools are compatible with LangChain and the Model Context Protocol (MCP).
 
@@ -27,8 +27,9 @@ try:
         get_global_tool_registry,
         discover_hacs_tools,
         get_langchain_tools,
-        get_mcp_tools
+        get_mcp_tools,
     )
+
     _has_registry = True
 except ImportError:
     _has_registry = False
@@ -37,8 +38,16 @@ except ImportError:
 def get_all_tools():
     """Get all HACS tools using the registry system."""
     if _has_registry:
-        registry = get_global_tool_registry()
-        return [tool.function for tool in registry.get_all_tools()]
+        try:
+            registry = get_global_tool_registry()
+            tools = [tool.function for tool in registry.get_all_tools()]
+            # Fallback to direct import if registry has no tools (development mode)
+            if not tools:
+                return _get_tools_direct_import()
+            return tools
+        except Exception:
+            # Robust fallback
+            return _get_tools_direct_import()
     else:
         # Fallback: direct import for backward compatibility
         return _get_tools_direct_import()
@@ -48,7 +57,11 @@ def get_tool(name: str):
     """Get a specific tool by name."""
     if _has_registry:
         registry = get_global_tool_registry()
-        return registry.get_tool_function(name)
+        func = registry.get_tool_function(name)
+        if not func and not name.endswith("_tool"):
+            # Try common *_tool suffix aliasing
+            func = registry.get_tool_function(f"{name}_tool")
+        return func
     else:
         # Fallback: try direct import
         return _get_tool_direct_import(name)
@@ -70,43 +83,48 @@ def get_available_domains():
         registry = get_global_tool_registry()
         return list(registry.get_available_domains())
     else:
-        # Fallback: known domains
-        return [
-            "resource_management", "clinical_workflows", "memory_operations",
-            "vector_search", "schema_discovery", "development_tools",
-            "fhir_integration", "healthcare_analytics", "ai_integrations",
-            "admin_operations"
-        ]
+        # Fallback: new 4-domain structure
+        return ["modeling", "extraction", "database", "agents"]
+
+
+def get_tools_by_tag(tag: str):
+    """Get tools by tag (e.g., 'records' or 'definitions')."""
+    if _has_registry:
+        registry = get_global_tool_registry()
+        try:
+            return [tool.function for tool in registry.get_tools_by_tag(tag)]
+        except Exception:
+            # Fallback to search_tools with tag filter if available
+            return [tool.function for tool in registry.search_tools(tags=[tag])]
+    return []
 
 
 def _get_tools_direct_import():
-    """Fallback: Direct import of tools when registry is not available."""
+    """Fallback: Direct import of tools when registry is not available.
+
+    Import each domain module individually so one missing module does not break discovery.
+    """
     tools = []
-    try:
-        # Import from domain modules
-        from .domains import (
-            resource_management, clinical_workflows, memory_operations,
-            vector_search, schema_discovery, development_tools,
-            fhir_integration, healthcare_analytics, ai_integrations,
-            admin_operations
-        )
-
-        modules = [
-            resource_management, clinical_workflows, memory_operations,
-            vector_search, schema_discovery, development_tools,
-            fhir_integration, healthcare_analytics, ai_integrations,
-            admin_operations
-        ]
-
-        for module in modules:
-            for attr_name in dir(module):
-                if not attr_name.startswith('_'):
-                    attr = getattr(module, attr_name)
-                    if callable(attr) and hasattr(attr, '__doc__'):
-                        tools.append(attr)
-    except ImportError:
-        pass
-
+    domain_module_names = [
+        "modeling",
+        "extraction",
+        "database",
+        "agents",
+    ]
+    for mod_name in domain_module_names:
+        try:
+            module = __import__(f"hacs_tools.domains.{mod_name}", fromlist=["*"])
+        except Exception:
+            continue
+        for attr_name in dir(module):
+            if attr_name.startswith("_"):
+                continue
+            try:
+                attr = getattr(module, attr_name)
+            except Exception:
+                continue
+            if callable(attr) and hasattr(attr, "__doc__"):
+                tools.append(attr)
     return tools
 
 
@@ -114,18 +132,18 @@ def _get_tool_direct_import(name: str):
     """Fallback: Get specific tool by direct import."""
     try:
         # Try importing from each domain module
-        domain_modules = [
-            "resource_management", "clinical_workflows", "memory_operations",
-            "vector_search", "schema_discovery", "development_tools",
-            "fhir_integration", "healthcare_analytics", "ai_integrations",
-            "admin_operations"
-        ]
+        domain_modules = ["modeling", "extraction", "database", "agents"]
 
         for domain in domain_modules:
             try:
                 module = __import__(f"hacs_tools.domains.{domain}", fromlist=[name])
+                # Exact name
                 if hasattr(module, name):
                     return getattr(module, name)
+                # Fallback: common HACS naming uses *_tool suffix
+                alt = f"{name}_tool"
+                if hasattr(module, alt):
+                    return getattr(module, alt)
             except ImportError:
                 continue
     except Exception:
@@ -161,7 +179,7 @@ def __dir__():
         "get_tool",
         "get_tools_by_domain",
         "get_available_domains",
-        "ALL_HACS_TOOLS"
+        "ALL_HACS_TOOLS",
     ]
 
     if _has_registry:
@@ -176,13 +194,102 @@ def __dir__():
 
 
 # Explicit exports for type checkers and documentation
+# Legacy compatibility
+ALL_HACS_TOOLS = None  # Will be populated by __getattr__
+
 __all__ = [
     # Registry functions (preferred)
     "get_all_tools",
     "get_tool",
-    "get_tools_by_domain",
+    "get_tools_by_domain", 
     "get_available_domains",
-
     # Legacy export
     "ALL_HACS_TOOLS",
 ]
+
+
+# === Convenience helpers for framework-bound usage ===
+
+
+def get_tool_handle(name: str, framework: str = "langchain"):
+    """
+    Get a framework-appropriate handle for a HACS tool by name.
+
+    - framework="langchain": returns a LangChain StructuredTool wrapper
+    - framework!="langchain": returns the underlying Python callable (from registry)
+    """
+    if framework == "langchain":
+        try:
+            # Lazy import to avoid circular deps at module load
+            from hacs_utils.integrations.common.tool_loader import get_all_hacs_tools_sync  # type: ignore
+
+            tools = get_all_hacs_tools_sync(framework="langchain")
+            for t in tools:
+                if getattr(t, "name", None) == name:
+                    return t
+            return None
+        except Exception:
+            return None
+    # Fallback to raw function via registry
+    return get_tool(name)
+
+
+def invoke_tool(name: str, arguments: dict, framework: str = "langchain"):
+    """
+    Invoke a HACS tool by name with the given arguments.
+
+    - framework="langchain": uses the LangChain tool wrapper's .invoke()
+    - framework!="langchain": calls the underlying Python function (**kwargs)
+    """
+    tool = get_tool_handle(name, framework=framework)
+    if tool is None:
+        raise ValueError(f"HACS tool not found: {name}")
+    if framework == "langchain":
+        return tool.invoke(arguments)
+    return tool(**arguments)
+
+
+def load_tool(name: str, framework: str = "langchain"):
+    """
+    Load a single HACS tool by name.
+
+    - framework="langchain": returns a LangChain StructuredTool
+    - otherwise: returns the underlying Python callable
+    """
+    if framework == "langchain":
+        try:
+            from hacs_utils.integrations.common.tool_loader import get_all_hacs_tools_sync  # type: ignore
+
+            tools = get_all_hacs_tools_sync(framework="langchain")
+            for t in tools:
+                if getattr(t, "name", None) == name:
+                    return t
+            return None
+        except Exception:
+            return None
+    return get_tool(name)
+
+
+def load_domain_tools(selector: str, framework: str = "langchain"):
+    """
+    Load tools by domain selector string.
+
+    Example: load_domain_tools('domain:modeling') or load_domain_tools('modeling')
+    """
+    # Normalize domain
+    domain = selector.split(":", 1)[1] if selector.startswith("domain:") else selector
+    try:
+        from hacs_registry import get_global_tool_registry  # type: ignore
+
+        reg = get_global_tool_registry()
+        defs = reg.search_tools(domain=domain)
+        names = {d.name for d in defs}
+        if framework == "langchain":
+            from hacs_utils.integrations.common.tool_loader import get_all_hacs_tools_sync  # type: ignore
+
+            all_tools = get_all_hacs_tools_sync(framework="langchain")
+            return [t for t in all_tools if getattr(t, "name", None) in names]
+        else:
+            return [get_tool(n) for n in names if get_tool(n) is not None]
+    except Exception:
+        return []

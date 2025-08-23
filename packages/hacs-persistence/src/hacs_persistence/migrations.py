@@ -8,7 +8,9 @@ for HACS using psycopg (v3) for non-blocking operations.
 import asyncio
 import logging
 import os
+import socket as _socket
 import sys
+import urllib.parse as _urlparse
 from typing import Any
 
 import psycopg
@@ -26,11 +28,48 @@ class HACSDatabaseMigration:
 
     async def _get_connection(self):
         """Get an asynchronous database connection."""
-        return await psycopg.AsyncConnection.connect(
-            self.database_url,
-            row_factory=dict_row,
-            autocommit=True
-        )
+        url = (self.database_url or "").strip()
+        # Ensure sslmode=require for Supabase
+        if (("supabase.co" in url) or ("supabase.net" in url)) and "sslmode=" not in url:
+            url = f"{url}{'&' if '?' in url else '?'}sslmode=require"
+
+        # Try robust connect: parse DSN and pass keyword args to libpq
+        try:
+            parsed = _urlparse.urlparse(url)
+            host = parsed.hostname
+            port = parsed.port or 5432
+            user = parsed.username
+            password = parsed.password
+            dbname = parsed.path.lstrip("/") or "postgres"
+            query = dict(_urlparse.parse_qsl(parsed.query))
+            sslmode = query.get("sslmode") or (
+                "require" if (host and ("supabase.co" in host or "supabase.net" in host)) else None
+            )
+
+            # DNS preflight to surface clearer errors
+            try:
+                if host:
+                    _socket.getaddrinfo(host, port)
+            except Exception as e:
+                logger.error(f"DNS resolution failed for host '{host}': {e}")
+
+            return await psycopg.AsyncConnection.connect(
+                host=host,
+                port=port,
+                user=user,
+                password=password,
+                dbname=dbname,
+                sslmode=sslmode,
+                row_factory=dict_row,
+                autocommit=True,
+            )
+        except Exception:
+            # Fallback to raw URL connect
+            return await psycopg.AsyncConnection.connect(
+                url,
+                row_factory=dict_row,
+                autocommit=True,
+            )
 
     async def run_migration(self) -> bool:
         """Run the complete HACS database migration asynchronously."""
@@ -91,7 +130,7 @@ class HACSDatabaseMigration:
             "hacs_registry",
             "hacs_agents",
             "hacs_admin",
-            "hacs_audit"
+            "hacs_audit",
         ]
 
         logger.info("Creating database schemas...")
@@ -109,6 +148,20 @@ class HACSDatabaseMigration:
                 id TEXT PRIMARY KEY,
                 resource_type TEXT NOT NULL,
                 data JSONB NOT NULL,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                created_by TEXT,
+                updated_by TEXT
+            );
+        """)
+
+        # Public HACS resources table (for workflow compatibility)
+        await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS public.hacs_resources (
+                id TEXT PRIMARY KEY,
+                resource_type TEXT NOT NULL,
+                data JSONB NOT NULL,
+                full_resource JSONB,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                 created_by TEXT,
@@ -523,6 +576,255 @@ class HACSDatabaseMigration:
             );
         """)
 
+        # Diagnostic Reports table
+        await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS hacs_clinical.diagnostic_reports (
+                id TEXT PRIMARY KEY,
+                identifier JSONB,
+                based_on TEXT[],
+                status TEXT NOT NULL,
+                category JSONB,
+                code JSONB NOT NULL,
+                subject TEXT NOT NULL,
+                encounter TEXT,
+                effective_datetime TIMESTAMP WITH TIME ZONE,
+                effective_period JSONB,
+                issued TIMESTAMP WITH TIME ZONE,
+                performer TEXT[],
+                results_interpreter TEXT[],
+                specimen TEXT[],
+                result TEXT[],
+                imaging_study TEXT[],
+                media JSONB,
+                conclusion TEXT,
+                conclusion_code JSONB,
+                presented_form JSONB,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );
+        """)
+
+        # Document References table
+        await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS hacs_clinical.document_references (
+                id TEXT PRIMARY KEY,
+                master_identifier JSONB,
+                identifier JSONB,
+                status TEXT NOT NULL,
+                doc_status TEXT,
+                type JSONB,
+                category JSONB,
+                subject TEXT,
+                date TIMESTAMP WITH TIME ZONE,
+                author TEXT[],
+                authenticator TEXT,
+                custodian TEXT,
+                relates_to JSONB,
+                description TEXT,
+                security_label JSONB,
+                content JSONB NOT NULL,
+                context JSONB,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );
+        """)
+
+        # Immunizations table
+        await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS hacs_clinical.immunizations (
+                id TEXT PRIMARY KEY,
+                identifier JSONB,
+                status TEXT NOT NULL,
+                status_reason JSONB,
+                vaccine_code JSONB NOT NULL,
+                patient TEXT NOT NULL,
+                encounter TEXT,
+                occurrence_datetime TIMESTAMP WITH TIME ZONE,
+                occurrence_string TEXT,
+                recorded TIMESTAMP WITH TIME ZONE,
+                primary_source BOOLEAN,
+                report_origin JSONB,
+                location TEXT,
+                manufacturer TEXT,
+                lot_number TEXT,
+                expiration_date DATE,
+                site JSONB,
+                route JSONB,
+                dose_quantity JSONB,
+                performer JSONB,
+                note JSONB,
+                reason_code JSONB,
+                reason_reference TEXT[],
+                is_subpotent BOOLEAN,
+                subpotent_reason JSONB,
+                education JSONB,
+                program_eligibility JSONB,
+                funding_source JSONB,
+                reaction JSONB,
+                protocol_applied JSONB,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );
+        """)
+
+        # Medication Statements table
+        await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS hacs_clinical.medication_statements (
+                id TEXT PRIMARY KEY,
+                identifier JSONB,
+                based_on TEXT[],
+                part_of TEXT[],
+                status TEXT NOT NULL,
+                status_reason JSONB,
+                category JSONB,
+                medication_codeable_concept JSONB,
+                medication_reference TEXT,
+                subject TEXT NOT NULL,
+                context TEXT,
+                effective_datetime TIMESTAMP WITH TIME ZONE,
+                effective_period JSONB,
+                date_asserted TIMESTAMP WITH TIME ZONE,
+                information_source TEXT,
+                derived_from TEXT[],
+                reason_code JSONB,
+                reason_reference TEXT[],
+                note JSONB,
+                dosage JSONB,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );
+        """)
+
+        # Practitioners table
+        await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS hacs_clinical.practitioners (
+                id TEXT PRIMARY KEY,
+                identifier JSONB,
+                active BOOLEAN DEFAULT TRUE,
+                name JSONB,
+                telecom JSONB,
+                address JSONB,
+                gender TEXT,
+                birth_date DATE,
+                photo JSONB,
+                qualification JSONB,
+                communication JSONB,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );
+        """)
+
+        # Appointments table
+        await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS hacs_clinical.appointments (
+                id TEXT PRIMARY KEY,
+                identifier JSONB,
+                status TEXT NOT NULL,
+                cancellation_reason JSONB,
+                service_category JSONB,
+                service_type JSONB,
+                specialty JSONB,
+                appointment_type JSONB,
+                reason_code JSONB,
+                reason_reference TEXT[],
+                priority INTEGER,
+                description TEXT,
+                supporting_information TEXT[],
+                start_time TIMESTAMP WITH TIME ZONE,
+                end_time TIMESTAMP WITH TIME ZONE,
+                minutes_duration INTEGER,
+                slot TEXT[],
+                created_datetime TIMESTAMP WITH TIME ZONE,
+                comment TEXT,
+                patient_instruction TEXT,
+                based_on TEXT[],
+                participant JSONB NOT NULL,
+                requested_period JSONB,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );
+        """)
+
+        # Care Plans table
+        await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS hacs_clinical.care_plans (
+                id TEXT PRIMARY KEY,
+                identifier JSONB,
+                instantiates_canonical TEXT[],
+                instantiates_uri TEXT[],
+                based_on TEXT[],
+                replaces TEXT[],
+                part_of TEXT[],
+                status TEXT NOT NULL,
+                intent TEXT NOT NULL,
+                category JSONB,
+                title TEXT,
+                description TEXT,
+                subject TEXT NOT NULL,
+                encounter TEXT,
+                period JSONB,
+                created_date TIMESTAMP WITH TIME ZONE,
+                author TEXT,
+                contributor TEXT[],
+                care_team TEXT[],
+                addresses TEXT[],
+                supporting_info TEXT[],
+                goal TEXT[],
+                activity JSONB,
+                note JSONB,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );
+        """)
+
+        # Care Teams table
+        await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS hacs_clinical.care_teams (
+                id TEXT PRIMARY KEY,
+                identifier JSONB,
+                status TEXT,
+                category JSONB,
+                name TEXT,
+                subject TEXT,
+                encounter TEXT,
+                period JSONB,
+                participant JSONB,
+                reason_code JSONB,
+                reason_reference TEXT[],
+                managing_organization TEXT[],
+                telecom JSONB,
+                note JSONB,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );
+        """)
+
+        # Nutrition Orders table
+        await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS hacs_clinical.nutrition_orders (
+                id TEXT PRIMARY KEY,
+                identifier JSONB,
+                instantiates_canonical TEXT[],
+                instantiates_uri TEXT[],
+                instantiates TEXT[],
+                status TEXT NOT NULL,
+                intent TEXT NOT NULL,
+                patient TEXT NOT NULL,
+                encounter TEXT,
+                date_time TIMESTAMP WITH TIME ZONE NOT NULL,
+                orderer TEXT,
+                allergen_intolerance TEXT[],
+                food_preference_modifier JSONB,
+                exclude_food_modifier JSONB,
+                oral_diet JSONB,
+                supplement JSONB,
+                enteral_formula JSONB,
+                note JSONB,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );
+        """)
+
         logger.info("✓ Clinical tables created")
 
     async def _create_organizational_tables(self, cursor):
@@ -777,7 +1079,7 @@ class HACSDatabaseMigration:
         await cursor.execute("""
             CREATE TABLE IF NOT EXISTS hacs_registry.model_versions (
                 id TEXT PRIMARY KEY,
-                model_name TEXT NOT NULL,
+                resource_name TEXT NOT NULL,
                 version TEXT NOT NULL,
                 description TEXT,
                 schema_definition JSONB NOT NULL,
@@ -785,7 +1087,7 @@ class HACSDatabaseMigration:
                 status TEXT DEFAULT 'published',
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-                UNIQUE(model_name, version)
+                UNIQUE(resource_name, version)
             );
         """)
 
@@ -930,6 +1232,20 @@ class HACSDatabaseMigration:
             "CREATE INDEX IF NOT EXISTS idx_service_requests_subject ON hacs_clinical.service_requests(subject);",
             "CREATE INDEX IF NOT EXISTS idx_family_member_history_patient ON hacs_clinical.family_member_history(patient);",
             "CREATE INDEX IF NOT EXISTS idx_risk_assessments_subject ON hacs_clinical.risk_assessments(subject);",
+            "CREATE INDEX IF NOT EXISTS idx_diagnostic_reports_subject ON hacs_clinical.diagnostic_reports(subject);",
+            "CREATE INDEX IF NOT EXISTS idx_diagnostic_reports_status ON hacs_clinical.diagnostic_reports(status);",
+            "CREATE INDEX IF NOT EXISTS idx_document_references_subject ON hacs_clinical.document_references(subject);",
+            "CREATE INDEX IF NOT EXISTS idx_document_references_status ON hacs_clinical.document_references(status);",
+            "CREATE INDEX IF NOT EXISTS idx_immunizations_patient ON hacs_clinical.immunizations(patient);",
+            "CREATE INDEX IF NOT EXISTS idx_immunizations_vaccine_code ON hacs_clinical.immunizations USING GIN(vaccine_code);",
+            "CREATE INDEX IF NOT EXISTS idx_medication_statements_subject ON hacs_clinical.medication_statements(subject);",
+            "CREATE INDEX IF NOT EXISTS idx_practitioners_name ON hacs_clinical.practitioners USING GIN(name);",
+            "CREATE INDEX IF NOT EXISTS idx_appointments_status ON hacs_clinical.appointments(status);",
+            "CREATE INDEX IF NOT EXISTS idx_appointments_start_time ON hacs_clinical.appointments(start_time);",
+            "CREATE INDEX IF NOT EXISTS idx_care_plans_subject ON hacs_clinical.care_plans(subject);",
+            "CREATE INDEX IF NOT EXISTS idx_care_plans_status ON hacs_clinical.care_plans(status);",
+            "CREATE INDEX IF NOT EXISTS idx_care_teams_subject ON hacs_clinical.care_teams(subject);",
+            "CREATE INDEX IF NOT EXISTS idx_nutrition_orders_patient ON hacs_clinical.nutrition_orders(patient);",
             "CREATE INDEX IF NOT EXISTS idx_organizations_name ON hacs_core.organizations(name);",
             "CREATE INDEX IF NOT EXISTS idx_organization_contacts_org_id ON hacs_core.organization_contacts(organization_id);",
             "CREATE INDEX IF NOT EXISTS idx_organization_qualifications_org_id ON hacs_core.organization_qualifications(organization_id);",
@@ -940,6 +1256,10 @@ class HACSDatabaseMigration:
             "CREATE INDEX IF NOT EXISTS idx_memory_blocks_session_id ON hacs_agents.memory_blocks(session_id);",
             "CREATE INDEX IF NOT EXISTS idx_audit_log_actor_id ON hacs_audit.system_audit_log(actor_id);",
             "CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON hacs_audit.system_audit_log(created_at);",
+            "CREATE INDEX IF NOT EXISTS idx_public_hacs_resources_type ON public.hacs_resources(resource_type);",
+            "CREATE INDEX IF NOT EXISTS idx_public_hacs_resources_created_at ON public.hacs_resources(created_at);",
+            "CREATE INDEX IF NOT EXISTS idx_public_hacs_resources_data ON public.hacs_resources USING GIN(data);",
+            "CREATE INDEX IF NOT EXISTS idx_public_hacs_resources_full_resource ON public.hacs_resources USING GIN(full_resource);",
         ]
 
         for index_sql in indexes:
@@ -980,6 +1300,15 @@ class HACSDatabaseMigration:
             "hacs_clinical.service_requests",
             "hacs_clinical.family_member_history",
             "hacs_clinical.risk_assessments",
+            "hacs_clinical.diagnostic_reports",
+            "hacs_clinical.document_references",
+            "hacs_clinical.immunizations",
+            "hacs_clinical.medication_statements",
+            "hacs_clinical.practitioners",
+            "hacs_clinical.appointments",
+            "hacs_clinical.care_plans",
+            "hacs_clinical.care_teams",
+            "hacs_clinical.nutrition_orders",
             "hacs_clinical.plan_definitions",
             "hacs_clinical.activity_definitions",
             "hacs_clinical.libraries",
@@ -990,10 +1319,13 @@ class HACSDatabaseMigration:
             "hacs_agents.memory_blocks",
             "hacs_agents.actor_sessions",
             "hacs_admin.system_configuration",
+            "public.hacs_resources",
         ]
 
         for table in tables_with_updated_at:
             trigger_name = f"update_{table.replace('.', '_').replace('hacs_', '')}_updated_at"
+            # Ensure idempotency: drop existing trigger then create fresh
+            await cursor.execute(f"DROP TRIGGER IF EXISTS {trigger_name} ON {table};")
             await cursor.execute(f"""
                 CREATE TRIGGER {trigger_name}
                     BEFORE UPDATE ON {table}
@@ -1024,7 +1356,9 @@ async def get_migration_status(database_url: str = None) -> dict[str, Any]:
             return {"error": "DATABASE_URL not provided"}
 
     try:
-        async with await psycopg.AsyncConnection.connect(database_url, row_factory=dict_row) as conn:
+        async with await psycopg.AsyncConnection.connect(
+            database_url, row_factory=dict_row
+        ) as conn:
             async with conn.cursor() as cursor:
                 # Count tables across all HACS schemas
                 await cursor.execute("""
@@ -1043,7 +1377,9 @@ async def get_migration_status(database_url: str = None) -> dict[str, Any]:
                 total_tables = sum(row["table_count"] for row in schema_tables)
 
                 # Check if pgvector extension exists
-                await cursor.execute("SELECT EXISTS(SELECT 1 FROM pg_extension WHERE extname = 'vector');")
+                await cursor.execute(
+                    "SELECT EXISTS(SELECT 1 FROM pg_extension WHERE extname = 'vector');"
+                )
                 pgvector_enabled = (await cursor.fetchone())["exists"]
 
                 return {
@@ -1051,8 +1387,10 @@ async def get_migration_status(database_url: str = None) -> dict[str, Any]:
                     "total_tables": total_tables,
                     "expected_tables": expected_tables,
                     "pgvector_enabled": pgvector_enabled,
-                    "schema_breakdown": {row["schemaname"]: row["table_count"] for row in schema_tables},
-                    "schemas_created": len(schema_tables)
+                    "schema_breakdown": {
+                        row["schemaname"]: row["table_count"] for row in schema_tables
+                    },
+                    "schemas_created": len(schema_tables),
                 }
     except Exception as e:
         return {"error": str(e)}
@@ -1061,6 +1399,7 @@ async def get_migration_status(database_url: str = None) -> dict[str, Any]:
 if __name__ == "__main__":
     # Command line execution
     import sys
+
     database_url = sys.argv[1] if len(sys.argv) > 1 else None
     success = asyncio.run(run_migration(database_url))
     sys.exit(0 if success else 1)

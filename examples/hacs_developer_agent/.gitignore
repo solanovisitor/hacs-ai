@@ -79,3 +79,6 @@ build/
 # Docs
 docs/_build/
 claude.md
+
+# LangGraph runtime artifacts
+.langgraph_api/

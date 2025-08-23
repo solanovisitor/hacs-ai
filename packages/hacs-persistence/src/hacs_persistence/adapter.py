@@ -9,7 +9,6 @@ import json
 import logging
 from typing import Any
 
-from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
 
 from hacs_core import (
@@ -45,7 +44,7 @@ class PostgreSQLAdapter(BaseAdapter, PersistenceProvider):
     ):
         super().__init__(name="PostgreSQL (Async)", version="2.0.0")
 
-        self.database_url = database_url
+        self.database_url = self._normalize_db_url(database_url)
         self.schema_name = schema_name
         self.pool_size = pool_size
         self.pool: AsyncConnectionPool = None
@@ -62,9 +61,9 @@ class PostgreSQLAdapter(BaseAdapter, PersistenceProvider):
                 conninfo=self.database_url,
                 min_size=2,
                 max_size=self.pool_size,
-                open=True,
-                row_factory=dict_row,
+                open=False,
             )
+            await self.pool.open()
             await self.pool.wait()
             await self._initialize_tables()
             logger.info("Async connection pool established and tables initialized.")
@@ -167,7 +166,7 @@ class PostgreSQLAdapter(BaseAdapter, PersistenceProvider):
                             f"Resource {resource_type.__name__}/{resource_id} not found"
                         )
 
-                    resource_data = result["data"]
+                    resource_data = result[0]
                     resource_instance = resource_type(**resource_data)
                     logger.info(
                         f"Resource {resource_type.__name__}/{resource_id} read successfully"
@@ -263,7 +262,7 @@ class PostgreSQLAdapter(BaseAdapter, PersistenceProvider):
                             if key.endswith(("_gt", "_gte", "_lt", "_lte")):
                                 field = key.rsplit("_", 1)[0]
                                 op_map = {"_gt": ">", "_gte": ">=", "_lt": "<", "_lte": "<="}
-                                op = op_map[key[len(field):]]
+                                op = op_map[key[len(field) :]]
                                 where_conditions.append(
                                     f"(data->>'{field}')::numeric {op} %({param_key})s"
                                 )
@@ -294,16 +293,14 @@ class PostgreSQLAdapter(BaseAdapter, PersistenceProvider):
                     resources = []
                     for result in results:
                         try:
-                            resource_data = result["data"]
+                            resource_data = result[0]
                             resource_instance = resource_type(**resource_data)
                             resources.append(resource_instance)
                         except (json.JSONDecodeError, TypeError) as e:
                             logger.warning(f"Skipping corrupted resource data: {e}")
                             continue
 
-                    logger.info(
-                        f"Search found {len(resources)} {resource_type.__name__} resources"
-                    )
+                    logger.info(f"Search found {len(resources)} {resource_type.__name__} resources")
                     return resources
         except Exception as e:
             logger.error(f"Failed to search resources: {e}")
@@ -342,14 +339,14 @@ class PostgreSQLAdapter(BaseAdapter, PersistenceProvider):
                     results = await cursor.fetchall()
 
                     stats = {
-                        "total_resources": sum(row["count"] for row in results),
+                        "total_resources": sum(row[1] for row in results),
                         "connection_status": "healthy",
                         "adapter_version": self.version,
                         "resource_types": {
-                            row["resource_type"]: {
-                                "count": row["count"],
-                                "earliest": row["earliest"].isoformat() if row["earliest"] else None,
-                                "latest": row["latest"].isoformat() if row["latest"] else None,
+                            row[0]: {
+                                "count": row[1],
+                                "earliest": row[2].isoformat() if row[2] else None,
+                                "latest": row[3].isoformat() if row[3] else None,
                             }
                             for row in results
                         },
@@ -359,23 +356,46 @@ class PostgreSQLAdapter(BaseAdapter, PersistenceProvider):
             logger.error(f"Failed to get database stats: {e}")
             return {"error": str(e), "connection_status": "unhealthy"}
 
+    @staticmethod
+    def _normalize_db_url(url: str) -> str:
+        """Ensure required parameters (e.g., sslmode) are present for managed providers.
 
-async def create_postgres_adapter() -> PostgreSQLAdapter:
-    """Factory function to create and connect a PostgreSQLAdapter."""
-    settings = get_settings()
-    if not settings.postgres_enabled:
-        raise AdapterNotFoundError(
-            "PostgreSQL is not configured. Please set DATABASE_URL."
-        )
+        - Supabase Postgres typically requires sslmode=require
+        """
+        try:
+            if not url:
+                return url
+            lower = url.lower()
+            if (
+                "supabase.co" in lower or "supabase.net" in lower or "supabase.com" in lower
+            ) and "sslmode=" not in lower:
+                sep = "&" if "?" in url else "?"
+                return f"{url}{sep}sslmode=require"
+            return url
+        except Exception:
+            return url
 
-    config = settings.get_postgres_config()
-    database_url = config.get("database_url") or config.get("url")
-    if not database_url:
-        raise AdapterNotFoundError("No database URL found. Please set DATABASE_URL.")
+
+async def create_postgres_adapter(
+    database_url: str | None = None, schema_name: str | None = None
+) -> PostgreSQLAdapter:
+    """Factory function to create and connect a PostgreSQLAdapter.
+
+    If parameters are not provided, read from global settings.
+    """
+    if database_url is None or schema_name is None:
+        settings = get_settings()
+        if not settings.postgres_enabled and database_url is None:
+            raise AdapterNotFoundError("PostgreSQL is not configured. Please set DATABASE_URL.")
+        config = settings.get_postgres_config()
+        database_url = database_url or config.get("database_url") or config.get("url")
+        if not database_url:
+            raise AdapterNotFoundError("No database URL found. Please set DATABASE_URL.")
+        schema_name = schema_name or config.get("schema_name", "public")
 
     adapter = PostgreSQLAdapter(
         database_url=database_url,
-        schema_name=config["schema_name"],
+        schema_name=schema_name or "public",
     )
     await adapter.connect()
     return adapter

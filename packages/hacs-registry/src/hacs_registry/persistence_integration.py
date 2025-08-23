@@ -17,12 +17,15 @@ License: MIT
 """
 
 import logging
-from typing import Optional, Dict, Any, List, Type
+from typing import Optional, Dict
 from contextlib import asynccontextmanager
 
 # Import protocols from hacs-core
 from hacs_core.persistence_protocols import (
-    Repository, PersistenceProvider, UnitOfWork, EntityId
+    Repository,
+    PersistenceProvider,
+    UnitOfWork,
+    EntityId,
 )
 
 # Import registry types
@@ -30,7 +33,8 @@ from .core import RegistryAggregateRoot
 from .resource_registry import RegisteredResource, HACSResourceRegistry
 from .agent_registry import AgentConfiguration, HACSAgentRegistry
 from .iam_registry import ActorIdentity, HACSIAMRegistry
-from .tool_registry import ToolDefinition, HACSToolRegistry
+from hacs_models import ToolDefinition
+from .tool_registry import HACSToolRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +71,9 @@ class RegistryPersistenceService:
 
         return self._repositories[aggregate_type]
 
-    async def save_registered_resource(self, resource: RegisteredResource) -> RegisteredResource:
+    async def save_registered_resource(
+        self, resource: RegisteredResource
+    ) -> RegisteredResource:
         """Save a registered resource."""
         repository = self._get_repository("RegisteredResource")
         if repository is None:
@@ -80,7 +86,9 @@ class RegistryPersistenceService:
             self.logger.error(f"Failed to save registered resource: {e}")
             return resource
 
-    async def find_registered_resource(self, resource_id: EntityId) -> Optional[RegisteredResource]:
+    async def find_registered_resource(
+        self, resource_id: EntityId
+    ) -> Optional[RegisteredResource]:
         """Find a registered resource by ID."""
         repository = self._get_repository("RegisteredResource")
         if repository is None:
@@ -92,7 +100,9 @@ class RegistryPersistenceService:
             self.logger.error(f"Failed to find registered resource: {e}")
             return None
 
-    async def save_agent_configuration(self, agent: AgentConfiguration) -> AgentConfiguration:
+    async def save_agent_configuration(
+        self, agent: AgentConfiguration
+    ) -> AgentConfiguration:
         """Save an agent configuration."""
         repository = self._get_repository("AgentConfiguration")
         if repository is None:
@@ -134,15 +144,23 @@ class RegistryPersistenceService:
     @asynccontextmanager
     async def transaction(self):
         """Create a transaction context for multiple operations."""
+        # Provide a best-effort transaction context
         if self.persistence_provider is None:
-            # No-op transaction when no persistence
             yield
             return
-
-        # For now, implement a simple transaction
-        # TODO: Implement proper UnitOfWork when available
         try:
-            yield
+            # Start transaction if provider supports it
+            uow: UnitOfWork | None = None
+            if hasattr(self.persistence_provider, "begin"):
+                uow = await self.persistence_provider.begin()
+            try:
+                yield
+                if uow and hasattr(uow, "commit"):
+                    await uow.commit()
+            except Exception:
+                if uow and hasattr(uow, "rollback"):
+                    await uow.rollback()
+                raise
         except Exception as e:
             self.logger.error(f"Transaction failed: {e}")
             raise
@@ -166,15 +184,15 @@ class RegistryRepositoryWrapper:
         """Save an aggregate."""
         try:
             # Serialize aggregate
-            if hasattr(aggregate, 'model_dump'):
+            if hasattr(aggregate, "model_dump"):
                 data = aggregate.model_dump()
-            elif hasattr(aggregate, 'to_dict'):
+            elif hasattr(aggregate, "to_dict"):
                 data = aggregate.to_dict()
             else:
                 data = aggregate.__dict__.copy()
 
             # Save via persistence provider
-            saved_data = await self.persistence_provider.save(
+            await self.persistence_provider.save(
                 self.aggregate_type, aggregate.id, data
             )
 
@@ -184,15 +202,29 @@ class RegistryRepositoryWrapper:
             self.logger.error(f"Failed to save {self.aggregate_type}: {e}")
             raise
 
-    async def find_by_id(self, aggregate_id: EntityId) -> Optional[RegistryAggregateRoot]:
+    async def find_by_id(
+        self, aggregate_id: EntityId
+    ) -> Optional[RegistryAggregateRoot]:
         """Find an aggregate by ID."""
         try:
-            data = await self.persistence_provider.load(self.aggregate_type, aggregate_id)
+            data = await self.persistence_provider.load(
+                self.aggregate_type, aggregate_id
+            )
             if data is None:
                 return None
 
-            # TODO: Implement proper deserialization based on aggregate type
-            # For now, return None as we need proper aggregate reconstruction
+            # Best-effort reconstruction: return raw dict if model class is unknown
+            aggregate_map = {
+                "RegisteredResource": RegisteredResource,
+                "AgentConfiguration": AgentConfiguration,
+                "ActorIdentity": ActorIdentity,
+                "ToolDefinition": ToolDefinition,
+            }
+            model_cls = aggregate_map.get(self.aggregate_type)
+            if model_cls is None:
+                return None
+            if hasattr(model_cls, "model_validate"):
+                return model_cls.model_validate(data)  # type: ignore
             return None
         except Exception as e:
             self.logger.error(f"Failed to find {self.aggregate_type}: {e}")
@@ -201,7 +233,9 @@ class RegistryRepositoryWrapper:
     async def exists(self, aggregate_id: EntityId) -> bool:
         """Check if aggregate exists."""
         try:
-            return await self.persistence_provider.exists(self.aggregate_type, aggregate_id)
+            return await self.persistence_provider.exists(
+                self.aggregate_type, aggregate_id
+            )
         except Exception as e:
             self.logger.error(f"Failed to check existence: {e}")
             return False
@@ -209,7 +243,9 @@ class RegistryRepositoryWrapper:
     async def delete(self, aggregate_id: EntityId) -> bool:
         """Delete an aggregate."""
         try:
-            return await self.persistence_provider.delete(self.aggregate_type, aggregate_id)
+            return await self.persistence_provider.delete(
+                self.aggregate_type, aggregate_id
+            )
         except Exception as e:
             self.logger.error(f"Failed to delete {self.aggregate_type}: {e}")
             return False
@@ -250,7 +286,9 @@ class RegistryPersistenceIntegration:
         if self._resource_registry is None:
             self._resource_registry = HACSResourceRegistry()
             if self.persistence_service:
-                self._resource_registry.set_persistence_service(self.persistence_service)
+                self._resource_registry.set_persistence_service(
+                    self.persistence_service
+                )
         return self._resource_registry
 
     def get_agent_registry(self) -> HACSAgentRegistry:

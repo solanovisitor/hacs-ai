@@ -1,5 +1,4 @@
-"""
-HACS Infrastructure - Core Infrastructure Components
+"""HACS Infrastructure - Core Infrastructure Components.
 
 This package provides the foundational infrastructure for healthcare AI systems,
 including dependency injection, configuration management, service discovery,
@@ -13,7 +12,7 @@ Design Philosophy:
     - AI agent-optimized service discovery
 
 Key Features:
-    - Comprehensive dependency injection container
+    -dependency injection container
     - Environment-based configuration with validation
     - Service registry and discovery
     - Health checking and monitoring
@@ -26,61 +25,47 @@ Version: 0.1.0
 """
 
 # Core infrastructure components
+from .config import ConfigurationError, HACSConfig, configure_hacs, get_config, reset_config
 from .container import (
     Container,
+    DependencyError,
     Injectable,
-    Singleton,
     Scoped,
     ServiceError,
-    DependencyError,
+    Singleton,
     get_container,
-    reset_container
+    reset_container,
 )
-from .config import (
-    HACSConfig,
-    ConfigurationError,
-    get_config,
-    reset_config,
-    configure_hacs
-)
-from .service_registry import (
-    ServiceRegistry,
-    ServiceInfo,
-    ServiceStatus,
-    HealthCheck,
-    ServiceDiscovery
-)
+
+# Event system
+from .events import Event, EventBus, EventError, EventHandler, EventSubscription
 from .lifecycle import (
-    ServiceLifecycle,
+    GracefulShutdown,
     LifecycleState,
-    StartupManager,
+    ServiceLifecycle,
     ShutdownManager,
-    GracefulShutdown
+    StartupManager,
 )
+
+# Monitoring and observability
+from .monitoring import HealthMonitor, MetricsCollector, PerformanceMonitor, ServiceMetrics
 from .protocols import (
     Configurable,
     HealthCheckable,
     Startable,
     Stoppable,
-    Injectable as InjectableProtocol
+)
+from .protocols import (
+    Injectable as InjectableProtocol,
+)
+from .service_registry import (
+    HealthCheck,
+    ServiceDiscovery,
+    ServiceInfo,
+    ServiceRegistry,
+    ServiceStatus,
 )
 
-# Event system
-from .events import (
-    EventBus,
-    Event,
-    EventHandler,
-    EventSubscription,
-    EventError
-)
-
-# Monitoring and observability
-from .monitoring import (
-    HealthMonitor,
-    MetricsCollector,
-    ServiceMetrics,
-    PerformanceMonitor
-)
 
 # Version info
 __version__ = "0.1.0"
@@ -89,56 +74,50 @@ __license__ = "MIT"
 
 # Public API
 __all__ = [
-    # Core container
-    "Container",
-    "Injectable",
-    "Singleton",
-    "Scoped",
-    "ServiceError",
-    "DependencyError",
-    "get_container",
-    "reset_container",
-
-    # Configuration
-    "HACSConfig",
-    "ConfigurationError",
-    "get_config",
-    "reset_config",
-    "configure_hacs",
-
-    # Service registry
-    "ServiceRegistry",
-    "ServiceInfo",
-    "ServiceStatus",
-    "HealthCheck",
-    "ServiceDiscovery",
-
-    # Lifecycle management
-    "ServiceLifecycle",
-    "LifecycleState",
-    "StartupManager",
-    "ShutdownManager",
-    "GracefulShutdown",
-
     # Protocols
     "Configurable",
-    "HealthCheckable",
-    "Startable",
-    "Stoppable",
-    "InjectableProtocol",
-
+    "ConfigurationError",
+    # Core container
+    "Container",
+    "DependencyError",
+    "Event",
     # Event system
     "EventBus",
-    "Event",
+    "EventError",
     "EventHandler",
     "EventSubscription",
-    "EventError",
-
+    "GracefulShutdown",
+    # Configuration
+    "HACSConfig",
+    "HealthCheck",
+    "HealthCheckable",
     # Monitoring
     "HealthMonitor",
+    "Injectable",
+    "InjectableProtocol",
+    "LifecycleState",
     "MetricsCollector",
-    "ServiceMetrics",
     "PerformanceMonitor",
+    "Scoped",
+    "ServiceDiscovery",
+    "ServiceError",
+    "ServiceInfo",
+    # Lifecycle management
+    "ServiceLifecycle",
+    "ServiceMetrics",
+    # Service registry
+    "ServiceRegistry",
+    "ServiceStatus",
+    "ShutdownManager",
+    "Singleton",
+    "Startable",
+    "StartupManager",
+    "Stoppable",
+    "configure_hacs",
+    "get_config",
+    "get_container",
+    "reset_config",
+    "reset_container",
 ]
 
 # Package metadata
@@ -149,11 +128,16 @@ PACKAGE_INFO = {
     "author": __author__,
     "license": __license__,
     "python_requires": ">=3.11",
-    "dependencies": ["pydantic>=2.11.7", "pydantic-settings>=2.7.0", "hacs-models>=0.1.0", "hacs-auth>=0.1.0"],
+    "dependencies": [
+        "pydantic>=2.11.7",
+        "pydantic-settings>=2.7.0",
+        "hacs-models>=0.1.0",
+        "hacs-auth>=0.1.0",
+    ],
     "optional_dependencies": {
         "redis": ["redis>=5.2.0"],
         "async": ["asyncio-mqtt>=0.14.0", "aiofiles>=24.1.0"],
-        "monitoring": ["prometheus-client>=0.21.0", "structlog>=24.4.0"]
+        "monitoring": ["prometheus-client>=0.21.0", "structlog>=24.4.0"],
     },
     "homepage": "https://github.com/your-org/hacs",
     "documentation": "https://hacs.readthedocs.io/",
@@ -162,8 +146,7 @@ PACKAGE_INFO = {
 
 
 def get_infrastructure_components() -> dict[str, type]:
-    """
-    Get registry of all available infrastructure components.
+    """Get registry of all available infrastructure components.
 
     Returns:
         Dictionary mapping component names to component classes
@@ -183,8 +166,7 @@ def get_infrastructure_components() -> dict[str, type]:
 
 
 def validate_infrastructure_setup() -> bool:
-    """
-    Validate that infrastructure components are properly configured.
+    """Validate that infrastructure components are properly configured.
 
     Returns:
         True if all components pass validation checks
@@ -195,36 +177,38 @@ def validate_infrastructure_setup() -> bool:
     try:
         # Test configuration loading
         config = get_config()
-        if not hasattr(config, 'debug'):
-            raise ValueError("Configuration not properly loaded")
+        if not hasattr(config, "debug"):
+            msg = "Configuration not properly loaded"
+            raise ValueError(msg)
 
         # Test container creation
         container = Container()
 
         # Test service registry
-        service_registry = ServiceRegistry()
+        ServiceRegistry()
 
         # Test basic dependency injection
         @Injectable
         class TestService:
-            def __init__(self):
+            def __init__(self) -> None:
                 self.name = "test"
 
         container.register(TestService)
         test_service = container.get(TestService)
 
         if test_service.name != "test":
-            raise ValueError("Dependency injection not working")
+            msg = "Dependency injection not working"
+            raise ValueError(msg)
 
         return True
 
     except Exception as e:
-        raise ValueError(f"Infrastructure setup validation failed: {e}") from e
+        msg = f"Infrastructure setup validation failed: {e}"
+        raise ValueError(msg) from e
 
 
 def get_feature_info() -> dict[str, str]:
-    """
-    Get information about infrastructure features and capabilities.
+    """Get information about infrastructure features and capabilities.
 
     Returns:
         Dictionary with feature information

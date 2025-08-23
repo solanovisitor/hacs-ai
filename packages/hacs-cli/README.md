@@ -8,7 +8,7 @@
 
 The HACS CLI is **under development**. Current healthcare operations are available through:
 
-1. **MCP Server** - 42+ Hacs Tools via JSON-RPC
+1. **MCP Server** - HACS tools via JSON-RPC
 2. **Docker Compose** - Infrastructure deployment and configuration
 3. **LangGraph Agent** - Interactive AI workflows via examples
 
@@ -25,9 +25,11 @@ python -m hacs_utils.mcp.cli
 # FastMCP server for streamable HTTP
 python -m hacs_utils.mcp.fastmcp_server
 
-# Environment configuration
+# Environment configuration (choose providers you use)
 export HACS_MCP_SERVER_URL=http://127.0.0.1:8000
 export DATABASE_URL=postgresql://hacs:hacs_dev@localhost:5432/hacs
+export OPENAI_API_KEY=...
+export ANTHROPIC_API_KEY=...
 ```
 
 ### **Service Management**
@@ -47,7 +49,7 @@ curl http://localhost:8001/       # LangGraph agent (if running)
 All healthcare operations use the **Model Context Protocol** server:
 
 ```bash
-# List available Hacs Tools (42 tools)
+# List available HACS tools
 curl -X POST -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"tools/list","id":1}' \
   $HACS_MCP_SERVER_URL

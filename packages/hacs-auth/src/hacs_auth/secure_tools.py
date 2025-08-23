@@ -1,5 +1,4 @@
-"""
-HACS Secure Tool Execution - Authentication-Protected Tool Wrappers
+"""HACS Secure Tool Execution - Authentication-Protected Tool Wrappers.
 
 This module provides secure wrappers for tool execution that enforce
 authentication and authorization requirements for all Hacs Tools.
@@ -17,16 +16,17 @@ License: MIT
 Version: 1.0.0
 """
 
-import time
-import hashlib
 import functools
-from datetime import datetime, timezone
-from typing import Any, Callable, Dict, List, Optional, Union
+import time
 from collections import defaultdict
+from collections.abc import Callable
+from datetime import UTC, datetime
+from typing import Any
 
-from .auth_manager import AuthManager, TokenData, AuthError
-from .security import HIPAAAuditLogger, SecurityLevel
 from hacs_core.tool_protocols import ToolCategory
+
+from .auth_manager import AuthError, AuthManager, TokenData
+from .security import HIPAAAuditLogger, SecurityLevel
 
 
 class SecurityContext:
@@ -35,33 +35,28 @@ class SecurityContext:
     def __init__(
         self,
         token_data: TokenData,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        session_data: Optional[Dict[str, Any]] = None
-    ):
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+        session_data: dict[str, Any] | None = None,
+    ) -> None:
         """Initialize security context."""
         self.token_data = token_data
         self.ip_address = ip_address
         self.user_agent = user_agent
         self.session_data = session_data or {}
-        self.request_timestamp = datetime.now(timezone.utc)
+        self.request_timestamp = datetime.now(UTC)
 
 
 class RateLimiter:
     """Rate limiter for preventing abuse."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize rate limiter."""
         self.requests = defaultdict(list)  # user_id -> [timestamps]
-        self.limits = {
-            "per_minute": 60,
-            "per_hour": 1000,
-            "per_day": 10000
-        }
+        self.limits = {"per_minute": 60, "per_hour": 1000, "per_day": 10000}
 
-    def is_allowed(self, user_id: str) -> tuple[bool, Optional[str]]:
-        """
-        Check if user is within rate limits.
+    def is_allowed(self, user_id: str) -> tuple[bool, str | None]:
+        """Check if user is within rate limits.
 
         Args:
             user_id: User identifier
@@ -73,7 +68,9 @@ class RateLimiter:
         user_requests = self.requests[user_id]
 
         # Clean old requests
-        user_requests[:] = [req_time for req_time in user_requests if now - req_time < 86400]  # 24 hours
+        user_requests[:] = [
+            req_time for req_time in user_requests if now - req_time < 86400
+        ]  # 24 hours
 
         # Check limits
         minute_requests = len([req for req in user_requests if now - req < 60])
@@ -99,12 +96,11 @@ class SecureToolExecutor:
 
     def __init__(
         self,
-        auth_manager: Optional[AuthManager] = None,
-        audit_logger: Optional[HIPAAAuditLogger] = None,
-        rate_limiter: Optional[RateLimiter] = None
-    ):
-        """
-        Initialize secure tool executor.
+        auth_manager: AuthManager | None = None,
+        audit_logger: HIPAAAuditLogger | None = None,
+        rate_limiter: RateLimiter | None = None,
+    ) -> None:
+        """Initialize secure tool executor.
 
         Args:
             auth_manager: Authentication manager instance
@@ -126,7 +122,7 @@ class SecureToolExecutor:
             ToolCategory.FHIR_INTEGRATION: ["read:fhir", "write:fhir"],
             ToolCategory.HEALTHCARE_ANALYTICS: ["read:analytics", "execute:analytics"],
             ToolCategory.AI_INTEGRATIONS: ["ai:integration"],
-            ToolCategory.ADMIN_OPERATIONS: ["admin:*"]
+            ToolCategory.ADMIN_OPERATIONS: ["admin:*"],
         }
 
         # Security level requirements for tool categories
@@ -141,13 +137,12 @@ class SecureToolExecutor:
     def require_authentication(
         self,
         category: ToolCategory,
-        required_permissions: Optional[List[str]] = None,
-        required_security_level: Optional[SecurityLevel] = None,
+        required_permissions: list[str] | None = None,
+        required_security_level: SecurityLevel | None = None,
         phi_access: bool = False,
-        audit_resource_type: Optional[str] = None
+        audit_resource_type: str | None = None,
     ):
-        """
-        Decorator to enforce authentication and authorization for tools.
+        """Decorator to enforce authentication and authorization for tools.
 
         Args:
             category: Tool category
@@ -156,16 +151,20 @@ class SecureToolExecutor:
             phi_access: Whether tool accesses PHI data
             audit_resource_type: Resource type for audit logging
         """
+
         def decorator(func: Callable) -> Callable:
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
                 # Extract security context from kwargs (injected by framework adapter)
-                security_context = kwargs.pop('_security_context', None)
+                security_context = kwargs.pop("_security_context", None)
                 if not security_context:
-                    raise AuthError("Authentication required - no security context provided")
+                    msg = "Authentication required - no security context provided"
+                    raise AuthError(msg)
 
                 # Validate security context
-                self._validate_security_context(security_context, category, required_permissions, required_security_level)
+                self._validate_security_context(
+                    security_context, category, required_permissions, required_security_level
+                )
 
                 # Check rate limits
                 allowed, reason = self.rate_limiter.is_allowed(security_context.token_data.user_id)
@@ -175,9 +174,10 @@ class SecureToolExecutor:
                         severity="medium",
                         description=reason,
                         user_id=security_context.token_data.user_id,
-                        ip_address=security_context.ip_address
+                        ip_address=security_context.ip_address,
                     )
-                    raise AuthError(f"Rate limit exceeded: {reason}")
+                    msg = f"Rate limit exceeded: {reason}"
+                    raise AuthError(msg)
 
                 # Log PHI access if applicable
                 if phi_access:
@@ -191,14 +191,13 @@ class SecureToolExecutor:
                         additional_data={
                             "session_id": security_context.token_data.session_id,
                             "organization": security_context.token_data.organization,
-                            "function_args": self._sanitize_args_for_audit(args, kwargs)
-                        }
+                            "function_args": self._sanitize_args_for_audit(args, kwargs),
+                        },
                     )
 
                 try:
                     # Execute the tool function
-                    result = func(*args, **kwargs)
-                    return result
+                    return func(*args, **kwargs)
 
                 except Exception as e:
                     # Log failed execution
@@ -212,34 +211,41 @@ class SecureToolExecutor:
                             user_agent=security_context.user_agent,
                             additional_data={
                                 "error": str(e),
-                                "session_id": security_context.token_data.session_id
-                            }
+                                "session_id": security_context.token_data.session_id,
+                            },
                         )
                     raise
 
             # Mark function as requiring authentication
             wrapper._requires_auth = True
             wrapper._auth_category = category
-            wrapper._auth_permissions = required_permissions or self.permission_requirements.get(category, [])
-            wrapper._auth_security_level = required_security_level or self.security_level_requirements.get(category, SecurityLevel.CONFIDENTIAL)
+            wrapper._auth_permissions = required_permissions or self.permission_requirements.get(
+                category, []
+            )
+            wrapper._auth_security_level = (
+                required_security_level
+                or self.security_level_requirements.get(category, SecurityLevel.CONFIDENTIAL)
+            )
             wrapper._phi_access = phi_access
 
             return wrapper
+
         return decorator
 
     def _validate_security_context(
         self,
         context: SecurityContext,
         category: ToolCategory,
-        required_permissions: Optional[List[str]],
-        required_security_level: Optional[SecurityLevel]
+        required_permissions: list[str] | None,
+        required_security_level: SecurityLevel | None,
     ) -> None:
         """Validate security context for tool execution."""
         token_data = context.token_data
 
         # Check token expiration
         if self.auth_manager.is_token_expired(token_data):
-            raise AuthError("Token has expired - authentication required")
+            msg = "Token has expired - authentication required"
+            raise AuthError(msg)
 
         # Check permissions
         permissions = required_permissions or self.permission_requirements.get(category, [])
@@ -251,21 +257,31 @@ class SecureToolExecutor:
                     description=f"Permission denied for {permission}",
                     user_id=token_data.user_id,
                     ip_address=context.ip_address,
-                    additional_data={"required_permission": permission, "user_permissions": token_data.permissions}
+                    additional_data={
+                        "required_permission": permission,
+                        "user_permissions": token_data.permissions,
+                    },
                 )
-                raise AuthError(f"Permission denied: {permission} required for {category.value}")
+                msg = f"Permission denied: {permission} required for {category.value}"
+                raise AuthError(msg)
 
         # Check security level
-        req_level = required_security_level or self.security_level_requirements.get(category, SecurityLevel.CONFIDENTIAL)
+        req_level = required_security_level or self.security_level_requirements.get(
+            category, SecurityLevel.CONFIDENTIAL
+        )
         if not self.auth_manager.validate_security_level(token_data, req_level.value):
-            raise AuthError(f"Insufficient security level: {req_level.value} required for {category.value}")
+            msg = f"Insufficient security level: {req_level.value} required for {category.value}"
+            raise AuthError(
+                msg
+            )
 
         # Additional security checks for high-risk categories
         if category in [ToolCategory.ADMIN_OPERATIONS, ToolCategory.RESOURCE_MANAGEMENT]:
             # Require recent authentication (within last 30 minutes)
-            token_age = (datetime.now(timezone.utc) - token_data.issued_at).total_seconds()
+            token_age = (datetime.now(UTC) - token_data.issued_at).total_seconds()
             if token_age > 1800:  # 30 minutes
-                raise AuthError("Recent authentication required for high-security operations")
+                msg = "Recent authentication required for high-security operations"
+                raise AuthError(msg)
 
     def _sanitize_args_for_audit(self, args: tuple, kwargs: dict) -> dict:
         """Sanitize function arguments for audit logging (remove sensitive data)."""
@@ -276,7 +292,7 @@ class SecureToolExecutor:
         for key, value in kwargs.items():
             if any(sensitive in key.lower() for sensitive in sensitive_keys):
                 sanitized[key] = "[REDACTED]"
-            elif isinstance(value, (str, int, float, bool)):
+            elif isinstance(value, str | int | float | bool):
                 sanitized[key] = value
             else:
                 sanitized[key] = str(type(value).__name__)
@@ -286,9 +302,8 @@ class SecureToolExecutor:
 
         return sanitized
 
-    def validate_tool_function(self, func: Callable) -> List[str]:
-        """
-        Validate that a tool function has proper security configuration.
+    def validate_tool_function(self, func: Callable) -> list[str]:
+        """Validate that a tool function has proper security configuration.
 
         Args:
             func: Tool function to validate
@@ -299,15 +314,15 @@ class SecureToolExecutor:
         errors = []
 
         # Check if function requires authentication
-        if not hasattr(func, '_requires_auth'):
+        if not hasattr(func, "_requires_auth"):
             errors.append("Tool function does not require authentication")
 
         # Check if function has defined permissions
-        if not hasattr(func, '_auth_permissions') or not func._auth_permissions:
+        if not hasattr(func, "_auth_permissions") or not func._auth_permissions:
             errors.append("Tool function has no defined permissions")
 
         # Check if function has security level
-        if not hasattr(func, '_auth_security_level'):
+        if not hasattr(func, "_auth_security_level"):
             errors.append("Tool function has no defined security level")
 
         return errors
@@ -315,9 +330,7 @@ class SecureToolExecutor:
 
 # Decorator shortcuts for common use cases
 def require_phi_access(
-    category: ToolCategory,
-    resource_type: str,
-    permissions: Optional[List[str]] = None
+    category: ToolCategory, resource_type: str, permissions: list[str] | None = None
 ):
     """Shortcut decorator for tools that access PHI."""
     executor = SecureToolExecutor()
@@ -325,21 +338,21 @@ def require_phi_access(
         category=category,
         required_permissions=permissions,
         phi_access=True,
-        audit_resource_type=resource_type
+        audit_resource_type=resource_type,
     )
 
 
-def require_admin_access(permissions: Optional[List[str]] = None):
+def require_admin_access(permissions: list[str] | None = None):
     """Shortcut decorator for administrative tools."""
     executor = SecureToolExecutor()
     return executor.require_authentication(
         category=ToolCategory.ADMIN_OPERATIONS,
         required_permissions=permissions or ["admin:*"],
-        required_security_level=SecurityLevel.TOP_SECRET
+        required_security_level=SecurityLevel.TOP_SECRET,
     )
 
 
-def require_clinical_access(permissions: Optional[List[str]] = None):
+def require_clinical_access(permissions: list[str] | None = None):
     """Shortcut decorator for clinical workflow tools."""
     executor = SecureToolExecutor()
     return executor.require_authentication(
@@ -347,16 +360,16 @@ def require_clinical_access(permissions: Optional[List[str]] = None):
         required_permissions=permissions or ["read:clinical", "execute:workflow"],
         required_security_level=SecurityLevel.RESTRICTED,
         phi_access=True,
-        audit_resource_type="clinical_workflow"
+        audit_resource_type="clinical_workflow",
     )
 
 
 # Export public API
 __all__ = [
-    "SecurityContext",
-    "SecureToolExecutor",
     "RateLimiter",
-    "require_phi_access",
+    "SecureToolExecutor",
+    "SecurityContext",
     "require_admin_access",
     "require_clinical_access",
+    "require_phi_access",
 ]

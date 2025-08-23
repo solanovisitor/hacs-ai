@@ -14,10 +14,10 @@ Architecture:
 import logging
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Type, Union, get_type_hints
+from typing import Any, Dict, List, Optional, Type, Tuple
 from dataclasses import dataclass, field
 
-from pydantic import Field, BaseModel
+from pydantic import Field
 
 # Import base resource from hacs_models (consolidated location)
 try:
@@ -25,58 +25,63 @@ try:
 except ImportError:
     from hacs_core import BaseResource
 
-# Import all HACS resources that can be registered
+# Import all HACS resources that can be registered (robustly)
 try:
-    from hacs_models import (
-        # Clinical Resources
-        Patient, Observation, Condition, Procedure, Medication, MedicationRequest,
-        AllergyIntolerance, FamilyMemberHistory, Goal, RiskAssessment,
+    import hacs_models as _HM
+except Exception:
+    _HM = None
 
-        # Workflow Resources
-        ActivityDefinition, PlanDefinition, Task, Appointment,
+def _maybe(name: str):
+    return getattr(_HM, name, None) if _HM is not None else None
 
-        # Communication Resources
-        AgentMessage, # Document, Library,  # Some may not exist yet
+# Clinical Resources
+Patient = _maybe("Patient")
+Observation = _maybe("Observation")
+Condition = _maybe("Condition")
+Procedure = _maybe("Procedure")
+Medication = _maybe("Medication")
+MedicationRequest = _maybe("MedicationRequest")
+AllergyIntolerance = _maybe("AllergyIntolerance")
+FamilyMemberHistory = _maybe("FamilyMemberHistory")
+Goal = _maybe("Goal")
+RiskAssessment = _maybe("RiskAssessment")
+Composition = _maybe("Composition")
+DocumentReference = _maybe("DocumentReference")
 
-        # Administrative Resources
-        Organization, Encounter,
+# Workflow Resources
+ActivityDefinition = _maybe("ActivityDefinition")
+PlanDefinition = _maybe("PlanDefinition")
+Task = _maybe("Task")
+Appointment = _maybe("Appointment")
+WorkflowDefinition = _maybe("WorkflowDefinition")
+WorkflowRequest = _maybe("WorkflowRequest")
+WorkflowEvent = _maybe("WorkflowEvent")
+WorkflowExecution = _maybe("WorkflowExecution")
 
-        # Evidence and Guidance
-        # EvidenceVariable, GuidanceResponse,  # Some may not exist yet
+# Communication Resources
+AgentMessage = _maybe("AgentMessage")
 
-        # Context and Memory
-        # ContextSummary, Memory, ResourceBundle  # Some may not exist yet
-    )
-except ImportError:
-    # Fallback to available models only
-    try:
-        from hacs_models import Patient, Observation, Encounter, AgentMessage
-        # Mock the missing ones for now
-        Condition = Procedure = Medication = MedicationRequest = None
-        AllergyIntolerance = FamilyMemberHistory = Goal = RiskAssessment = None
-        ActivityDefinition = PlanDefinition = Task = Appointment = None
-        Organization = None
-    except ImportError:
-        # Ultimate fallback - we'll use BaseResource as the only registrable type
-        Patient = Observation = Encounter = AgentMessage = None
-        Condition = Procedure = Medication = MedicationRequest = None
-        AllergyIntolerance = FamilyMemberHistory = Goal = RiskAssessment = None
-        ActivityDefinition = PlanDefinition = Task = Appointment = None
-        Organization = None
+# Administrative Resources
+Organization = _maybe("Organization")
+Encounter = _maybe("Encounter")
 
-# For now, skip workflow definitions as they may not exist in hacs_models yet
-# TODO: Move workflow definitions to hacs_models when available
-WorkflowDefinition = WorkflowRequest = WorkflowEvent = WorkflowExecution = None
+# Evidence and Guidance
+EvidenceVariable = _maybe("EvidenceVariable")
+GuidanceResponse = _maybe("GuidanceResponse")
 
-# Set undefined resource references to None for now
-Document = Library = EvidenceVariable = GuidanceResponse = None
-ContextSummary = Memory = ResourceBundle = None
+# Context and Memory
+ContextSummary = _maybe("ContextSummary")
+Memory = _maybe("Memory")
+
+ResourceBundle = _maybe("ResourceBundle")
+Library = _maybe("Library")
 
 logger = logging.getLogger(__name__)
 
 
 class ResourceStatus(str, Enum):
     """Lifecycle status of a registered resource."""
+
     DRAFT = "draft"
     REVIEW = "review"
     PUBLISHED = "published"
@@ -86,6 +91,7 @@ class ResourceStatus(str, Enum):
 
 class ResourceCategory(str, Enum):
     """Categories for organizing registered resources."""
+
     # Core clinical categories
     CLINICAL = "clinical"
     DIAGNOSTIC = "diagnostic"
@@ -110,6 +116,7 @@ class ResourceCategory(str, Enum):
 @dataclass
 class ResourceMetadata:
     """Metadata for a registered resource."""
+
     name: str
     version: str
     description: str
@@ -134,7 +141,9 @@ class RegisteredResource(BaseResource):
     lifecycle management, and metadata.
     """
 
-    resource_type: str = Field(default="RegisteredResource", description="Registry wrapper type")
+    resource_type: str = Field(
+        default="RegisteredResource", description="Registry wrapper type"
+    )
 
     # Registry metadata
     registry_id: str = Field(description="Unique registry identifier")
@@ -143,21 +152,18 @@ class RegisteredResource(BaseResource):
     # Reference to the actual hacs-core resource
     resource_class: str = Field(description="Name of the hacs-core resource class")
     resource_instance: Optional[Dict[str, Any]] = Field(
-        default=None,
-        description="Serialized instance of the hacs-core resource"
+        default=None, description="Serialized instance of the hacs-core resource"
     )
 
     # Validation and schema information
     schema_version: str = Field(description="Schema version compatibility")
     validation_rules: List[str] = Field(
-        default_factory=list,
-        description="Additional validation rules"
+        default_factory=list, description="Additional validation rules"
     )
 
     # Lifecycle management
     lifecycle_history: List[Dict[str, Any]] = Field(
-        default_factory=list,
-        description="History of status changes"
+        default_factory=list, description="History of status changes"
     )
 
     def update_status(self, new_status: ResourceStatus, reason: str = ""):
@@ -172,12 +178,14 @@ class RegisteredResource(BaseResource):
             self.metadata.deprecated_at = datetime.now(timezone.utc)
 
         # Record history
-        self.lifecycle_history.append({
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "from_status": old_status,
-            "to_status": new_status,
-            "reason": reason
-        })
+        self.lifecycle_history.append(
+            {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "from_status": old_status,
+                "to_status": new_status,
+                "reason": reason,
+            }
+        )
 
     def get_resource_class(self) -> Optional[Type[BaseResource]]:
         """Get the actual hacs-core resource class."""
@@ -193,29 +201,31 @@ class RegisteredResource(BaseResource):
             "FamilyMemberHistory": FamilyMemberHistory,
             "Goal": Goal,
             "RiskAssessment": RiskAssessment,
+            "Composition": Composition,
+            "DocumentReference": DocumentReference,
             "ActivityDefinition": ActivityDefinition,
             "PlanDefinition": PlanDefinition,
             "Task": Task,
             "Appointment": Appointment,
             "AgentMessage": AgentMessage,
-            "Document": Document,
-            "Library": Library,
+            # Optional resources: include only if available
+            **({"Library": Library} if Library is not None else {}),
             "Organization": Organization,
             "Encounter": Encounter,
-            "EvidenceVariable": EvidenceVariable,
-            "GuidanceResponse": GuidanceResponse,
-            "ContextSummary": ContextSummary,
-            "Memory": Memory,
+            **({"EvidenceVariable": EvidenceVariable} if EvidenceVariable is not None else {}),
+            **({"GuidanceResponse": GuidanceResponse} if GuidanceResponse is not None else {}),
+            **({"ContextSummary": ContextSummary} if ContextSummary is not None else {}),
+            **({"Memory": Memory} if Memory is not None else {}),
             "ResourceBundle": ResourceBundle,
-            "WorkflowDefinition": WorkflowDefinition,
-            "WorkflowRequest": WorkflowRequest,
-            "WorkflowEvent": WorkflowEvent,
-            "WorkflowExecution": WorkflowExecution,
+            **({"WorkflowDefinition": WorkflowDefinition} if WorkflowDefinition is not None else {}),
+            **({"WorkflowRequest": WorkflowRequest} if WorkflowRequest is not None else {}),
+            **({"WorkflowEvent": WorkflowEvent} if WorkflowEvent is not None else {}),
+            **({"WorkflowExecution": WorkflowExecution} if WorkflowExecution is not None else {}),
         }
 
         return resource_map.get(self.resource_class)
 
-    def instantiate_resource(self, **kwargs) -> Optional[BaseResource]:
+    def pin_resource(self, **kwargs) -> Optional[BaseResource]:
         """Create an instance of the wrapped hacs-core resource."""
         resource_cls = self.get_resource_class()
         if resource_cls:
@@ -254,7 +264,7 @@ class HACSResourceRegistry:
         resource_class: Type[BaseResource],
         metadata: ResourceMetadata,
         instance_data: Optional[Dict[str, Any]] = None,
-        actor_id: Optional[str] = None
+        actor_id: Optional[str] = None,
     ) -> RegisteredResource:
         """
         Register a hacs-core resource with the registry.
@@ -272,9 +282,16 @@ class HACSResourceRegistry:
         if actor_id:
             try:
                 from .iam_registry import get_global_iam_registry, AccessLevel
+
                 iam = get_global_iam_registry()
-                if not iam.check_access(actor_id, f"resource_registry:{resource_class.__name__}", AccessLevel.WRITE):
-                    raise PermissionError(f"Actor {actor_id} not authorized to register {resource_class.__name__}")
+                if not iam.check_access(
+                    actor_id,
+                    f"resource_registry:{resource_class.__name__}",
+                    AccessLevel.WRITE,
+                ):
+                    raise PermissionError(
+                        f"Actor {actor_id} not authorized to register {resource_class.__name__}"
+                    )
             except ImportError:
                 # IAM not available, proceed without check
                 pass
@@ -285,7 +302,7 @@ class HACSResourceRegistry:
             metadata=metadata,
             resource_class=resource_class.__name__,
             resource_instance=instance_data,
-            schema_version="1.0.0"  # Could be derived from resource class
+            schema_version="1.0.0",  # Could be derived from resource class
         )
 
         # Store in registry
@@ -305,10 +322,16 @@ class HACSResourceRegistry:
         # Optional persistence (dependency injection)
         if self._persistence_service:
             try:
-                # Note: This would be async in a real implementation
-                # For now, just log that persistence would happen
-                logger.info(f"Would persist resource: {registry_id}")
-                # TODO: await self._persistence_service.save_registered_resource(registered)
+                # Fire-and-forget persistence; do not block registration
+                import asyncio
+
+                coro = self._persistence_service.save_registered_resource(registered)
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop.create_task(coro)
+                except RuntimeError:
+                    # No running loop; run in background thread loop
+                    asyncio.run(coro)
             except Exception as e:
                 logger.warning(f"Failed to persist resource {registry_id}: {e}")
 
@@ -323,7 +346,7 @@ class HACSResourceRegistry:
         self,
         category: Optional[ResourceCategory] = None,
         resource_class: Optional[str] = None,
-        status: Optional[ResourceStatus] = None
+        status: Optional[ResourceStatus] = None,
     ) -> List[RegisteredResource]:
         """List registered resources with optional filtering."""
         resources = []
@@ -346,7 +369,7 @@ class HACSResourceRegistry:
         self,
         name_pattern: Optional[str] = None,
         tags: Optional[List[str]] = None,
-        use_case: Optional[str] = None
+        use_case: Optional[str] = None,
     ) -> List[RegisteredResource]:
         """Find resources by name, tags, or use case."""
         results = []
@@ -354,7 +377,10 @@ class HACSResourceRegistry:
         for resource in self._resources.values():
             match = True
 
-            if name_pattern and name_pattern.lower() not in resource.metadata.name.lower():
+            if (
+                name_pattern
+                and name_pattern.lower() not in resource.metadata.name.lower()
+            ):
                 match = False
 
             if tags and not any(tag in resource.metadata.tags for tag in tags):
@@ -369,10 +395,7 @@ class HACSResourceRegistry:
         return results
 
     def update_resource_status(
-        self,
-        registry_id: str,
-        new_status: ResourceStatus,
-        reason: str = ""
+        self, registry_id: str, new_status: ResourceStatus, reason: str = ""
     ) -> bool:
         """Update the status of a registered resource."""
         resource = self._resources.get(registry_id)
@@ -389,9 +412,7 @@ class HACSResourceRegistry:
                 cat.value: len(ids) for cat, ids in self._by_category.items()
             },
             "by_status": {},
-            "by_class": {
-                cls: len(ids) for cls, ids in self._by_class.items()
-            }
+            "by_class": {cls: len(ids) for cls, ids in self._by_class.items()},
         }
 
         # Count by status
@@ -400,6 +421,160 @@ class HACSResourceRegistry:
             stats["by_status"][status] = stats["by_status"].get(status, 0) + 1
 
         return stats
+
+    def iter_model_classes(self) -> List[Tuple[str, Type[BaseResource]]]:
+        """Iterate over all available HACS model classes."""
+        model_classes = []
+        
+        # Get all available resource classes from the resource map
+        resource_map = {
+            "Patient": Patient,
+            "Observation": Observation,
+            "Condition": Condition,
+            "Procedure": Procedure,
+            "Medication": Medication,
+            "MedicationRequest": MedicationRequest,
+            "AllergyIntolerance": AllergyIntolerance,
+            "FamilyMemberHistory": FamilyMemberHistory,
+            "Goal": Goal,
+            "RiskAssessment": RiskAssessment,
+            "Composition": Composition,
+            "DocumentReference": DocumentReference,
+            "ActivityDefinition": ActivityDefinition,
+            "PlanDefinition": PlanDefinition,
+            "Task": Task,
+            "Appointment": Appointment,
+            "AgentMessage": AgentMessage,
+            "Organization": Organization,
+            "Encounter": Encounter,
+            "ResourceBundle": ResourceBundle,
+        }
+        
+        # Add optional resources if available
+        if Library is not None:
+            resource_map["Library"] = Library
+        if EvidenceVariable is not None:
+            resource_map["EvidenceVariable"] = EvidenceVariable
+        if GuidanceResponse is not None:
+            resource_map["GuidanceResponse"] = GuidanceResponse
+        if ContextSummary is not None:
+            resource_map["ContextSummary"] = ContextSummary
+        if Memory is not None:
+            resource_map["Memory"] = Memory
+        if WorkflowDefinition is not None:
+            resource_map["WorkflowDefinition"] = WorkflowDefinition
+        if WorkflowRequest is not None:
+            resource_map["WorkflowRequest"] = WorkflowRequest
+        if WorkflowEvent is not None:
+            resource_map["WorkflowEvent"] = WorkflowEvent
+        if WorkflowExecution is not None:
+            resource_map["WorkflowExecution"] = WorkflowExecution
+            
+        # Add additional resources that might be available
+        try:
+            from hacs_models import Practitioner, ServiceRequest, DiagnosticReport, Immunization, MedicationStatement
+            resource_map.update({
+                "Practitioner": Practitioner,
+                "ServiceRequest": ServiceRequest,
+                "DiagnosticReport": DiagnosticReport,
+                "Immunization": Immunization,
+                "MedicationStatement": MedicationStatement,
+            })
+        except ImportError:
+            pass
+        
+        # Filter out None values and return as list of tuples
+        for name, cls in resource_map.items():
+            if cls is not None:
+                model_classes.append((name, cls))
+                
+        return sorted(model_classes, key=lambda x: x[0])
+
+    def get_extractables_index(self) -> Dict[str, Dict[str, Any]]:
+        """Get an index of extractable fields for all HACS resources."""
+        extractables_index = {}
+        
+        for name, cls in self.iter_model_classes():
+            try:
+                # Get extractable fields
+                extractable_fields = []
+                if hasattr(cls, 'get_extractable_fields') and callable(cls.get_extractable_fields):
+                    extractable_fields = cls.get_extractable_fields()
+                
+                # Get LLM hints
+                llm_hints = []
+                if hasattr(cls, 'llm_hints') and callable(cls.llm_hints):
+                    llm_hints = cls.llm_hints()
+                
+                # Get system fields
+                system_fields = []
+                if hasattr(cls, 'get_system_fields') and callable(cls.get_system_fields):
+                    system_fields = cls.get_system_fields()
+                
+                # Get LLM schema info
+                llm_schema_info = {}
+                if hasattr(cls, 'get_llm_schema') and callable(cls.get_llm_schema):
+                    try:
+                        llm_schema_info = cls.get_llm_schema(minimal=True) or {}
+                    except Exception:
+                        pass
+                
+                # Get required extractables
+                required_extractables = []
+                if hasattr(cls, 'get_required_extractables') and callable(cls.get_required_extractables):
+                    required_extractables = cls.get_required_extractables()
+                
+                # Get canonical defaults
+                canonical_defaults = {}
+                if hasattr(cls, 'get_canonical_defaults') and callable(cls.get_canonical_defaults):
+                    canonical_defaults = cls.get_canonical_defaults()
+                
+                extractables_index[name] = {
+                    "extractable_fields": extractable_fields,
+                    "extractable_count": len(extractable_fields),
+                    "required_extractables": required_extractables,
+                    "canonical_defaults": canonical_defaults,
+                    "llm_hints": llm_hints,
+                    "system_fields": system_fields,
+                    "llm_schema_available": bool(llm_schema_info),
+                    "has_pick_method": hasattr(cls, 'pick') and callable(cls.pick),
+                    "has_validate_extractable": hasattr(cls, 'validate_extractable') and callable(cls.validate_extractable),
+                    "has_coerce_extractable": hasattr(cls, 'coerce_extractable') and callable(cls.coerce_extractable),
+                }
+                
+                # Validate that resource_type is not in extractables
+                if "resource_type" in extractable_fields:
+                    extractables_index[name]["warning"] = "resource_type found in extractables (should be excluded)"
+                    
+            except Exception as e:
+                extractables_index[name] = {
+                    "error": str(e),
+                    "extractable_fields": [],
+                    "extractable_count": 0,
+                }
+        
+        return extractables_index
+
+    def register_default_cardiology_bundle(self) -> RegisteredResource:
+        """Create and register the default 'Cardiologia: Consulta Inicial' bundle template."""
+        try:
+            from hacs_models.resource_bundle import ResourceBundle
+        except Exception as e:
+            raise RuntimeError(f"hacs_models not available: {e}")
+
+        bundle = ResourceBundle.create_cardiology_first_consult_template()
+        metadata = ResourceMetadata(
+            name=bundle.title or "Cardiologia: Consulta Inicial",
+            version=bundle.version or "1.0.0",
+            description=bundle.description or "",
+            category=ResourceCategory.CLINICAL,
+            status=ResourceStatus.PUBLISHED,
+            tags=["cardiologia", "template", "consulta"],
+        )
+        registered = self.register_resource(
+            ResourceBundle, metadata, instance_data=bundle.model_dump()
+        )
+        return registered
 
 
 # Global registry instance
@@ -421,7 +596,7 @@ def register_hacs_resource(
     description: str,
     category: ResourceCategory,
     actor_id: Optional[str] = None,
-    **metadata_kwargs
+    **metadata_kwargs,
 ) -> RegisteredResource:
     """
     Convenience function to register a hacs-core resource.
@@ -443,11 +618,25 @@ def register_hacs_resource(
         version=version,
         description=description,
         category=category,
-        **metadata_kwargs
+        **metadata_kwargs,
     )
 
     registry = get_global_registry()
-    return registry.register_resource(resource_class, metadata, instance_data=None, actor_id=actor_id)
+    return registry.register_resource(
+        resource_class, metadata, instance_data=None, actor_id=actor_id
+    )
+
+
+def get_extractables_index() -> Dict[str, Dict[str, Any]]:
+    """Get an index of extractable fields for all HACS resources."""
+    registry = get_global_registry()
+    return registry.get_extractables_index()
+
+
+def iter_model_classes() -> List[Tuple[str, Type[BaseResource]]]:
+    """Iterate over all available HACS model classes."""
+    registry = get_global_registry()
+    return registry.iter_model_classes()
 
 
 # Pre-register common hacs-core resources
@@ -466,8 +655,8 @@ def _register_core_resources():
                         version="1.0.0",
                         description=description,
                         category=category,
-                        tags=tags
-                    )
+                        tags=tags,
+                    ),
                 )
                 logger.info(f"Registered resource: {name}")
             except Exception as e:
@@ -475,18 +664,27 @@ def _register_core_resources():
 
     # Clinical resources
     register_if_available(
-        Patient, "Patient", "FHIR-compatible patient resource",
-        ResourceCategory.CLINICAL, ["fhir", "patient", "demographics"]
+        Patient,
+        "Patient",
+        "FHIR-compatible patient resource",
+        ResourceCategory.CLINICAL,
+        ["fhir", "patient", "demographics"],
     )
 
     register_if_available(
-        Observation, "Observation", "Clinical observations and measurements",
-        ResourceCategory.CLINICAL, ["fhir", "observation", "measurement"]
+        Observation,
+        "Observation",
+        "Clinical observations and measurements",
+        ResourceCategory.CLINICAL,
+        ["fhir", "observation", "measurement"],
     )
 
     register_if_available(
-        Encounter, "Encounter", "Healthcare encounter/visit",
-        ResourceCategory.CLINICAL, ["fhir", "encounter", "visit"]
+        Encounter,
+        "Encounter",
+        "Healthcare encounter/visit",
+        ResourceCategory.CLINICAL,
+        ["fhir", "encounter", "visit"],
     )
 
     # NEW - Phase 1 critical resources (safety-critical)
@@ -494,18 +692,27 @@ def _register_core_resources():
         from hacs_models import AllergyIntolerance, ServiceRequest, DiagnosticReport
 
         register_if_available(
-            AllergyIntolerance, "AllergyIntolerance", "Patient allergy and intolerance information (safety-critical)",
-            ResourceCategory.SAFETY, ["fhir", "allergy", "safety", "patient-safety"]
+            AllergyIntolerance,
+            "AllergyIntolerance",
+            "Patient allergy and intolerance information (safety-critical)",
+            ResourceCategory.SAFETY,
+            ["fhir", "allergy", "safety", "patient-safety"],
         )
 
         register_if_available(
-            ServiceRequest, "ServiceRequest", "Request for healthcare services (care coordination)",
-            ResourceCategory.WORKFLOW, ["fhir", "service-request", "care-coordination", "ordering"]
+            ServiceRequest,
+            "ServiceRequest",
+            "Request for healthcare services (care coordination)",
+            ResourceCategory.WORKFLOW,
+            ["fhir", "service-request", "care-coordination", "ordering"],
         )
 
         register_if_available(
-            DiagnosticReport, "DiagnosticReport", "Diagnostic test results and reports (clinical decisions)",
-            ResourceCategory.DIAGNOSTIC, ["fhir", "diagnostic", "report", "clinical-decisions"]
+            DiagnosticReport,
+            "DiagnosticReport",
+            "Diagnostic test results and reports (clinical decisions)",
+            ResourceCategory.DIAGNOSTIC,
+            ["fhir", "diagnostic", "report", "clinical-decisions"],
         )
     except ImportError:
         logger.warning("Phase 1 critical resources not available for registration")
@@ -515,32 +722,47 @@ def _register_core_resources():
         from hacs_models import Practitioner, Organization
 
         register_if_available(
-            Practitioner, "Practitioner", "Healthcare provider information (care team management)",
-            ResourceCategory.CLINICAL, ["fhir", "practitioner", "provider", "care-team"]
+            Practitioner,
+            "Practitioner",
+            "Healthcare provider information (care team management)",
+            ResourceCategory.CLINICAL,
+            ["fhir", "practitioner", "provider", "care-team"],
         )
 
         register_if_available(
-            Organization, "Organization", "Healthcare facility and organizational information",
-            ResourceCategory.ADMINISTRATIVE, ["fhir", "organization", "facility", "institution"]
+            Organization,
+            "Organization",
+            "Healthcare facility and organizational information",
+            ResourceCategory.ADMINISTRATIVE,
+            ["fhir", "organization", "facility", "institution"],
         )
     except ImportError:
         logger.warning("Phase 2 care team resources not available for registration")
 
     # Workflow resources (only if available)
     register_if_available(
-        WorkflowDefinition, "WorkflowDefinition", "Clinical workflow definition",
-        ResourceCategory.WORKFLOW, ["workflow", "clinical", "process"]
+        WorkflowDefinition,
+        "WorkflowDefinition",
+        "Clinical workflow definition",
+        ResourceCategory.WORKFLOW,
+        ["workflow", "clinical", "process"],
     )
 
     register_if_available(
-        ActivityDefinition, "ActivityDefinition", "Definition of activities in workflows",
-        ResourceCategory.WORKFLOW, ["workflow", "activity", "process"]
+        ActivityDefinition,
+        "ActivityDefinition",
+        "Definition of activities in workflows",
+        ResourceCategory.WORKFLOW,
+        ["workflow", "activity", "process"],
     )
 
     # Communication resources
     register_if_available(
-        AgentMessage, "AgentMessage", "Messages for agent communication",
-        ResourceCategory.COMMUNICATION, ["agent", "message", "communication"]
+        AgentMessage,
+        "AgentMessage",
+        "Messages for agent communication",
+        ResourceCategory.COMMUNICATION,
+        ["agent", "message", "communication"],
     )
 
 
@@ -549,11 +771,100 @@ _register_core_resources()
 
 
 __all__ = [
-    'ResourceStatus',
-    'ResourceCategory',
-    'ResourceMetadata',
-    'RegisteredResource',
-    'HACSResourceRegistry',
-    'get_global_registry',
-    'register_hacs_resource',
+    "ResourceStatus",
+    "ResourceCategory",
+    "ResourceMetadata",
+    "RegisteredResource",
+    "HACSResourceRegistry",
+    "get_global_registry",
+    "register_hacs_resource",
+    "get_extractables_index",
+    "iter_model_classes",
 ]
+
+# ---------------------------------------------
+# Experimental: Decorator-based resource registration (deferred)
+# ---------------------------------------------
+
+# Pending queue for decorator-registered resources (deferred until migrations or explicit commit)
+_pending_resource_registrations: List[
+    Tuple[Type[BaseResource], ResourceMetadata, Optional[Dict[str, Any]], Optional[str]]
+] = []
+
+
+def register_resource(
+    *,
+    name: Optional[str] = None,
+    version: str = "1.0.0",
+    description: str = "",
+    category: ResourceCategory = ResourceCategory.CLINICAL,
+    tags: Optional[List[str]] = None,
+    status: ResourceStatus = ResourceStatus.DRAFT,
+    instance_data: Optional[Dict[str, Any]] = None,
+    actor_id: Optional[str] = None,
+    **metadata_kwargs: Any,
+):
+    """Class decorator to register a HACS resource (deferred).
+
+    Usage:
+        @register_resource(name="MedicationReview", category=ResourceCategory.CLINICAL)
+        class MedicationReview(Document): ...
+
+    This does not persist to DB at import time. Use
+    consume_pending_resource_registrations() during migrations/startup.
+    """
+
+    def _decorator(resource_class: Type[BaseResource]) -> Type[BaseResource]:
+        meta = ResourceMetadata(
+            name=name or resource_class.__name__,
+            version=version,
+            description=description or (resource_class.__doc__ or ""),
+            category=category,
+            status=status,
+            tags=tags or [],
+            **metadata_kwargs,
+        )
+        _pending_resource_registrations.append(
+            (resource_class, meta, instance_data, actor_id)
+        )
+        return resource_class
+
+    return _decorator
+
+
+def get_pending_resource_registrations() -> List[
+    Tuple[Type[BaseResource], ResourceMetadata, Optional[Dict[str, Any]], Optional[str]]
+]:
+    """Inspect the current pending decorator-based registrations."""
+    return list(_pending_resource_registrations)
+
+
+def consume_pending_resource_registrations(
+    clear: bool = True,
+) -> List[RegisteredResource]:
+    """Register pending decorator-based resources into the in-memory registry.
+
+    Returns the list of RegisteredResource wrappers created.
+    """
+    registry = get_global_registry()
+    results: List[RegisteredResource] = []
+    for (
+        resource_class,
+        metadata,
+        instance_data,
+        actor_id,
+    ) in _pending_resource_registrations:
+        try:
+            registered = registry.register_resource(
+                resource_class,
+                metadata,
+                instance_data=instance_data,
+                actor_id=actor_id,
+            )
+            results.append(registered)
+        except Exception as e:
+            logger.warning(f"Failed to register resource {metadata.name}: {e}")
+
+    if clear:
+        _pending_resource_registrations.clear()
+    return results

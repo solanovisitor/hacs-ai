@@ -12,16 +12,33 @@ Design Goals:
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Protocol, TypeVar, runtime_checkable
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Protocol,
+    TypeVar,
+    runtime_checkable,
+)
 from dataclasses import dataclass
 from enum import Enum
 
+# Consolidate registration path into hacs-registry (single source of truth)
+try:
+    # Local import to avoid hard dependency at import time if registry isn't installed
+    from hacs_registry.tool_registry import register_tool as _registry_register_tool
+except Exception:  # pragma: no cover - fallback if registry not available
+    _registry_register_tool = None  # type: ignore
+
 # Type variables
-F = TypeVar('F', bound=Callable[..., Any])
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 class ToolCategory(str, Enum):
     """Categories for organizing tools."""
+
     RESOURCE_MANAGEMENT = "resource_management"
     CLINICAL_WORKFLOWS = "clinical_workflows"
     MEMORY_OPERATIONS = "memory_operations"
@@ -37,22 +54,20 @@ class ToolCategory(str, Enum):
 @dataclass
 class ToolMetadata:
     """Metadata for tool registration."""
+
     name: str
     description: str
     category: ToolCategory
     version: str = "1.0.0"
     author: str = "HACS Team"
     tags: List[str] = None
-    healthcare_domains: List[str] = None
-    fhir_resources: List[str] = None
+    domains: List[str] = None
 
     def __post_init__(self):
         if self.tags is None:
             self.tags = []
-        if self.healthcare_domains is None:
-            self.healthcare_domains = []
-        if self.fhir_resources is None:
-            self.fhir_resources = []
+        if self.domains is None:
+            self.domains = []
 
 
 @runtime_checkable
@@ -83,11 +98,7 @@ class ToolRegistry(Protocol):
     in their specific format while maintaining a common interface.
     """
 
-    def register_tool(
-        self,
-        func: Callable,
-        metadata: ToolMetadata
-    ) -> None:
+    def register_tool(self, func: Callable, metadata: ToolMetadata) -> None:
         """Register a tool with metadata.
 
         Args:
@@ -190,7 +201,7 @@ class FrameworkAdapter(ABC):
         if not callable(func):
             errors.append("Tool must be callable")
 
-        if not hasattr(func, '__name__'):
+        if not hasattr(func, "__name__"):
             errors.append("Tool must have a name")
 
         if not func.__doc__:
@@ -215,8 +226,10 @@ class NoOpAdapter(FrameworkAdapter):
 
     def create_tool_decorator(self) -> ToolDecorator:
         """Return a no-op decorator that just returns the function unchanged."""
+
         def noop_decorator(func: F) -> F:
             return func
+
         return noop_decorator
 
     def create_tool_registry(self) -> ToolRegistry:
@@ -249,7 +262,8 @@ class InMemoryToolRegistry:
             return list(self._tools.keys())
 
         return [
-            name for name, metadata in self._metadata.items()
+            name
+            for name, metadata in self._metadata.items()
             if metadata.category == category
         ]
 
@@ -314,13 +328,33 @@ def register_tool_with_metadata(func: Callable, metadata: ToolMetadata) -> Calla
     Returns:
         Decorated function
     """
-    # Get framework-specific decorator
+    # 1) Register with the canonical hacs-registry (if available)
+    #    This ensures global discovery/search picks it up immediately.
+    registered_func = func
+    if _registry_register_tool is not None:
+        try:
+            domain = metadata.domains[0] if metadata.domains else "general"
+            # Use tags to carry category and observability hints
+            tags = list(metadata.tags or [])
+            if metadata.category:
+                tags.append(f"category:{metadata.category}")
+            registry_decorator = _registry_register_tool(
+                name=metadata.name,
+                version=metadata.version,
+                description=metadata.description,
+                domain=domain,
+                tags=tags,
+            )
+            registered_func = registry_decorator(func)
+        except Exception:
+            # Best-effort: continue even if registry not available/misconfigured
+            pass
+
+    # 2) Apply framework-specific decoration (e.g., LangChain/MCP/CrewAI)
     decorator = get_tool_decorator()
+    decorated_func = decorator(registered_func)
 
-    # Apply framework decoration
-    decorated_func = decorator(func)
-
-    # Register with registry
+    # 3) Register with the in-memory adapter registry for the active framework
     registry = get_tool_registry()
     registry.register_tool(decorated_func, metadata)
 
@@ -331,11 +365,10 @@ def hacs_tool(
     name: str,
     description: str,
     category: ToolCategory,
-    healthcare_domains: List[str] = None,
-    fhir_resources: List[str] = None,
+    domains: List[str] = None,
     enable_tracing: bool = True,
     enable_metrics: bool = True,
-    **kwargs
+    **kwargs,
 ) -> Callable[[F], F]:
     """Decorator for Hacs Tools with automatic metadata and observability.
 
@@ -346,8 +379,7 @@ def hacs_tool(
         name: Tool name
         description: Tool description
         category: Tool category
-        healthcare_domains: Relevant healthcare domains
-        fhir_resources: Relevant FHIR resources
+        domains: Relevant healthcare domains
         enable_tracing: Enable distributed tracing for this tool
         enable_metrics: Enable metrics collection for this tool
         **kwargs: Additional metadata
@@ -355,19 +387,23 @@ def hacs_tool(
     Returns:
         Decorator function
     """
+
     def decorator(func: F) -> F:
         metadata = ToolMetadata(
             name=name,
             description=description,
             category=category,
-            healthcare_domains=healthcare_domains or [],
-            fhir_resources=fhir_resources or [],
-            **kwargs
+            domains=domains or [],
+            **kwargs,
         )
 
         # Add observability metadata
-        metadata.enable_tracing = enable_tracing
-        metadata.enable_metrics = enable_metrics
+        try:
+            # Attach as dynamic attributes for downstream adapters if needed
+            setattr(metadata, "enable_tracing", enable_tracing)
+            setattr(metadata, "enable_metrics", enable_metrics)
+        except Exception:
+            pass
 
         return register_tool_with_metadata(func, metadata)
 

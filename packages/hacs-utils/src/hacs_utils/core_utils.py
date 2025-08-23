@@ -6,9 +6,9 @@ code duplication and ensure consistency.
 """
 
 import logging
-import os
 from functools import wraps
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Optional
+from dotenv import load_dotenv, dotenv_values
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ def optional_import(package_name: str, fallback_value: Any = None) -> Any:
         return fallback_value
 
 
-def get_api_key(key_name: str, env_var: str, required: bool = True) -> str | None:
+def get_api_key(key_name: str, env_var: str, required: bool = True) -> Optional[str]:
     """
     Get API key from environment with consistent error handling.
 
@@ -85,12 +85,11 @@ def get_api_key(key_name: str, env_var: str, required: bool = True) -> str | Non
     Raises:
         ValueError: If required key is not found
     """
-    api_key = os.getenv(env_var)
+    load_dotenv()
+    api_key = dotenv_values().get(env_var)
 
     if not api_key and required:
-        raise ValueError(
-            f"{key_name} is required. Set the {env_var} environment variable."
-        )
+        raise ValueError(f"{key_name} is required. Set the {env_var} environment variable.")
 
     return api_key
 
@@ -257,27 +256,49 @@ class VersionManager:
             return cls.UTILITY_VERSION
 
 
-def _get_model_class(resource_type: str):
+def _get_resource_class(resource_type: str):
     """Get the model class for a resource type."""
     try:
         from hacs_core import (
-            Patient, Observation, Encounter, AgentMessage,
-            AllergyIntolerance, Condition, Medication, MedicationRequest,
-            PlanDefinition, ActivityDefinition, Library,
-            GuidanceResponse, RequestOrchestration,
-            DataRequirement, EvidenceVariable, ArtifactAssessment,
-            Memory, KnowledgeItem
+            Patient,
+            Observation,
+            Encounter,
+            AgentMessage,
+            AllergyIntolerance,
+            Condition,
+            Medication,
+            MedicationRequest,
+            PlanDefinition,
+            ActivityDefinition,
+            Library,
+            GuidanceResponse,
+            RequestOrchestration,
+            DataRequirement,
+            EvidenceVariable,
+            ArtifactAssessment,
+            Memory,
+            KnowledgeItem,
         )
 
         model_map = {
-            "Patient": Patient, "Observation": Observation, "Encounter": Encounter,
-            "AgentMessage": AgentMessage, "AllergyIntolerance": AllergyIntolerance,
-            "Condition": Condition, "Medication": Medication, "MedicationRequest": MedicationRequest,
-            "PlanDefinition": PlanDefinition, "ActivityDefinition": ActivityDefinition,
-            "Library": Library, "GuidanceResponse": GuidanceResponse,
-            "RequestOrchestration": RequestOrchestration, "DataRequirement": DataRequirement,
-            "EvidenceVariable": EvidenceVariable, "ArtifactAssessment": ArtifactAssessment,
-            "Memory": Memory, "KnowledgeItem": KnowledgeItem
+            "Patient": Patient,
+            "Observation": Observation,
+            "Encounter": Encounter,
+            "AgentMessage": AgentMessage,
+            "AllergyIntolerance": AllergyIntolerance,
+            "Condition": Condition,
+            "Medication": Medication,
+            "MedicationRequest": MedicationRequest,
+            "PlanDefinition": PlanDefinition,
+            "ActivityDefinition": ActivityDefinition,
+            "Library": Library,
+            "GuidanceResponse": GuidanceResponse,
+            "RequestOrchestration": RequestOrchestration,
+            "DataRequirement": DataRequirement,
+            "EvidenceVariable": EvidenceVariable,
+            "ArtifactAssessment": ArtifactAssessment,
+            "Memory": Memory,
+            "KnowledgeItem": KnowledgeItem,
         }
 
         return model_map.get(resource_type)

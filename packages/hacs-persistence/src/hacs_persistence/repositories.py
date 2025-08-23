@@ -17,19 +17,22 @@ License: MIT
 """
 
 import logging
-from typing import Dict, List, Optional, Any, Type, TypeVar
-from datetime import datetime, timezone
+from datetime import datetime
+from typing import Any, TypeVar
 
 # Import persistence protocols from hacs-core
 from hacs_core.persistence_protocols import (
-    Repository, EntityId, Entity, AggregateRoot, PersistenceProvider
+    AggregateRoot,
+    EntityId,
+    PersistenceProvider,
+    Repository,
 )
 
 # Import models from hacs_models
 try:
-    from hacs_models import BaseResource, Actor, Patient, Observation, Encounter
+    from hacs_models import Actor, BaseResource, Encounter, Observation, Patient
 except ImportError:
-    from hacs_core import BaseResource, Actor, Patient, Observation, Encounter
+    from hacs_core import BaseResource, Encounter, Observation, Patient
 
 # Import existing adapters
 from .adapter import PostgreSQLAdapter
@@ -37,8 +40,8 @@ from .adapter import PostgreSQLAdapter
 logger = logging.getLogger(__name__)
 
 # Type variables
-TAggregate = TypeVar('TAggregate', bound=AggregateRoot)
-TResource = TypeVar('TResource', bound=BaseResource)
+TAggregate = TypeVar("TAggregate", bound=AggregateRoot)
+TResource = TypeVar("TResource", bound=BaseResource)
 
 
 class BaseRepository(Repository[TAggregate]):
@@ -55,20 +58,20 @@ class BaseRepository(Repository[TAggregate]):
         self.aggregate_type = aggregate_type
         self.logger = logging.getLogger(f"{self.__class__.__name__}")
 
-    async def _serialize_aggregate(self, aggregate: TAggregate) -> Dict[str, Any]:
+    async def _serialize_aggregate(self, aggregate: TAggregate) -> dict[str, Any]:
         """Serialize aggregate to dictionary."""
-        if hasattr(aggregate, 'model_dump'):
+        if hasattr(aggregate, "model_dump"):
             # Pydantic model
             return aggregate.model_dump()
-        elif hasattr(aggregate, 'to_dict'):
+        elif hasattr(aggregate, "to_dict"):
             # Custom serialization
             return aggregate.to_dict()
-        elif hasattr(aggregate, '__dict__'):
+        elif hasattr(aggregate, "__dict__"):
             # Fallback to object dict
             data = aggregate.__dict__.copy()
             # Convert EntityId to string
-            if 'id' in data and hasattr(data['id'], 'value'):
-                data['id'] = data['id'].value
+            if "id" in data and hasattr(data["id"], "value"):
+                data["id"] = data["id"].value
             # Convert datetime objects
             for key, value in data.items():
                 if isinstance(value, datetime):
@@ -77,23 +80,25 @@ class BaseRepository(Repository[TAggregate]):
         else:
             raise ValueError(f"Cannot serialize aggregate of type {type(aggregate)}")
 
-    async def _deserialize_aggregate(self, data: Dict[str, Any], aggregate_class: Type[TAggregate]) -> TAggregate:
+    async def _deserialize_aggregate(
+        self, data: dict[str, Any], aggregate_class: type[TAggregate]
+    ) -> TAggregate:
         """Deserialize dictionary to aggregate."""
         try:
             # Convert id string back to EntityId if needed
-            if 'id' in data and isinstance(data['id'], str):
-                data['id'] = EntityId(data['id'])
+            if "id" in data and isinstance(data["id"], str):
+                data["id"] = EntityId(data["id"])
 
             # Convert datetime strings back to datetime objects
             for key, value in data.items():
-                if isinstance(value, str) and key.endswith('_at'):
+                if isinstance(value, str) and key.endswith("_at"):
                     try:
-                        data[key] = datetime.fromisoformat(value.replace('Z', '+00:00'))
+                        data[key] = datetime.fromisoformat(value.replace("Z", "+00:00"))
                     except ValueError:
                         pass  # Keep as string if conversion fails
 
             # Create aggregate instance
-            if hasattr(aggregate_class, 'model_validate'):
+            if hasattr(aggregate_class, "model_validate"):
                 # Pydantic model
                 return aggregate_class.model_validate(data)
             else:
@@ -118,7 +123,7 @@ class BaseRepository(Repository[TAggregate]):
             self.logger.error(f"Failed to save {self.aggregate_type} {aggregate.id}: {e}")
             raise
 
-    async def find_by_id(self, aggregate_id: EntityId) -> Optional[TAggregate]:
+    async def find_by_id(self, aggregate_id: EntityId) -> TAggregate | None:
         """Find an aggregate by its ID."""
         try:
             data = await self.adapter.load(self.aggregate_type, aggregate_id)
@@ -137,7 +142,9 @@ class BaseRepository(Repository[TAggregate]):
         try:
             return await self.adapter.exists(self.aggregate_type, aggregate_id)
         except Exception as e:
-            self.logger.error(f"Failed to check existence of {self.aggregate_type} {aggregate_id}: {e}")
+            self.logger.error(
+                f"Failed to check existence of {self.aggregate_type} {aggregate_id}: {e}"
+            )
             raise
 
     async def delete(self, aggregate_id: EntityId) -> bool:
@@ -148,12 +155,12 @@ class BaseRepository(Repository[TAggregate]):
             self.logger.error(f"Failed to delete {self.aggregate_type} {aggregate_id}: {e}")
             raise
 
-    async def find_all(self, limit: Optional[int] = None, offset: int = 0) -> List[TAggregate]:
+    async def find_all(self, limit: int | None = None, offset: int = 0) -> list[TAggregate]:
         """Find all aggregates with optional pagination."""
         try:
             data_list = await self.adapter.list_all(self.aggregate_type, limit, offset)
             results = []
-            for data in data_list:
+            for _data in data_list:
                 # This will be overridden in concrete repositories
                 raise NotImplementedError("Concrete repositories must implement find_all")
             return results
@@ -161,12 +168,12 @@ class BaseRepository(Repository[TAggregate]):
             self.logger.error(f"Failed to find all {self.aggregate_type}: {e}")
             raise
 
-    async def find_by_criteria(self, criteria: Dict[str, Any]) -> List[TAggregate]:
+    async def find_by_criteria(self, criteria: dict[str, Any]) -> list[TAggregate]:
         """Find aggregates matching specific criteria."""
         try:
             data_list = await self.adapter.find_by_criteria(self.aggregate_type, criteria)
             results = []
-            for data in data_list:
+            for _data in data_list:
                 # This will be overridden in concrete repositories
                 raise NotImplementedError("Concrete repositories must implement find_by_criteria")
             return results
@@ -184,18 +191,18 @@ class ResourceRepository(BaseRepository[BaseResource]):
     - L: Liskov substitution - implements Repository contract
     """
 
-    def __init__(self, adapter: PersistenceProvider, resource_class: Type[BaseResource]):
+    def __init__(self, adapter: PersistenceProvider, resource_class: type[BaseResource]):
         self.resource_class = resource_class
         super().__init__(adapter, resource_class.__name__)
 
-    async def find_by_id(self, aggregate_id: EntityId) -> Optional[BaseResource]:
+    async def find_by_id(self, aggregate_id: EntityId) -> BaseResource | None:
         """Find a resource by its ID."""
         data = await self.adapter.load(self.aggregate_type, aggregate_id)
         if data is None:
             return None
         return await self._deserialize_aggregate(data, self.resource_class)
 
-    async def find_all(self, limit: Optional[int] = None, offset: int = 0) -> List[BaseResource]:
+    async def find_all(self, limit: int | None = None, offset: int = 0) -> list[BaseResource]:
         """Find all resources with optional pagination."""
         data_list = await self.adapter.list_all(self.aggregate_type, limit, offset)
         results = []
@@ -204,7 +211,7 @@ class ResourceRepository(BaseRepository[BaseResource]):
             results.append(aggregate)
         return results
 
-    async def find_by_criteria(self, criteria: Dict[str, Any]) -> List[BaseResource]:
+    async def find_by_criteria(self, criteria: dict[str, Any]) -> list[BaseResource]:
         """Find resources matching specific criteria."""
         data_list = await self.adapter.find_by_criteria(self.aggregate_type, criteria)
         results = []
@@ -226,17 +233,14 @@ class PatientRepository(ResourceRepository):
     def __init__(self, adapter: PersistenceProvider):
         super().__init__(adapter, Patient)
 
-    async def find_by_mrn(self, mrn: str) -> Optional[Patient]:
+    async def find_by_mrn(self, mrn: str) -> Patient | None:
         """Find a patient by Medical Record Number."""
         results = await self.find_by_criteria({"medical_record_number": mrn})
         return results[0] if results else None
 
-    async def find_by_name(self, family_name: str, given_names: List[str]) -> List[Patient]:
+    async def find_by_name(self, family_name: str, given_names: list[str]) -> list[Patient]:
         """Find patients by name."""
-        criteria = {
-            "family_name": family_name,
-            "given_names": given_names
-        }
+        criteria = {"family_name": family_name, "given_names": given_names}
         return await self.find_by_criteria(criteria)
 
 
@@ -252,11 +256,11 @@ class ObservationRepository(ResourceRepository):
     def __init__(self, adapter: PersistenceProvider):
         super().__init__(adapter, Observation)
 
-    async def find_by_patient(self, patient_id: EntityId) -> List[Observation]:
+    async def find_by_patient(self, patient_id: EntityId) -> list[Observation]:
         """Find observations for a specific patient."""
         return await self.find_by_criteria({"patient_id": patient_id.value})
 
-    async def find_by_code(self, code: str) -> List[Observation]:
+    async def find_by_code(self, code: str) -> list[Observation]:
         """Find observations by observation code."""
         return await self.find_by_criteria({"code": code})
 
@@ -273,11 +277,11 @@ class EncounterRepository(ResourceRepository):
     def __init__(self, adapter: PersistenceProvider):
         super().__init__(adapter, Encounter)
 
-    async def find_by_patient(self, patient_id: EntityId) -> List[Encounter]:
+    async def find_by_patient(self, patient_id: EntityId) -> list[Encounter]:
         """Find encounters for a specific patient."""
         return await self.find_by_criteria({"patient_id": patient_id.value})
 
-    async def find_active_encounters(self) -> List[Encounter]:
+    async def find_active_encounters(self) -> list[Encounter]:
         """Find all active encounters."""
         return await self.find_by_criteria({"status": "active"})
 
@@ -294,9 +298,9 @@ class RepositoryFactory:
 
     def __init__(self, adapter: PersistenceProvider):
         self.adapter = adapter
-        self._repositories: Dict[str, Repository] = {}
+        self._repositories: dict[str, Repository] = {}
 
-    def get_repository(self, resource_class: Type[BaseResource]) -> Repository:
+    def get_repository(self, resource_class: type[BaseResource]) -> Repository:
         """Get a repository for a specific resource class."""
         class_name = resource_class.__name__
 

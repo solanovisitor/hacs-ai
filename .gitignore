@@ -27,11 +27,14 @@ wheels/
 .env
 .env.local
 .venv
+.hacs-venv/
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+hf_ingestion/
+capture_logs.py
 
 # Sensitive data
 *.key

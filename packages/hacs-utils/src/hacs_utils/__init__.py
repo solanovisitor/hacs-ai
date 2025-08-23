@@ -26,18 +26,11 @@ from .core_utils import (
     log_llm_request,
     standardize_messages,
     RetryMixin,
-    VersionManager
+    VersionManager,
 )
-from .agent_types import (
-    HealthcareDomain,
-    AgentRole,
-    AgentInteractionStrategy,
-    AgentMemoryStrategy,
-    AgentChainStrategy,
-    AgentRetrievalStrategy,
-    AgentScratchpadEntry,
-    AgentTask
-)
+# NOTE: Agent type symbols are lazily exposed via __getattr__ to avoid
+# importing optional heavy modules at package import time.
+
 
 # Graceful import handling for optional dependencies
 def _safe_import(module_name: str, class_name: str = None):
@@ -53,23 +46,52 @@ def _safe_import(module_name: str, class_name: str = None):
             warnings.warn(
                 f"Package conflict in {module_name}: {e}. "
                 "Please uninstall 'pinecone-client' and install 'pinecone' instead.",
-                UserWarning
+                UserWarning,
             )
         return None
+
 
 # MCP Server - lazy loading to avoid dependency conflicts
 _has_mcp = None  # Lazy check
 
 # OpenAI Integration
 OpenAIClient = _safe_import("hacs_utils.integrations.openai", "OpenAIClient")
-OpenAIStructuredGenerator = _safe_import("hacs_utils.integrations.openai", "OpenAIStructuredGenerator")
 OpenAIEmbedding = _safe_import("hacs_utils.integrations.openai", "OpenAIEmbedding")
 create_openai_client = _safe_import("hacs_utils.integrations.openai", "create_openai_client")
 create_openai_embedding = _safe_import("hacs_utils.integrations.openai", "create_openai_embedding")
 
 # Anthropic Integration
 AnthropicClient = _safe_import("hacs_utils.integrations.anthropic", "AnthropicClient")
-create_anthropic_client = _safe_import("hacs_utils.integrations.anthropic", "create_anthropic_client")
+create_anthropic_client = _safe_import(
+    "hacs_utils.integrations.anthropic", "create_anthropic_client"
+)
+anthropic_structured_extract = _safe_import(
+    "hacs_utils.integrations.anthropic", "anthropic_structured_extract"
+)
+
+# Provider selection helpers (explicit only; no env-based selection)
+def create_llm(model: str, provider: str | None = None):
+    """Create a LangChain chat model from a model string and optional provider.
+
+    - If provider is "openai"/"anthropic", build the respective LC chat if available.
+    - If provider is None, infer from model name prefix (gpt-*, claude-*).
+    - Returns a LangChain chat model or raises ImportError if SDK missing.
+    """
+    prov = (provider or ("openai" if model.startswith("gpt-") else ("anthropic" if model.startswith("claude-") else None)))
+    if prov == "openai":
+        try:
+            from langchain_openai import ChatOpenAI  # type: ignore
+        except Exception as e:
+            raise ImportError(f"langchain-openai not available: {e}")
+        return ChatOpenAI(model=model)
+    if prov == "anthropic":
+        try:
+            from langchain_anthropic import ChatAnthropic  # type: ignore
+        except Exception as e:
+            raise ImportError(f"langchain-anthropic not available: {e}")
+        return ChatAnthropic(model=model)
+    raise ValueError("Unsupported provider; specify provider or use a supported model prefix (gpt-/claude-)")
+
 
 # Pinecone Integration
 PineconeVectorStore = _safe_import("hacs_utils.integrations.pinecone", "PineconeVectorStore")
@@ -79,69 +101,109 @@ create_pinecone_store = _safe_import("hacs_utils.integrations.pinecone", "create
 QdrantVectorStore = _safe_import("hacs_utils.integrations.qdrant", "QdrantVectorStore")
 create_qdrant_store = _safe_import("hacs_utils.integrations.qdrant", "create_qdrant_store")
 
-# LangChain Integration
-LangChainDocumentAdapter = _safe_import("hacs_utils.integrations.langchain", "LangChainDocumentAdapter")
-create_langchain_adapter = _safe_import("hacs_utils.integrations.langchain", "create_langchain_adapter")
+# LangChain Integration (removed legacy adapters; keep minimal marker)
+LangChainDocumentAdapter = None
+create_langchain_adapter = None
 
 # LangGraph Integration
 LangGraphWorkflow = _safe_import("hacs_utils.integrations.langgraph", "LangGraphWorkflow")
-create_langgraph_workflow = _safe_import("hacs_utils.integrations.langgraph", "create_langgraph_workflow")
+create_langgraph_workflow = _safe_import(
+    "hacs_utils.integrations.langgraph", "create_langgraph_workflow"
+)
 
 # CrewAI Integration (maintained for backward compatibility) - lazy loading
 _has_crewai = None  # Lazy check
 
 # Structured Output (always available)
 try:
-    from .structured import generate_structured_output, generate_structured_list
+    from .structured import extract, structure, extract_sync, structure_sync
+
     _has_structured = True
 except ImportError:
-    generate_structured_output = None
-    generate_structured_list = None
+    extract = None
+    structure = None
+    extract_sync = None
+    structure_sync = None
     _has_structured = False
 
 
 # Core adapter (always available)
 from .adapter import AbstractAdapter, AdapterConfig
 
+# Heavy utilities are exposed lazily via __getattr__ to avoid import-time side effects
 
-def list_available_integrations() -> dict[str, bool]:
+# Visualization utilities (import light, but still guard to avoid optional deps noise)
+try:
+    from .visualization import (
+        visualize_resource,
+        visualize_annotations,
+        resource_to_markdown,
+        annotations_to_markdown,
+        get_specs_markdown,
+        resource_to_html_widget,
+        resource_to_json_str,
+        resource_to_yaml_str,
+        resource_to_schema_json_str,
+        resource_to_schema_markdown,
+    )
+except Exception:
+    # Provide stubs so docs imports don't explode; actual usage should import from hacs_utils.visualization
+    visualize_resource = None  # type: ignore
+    visualize_annotations = None  # type: ignore
+    resource_to_markdown = None  # type: ignore
+    annotations_to_markdown = None  # type: ignore
+    get_specs_markdown = None  # type: ignore
+    resource_to_html_widget = None  # type: ignore
+    resource_to_json_str = None  # type: ignore
+    resource_to_yaml_str = None  # type: ignore
+    resource_to_schema_json_str = None  # type: ignore
+    resource_to_schema_markdown = None  # type: ignore
+
+
+def list_available_integrations() -> list[str]:
     """
     List all available integrations and their availability status.
 
     Returns:
         Dict mapping integration name to availability status
     """
+
     # Lazy check for MCP availability
     def _check_mcp():
         global _has_mcp
         if _has_mcp is None:
             try:
                 from .mcp import HacsMCPServer  # noqa: F401
+
                 _has_mcp = True
             except ImportError:
                 _has_mcp = False
         return _has_mcp
+
     # Lazy check for CrewAI availability
     def _check_crewai():
         global _has_crewai
         if _has_crewai is None:
             try:
                 from .integrations.crewai.adapter import CrewAIAdapter  # noqa: F401
+
                 _has_crewai = True
             except ImportError:
                 _has_crewai = False
         return _has_crewai
 
-    return {
+    status = {
         "mcp": _check_mcp(),
         "openai": OpenAIClient is not None,
         "anthropic": AnthropicClient is not None,
         "pinecone": PineconeVectorStore is not None,
         "qdrant": QdrantVectorStore is not None,
-        "langchain": LangChainDocumentAdapter is not None,
+        "langchain": False,
         "langgraph": LangGraphWorkflow is not None,
         "crewai": _check_crewai(),
     }
+    # Return list of available integration names
+    return [name for name, available in status.items() if available]
 
 
 def get_integration_info(integration_name: str = None) -> dict[str, str]:
@@ -154,53 +216,58 @@ def get_integration_info(integration_name: str = None) -> dict[str, str]:
     Returns:
         Dict with integration details including install command
     """
+    # Build availability map dynamically to keep in sync with list_available_integrations()
+    avail_set = set(list_available_integrations())
+
     info_map = {
         "mcp": {
             "description": "Model Context Protocol server for secure agent access",
             "install": "pip install hacs-utils[mcp]",
-            "available": list_available_integrations()["mcp"]
+            "available": "mcp" in avail_set,
         },
         "openai": {
             "description": "OpenAI GPT models, embeddings, and structured generation",
             "install": "pip install hacs-utils[openai]",
-            "available": OpenAIClient is not None
+            "available": "openai" in avail_set,
         },
         "anthropic": {
             "description": "Anthropic Claude models and chat completion",
             "install": "pip install hacs-utils[anthropic]",
-            "available": AnthropicClient is not None
+            "available": "anthropic" in avail_set,
         },
         "pinecone": {
             "description": "Pinecone vector database for semantic search",
             "install": "pip install hacs-utils[pinecone]",
-            "available": PineconeVectorStore is not None
+            "available": "pinecone" in avail_set,
         },
         "qdrant": {
             "description": "Qdrant vector database for semantic search",
             "install": "pip install hacs-utils[qdrant]",
-            "available": QdrantVectorStore is not None
+            "available": "qdrant" in avail_set,
         },
         "langchain": {
-            "description": "LangChain document processing and vector store adaptation",
-            "install": "pip install hacs-utils[langchain]",
-            "available": LangChainDocumentAdapter is not None
+            "description": "(Deprecated) LangChain shim removed",
+            "install": "",
+            "available": False,
         },
         "langgraph": {
             "description": "LangGraph stateful multi-agent workflows",
             "install": "pip install hacs-utils[langgraph]",
-            "available": LangGraphWorkflow is not None
+            "available": "langgraph" in avail_set,
         },
         "crewai": {
             "description": "CrewAI multi-agent orchestration (backward compatibility)",
             "install": "pip install hacs-utils[crewai]",
-            "available": list_available_integrations()["crewai"]
-        }
+            "available": "crewai" in avail_set,
+        },
     }
 
     if integration_name is None:
         return info_map
     else:
-        return info_map.get(integration_name, {"error": f"Integration '{integration_name}' not found"})
+        return info_map.get(
+            integration_name, {"error": f"Integration '{integration_name}' not found"}
+        )
 
 
 __version__ = "0.3.0"
@@ -217,16 +284,7 @@ __all__ = [
     "standardize_messages",
     "RetryMixin",
     "VersionManager",
-
-    # Agent types
-    "HealthcareDomain",
-    "AgentRole",
-    "AgentInteractionStrategy",
-    "AgentMemoryStrategy",
-    "AgentChainStrategy",
-    "AgentRetrievalStrategy",
-    "AgentScratchpadEntry",
-    "AgentTask",
+    # Agent types (lazy via __getattr__)
     # OpenAI
     "OpenAIClient",
     "OpenAIStructuredGenerator",
@@ -242,18 +300,31 @@ __all__ = [
     # Qdrant
     "QdrantVectorStore",
     "create_qdrant_store",
-    # LangChain
-    "LangChainDocumentAdapter",
-    "create_langchain_adapter",
+    # LangChain (removed)
     # LangGraph
     "LangGraphWorkflow",
     "create_langgraph_workflow",
     # Structured Output
-    "generate_structured_output",
-    "generate_structured_list",
+    "extract",
+    "structure",
+    "extract_sync",
+    "structure_sync",
+    # Visualization
+    "visualize_resource",
+    "visualize_annotations",
+    "resource_to_markdown",
+    "annotations_to_markdown",
+    "get_specs_markdown",
+    "resource_to_html_widget",
+    "resource_to_json_str",
+    "resource_to_yaml_str",
+    "resource_to_schema_json_str",
+    "resource_to_schema_markdown",
+    "get_specs_markdown",
     # Core
     "AbstractAdapter",
     "AdapterConfig",
+    # Heavy utilities are intentionally not re-exported at top-level to reduce import-time side effects
     # Utilities
     "list_available_integrations",
     "get_integration_info",
@@ -274,14 +345,15 @@ def __getattr__(name: str):
         "MCPError",
     }
 
-    # CrewAI components
+    # CrewAI components and helper aliases for backward compatibility
     crewai_exports = {
         "CrewAIAdapter",
-        "CrewAIAgent",
         "CrewAITask",
-        "CrewAIProcess",
         "CrewAIAgentRole",
         "CrewAITaskType",
+        # Backward-compat helper functions
+        "create_agent_binding",
+        "task_to_crew_format",
     }
 
     if name in mcp_exports:
@@ -296,6 +368,7 @@ def __getattr__(name: str):
                 MCPNotification,
                 MCPError,
             )
+
             globals()["_has_mcp"] = True
 
             # Export all MCP components to globals
@@ -316,30 +389,31 @@ def __getattr__(name: str):
         except ImportError as e:
             globals()["_has_mcp"] = False
             raise AttributeError(
-                f"'{name}' requires MCP dependencies that have conflicts. "
-                f"Import error: {e}"
+                f"'{name}' requires MCP dependencies that have conflicts. Import error: {e}"
             ) from e
 
     if name in crewai_exports:
         try:
             from .integrations.crewai.adapter import (
                 CrewAIAdapter,
-                CrewAIAgent,
                 CrewAITask,
-                CrewAIProcess,
                 CrewAIAgentRole,
                 CrewAITaskType,
+                create_agent_binding as _create_agent_binding,
+                task_to_crew_format as _task_to_crew_format,
             )
+
             globals()["_has_crewai"] = True
 
             # Export all CrewAI components to globals
             crewai_components = {
                 "CrewAIAdapter": CrewAIAdapter,
-                "CrewAIAgent": CrewAIAgent,
                 "CrewAITask": CrewAITask,
-                "CrewAIProcess": CrewAIProcess,
                 "CrewAIAgentRole": CrewAIAgentRole,
                 "CrewAITaskType": CrewAITaskType,
+                # helper aliases
+                "create_agent_binding": _create_agent_binding,
+                "task_to_crew_format": _task_to_crew_format,
             }
             globals().update(crewai_components)
 
@@ -348,8 +422,7 @@ def __getattr__(name: str):
         except ImportError as e:
             globals()["_has_crewai"] = False
             raise AttributeError(
-                f"'{name}' requires CrewAI dependencies that have conflicts. "
-                f"Import error: {e}"
+                f"'{name}' requires CrewAI dependencies that have conflicts. Import error: {e}"
             ) from e
 
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
