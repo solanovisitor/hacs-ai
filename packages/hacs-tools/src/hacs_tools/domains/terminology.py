@@ -21,7 +21,7 @@ UMLS_BASE = "https://uts-ws.nlm.nih.gov/rest"
 
 def normalize_code(system: str, code: str, display: Optional[str] = None) -> HACSResult:
     """Create a normalized TerminologyConcept payload without remote calls."""
-    from hacs_utils.resource_specific import make_terminology_concept
+    from hacs_utils.terminology.helpers import make_terminology_concept
 
     concept = make_terminology_concept(system, code, display)
     return HACSResult(success=True, message="Normalized concept", data={"concept": concept})
@@ -116,7 +116,7 @@ def summarize_codable_concepts(
 
     # Local candidate scan (recursive) for any resource
     try:
-        from hacs_utils.resource_specific import scan_codable_concepts
+        from hacs_utils.terminology.helpers import scan_codable_concepts
 
         candidates = (
             scan_codable_concepts(
@@ -192,7 +192,7 @@ def map_terminology(
 ) -> HACSResult:
     """Task-level tool: suggest mappings from source to target across any HACS resource."""
     try:
-        from hacs_utils.resource_specific import normalize_system_uri, scan_codable_concepts
+        from hacs_utils.terminology.helpers import normalize_system_uri, scan_codable_concepts
         from hacs_utils.terminology.client import UMLSClient, system_uri_to_source
     except Exception as e:
         return HACSResult(success=False, message="Missing terminology utilities", error=str(e))

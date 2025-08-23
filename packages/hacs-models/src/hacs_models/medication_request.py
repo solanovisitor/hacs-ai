@@ -411,6 +411,73 @@ class MedicationRequest(DomainResource):
         self.reason_code.append(reason)
         return reason
 
+    # --- LLM-friendly extractable facade overrides ---
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
+        """Return fields that should be extracted by LLMs (3-4 key fields only)."""
+        return [
+            "status",
+            "medication_codeable_concept",
+            "dosage_instruction",
+            "reason_code",
+        ]
+
+    @classmethod
+    def get_required_extractables(cls) -> list[str]:
+        """Fields that must be provided for valid extraction."""
+        return ["medication_codeable_concept"]
+
+    @classmethod
+    def get_canonical_defaults(cls) -> dict[str, Any]:
+        """Default values for system/required fields during extraction."""
+        return {
+            "status": "active",
+            "intent": "order",
+            "subject": "Patient/UNKNOWN",
+            "medication_codeable_concept": {"text": ""},  # Will be filled by LLM
+        }
+
+    @classmethod
+    def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
+        """Coerce extractable payload to proper types with relaxed validation."""
+        coerced = payload.copy()
+        
+        # Coerce medication_codeable_concept to CodeableConcept if it's a string
+        if "medication_codeable_concept" in coerced and isinstance(coerced["medication_codeable_concept"], str):
+            coerced["medication_codeable_concept"] = {"text": coerced["medication_codeable_concept"]}
+        
+        # Coerce dosage_instruction to list of Dosage if it's a string or dict
+        if "dosage_instruction" in coerced:
+            dosage = coerced["dosage_instruction"]
+            if isinstance(dosage, str):
+                coerced["dosage_instruction"] = [{"text": dosage}]
+            elif isinstance(dosage, dict):
+                coerced["dosage_instruction"] = [dosage]
+            elif not isinstance(dosage, list):
+                coerced["dosage_instruction"] = []
+        
+        # Coerce reason_code to list of CodeableConcept if it's a string or dict
+        if "reason_code" in coerced:
+            reason = coerced["reason_code"]
+            if isinstance(reason, str):
+                coerced["reason_code"] = [{"text": reason}]
+            elif isinstance(reason, dict):
+                coerced["reason_code"] = [reason]
+            elif not isinstance(reason, list):
+                coerced["reason_code"] = []
+        
+        return coerced
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:  # type: ignore[override]
+        """Provide LLM-specific extraction hints."""
+        return [
+            "Extract medication name/code from prescription text",
+            "Include dosage instructions (dose, frequency, duration)",
+            "Capture reason for prescription when mentioned",
+            "Status should be: active, completed, cancelled, or stopped"
+        ]
+
 
 # Convenience functions for common medication request types
 

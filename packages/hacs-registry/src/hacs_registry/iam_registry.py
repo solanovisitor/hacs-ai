@@ -21,7 +21,19 @@ from dataclasses import dataclass, field
 from contextlib import contextmanager
 
 from pydantic import Field
-from hacs_core import BaseResource, HealthcareDomain
+try:
+    # Prefer hacs_models as the consolidated source for types and base classes
+    from hacs_models import BaseResource
+    from hacs_models.types import HealthcareDomain
+except Exception:  # Fallback for legacy environments
+    from hacs_core import BaseResource  # type: ignore
+    try:
+        from hacs_core import HealthcareDomain  # type: ignore
+    except Exception:
+        # Minimal local shim to avoid import-time failure; replaces quickly once models are available
+        from enum import Enum as _Enum
+        class HealthcareDomain(str, _Enum):  # type: ignore
+            GENERAL = "general"
 
 try:
     from hacs_models import Patient, Organization

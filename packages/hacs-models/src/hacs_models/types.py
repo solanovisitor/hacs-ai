@@ -231,6 +231,34 @@ class ProcedureStatus(str, Enum):
     UNKNOWN = "unknown"  # Status unknown
 
 
+class CarePlanStatus(str, Enum):
+    """
+    Status of care plan following FHIR RequestStatus value set.
+
+    Based on FHIR R4/R5 RequestStatus used by CarePlan.status:
+    http://hl7.org/fhir/request-status
+    """
+
+    DRAFT = "draft"
+    ACTIVE = "active"
+    ON_HOLD = "on-hold"
+    ENTERED_IN_ERROR = "entered-in-error"
+    ENDED = "ended"
+    COMPLETED = "completed"
+    REVOKED = "revoked"
+    UNKNOWN = "unknown"
+
+
+class CarePlanIntent(str, Enum):
+    """CarePlan intent values per FHIR R4."""
+
+    PROPOSAL = "proposal"
+    PLAN = "plan"
+    ORDER = "order"
+    OPTION = "option"
+    DIRECTIVE = "directive"
+
+
 class GoalLifecycleStatus(str, Enum):
     """
     Lifecycle status of goal following FHIR GoalLifecycleStatus.
@@ -507,13 +535,14 @@ TimestampStr = str  # ISO 8601 timestamp string
 UuidStr = str  # UUID string
 UrlStr = str  # HTTP/HTTPS URL string
 
-# Union types for flexibility
+# Union types for flexibility (base set; extended later after more enums are defined)
 StatusType = Union[
     ObservationStatus,
     EncounterStatus,
     ConditionClinicalStatus,
     MedicationRequestStatus,
     ProcedureStatus,
+    CarePlanStatus,
     GoalLifecycleStatus,
 ]
 
@@ -617,6 +646,18 @@ class MedicationStatus(str, Enum):
     ENTERED_IN_ERROR = "entered-in-error"
 
 
+class MedicationStatementStatus(str, Enum):
+    """MedicationStatement status values per FHIR R4."""
+
+    ACTIVE = "active"
+    COMPLETED = "completed"
+    ENTERED_IN_ERROR = "entered-in-error"
+    INTENDED = "intended"
+    STOPPED = "stopped"
+    ON_HOLD = "on-hold"
+    UNKNOWN = "unknown"
+
+
 # =============================================================================
 # ENHANCED TYPE UNIONS FOR NEW RESOURCES
 # =============================================================================
@@ -628,6 +669,8 @@ StatusType = Union[
     ConditionClinicalStatus,
     MedicationRequestStatus,
     ProcedureStatus,
+    MedicationStatementStatus,
+    CarePlanStatus,
     GoalLifecycleStatus,
     # NEW - Critical additions
     AllergyIntoleranceStatus,

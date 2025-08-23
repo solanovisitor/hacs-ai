@@ -8,7 +8,7 @@ def pytest_ignore_collect(path):
         "test_integration_end_to_end.py",
         "test_ci_essential.py",
         "test_hacs_debug_comprehensive.py",
-        "test_phase2_integration.py",
+
         "test_bundle_creation.py",
         "test_bundle_validation.py",
         "test_template_examples.py",

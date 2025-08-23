@@ -5,7 +5,8 @@ from typing import Any, Literal
 from pydantic import Field
 
 from .base_resource import DomainResource
-from .types import ConfidentialityLevel, DocumentStatus, DocumentType
+from .types import ConfidentialityLevel, DocumentStatus, DocumentType, ResourceReference, TimestampStr
+from .observation import CodeableConcept
 
 
 class CompositionAuthor(DomainResource):
@@ -34,6 +35,11 @@ class CompositionSection(DomainResource):
     sections: list[CompositionSection] = Field(
         default_factory=list, description="Nested sections"
     )
+    # FHIR-aligned additions: coded section and entries
+    section_code: CodeableConcept | None = None
+    entry_refs: list[ResourceReference] = Field(
+        default_factory=list, description="References to resources in this section"
+    )
 
 
 class CompositionEncounter(DomainResource):
@@ -55,6 +61,12 @@ class Composition(DomainResource):
     attesters: list[CompositionAttester] = Field(default_factory=list)
     sections: list[CompositionSection] = Field(default_factory=list)
     encounter: CompositionEncounter | None = None
+    # FHIR-aligned additions
+    type_code: CodeableConcept | None = Field(default=None, description="Composition.type code")
+    subject_ref: ResourceReference | None = Field(default=None, description="Subject reference")
+    date: TimestampStr | None = Field(default=None, description="Document date/time")
+    author_refs: list[ResourceReference] = Field(default_factory=list)
+    custodian_ref: ResourceReference | None = Field(default=None)
 
     def add_section(
         self,
@@ -62,9 +74,18 @@ class Composition(DomainResource):
         text: str,
         code: str | None = None,
         metadata: dict[str, Any] | None = None,
+        section_code: CodeableConcept | None = None,
+        entry_refs: list[ResourceReference] | None = None,
     ) -> None:
         self.sections.append(
-            CompositionSection(title=title, text=text, code=code, metadata=metadata or {})
+            CompositionSection(
+                title=title,
+                text=text,
+                code=code,
+                metadata=metadata or {},
+                section_code=section_code,
+                entry_refs=entry_refs or [],
+            )
         )
 
     def add_author(
@@ -96,18 +117,56 @@ class Composition(DomainResource):
             )
         )
 
-    def to_resource_bundle(self) -> ResourceBundle:
-        from .resource_bundle import BundleStatus, BundleType, ResourceBundle
+    def to_resource_bundle(self):
+        from .resource_bundle import BundleStatus, BundleType, ResourceBundle, BundleEntry
 
         bundle = ResourceBundle(
             title=self.title,
             bundle_type=BundleType.DOCUMENT,
             status=BundleStatus.ACTIVE,
             version=self.version,
+            entries=[
+                BundleEntry(
+                    title=self.title or "Composition",
+                    resource=self,
+                    contained_resource_id=getattr(self, "id", None),
+                )
+            ],
         )
-        # If we had embedded resources we could add them here. For now, sections carry text.
-        # Enforce at least one entry to satisfy document constraints, add self as entry.
-        bundle.add_entry(self, title=self.title or "Composition")
+        # Include referenced resources if provided via section.entry_refs
+        for section in self.sections:
+            for ref in section.entry_refs:
+                # In HACS, we don't dereference; callers should add resources explicitly.
+                # Here we only track references; actual resource inclusion is handled by caller.
+                # This method remains a convenience to build a document bundle shell.
+                pass
+        return bundle
+
+    def to_document_bundle(self, included_resources: list[Any] | None = None):
+        """Create a FHIR-like document bundle including Composition and provided resources.
+
+        - Composition is inserted as the first entry (as required by FHIR).
+        - All resources passed in included_resources are added as subsequent entries.
+        - This helper does not attempt to resolve references automatically; callers
+          should pass the exact resource objects they want included.
+        """
+        from .resource_bundle import BundleStatus, BundleType, ResourceBundle, BundleEntry
+
+        bundle = ResourceBundle(
+            title=self.title,
+            bundle_type=BundleType.DOCUMENT,
+            status=BundleStatus.ACTIVE,
+            version=self.version,
+            entries=[
+                BundleEntry(
+                    title=self.title or "Composition",
+                    resource=self,
+                    contained_resource_id=getattr(self, "id", None),
+                )
+            ],
+        )
+        for res in included_resources or []:
+            bundle.add_entry(res, title=getattr(res, "resource_type", None))
         return bundle
 
 

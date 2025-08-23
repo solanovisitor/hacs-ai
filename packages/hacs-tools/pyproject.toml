@@ -42,6 +42,9 @@ Documentation = "https://github.com/solanovisitor/hacs-ai/blob/main/docs/"
 Repository = "https://github.com/solanovisitor/hacs-ai"
 Issues = "https://github.com/solanovisitor/hacs-ai/issues"
 Changelog = "https://github.com/solanovisitor/hacs-ai/blob/main/CHANGELOG.md"
+
+[project.scripts]
+hacs-tools = "hacs_tools.cli:main"
 [project.optional-dependencies]
 # Clinical operations extra
 clinical = [

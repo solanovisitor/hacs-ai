@@ -806,6 +806,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../how-to/validate_hacs_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Validate HACS models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../how-to/visualize_resources/" class="md-nav__link">
         
   
@@ -1951,7 +1974,7 @@
 <h4 id="visualize-resources-and-their-definitions">Visualize resources and their definitions<a class="headerlink" href="#visualize-resources-and-their-definitions" title="Permanent link">&para;</a></h4>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Patient</span><span class="p">,</span> <span class="n">Observation</span><span class="p">,</span> <span class="n">CodeableConcept</span><span class="p">,</span> <span class="n">Quantity</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">ObservationStatus</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">resource_to_markdown</span><span class="p">,</span> <span class="n">get_specs_markdown</span><span class="p">,</span> <span class="n">get_specs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_markdown</span>
 
 <span class="n">pat</span> <span class="o">=</span> <span class="n">Patient</span><span class="p">(</span><span class="n">full_name</span><span class="o">=</span><span class="s2">&quot;Maria Rodriguez&quot;</span><span class="p">,</span> <span class="n">birth_date</span><span class="o">=</span><span class="s2">&quot;1985-03-15&quot;</span><span class="p">,</span> <span class="n">gender</span><span class="o">=</span><span class="s2">&quot;female&quot;</span><span class="p">)</span>
 <span class="n">obs</span> <span class="o">=</span> <span class="n">Observation</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">ObservationStatus</span><span class="o">.</span><span class="n">FINAL</span><span class="p">,</span>
@@ -1964,8 +1987,8 @@
 <span class="nb">print</span><span class="p">(</span><span class="n">to_markdown</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
 
 <span class="c1"># Render model definition docs (scope, boundaries, relationships)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">get_specs_markdown</span><span class="p">(</span><span class="n">Patient</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">get_specs_markdown</span><span class="p">(</span><span class="n">Observation</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">to_markdown</span><span class="p">(</span><span class="n">Patient</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">to_markdown</span><span class="p">(</span><span class="n">Observation</span><span class="p">))</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code>### Patient
 
@@ -2019,7 +2042,7 @@ Do not use for diagnoses/problems…
 <p><strong>FHIR-aligned healthcare models</strong></p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Patient</span><span class="p">,</span> <span class="n">Observation</span><span class="p">,</span> <span class="n">CodeableConcept</span><span class="p">,</span> <span class="n">Quantity</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">ObservationStatus</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">resource_to_markdown</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_markdown</span>
 
 <span class="n">patient</span> <span class="o">=</span> <span class="n">Patient</span><span class="p">(</span><span class="n">full_name</span><span class="o">=</span><span class="s2">&quot;John Smith&quot;</span><span class="p">,</span> <span class="n">birth_date</span><span class="o">=</span><span class="s2">&quot;1980-01-15&quot;</span><span class="p">,</span> <span class="n">gender</span><span class="o">=</span><span class="s2">&quot;male&quot;</span><span class="p">)</span>
 <span class="n">obs</span> <span class="o">=</span> <span class="n">Observation</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">ObservationStatus</span><span class="o">.</span><span class="n">FINAL</span><span class="p">,</span>
@@ -2029,17 +2052,17 @@ Do not use for diagnoses/problems…
 
 <span class="c1"># Always visualize created records</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Patient record:&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">resource_to_markdown</span><span class="p">(</span><span class="n">patient</span><span class="p">,</span> <span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">to_markdown</span><span class="p">(</span><span class="n">patient</span><span class="p">,</span> <span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Observation record:&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">resource_to_markdown</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">to_markdown</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
 </code></pre></div>
 <p>Markdown visualization (for static docs):</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Markdown visualization for any resource</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">resource_to_markdown</span><span class="p">,</span> <span class="n">annotations_to_markdown</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_markdown</span><span class="p">,</span> <span class="n">annotations_to_markdown</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnnotatedDocument</span><span class="p">,</span> <span class="n">Extraction</span><span class="p">,</span> <span class="n">CharInterval</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">resource_to_markdown</span><span class="p">(</span><span class="n">patient</span><span class="p">,</span> <span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">resource_to_markdown</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">to_markdown</span><span class="p">(</span><span class="n">patient</span><span class="p">,</span> <span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">to_markdown</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
 
 <span class="n">doc</span> <span class="o">=</span> <span class="n">AnnotatedDocument</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;BP 128/82, HR 72&quot;</span><span class="p">,</span>
                         <span class="n">extractions</span><span class="o">=</span><span class="p">[</span><span class="n">Extraction</span><span class="p">(</span><span class="n">extraction_class</span><span class="o">=</span><span class="s2">&quot;blood_pressure&quot;</span><span class="p">,</span>

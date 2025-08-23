@@ -305,6 +305,33 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#production-extraction-extractionrunner" class="md-nav__link">
+    <span class="md-ellipsis">
+      Production extraction (ExtractionRunner)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onestep-typed-multiresource-extraction-no-stage1-gating" class="md-nav__link">
+    <span class="md-ellipsis">
+      One‑step typed multi‑resource extraction (no Stage‑1 gating)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cli-hacstools" class="md-nav__link">
+    <span class="md-ellipsis">
+      CLI (hacs‑tools)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#database-persistence" class="md-nav__link">
     <span class="md-ellipsis">
       Database persistence
@@ -575,6 +602,29 @@
   
   <span class="md-ellipsis">
     Extract citations
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/validate_hacs_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Validate HACS models
     
   </span>
   
@@ -1010,6 +1060,33 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#production-extraction-extractionrunner" class="md-nav__link">
+    <span class="md-ellipsis">
+      Production extraction (ExtractionRunner)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#onestep-typed-multiresource-extraction-no-stage1-gating" class="md-nav__link">
+    <span class="md-ellipsis">
+      One‑step typed multi‑resource extraction (no Stage‑1 gating)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cli-hacstools" class="md-nav__link">
+    <span class="md-ellipsis">
+      CLI (hacs‑tools)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#database-persistence" class="md-nav__link">
     <span class="md-ellipsis">
       Database persistence
@@ -1198,12 +1275,41 @@ Observation record:
 <span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>
 
 <span class="n">PatientInfo</span> <span class="o">=</span> <span class="n">Patient</span><span class="o">.</span><span class="n">pick</span><span class="p">(</span><span class="s2">&quot;full_name&quot;</span><span class="p">,</span> <span class="s2">&quot;birth_date&quot;</span><span class="p">,</span> <span class="s2">&quot;gender&quot;</span><span class="p">)</span>
-<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-5&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">note</span> <span class="o">=</span> <span class="s2">&quot;Maria Rodriguez (1985-03-15), female.&quot;</span>
 <span class="n">subset</span> <span class="o">=</span> <span class="n">extract</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Extract demographics.</span><span class="se">\n\n</span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">output_model</span><span class="o">=</span><span class="n">PatientInfo</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;extracted:&quot;</span><span class="p">,</span> <span class="n">subset</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 </code></pre></div>
 <p>See <code>docs/tutorials/medication_extraction.md</code> and API reference (structured extraction).</p>
+<h3 id="production-extraction-extractionrunner">Production extraction (ExtractionRunner)<a class="headerlink" href="#production-extraction-extractionrunner" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Prereq: uv pip install -U hacs-utils[langchain]; set OPENAI_API_KEY</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.structured</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExtractionRunner</span><span class="p">,</span> <span class="n">ExtractionConfig</span>
+
+<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">ExtractionConfig</span><span class="p">(</span><span class="n">concurrency_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">window_timeout_sec</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span> <span class="n">total_timeout_sec</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span> <span class="n">max_extractable_fields</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">runner</span> <span class="o">=</span> <span class="n">ExtractionRunner</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+<span class="n">text</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;examples/data/pt_transcricao_exemplo.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">runner</span><span class="o">.</span><span class="n">extract_document</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">source_text</span><span class="o">=</span><span class="n">text</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">({</span><span class="n">rtype</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">for</span> <span class="n">rtype</span><span class="p">,</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+</code></pre></div>
+<h3 id="onestep-typed-multiresource-extraction-no-stage1-gating">One‑step typed multi‑resource extraction (no Stage‑1 gating)<a class="headerlink" href="#onestep-typed-multiresource-extraction-no-stage1-gating" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.structured</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract_hacs_multi_with_citations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Observation</span><span class="p">,</span> <span class="n">Patient</span><span class="p">,</span> <span class="n">MedicationStatement</span><span class="p">,</span> <span class="n">ServiceRequest</span><span class="p">,</span> <span class="n">DiagnosticReport</span><span class="p">,</span> <span class="n">Condition</span><span class="p">,</span> <span class="n">Immunization</span><span class="p">,</span> <span class="n">Procedure</span>
+
+<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+<span class="n">text</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;examples/data/pt_transcricao_exemplo.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="n">models</span> <span class="o">=</span> <span class="p">[</span><span class="n">Observation</span><span class="p">,</span> <span class="n">Patient</span><span class="p">,</span> <span class="n">MedicationStatement</span><span class="p">,</span> <span class="n">ServiceRequest</span><span class="p">,</span> <span class="n">DiagnosticReport</span><span class="p">,</span> <span class="n">Condition</span><span class="p">,</span> <span class="n">Immunization</span><span class="p">,</span> <span class="n">Procedure</span><span class="p">]</span>
+<span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">extract_hacs_multi_with_citations</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">source_text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">resource_models</span><span class="o">=</span><span class="n">models</span><span class="p">,</span> <span class="n">max_items_per_type</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">({</span><span class="n">rtype</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">for</span> <span class="n">rtype</span><span class="p">,</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+</code></pre></div>
+<h3 id="cli-hacstools">CLI (hacs‑tools)<a class="headerlink" href="#cli-hacstools" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Prereq: uv pip install -e packages/hacs-tools</span>
+hacs-tools<span class="w"> </span>extract<span class="w"> </span>--model<span class="w"> </span>gpt-4o-mini<span class="w"> </span>--transcript<span class="w"> </span>examples/data/pt_transcricao_exemplo.txt<span class="w"> </span>--out<span class="w"> </span>./outputs
+hacs-tools<span class="w"> </span>registry<span class="w"> </span>--list-extractables
+</code></pre></div>
 <h3 id="database-persistence">Database persistence<a class="headerlink" href="#database-persistence" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot; Prereq: uv pip install -U hacs-persistence; set DATABASE_URL &quot;&quot;&quot;</span>
 
@@ -1215,7 +1321,10 @@ Observation record:
 
 <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%(name)s</span><span class="s2">:</span><span class="si">%(levelname)s</span><span class="s2">:</span><span class="si">%(message)s</span><span class="s2">&quot;</span><span class="p">)</span>
 
-<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;DATABASE_URL&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DATABASE_URL&quot;</span><span class="p">,</span> <span class="s2">&quot;postgresql://hacs:hacs_dev@localhost:5432/hacs&quot;</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span><span class="p">,</span> <span class="n">dotenv_values</span>
+<span class="n">load_dotenv</span><span class="p">()</span>
+<span class="n">kv</span> <span class="o">=</span> <span class="n">dotenv_values</span><span class="p">()</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;DATABASE_URL&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kv</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;DATABASE_URL&quot;</span><span class="p">,</span> <span class="s2">&quot;postgresql://hacs:hacs_dev@localhost:5432/hacs&quot;</span><span class="p">)</span>
 
 <span class="n">adapter</span> <span class="o">=</span> <span class="n">HACSConnectionFactory</span><span class="o">.</span><span class="n">get_adapter</span><span class="p">(</span><span class="n">auto_migrate</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">doctor</span> <span class="o">=</span> <span class="n">Actor</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Dr. Sarah Chen&quot;</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="n">ActorRole</span><span class="o">.</span><span class="n">PHYSICIAN</span><span class="p">,</span> <span class="n">organization</span><span class="o">=</span><span class="s2">&quot;General Hospital&quot;</span><span class="p">)</span>

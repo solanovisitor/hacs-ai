@@ -43,21 +43,26 @@ from .agent_registry import (
     get_global_agent_registry,
 )
 
-# IAM and access control
-from .iam_registry import (
-    AccessLevel,
-    PermissionScope,
-    ComplianceRule,
-    AuditEventType,
-    ActorIdentity,
-    Permission,
-    AuditEntry,
-    PermissionMatrix,
-    HACSIAMRegistry,
-    get_global_iam_registry,
-    iam_context,
-    require_permission,
-)
+# IAM and access control (optional; avoid import errors if core not present)
+try:
+    from .iam_registry import (
+        AccessLevel,
+        PermissionScope,
+        ComplianceRule,
+        AuditEventType,
+        ActorIdentity,
+        Permission,
+        AuditEntry,
+        PermissionMatrix,
+        HACSIAMRegistry,
+        get_global_iam_registry,
+        iam_context,
+        require_permission,
+    )
+except Exception:
+    AccessLevel = PermissionScope = ComplianceRule = AuditEventType = None
+    ActorIdentity = Permission = AuditEntry = PermissionMatrix = None
+    HACSIAMRegistry = get_global_iam_registry = iam_context = require_permission = None
 
 # Tool registry (existing)
 # Unified tool registry and plugin discovery
@@ -149,6 +154,7 @@ __all__ = [
     "HACSAgentRegistry",
     "get_global_agent_registry",
     # IAM registry - Access control
+    # IAM exports (may be None if unavailable)
     "AccessLevel",
     "PermissionScope",
     "ComplianceRule",

@@ -127,3 +127,55 @@ class Encounter(DomainResource):
     def __str__(self) -> str:
         """Human-readable string representation."""
         return f"Encounter({self.class_}, {self.status})"
+
+    # --- LLM-friendly extractable facade overrides ---
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
+        """Return fields that should be extracted by LLMs (3-4 key fields only)."""
+        return [
+            "status",
+            "class_",
+            "period_start",
+            "reason_code",
+        ]
+
+    @classmethod
+    def get_required_extractables(cls) -> list[str]:
+        """Fields that must be provided for valid extraction."""
+        return ["status", "class_"]
+
+    @classmethod
+    def get_canonical_defaults(cls) -> dict[str, Any]:
+        """Default values for system/required fields during extraction."""
+        return {
+            "status": "finished",
+            "class_": "outpatient",
+            "subject": "Patient/UNKNOWN",
+        }
+
+    @classmethod
+    def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
+        """Coerce extractable payload to proper types with relaxed validation."""
+        coerced = payload.copy()
+        
+        # Coerce reason_code to list of CodeableConcept if it's a string or dict
+        if "reason_code" in coerced:
+            reason = coerced["reason_code"]
+            if isinstance(reason, str):
+                coerced["reason_code"] = [{"text": reason}]
+            elif isinstance(reason, dict):
+                coerced["reason_code"] = [reason]
+            elif not isinstance(reason, list):
+                coerced["reason_code"] = []
+        
+        return coerced
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:  # type: ignore[override]
+        """Provide LLM-specific extraction hints."""
+        return [
+            "Extract encounter type (inpatient, outpatient, emergency, ambulatory)",
+            "Status should be: planned, arrived, in-progress, finished, cancelled",
+            "Include start time when mentioned",
+            "Capture reason for visit in reason_code"
+        ]

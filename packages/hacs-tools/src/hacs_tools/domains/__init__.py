@@ -47,16 +47,10 @@ except Exception:
 # Extraction domain is optional at import-time due to LLM dependencies. Defer failures.
 try:
     from .extraction import (
-        synthesize_mapping_spec,
-        extract_variables,
-        apply_mapping_spec,
-        summarize_context,
+        extract_hacs_fields,
     )
 except Exception:
-    synthesize_mapping_spec = None  # type: ignore
-    extract_variables = None  # type: ignore
-    apply_mapping_spec = None  # type: ignore
-    summarize_context = None  # type: ignore
+    extract_hacs_fields = None  # type: ignore
 
 from .database import (
     save_resource,
@@ -101,11 +95,8 @@ __all__ = [
     "validate_resource",
     "diff_resources",
     "validate_bundle",
-    # Extraction Domain - Structured data extraction and mapping
-    "synthesize_mapping_spec",
-    "extract_variables",
-    "apply_mapping_spec",
-    "summarize_context",
+    # Extraction Domain - Structured data extraction
+    "extract_hacs_fields",
     # Database Domain - CRUD operations, registry, vector search
     "save_resource",
     "read_resource",

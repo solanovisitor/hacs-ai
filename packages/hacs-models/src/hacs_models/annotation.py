@@ -193,7 +193,7 @@ class CharInterval(BaseModel):
     end_pos: int | None = None
 
 
-class Extraction(BaseModel):
+class ExtractionResults(BaseModel):
     extraction_class: str
     extraction_text: str
     char_interval: CharInterval | None = None
@@ -581,5 +581,86 @@ def create_clinical_summary(
 
 class AnnotatedDocument(BaseModel):
     document_id: str = Field(default_factory=lambda: f"doc_{uuid4().hex[:8]}")
-    extractions: list[Extraction] | None = None
+    extractions: list[ExtractionResults] | None = None
     text: str | None = None
+
+
+# --------------------------------------------
+# Extraction Recipe (config object for extraction flows)
+# --------------------------------------------
+
+
+class ExtractionRecipe(BaseModel):
+    # Identity
+    name: str = Field(default="recipe")
+    description: str | None = None
+    locale: str | None = None
+    version: str | None = None
+
+    # Output target
+    output_mode: Literal["citations", "typed"] = "citations"
+    resource_type: str | None = None
+    fields: list[str] | None = None
+
+    # Prompting
+    base_prompt: str | None = None
+    use_descriptive_schema: bool = True
+    repair_attempts: int = 1
+
+    # Provider (advisory; actual provider selection handled by utils)
+    provider: Literal["auto", "langchain", "openai", "anthropic"] = "auto"
+    model: str = "gpt-5-mini-2025-08-07"
+    temperature: float | None = None
+    timeout_sec: int = 45
+    max_retries: int = 0
+    prefer_provider_structured: bool = True
+    prefer_langchain_structured: bool = True
+
+    # Sampling/shape
+    many: bool = True
+    max_items: int = 20
+    fenced_output: bool = True
+
+    # Chunking/alignment
+    chunking_policy: ChunkingPolicy | None = None
+    align_spans: bool = True
+    case_insensitive_align: bool = True
+
+    # Injection/normalization
+    injected_fields: dict[str, Any] = Field(default_factory=dict)
+    injected_instance: dict[str, Any] | None = None
+    label_mapping: dict[str, str] = Field(default_factory=dict)
+    post_filters: dict[str, Any] = Field(default_factory=dict)
+
+    # Citations-specific rules
+    citations_rules: dict[str, Any] = Field(default_factory=dict)
+
+    # Validation
+    enum_aliases: dict[str, dict[str, str]] = Field(default_factory=dict)
+    resource_constraints: dict[str, Any] = Field(default_factory=dict)
+
+    # Debugging
+    debug_dir: str | None = None
+    debug_prefix: str | None = None
+    save_prompts: bool = True
+    save_responses: bool = True
+    save_parsed: bool = True
+    save_validation: bool = True
+
+    def to_structured_kwargs(self) -> dict[str, Any]:
+        # Avoid importing utils to prevent cycles; rely on defaults (JSON)
+        return {
+            "many": self.many,
+            "max_items": self.max_items,
+            "fenced_output": self.fenced_output,
+            "max_retries": self.repair_attempts,
+            "strict": False,
+            "use_descriptive_schema": self.use_descriptive_schema,
+            "chunking_policy": self.chunking_policy,
+            "case_insensitive_align": self.case_insensitive_align,
+            "injected_fields": dict(self.injected_fields or {}),
+            "debug_dir": self.debug_dir,
+            "debug_prefix": self.debug_prefix,
+            "prefer_provider_structured": self.prefer_provider_structured,
+            "prefer_langchain_structured": self.prefer_langchain_structured,
+        }

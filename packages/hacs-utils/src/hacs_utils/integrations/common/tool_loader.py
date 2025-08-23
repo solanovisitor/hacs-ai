@@ -177,9 +177,10 @@ def _compute_injected_values(required: set[str]) -> Dict[str, Any]:
     needs_db = any(k in required for k in ("db_adapter", "database"))
     if needs_db:
         try:
-            from hacs_utils.container import get_persistence_provider  # type: ignore
-
-            db = get_persistence_provider()
+            # Note: get_persistence_provider moved to hacs_infrastructure
+            from hacs_infrastructure import get_container
+            container = get_container()
+            db = container.get_adapter("PersistenceProvider")
             if "db_adapter" in required:
                 injected["db_adapter"] = db
             if "database" in required:
@@ -192,9 +193,10 @@ def _compute_injected_values(required: set[str]) -> Dict[str, Any]:
     needs_vs = any(k in required for k in ("vector_store", "store"))
     if needs_vs:
         try:
-            from hacs_utils.container import get_vector_store  # type: ignore
-
-            vs = get_vector_store()
+            # Note: get_vector_store moved to hacs_infrastructure
+            from hacs_infrastructure import get_container
+            container = get_container()
+            vs = container.get_adapter("VectorStore")
             if "vector_store" in required:
                 injected["vector_store"] = vs
             if "store" in required:

@@ -26,7 +26,7 @@ clinical_text = (
     "Continue current Aspirin 81mg daily for cardioprotection."
 )
 
-llm = ChatOpenAI(model="gpt-5-mini-2025-08-07")
+llm = ChatOpenAI(model="gpt-4o-mini")
 
 med_prompt = f"""
 Extract MedicationRequest objects for each medication order in the text.
@@ -107,19 +107,9 @@ Output:
 | subject | Patient/123 |
 | created_at | 2025-08-20T00:00:00Z |
 | updated_at | 2025-08-20T00:00:00Z |
-
-#### Condition
-
-| Field | Value |
-|---|---|
-| resource_type | Condition |
-| id | condition-2 |
-| status | active |
-| code | type 2 diabetes |
-| subject | Patient/123 |
-| created_at | 2025-08-20T00:00:00Z |
-| updated_at | 2025-08-20T00:00:00Z |
 ```
+
+> Tip: Use `injected_fields` to pre‑fill stable enum/reference fields (e.g., status, intent, subject) so the model focuses on content extraction. See the injected_fields section in the extraction guide.
 
 <!-- Analysis intentionally omitted for brevity -->
 

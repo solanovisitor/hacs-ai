@@ -96,13 +96,51 @@ from hacs_utils.structured import extract
 from langchain_openai import ChatOpenAI
 
 PatientInfo = Patient.pick("full_name", "birth_date", "gender")
-llm = ChatOpenAI(model="gpt-5", temperature=0)
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 note = "Maria Rodriguez (1985-03-15), female."
 subset = extract(llm, prompt=f"Extract demographics.\n\n{note}", output_model=PatientInfo)
 print("extracted:", subset.model_dump())
 ```
 
 See `docs/tutorials/medication_extraction.md` and API reference (structured extraction).
+
+### Production extraction (ExtractionRunner)
+
+```python
+# Prereq: uv pip install -U hacs-utils[langchain]; set OPENAI_API_KEY
+from langchain_openai import ChatOpenAI
+from hacs_utils.structured import ExtractionRunner, ExtractionConfig
+
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1, timeout=60)
+config = ExtractionConfig(concurrency_limit=3, window_timeout_sec=45, total_timeout_sec=600, max_extractable_fields=4)
+runner = ExtractionRunner(config)
+
+text = open("examples/data/pt_transcricao_exemplo.txt", "r", encoding="utf-8").read()
+results = await runner.extract_document(llm, source_text=text)
+print({rtype: len(items) for rtype, items in results.items()})
+```
+
+### One‑step typed multi‑resource extraction (no Stage‑1 gating)
+
+```python
+from langchain_openai import ChatOpenAI
+from hacs_utils.structured import extract_hacs_multi_with_citations
+from hacs_models import Observation, Patient, MedicationStatement, ServiceRequest, DiagnosticReport, Condition, Immunization, Procedure
+
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1, timeout=60)
+text = open("examples/data/pt_transcricao_exemplo.txt", "r", encoding="utf-8").read()
+models = [Observation, Patient, MedicationStatement, ServiceRequest, DiagnosticReport, Condition, Immunization, Procedure]
+results = await extract_hacs_multi_with_citations(llm, source_text=text, resource_models=models, max_items_per_type=20)
+print({rtype: len(items) for rtype, items in results.items()})
+```
+
+### CLI (hacs‑tools)
+
+```bash
+# Prereq: uv pip install -e packages/hacs-tools
+hacs-tools extract --model gpt-4o-mini --transcript examples/data/pt_transcricao_exemplo.txt --out ./outputs
+hacs-tools registry --list-extractables
+```
 
 ### Database persistence
 
@@ -117,7 +155,10 @@ from hacs_models.types import ObservationStatus
 
 logging.basicConfig(level=logging.INFO, format="%(name)s:%(levelname)s:%(message)s")
 
-os.environ["DATABASE_URL"] = os.getenv("DATABASE_URL", "postgresql://hacs:hacs_dev@localhost:5432/hacs")
+from dotenv import load_dotenv, dotenv_values
+load_dotenv()
+kv = dotenv_values()
+os.environ["DATABASE_URL"] = kv.get("DATABASE_URL", "postgresql://hacs:hacs_dev@localhost:5432/hacs")
 
 adapter = HACSConnectionFactory.get_adapter(auto_migrate=False)
 doctor = Actor(name="Dr. Sarah Chen", role=ActorRole.PHYSICIAN, organization="General Hospital")

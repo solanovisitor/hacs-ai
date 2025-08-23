@@ -87,11 +87,14 @@ Extracted: 1 MedicationRequest, 2 Condition
 
 ```python
 import os, asyncio
+from dotenv import load_dotenv, dotenv_values
 from hacs_persistence.adapter import create_postgres_adapter
 from hacs_models import Actor
 
-# Map DATABASE_URL -> HACS_DATABASE_URL for adapter
-os.environ.setdefault("HACS_DATABASE_URL", os.getenv("DATABASE_URL", ""))
+# Map DATABASE_URL -> HACS_DATABASE_URL for adapter using dotenv
+load_dotenv()
+kv = dotenv_values()
+os.environ.setdefault("HACS_DATABASE_URL", kv.get("DATABASE_URL", ""))
 
 async def persist_all():
     adapter = await create_postgres_adapter()

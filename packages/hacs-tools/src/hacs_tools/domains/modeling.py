@@ -449,6 +449,147 @@ def validate_bundle(bundle: Dict[str, Any]) -> HACSResult:
 validate_bundle._tool_args = ValidateBundleInput  # type: ignore[attr-defined]
 
 
+# ----------------------------------------------------------------------------
+# Document/Composition mutations: add_entries
+# ----------------------------------------------------------------------------
+
+
+class AddEntriesInput(BaseModel):
+    document: Dict[str, Any] = Field(description="Document/Composition dictionary")
+    entries: List[Dict[str, Any]] = Field(
+        description=
+        "List of resources to add. Each item must contain 'resource_type' and the fields of the resource."
+    )
+    strategy: str = Field(
+        default="append",
+        description="append|upsert (best-effort upsert by resource_type + simple keys like code.text)",
+    )
+
+
+def _ensure_document(doc_data: Dict[str, Any]) -> Document:
+    """Instantiate a Document safely even if status=final and no sections yet."""
+    try:
+        return Document(**doc_data)
+    except Exception:
+        tmp = dict(doc_data)
+        tmp["status"] = "preliminary"
+        return Document(**tmp)
+
+
+def _get_or_create_section(doc: Document, title: str):
+    sec = doc.get_section_by_title(title)
+    if not sec:
+        doc.add_section(title, "")
+        sec = doc.get_section_by_title(title)
+    return sec
+
+
+def _summarize_resource_line(rtype: str, res: Dict[str, Any]) -> str:
+    rtype_lower = (rtype or "").lower()
+    if rtype_lower == "observation":
+        code = (((res.get("code") or {}).get("text")) if isinstance(res.get("code"), dict) else res.get("code")) or "Observação"
+        vq = res.get("value_quantity") or {}
+        val = vq.get("value")
+        unit = vq.get("unit")
+        return f"{code}: {val} {unit}".strip()
+    if rtype_lower == "medicationstatement":
+        m = res.get("medication_codeable_concept") or {}
+        name = m.get("text") or "Medicamento"
+        ds = res.get("dosage") or []
+        dtext = ds[0].get("text") if ds and isinstance(ds[0], dict) else None
+        return f"{name}{' - ' + dtext if dtext else ''}"
+    if rtype_lower == "condition":
+        code = (((res.get("code") or {}).get("text")) if isinstance(res.get("code"), dict) else res.get("code")) or "Condição"
+        return f"{code}"
+    if rtype_lower == "immunization":
+        v = res.get("vaccine_code") or {}
+        vtext = v.get("text") or "Imunização"
+        when = res.get("occurrence_date_time") or ""
+        return f"{vtext}{' - ' + when if when else ''}"
+    if rtype_lower == "familymemberhistory":
+        rel = res.get("relationship")
+        note = res.get("note")
+        rel_text = rel.get("text") if isinstance(rel, dict) else rel
+        note_text = note.get("text") if isinstance(note, dict) else note
+        return " - ".join([x for x in [rel_text, note_text] if x]) or "História familiar"
+    if rtype_lower == "servicerequest":
+        code = (((res.get("code") or {}).get("text")) if isinstance(res.get("code"), dict) else res.get("code")) or "Solicitação"
+        return f"{code}"
+    # Fallback
+    return rtype
+
+
+def _target_section_for_resource(rtype: str, res: Dict[str, Any]) -> str:
+    rl = (rtype or "").lower()
+    if rl == "observation":
+        code = (((res.get("code") or {}).get("text")) if isinstance(res.get("code"), dict) else res.get("code")) or ""
+        return "Sinais Vitais" if any(k in (code or "").lower() for k in ["pa", "fc", "fr", "temp", "sp"]) else "Dados Antropométricos"
+    if rl == "medicationstatement":
+        return "Medicações em uso"
+    if rl == "condition":
+        return "Hipóteses Diagnósticas"
+    if rl == "immunization":
+        return "História Vacinal"
+    if rl == "familymemberhistory":
+        return "História Familiar"
+    if rl == "servicerequest":
+        return "Exames Complementares"
+    return "Outros"
+
+
+@register_tool(name="add_entries", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE)
+def add_entries(document: Dict[str, Any], entries: List[Dict[str, Any]], strategy: str = "append") -> HACSResult:
+    """
+    Add HACS resources into a Document/Composition, mapping each resource to the appropriate section and
+    appending a concise, clinical summary line. If strategy='upsert', best-effort replace lines by
+    resource_type + a simple key (e.g., Observation.code.text).
+
+    Returns the updated document.
+    """
+    try:
+        doc_obj = _ensure_document(document)
+        added = 0
+        for res in entries or []:
+            rtype = res.get("resource_type")
+            if not rtype:
+                continue
+            target = _target_section_for_resource(rtype, res)
+            line = _summarize_resource_line(rtype, res)
+            sec = _get_or_create_section(doc_obj, target)
+            current_text = getattr(sec, "text", "") or ""
+            # naive upsert: replace line containing the code text if present
+            if strategy == "upsert":
+                key = None
+                if rtype.lower() == "observation":
+                    code = res.get("code") or {}
+                    key = (code.get("text") if isinstance(code, dict) else None)
+                if key and current_text:
+                    lines = [ln for ln in current_text.split("\n") if ln.strip()]
+                    replaced = False
+                    for i, ln in enumerate(lines):
+                        if key and key.lower() in ln.lower():
+                            lines[i] = line
+                            replaced = True
+                            break
+                    if replaced:
+                        sec.text = "\n".join(lines)
+                    else:
+                        sec.text = (current_text + ("\n" if current_text and not current_text.endswith("\n") else "") + line)
+                else:
+                    sec.text = (current_text + ("\n" if current_text and not current_text.endswith("\n") else "") + line)
+            else:
+                sec.text = (current_text + ("\n" if current_text and not current_text.endswith("\n") else "") + line)
+            added += 1
+
+        updated = doc_obj.model_dump()
+        return HACSResult(success=True, message=f"Added {added} entries", data={"document": updated, "added": added})
+    except Exception as e:
+        return HACSResult(success=False, message="Failed to add entries", error=str(e))
+
+
+add_entries._tool_args = AddEntriesInput  # type: ignore[attr-defined]
+
+
 def validate_bundles(bundles: List[Dict[str, Any]]) -> HACSResult:
     """Validate multiple bundles."""
     results: List[Dict[str, Any]] = []

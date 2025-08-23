@@ -337,3 +337,53 @@ class Goal(DomainResource):
         goal_text = self.get_display_text()
         status_str = f" ({self.lifecycle_status})" if self.lifecycle_status else ""
         return f"Goal('{goal_text}'{status_str})"
+
+    # --- LLM-friendly extractable facade overrides ---
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
+        """Return fields that should be extracted by LLMs (3-4 key fields only)."""
+        return [
+            "lifecycle_status",
+            "description",
+            "target",
+            "start_date",
+        ]
+
+    @classmethod
+    def get_required_extractables(cls) -> list[str]:
+        """Fields that must be provided for valid extraction."""
+        return ["description"]
+
+    @classmethod
+    def get_canonical_defaults(cls) -> dict[str, Any]:
+        """Default values for system/required fields during extraction."""
+        return {
+            "lifecycle_status": "active",
+            "subject": "Patient/UNKNOWN",
+            "description": {"text": ""},  # Will be filled by LLM
+        }
+
+    @classmethod
+    def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
+        """Coerce extractable payload to proper types with relaxed validation."""
+        coerced = payload.copy()
+        
+        # Coerce description to CodeableConcept if it's a string
+        if "description" in coerced and isinstance(coerced["description"], str):
+            coerced["description"] = {"text": coerced["description"]}
+        
+        # Coerce target to list if it's a single dict
+        if "target" in coerced and isinstance(coerced["target"], dict):
+            coerced["target"] = [coerced["target"]]
+        
+        return coerced
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:  # type: ignore[override]
+        """Provide LLM-specific extraction hints."""
+        return [
+            "Extract goal description (what the patient wants to achieve)",
+            "Include target outcomes with measurable values when mentioned",
+            "Capture start date or timeline when specified",
+            "Status should be: proposed, accepted, active, completed, or cancelled"
+        ]

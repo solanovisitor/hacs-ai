@@ -555,6 +555,39 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#guide-llm-outputs-with-injected-fields-highly-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      Guide LLM outputs with injected fields (highly recommended)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Guide LLM outputs with injected fields (highly recommended)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#injecting-larger-templates-advanced" class="md-nav__link">
+    <span class="md-ellipsis">
+      Injecting larger templates (advanced)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structure-resources-directly-no-long-text-extraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Structure resources directly (no long text extraction)
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -577,6 +610,29 @@
   
   <span class="md-ellipsis">
     Extract citations
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../validate_hacs_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Validate HACS models
     
   </span>
   
@@ -1107,6 +1163,39 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#guide-llm-outputs-with-injected-fields-highly-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      Guide LLM outputs with injected fields (highly recommended)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Guide LLM outputs with injected fields (highly recommended)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#injecting-larger-templates-advanced" class="md-nav__link">
+    <span class="md-ellipsis">
+      Injecting larger templates (advanced)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structure-resources-directly-no-long-text-extraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Structure resources directly (no long text extraction)
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1227,14 +1316,14 @@ Do not use for actual medication taking/administration (use MedicationStatement/
 <div class="highlight"><pre><span></span><code><span class="c1"># Initialize the language model for HACS model extraction</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>
 
-<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-5-mini-2025-08-07&quot;</span><span class="p">)</span>
+<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">)</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✓ LLM configured for HACS model extraction&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Model: </span><span class="si">{</span><span class="n">llm</span><span class="o">.</span><span class="n">model_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Model: gpt-4o-mini&quot;</span><span class="p">)</span>
 </code></pre></div>
 <p>Output:
 <div class="highlight"><pre><span></span><code>✓ LLM configured for HACS model extraction
-Model: gpt-5-mini-2025-08-07
+Model: gpt-4o-mini
 </code></pre></div></p>
 <h3 id="step-5-extract-structured-hacs-models">Step 5: Extract structured HACS models<a class="headerlink" href="#step-5-extract-structured-hacs-models" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_markdown</span>
@@ -1254,22 +1343,51 @@ Model: gpt-5-mini-2025-08-07
 
 <span class="nb">print</span><span class="p">(</span><span class="n">to_markdown</span><span class="p">(</span><span class="n">medication_requests</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Example Extraction Record&quot;</span><span class="p">))</span>
 </code></pre></div>
-<p>Output:
-<div class="highlight"><pre><span></span><code>### Example Extraction Record
+<p>Output:</p>
+<div class="highlight"><pre><span></span><code><span class="gu">### Example Extraction Record</span>
 
-#### MedicationRequest
+<span class="gu">#### MedicationRequest</span>
 
 | Field | Value |
 |---|---|
 | resource_type | MedicationRequest |
-| id | medicationrequest-093872e8 |
+| id | medicationrequest-c921d3cc |
 | status | active |
-| subject | Patient/123 |
-| dosage_instruction | [] |
+| subject | Patient/UNKNOWN |
+| medication_codeable_concept | Lisinopril 10mg |
+| dosage_instruction | Take 10mg daily for hypertension management. |
 | intent | order |
-| created_at | 2025-08-20T02:24:30.881805Z |
-| updated_at | 2025-08-20T02:24:30.881814Z |
-</code></pre></div></p>
+| created_at | 2025-08-23T18:07:02.401678Z |
+| updated_at | 2025-08-23T18:07:02.401689Z |
+
+<span class="gu">#### MedicationRequest</span>
+
+| Field | Value |
+|---|---|
+| resource_type | MedicationRequest |
+| id | medicationrequest-4c3f55dc |
+| status | active |
+| subject | Patient/UNKNOWN |
+| medication_codeable_concept | Metformin 500mg |
+| dosage_instruction | Take 500mg twice daily for type 2 diabetes control. |
+| intent | order |
+| created_at | 2025-08-23T18:07:02.401940Z |
+| updated_at | 2025-08-23T18:07:02.401941Z |
+
+<span class="gu">#### MedicationRequest</span>
+
+| Field | Value |
+|---|---|
+| resource_type | MedicationRequest |
+| id | medicationrequest-22d00c68 |
+| status | active |
+| subject | Patient/UNKNOWN |
+| medication_codeable_concept | Aspirin 81mg |
+| dosage_instruction | Continue taking 81mg daily for cardioprotection. |
+| intent | order |
+| created_at | 2025-08-23T18:07:02.401974Z |
+| updated_at | 2025-08-23T18:07:02.401974Z |
+</code></pre></div>
 <p><strong>What happens during HACS model extraction:</strong></p>
 <ol>
 <li>HACS descriptive schema provides field descriptions, enum values, and examples to the LLM</li>
@@ -1336,48 +1454,90 @@ Model: gpt-5-mini-2025-08-07
 <span class="nb">print</span><span class="p">()</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">to_markdown</span><span class="p">(</span><span class="n">conds</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Extracted Conditions&quot;</span><span class="p">))</span>
 </code></pre></div>
-<p>Output:
-<div class="highlight"><pre><span></span><code>### Extracted MedicationRequests
+<p>Output (MedicationRequest):</p>
+<div class="highlight"><pre><span></span><code><span class="gu">### Extracted MedicationRequests</span>
 
-#### MedicationRequest
+<span class="gu">#### MedicationRequest</span>
 
 | Field | Value |
 |---|---|
 | resource_type | MedicationRequest |
-| id | medicationrequest-093872e8 |
+| id | medicationrequest-54fe2fc5 |
 | status | active |
 | subject | Patient/123 |
-| dosage_instruction | [] |
+| medication_codeable_concept | Lisinopril |
+| dosage_instruction | 10mg daily |
 | intent | order |
-| created_at | 2025-08-20T02:24:30.881805Z |
-| updated_at | 2025-08-20T02:24:30.881814Z |
+| created_at | 2025-08-23T18:07:26.327782Z |
+| updated_at | 2025-08-23T18:07:26.327786Z |
 
-### Extracted Conditions
+<span class="gu">#### MedicationRequest</span>
 
-#### Condition
+| Field | Value |
+|---|---|
+| resource_type | MedicationRequest |
+| id | medicationrequest-b9211585 |
+| status | active |
+| subject | Patient/123 |
+| medication_codeable_concept | Metformin |
+| dosage_instruction | 500mg twice daily |
+| intent | order |
+| created_at | 2025-08-23T18:07:26.327883Z |
+| updated_at | 2025-08-23T18:07:26.327884Z |
+
+<span class="gu">#### MedicationRequest</span>
+
+| Field | Value |
+|---|---|
+| resource_type | MedicationRequest |
+| id | medicationrequest-2653a3d8 |
+| status | active |
+| subject | Patient/123 |
+| medication_codeable_concept | Aspirin |
+| dosage_instruction | 81mg daily |
+| intent | order |
+| created_at | 2025-08-23T18:07:26.327915Z |
+| updated_at | 2025-08-23T18:07:26.327915Z |
+</code></pre></div>
+<p>Output (Condition):</p>
+<div class="highlight"><pre><span></span><code><span class="gu">### Extracted Conditions</span>
+
+<span class="gu">#### Condition</span>
 
 | Field | Value |
 |---|---|
 | resource_type | Condition |
-| id | condition-1 |
+| id | condition-5ad26285 |
 | status | active |
 | code | hypertension |
 | subject | Patient/123 |
-| created_at | 2025-08-20T00:00:00Z |
-| updated_at | 2025-08-20T00:00:00Z |
+| created_at | 2025-08-23T18:07:28.884472Z |
+| updated_at | 2025-08-23T18:07:28.884475Z |
 
-#### Condition
+<span class="gu">#### Condition</span>
 
 | Field | Value |
 |---|---|
 | resource_type | Condition |
-| id | condition-2 |
+| id | condition-56b673eb |
 | status | active |
 | code | type 2 diabetes |
 | subject | Patient/123 |
-| created_at | 2025-08-20T00:00:00Z |
-| updated_at | 2025-08-20T00:00:00Z |
-</code></pre></div></p>
+| created_at | 2025-08-23T18:07:28.884555Z |
+| updated_at | 2025-08-23T18:07:28.884556Z |
+
+<span class="gu">#### Condition</span>
+
+| Field | Value |
+|---|---|
+| resource_type | Condition |
+| id | condition-9358471e |
+| status | active |
+| code | cardioprotection |
+| subject | Patient/123 |
+| created_at | 2025-08-23T18:07:28.884567Z |
+| updated_at | 2025-08-23T18:07:28.884568Z |
+</code></pre></div>
 <h2 id="create-a-clinical-document-from-extracted-resources">Create a clinical document from extracted resources<a class="headerlink" href="#create-a-clinical-document-from-extracted-resources" title="Permanent link">&para;</a></h2>
 <p>Once you have extracted HACS models, assemble them into a structured clinical document:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Document</span>
@@ -1431,6 +1591,91 @@ Model: gpt-5-mini-2025-08-07
 <h2 id="alternative-approaches">Alternative approaches<a class="headerlink" href="#alternative-approaches" title="Permanent link">&para;</a></h2>
 <h3 id="extract-with-citations">Extract with citations<a class="headerlink" href="#extract-with-citations" title="Permanent link">&para;</a></h3>
 <p>For cases where you need precise character positions instead of structured models, see the <a href="../grounded_extraction/">Extract with citations guide</a>.</p>
+<h2 id="guide-llm-outputs-with-injected-fields-highly-recommended">Guide LLM outputs with injected fields (highly recommended)<a class="headerlink" href="#guide-llm-outputs-with-injected-fields-highly-recommended" title="Permanent link">&para;</a></h2>
+<p>Most healthcare resources have required enums and references. To keep the model focused on clinical content while guaranteeing validity, use <code>injected_fields</code> to pre‑fill stable fields and let the LLM fill the rest.</p>
+<ul>
+<li>What it does: merges your fields into the LLM result, then re‑validates the object</li>
+<li>Priority: injected_instance &gt; injected_fields &gt; LLM generated values</li>
+<li>Unknown keys are ignored by validation</li>
+<li>Works for both single and list outputs</li>
+</ul>
+<p>Common examples:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 1) MedicationRequest: lock status, intent, and patient reference</span>
+<span class="n">meds</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">extract</span><span class="p">(</span>
+    <span class="n">llm_provider</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
+    <span class="n">prompt</span><span class="o">=</span><span class="n">med_prompt</span><span class="p">,</span>
+    <span class="n">output_model</span><span class="o">=</span><span class="n">MedicationRequest</span><span class="p">,</span>
+    <span class="n">many</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">injected_fields</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">MedicationRequestStatus</span><span class="o">.</span><span class="n">ACTIVE</span><span class="p">,</span>
+        <span class="s2">&quot;intent&quot;</span><span class="p">:</span> <span class="n">MedicationRequestIntent</span><span class="o">.</span><span class="n">ORDER</span><span class="p">,</span>
+        <span class="s2">&quot;subject&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Patient/</span><span class="si">{</span><span class="n">patient_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">))</span>
+
+<span class="c1"># 2) Condition: ensure clinical and verification statuses are valid</span>
+<span class="n">conds</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">extract</span><span class="p">(</span>
+    <span class="n">llm_provider</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
+    <span class="n">prompt</span><span class="o">=</span><span class="n">cond_prompt</span><span class="p">,</span>
+    <span class="n">output_model</span><span class="o">=</span><span class="n">Condition</span><span class="p">,</span>
+    <span class="n">many</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">injected_fields</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;clinical_status&quot;</span><span class="p">:</span> <span class="n">ConditionClinicalStatus</span><span class="o">.</span><span class="n">ACTIVE</span><span class="p">,</span>
+        <span class="s2">&quot;verification_status&quot;</span><span class="p">:</span> <span class="n">ConditionVerificationStatus</span><span class="o">.</span><span class="n">CONFIRMED</span><span class="p">,</span>
+        <span class="s2">&quot;subject&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Patient/</span><span class="si">{</span><span class="n">patient_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">))</span>
+</code></pre></div>
+<p>Notes:
+- Prefer enums from <code>hacs_models</code> for clarity and validation.
+- You can inject any field the model supports (strings, enums, nested structures).
+- This is the easiest way to fix flaky enum/literal fields while keeping the LLM’s job simple.</p>
+<h3 id="injecting-larger-templates-advanced">Injecting larger templates (advanced)<a class="headerlink" href="#injecting-larger-templates-advanced" title="Permanent link">&para;</a></h3>
+<p>You can also pass a partial object via <code>injected_instance</code> when you already have a resource to merge from. Use this when you want to carry forward system‑generated IDs or shared metadata.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Example: carry an existing subject reference and intent from a prior step</span>
+<span class="n">base_fields</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;subject&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Patient/</span><span class="si">{</span><span class="n">patient_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;intent&quot;</span><span class="p">:</span> <span class="n">MedicationRequestIntent</span><span class="o">.</span><span class="n">ORDER</span><span class="p">}</span>
+<span class="n">meds</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">extract</span><span class="p">(</span>
+    <span class="n">llm_provider</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
+    <span class="n">prompt</span><span class="o">=</span><span class="n">med_prompt</span><span class="p">,</span>
+    <span class="n">output_model</span><span class="o">=</span><span class="n">MedicationRequest</span><span class="p">,</span>
+    <span class="n">many</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">injected_fields</span><span class="o">=</span><span class="n">base_fields</span><span class="p">,</span>
+    <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">))</span>
+</code></pre></div>
+<hr />
+<h2 id="structure-resources-directly-no-long-text-extraction">Structure resources directly (no long text extraction)<a class="headerlink" href="#structure-resources-directly-no-long-text-extraction" title="Permanent link">&para;</a></h2>
+<p>Use <code>structure()</code> when you want the model to produce a typed object from concise instructions and context (not chunking). This is useful for generating plans, orders, or summaries given known values.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.structured</span><span class="w"> </span><span class="kn">import</span> <span class="n">structure</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CarePlan</span>
+
+<span class="n">patient_ref</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Patient/</span><span class="si">{</span><span class="n">patient_id</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="n">ctx</span> <span class="o">=</span> <span class="s2">&quot;Patient has hypertension; reduce BP over 3 months with medication and lifestyle changes.&quot;</span>
+
+<span class="n">cp</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">structure</span><span class="p">(</span>
+    <span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
+    <span class="n">prompt</span><span class="o">=</span><span class="p">(</span>
+        <span class="s2">&quot;Generate a CarePlan object.</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Subject: </span><span class="si">{</span><span class="n">patient_ref</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="s2">&quot;Include: title, description_text, at least one activity_text item, and one goal_refs placeholder.</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Context: </span><span class="si">{</span><span class="n">ctx</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">),</span>
+    <span class="n">output_model</span><span class="o">=</span><span class="n">CarePlan</span><span class="p">,</span>
+    <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">))</span>
+</code></pre></div>
+<p>Synchronous convenience wrappers are also available for scripts/CLI:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract_sync</span><span class="p">,</span> <span class="n">structure_sync</span>
+
+<span class="n">subset</span> <span class="o">=</span> <span class="n">extract_sync</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;Extract: Jane Doe (1985-03-20)&quot;</span><span class="p">,</span> <span class="n">output_model</span><span class="o">=</span><span class="n">Patient</span><span class="o">.</span><span class="n">pick</span><span class="p">(</span><span class="s2">&quot;full_name&quot;</span><span class="p">,</span><span class="s2">&quot;birth_date&quot;</span><span class="p">),</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">plan</span> <span class="o">=</span> <span class="n">structure_sync</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;Return a CarePlan for Patient/123 with a title and one activity_text&quot;</span><span class="p">,</span> <span class="n">output_model</span><span class="o">=</span><span class="n">CarePlan</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div>
+<p>Implementation details:
+- Descriptive schema is enabled by default; field descriptions and allowed values are injected into prompts.
+- Provider‑native structured outputs (OpenAI Responses.parse, Anthropic tool JSON) are preferred when available; otherwise LangChain function calling is used.
+- Injected fields are merged after parsing, then the object is re‑validated.</p>
 
 
 

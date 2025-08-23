@@ -11,61 +11,41 @@ from typing import Dict, List, Any, Optional
 
 from hacs_models import HACSResult
 from hacs_registry.tool_registry import register_tool, VersionStatus
-from hacs_utils.resource_specific import (
+from hacs_utils.resources import (
+    # patient
     calculate_patient_age,
     add_patient_identifier,
     get_patient_identifier_by_type,
     add_patient_care_provider,
     deactivate_patient,
+    # observation
     get_observation_value_summary,
+    # document
     get_document_full_text,
+    # document reference
     validate_document_metadata,
     resolve_document_location,
     register_external_document,
     link_document_to_record,
-    validate_service_request,
-    route_service_request,
+    # service request (validation/routing still local below)
+    # diagnostic report
     summarize_diagnostic_report,
     link_report_observations,
     attach_report_media,
     validate_report_completeness,
-    validate_prescription,
-    route_prescription,
-    check_allergy_contraindications,
-    check_drug_interactions,
-    create_event,
-    update_event_status_util,
-    add_event_performer_util,
-    schedule_event_util,
-    summarize_event_util,
-    # Appointment
+    # appointment
     schedule_appointment_util,
     reschedule_appointment_util,
     cancel_appointment_util,
     check_appointment_conflicts_util,
     send_appointment_reminders_util,
-    # CarePlan
-    create_care_plan_util,
-    update_care_plan_progress_util,
-    coordinate_care_activities_util,
-    track_care_plan_goals_util,
-    # CareTeam
-    assemble_care_team_util,
-    assign_team_roles_util,
-    coordinate_team_communication_util,
-    track_team_responsibilities_util,
-    update_team_membership_util,
-    # Goal
-    track_goal_progress_util,
-    update_goal_status_util,
-    measure_goal_achievement_util,
-    link_goal_to_careplan_util,
-    # NutritionOrder
-    create_therapeutic_diet_order_util,
-    manage_nutrition_restrictions_util,
-    calculate_nutritional_requirements_util,
-    coordinate_feeding_protocols_util,
 )
+from hacs_utils.resources.service_request import normalize_intent as _normalize_sr_intent
+from hacs_utils.document.attachments import create_markdown_document as _create_md_docref
+from hacs_utils.resources.observation import create_vital_observation
+from hacs_utils.resources.condition import create_condition
+from hacs_utils.resources.service_request import create_referral
+from hacs_utils.resources.medication_request import create_simple_prescription
 
 logger = logging.getLogger(__name__)
 
@@ -415,7 +395,7 @@ def add_care_provider(payload: AddCareProviderInput) -> HACSResult:
 
         return HACSResult(
             success=True,
-            message=f"Successfully added care provider {provider_reference}",
+            message=f"Successfully added care provider {payload.provider_reference}",
             data={"patient": updated_data, "provider_added": payload.provider_reference},
         )
 
@@ -644,6 +624,7 @@ link_document._tool_args = LinkDocumentInput  # type: ignore[attr-defined]
 )
 def validate_service_request_tool(sr: Dict[str, Any]) -> HACSResult:
     try:
+        from hacs_utils.resources.service_request import validate_service_request
         res = validate_service_request(sr)
         return HACSResult(success=res["valid"], message="ServiceRequest validated", data=res)
     except Exception as e:
@@ -661,6 +642,7 @@ validate_service_request_tool._tool_args = ValidateServiceRequestInput  # type: 
 )
 def route_service_request_tool(sr: Dict[str, Any]) -> HACSResult:
     try:
+        from hacs_utils.resources.service_request import route_service_request
         dest = route_service_request(sr)
         return HACSResult(success=True, message="ServiceRequest routed", data=dest)
     except Exception as e:
@@ -754,6 +736,7 @@ validate_report_completeness_tool._tool_args = ValidateReportCompletenessInput  
 )
 def validate_prescription_tool(rx: Dict[str, Any]) -> HACSResult:
     try:
+        from hacs_utils.resources.medication_request import validate_prescription
         res = validate_prescription(rx)
         return HACSResult(success=res["valid"], message="Prescription validated", data=res)
     except Exception as e:
@@ -771,6 +754,7 @@ validate_prescription_tool._tool_args = ValidatePrescriptionInput  # type: ignor
 )
 def route_prescription_tool(rx: Dict[str, Any]) -> HACSResult:
     try:
+        from hacs_utils.resources.medication_request import route_prescription
         res = route_prescription(rx)
         return HACSResult(success=True, message="Prescription routed", data=res)
     except Exception as e:
@@ -788,6 +772,7 @@ route_prescription_tool._tool_args = RoutePrescriptionInput  # type: ignore[attr
 )
 def check_contraindications_tool(rx: Dict[str, Any], allergies: List[Dict[str, Any]]) -> HACSResult:
     try:
+        from hacs_utils.resources.medication_request import check_allergy_contraindications
         res = check_allergy_contraindications(rx, allergies)
         return HACSResult(success=True, message="Contraindications evaluated", data=res)
     except Exception as e:
@@ -805,6 +790,7 @@ check_contraindications_tool._tool_args = CheckContraindicationsInput  # type: i
 )
 def check_drug_interactions_tool(medications: List[Dict[str, Any]]) -> HACSResult:
     try:
+        from hacs_utils.resources.medication_request import check_drug_interactions
         res = check_drug_interactions(medications)
         return HACSResult(success=True, message="Drug interactions evaluated", data=res)
     except Exception as e:
@@ -825,6 +811,7 @@ def create_event_tool(
     subject: str, code_text: Optional[str] = None, when: Optional[str] = None
 ) -> HACSResult:
     try:
+        from hacs_utils.resources.event import create_event
         payload = create_event(subject, code_text, when)
         return HACSResult(success=True, message="Event created", data={"event": payload})
     except Exception as e:
@@ -844,6 +831,7 @@ def update_event_status_tool(
     event_obj: Dict[str, Any], status: str, reason: Optional[str] = None
 ) -> HACSResult:
     try:
+        from hacs_utils.resources.event import update_event_status_util
         updated = update_event_status_util(event_obj, status, reason)
         return HACSResult(success=True, message="Event status updated", data={"event": updated})
     except Exception as e:
@@ -863,6 +851,7 @@ def add_event_performer_tool(
     event_obj: Dict[str, Any], actor_ref: str, role_text: Optional[str] = None
 ) -> HACSResult:
     try:
+        from hacs_utils.resources.event import add_event_performer_util
         updated = add_event_performer_util(event_obj, actor_ref, role_text)
         return HACSResult(success=True, message="Event performer added", data={"event": updated})
     except Exception as e:
@@ -885,6 +874,7 @@ def schedule_event_tool(
     end: Optional[str] = None,
 ) -> HACSResult:
     try:
+        from hacs_utils.resources.event import schedule_event_util
         updated = schedule_event_util(event_obj, when, start, end)
         return HACSResult(success=True, message="Event scheduled", data={"event": updated})
     except Exception as e:
@@ -902,6 +892,7 @@ schedule_event_tool._tool_args = ScheduleEventInput  # type: ignore[attr-defined
 )
 def summarize_event_tool(event_obj: Dict[str, Any]) -> HACSResult:
     try:
+        from hacs_utils.resources.event import summarize_event_util
         summary = summarize_event_util(event_obj)
         return HACSResult(success=True, message="Event summarized", data={"summary": summary})
     except Exception as e:
@@ -1024,6 +1015,7 @@ def create_care_plan(
     activities: Optional[List[Dict[str, Any]]] = None,
 ) -> HACSResult:
     try:
+        from hacs_utils.resources.care_plan import create_care_plan_util
         cp = create_care_plan_util(patient_ref, title, description, goals, activities)
         return HACSResult(success=True, message="CarePlan created", data={"care_plan": cp})
     except Exception as e:
@@ -1041,6 +1033,7 @@ create_care_plan._tool_args = CreateCarePlanInput  # type: ignore[attr-defined]
 )
 def update_care_plan_progress(care_plan: Dict[str, Any], progress_note: str) -> HACSResult:
     try:
+        from hacs_utils.resources.care_plan import update_care_plan_progress_util
         updated = update_care_plan_progress_util(care_plan, progress_note)
         return HACSResult(
             success=True, message="CarePlan progress updated", data={"care_plan": updated}
@@ -1062,6 +1055,7 @@ def coordinate_care_activities(
     care_plan: Dict[str, Any], activities: List[Dict[str, Any]]
 ) -> HACSResult:
     try:
+        from hacs_utils.resources.care_plan import coordinate_care_activities_util
         updated = coordinate_care_activities_util(care_plan, activities)
         return HACSResult(
             success=True, message="CarePlan activities coordinated", data={"care_plan": updated}
@@ -1081,6 +1075,7 @@ coordinate_care_activities._tool_args = CoordinateCareActivitiesInput  # type: i
 )
 def track_care_plan_goals(care_plan: Dict[str, Any]) -> HACSResult:
     try:
+        from hacs_utils.resources.care_plan import track_care_plan_goals_util
         res = track_care_plan_goals_util(care_plan)
         return HACSResult(success=True, message="CarePlan goals summarized", data=res)
     except Exception as e:
@@ -1095,6 +1090,7 @@ def assemble_care_team(
     patient_ref: str, participants: List[Dict[str, Any]], name: Optional[str] = None
 ) -> HACSResult:
     try:
+        from hacs_utils.resources.care_team import assemble_care_team_util
         ct = assemble_care_team_util(patient_ref, participants, name)
         return HACSResult(success=True, message="CareTeam assembled", data={"care_team": ct})
     except Exception as e:
@@ -1103,6 +1099,7 @@ def assemble_care_team(
 
 def assign_team_roles(care_team: Dict[str, Any], member_ref: str, role_text: str) -> HACSResult:
     try:
+        from hacs_utils.resources.care_team import assign_team_roles_util
         updated = assign_team_roles_util(care_team, member_ref, role_text)
         return HACSResult(success=True, message="Team role assigned", data={"care_team": updated})
     except Exception as e:
@@ -1111,6 +1108,7 @@ def assign_team_roles(care_team: Dict[str, Any], member_ref: str, role_text: str
 
 def coordinate_team_communication(care_team: Dict[str, Any], message: str) -> HACSResult:
     try:
+        from hacs_utils.resources.care_team import coordinate_team_communication_util
         updated = coordinate_team_communication_util(care_team, message)
         return HACSResult(
             success=True, message="Team communication logged", data={"care_team": updated}
@@ -1123,6 +1121,7 @@ def coordinate_team_communication(care_team: Dict[str, Any], message: str) -> HA
 
 def track_team_responsibilities(care_team: Dict[str, Any]) -> HACSResult:
     try:
+        from hacs_utils.resources.care_team import track_team_responsibilities_util
         res = track_team_responsibilities_util(care_team)
         return HACSResult(success=True, message="Team responsibilities summarized", data=res)
     except Exception as e:
@@ -1135,6 +1134,7 @@ def update_team_membership(
     remove_members: Optional[List[str]] = None,
 ) -> HACSResult:
     try:
+        from hacs_utils.resources.care_team import update_team_membership_util
         updated = update_team_membership_util(care_team, add, remove_members)
         return HACSResult(
             success=True, message="CareTeam membership updated", data={"care_team": updated}
@@ -1146,6 +1146,7 @@ def update_team_membership(
 # Goal tools
 def track_goal_progress(goal: Dict[str, Any], current_value: Optional[float] = None) -> HACSResult:
     try:
+        from hacs_utils.resources.goal import track_goal_progress_util
         res = track_goal_progress_util(goal, current_value)
         return HACSResult(success=True, message="Goal progress summarized", data=res)
     except Exception as e:
@@ -1154,6 +1155,7 @@ def track_goal_progress(goal: Dict[str, Any], current_value: Optional[float] = N
 
 def update_goal_status(goal: Dict[str, Any], status: str) -> HACSResult:
     try:
+        from hacs_utils.resources.goal import update_goal_status_util
         updated = update_goal_status_util(goal, status)
         return HACSResult(success=True, message="Goal status updated", data={"goal": updated})
     except Exception as e:
@@ -1164,6 +1166,7 @@ def measure_goal_achievement(
     goal: Dict[str, Any], observations: List[Dict[str, Any]]
 ) -> HACSResult:
     try:
+        from hacs_utils.resources.goal import measure_goal_achievement_util
         res = measure_goal_achievement_util(goal, observations)
         return HACSResult(success=True, message="Goal achievement measured", data=res)
     except Exception as e:
@@ -1172,6 +1175,7 @@ def measure_goal_achievement(
 
 def link_goal_to_careplan(goal: Dict[str, Any], care_plan_ref: str) -> HACSResult:
     try:
+        from hacs_utils.resources.goal import link_goal_to_careplan_util
         updated = link_goal_to_careplan_util(goal, care_plan_ref)
         return HACSResult(success=True, message="Goal linked to CarePlan", data={"goal": updated})
     except Exception as e:
@@ -1183,6 +1187,7 @@ def create_therapeutic_diet_order(
     patient_ref: str, diet_text: str, restrictions: Optional[List[str]] = None
 ) -> HACSResult:
     try:
+        from hacs_utils.resources.nutrition import create_therapeutic_diet_order_util
         order = create_therapeutic_diet_order_util(patient_ref, diet_text, restrictions)
         return HACSResult(
             success=True, message="Therapeutic diet order created", data={"nutrition_order": order}
@@ -1195,6 +1200,7 @@ def manage_nutrition_restrictions(
     nutrition_order: Dict[str, Any], allergies: List[Dict[str, Any]]
 ) -> HACSResult:
     try:
+        from hacs_utils.resources.nutrition import manage_nutrition_restrictions_util
         updated = manage_nutrition_restrictions_util(nutrition_order, allergies)
         return HACSResult(
             success=True,
@@ -1209,6 +1215,7 @@ def calculate_nutritional_requirements(
     weight_kg: float, height_cm: float, age_years: int, sex: str
 ) -> HACSResult:
     try:
+        from hacs_utils.resources.nutrition import calculate_nutritional_requirements_util
         res = calculate_nutritional_requirements_util(weight_kg, height_cm, age_years, sex)
         return HACSResult(success=True, message="Nutritional requirements estimated", data=res)
     except Exception as e:
@@ -1219,6 +1226,7 @@ def coordinate_feeding_protocols(
     nutrition_order: Dict[str, Any], route_text: str, schedule: Optional[Dict[str, Any]] = None
 ) -> HACSResult:
     try:
+        from hacs_utils.resources.nutrition import coordinate_feeding_protocols_util
         updated = coordinate_feeding_protocols_util(nutrition_order, route_text, schedule)
         return HACSResult(
             success=True, message="Feeding protocols coordinated", data={"nutrition_order": updated}
@@ -1294,4 +1302,99 @@ __all__ = [
     "manage_nutrition_restrictions",
     "calculate_nutritional_requirements",
     "coordinate_feeding_protocols",
+    # New typed-first tools
+    "normalize_service_request_intent",
+    "create_markdown_document_reference",
 ]
+
+
+# New helpers adopting typed-first utilities
+
+@register_tool(
+    name="normalize_service_request_intent",
+    domain="resource",
+    tags=["resource:servicerequest"],
+    status=VersionStatus.ACTIVE,
+)
+def normalize_service_request_intent(sr: Dict[str, Any]) -> HACSResult:
+    """Normalize ServiceRequest.intent values (e.g., 'referral' -> 'order')."""
+    try:
+        val = sr.get("intent")
+        norm = _normalize_sr_intent(str(val or ""))
+        sr["intent"] = norm.value  # store normalized string
+        return HACSResult(success=True, message="Intent normalized", data={"service_request": sr})
+    except Exception as e:
+        return HACSResult(success=False, message="Normalization failed", error=str(e))
+
+
+@register_tool(
+    name="create_markdown_document_reference",
+    domain="resource",
+    tags=["resource:documentreference"],
+    status=VersionStatus.ACTIVE,
+)
+def create_markdown_document_reference(markdown_text: str, title: Optional[str] = None, subject_ref: Optional[str] = None) -> HACSResult:
+    """Create a DocumentReference from Markdown text."""
+    try:
+        doc = _create_md_docref(markdown_text, title=title, subject_ref=subject_ref)
+        return HACSResult(success=True, message="DocumentReference created", data={"document_reference": doc.model_dump()})
+    except Exception as e:
+        return HACSResult(success=False, message="Create DocumentReference failed", error=str(e))
+
+
+# Creation helpers wrapping typed-first defaults
+
+@register_tool(
+    name="create_vital_observation",
+    domain="resource",
+    tags=["resource:observation"],
+    status=VersionStatus.ACTIVE,
+)
+def create_vital_observation_tool(metric_key: str, value: float, unit: str, subject_ref: Optional[str] = None) -> HACSResult:
+    try:
+        obs = create_vital_observation(metric_key, value, unit, subject_ref=subject_ref)
+        return HACSResult(success=True, message="Observation created", data={"observation": obs.model_dump()})
+    except Exception as e:
+        return HACSResult(success=False, message="Create Observation failed", error=str(e))
+
+
+@register_tool(
+    name="create_condition_default",
+    domain="resource",
+    tags=["resource:condition"],
+    status=VersionStatus.ACTIVE,
+)
+def create_condition_default(text_or_code: str, subject_ref: Optional[str] = None) -> HACSResult:
+    try:
+        cond = create_condition(text_or_code, subject_ref=subject_ref)
+        return HACSResult(success=True, message="Condition created", data={"condition": cond.model_dump()})
+    except Exception as e:
+        return HACSResult(success=False, message="Create Condition failed", error=str(e))
+
+
+@register_tool(
+    name="create_referral_request",
+    domain="resource",
+    tags=["resource:servicerequest"],
+    status=VersionStatus.ACTIVE,
+)
+def create_referral_request(subject_ref: str, reason_text: Optional[str] = None, code_text: Optional[str] = None) -> HACSResult:
+    try:
+        sr = create_referral(subject_ref, reason_text=reason_text, code_text=code_text)
+        return HACSResult(success=True, message="ServiceRequest created", data={"service_request": sr})
+    except Exception as e:
+        return HACSResult(success=False, message="Create ServiceRequest failed", error=str(e))
+
+
+@register_tool(
+    name="create_simple_prescription",
+    domain="resource",
+    tags=["resource:medicationrequest"],
+    status=VersionStatus.ACTIVE,
+)
+def create_simple_prescription_tool(medication_text: str, subject_ref: str, dosage_text: Optional[str] = None) -> HACSResult:
+    try:
+        rx = create_simple_prescription(medication_text, subject_ref, dosage_text=dosage_text)
+        return HACSResult(success=True, message="MedicationRequest created", data={"medication_request": rx.model_dump()})
+    except Exception as e:
+        return HACSResult(success=False, message="Create MedicationRequest failed", error=str(e))

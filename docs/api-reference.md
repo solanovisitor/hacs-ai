@@ -18,7 +18,7 @@ Lightweight, developer-first reference to core packages and integrations. See Ho
 ```python
 from hacs_models import Patient, Observation, CodeableConcept, Quantity
 from hacs_models.types import ObservationStatus
-from hacs_utils.visualization import resource_to_markdown, get_specs_markdown, get_specs
+from hacs_utils.visualization import to_markdown
 
 pat = Patient(full_name="Maria Rodriguez", birth_date="1985-03-15", gender="female")
 obs = Observation(status=ObservationStatus.FINAL,
@@ -31,8 +31,8 @@ print(to_markdown(pat, include_json=False))
 print(to_markdown(obs, include_json=False))
 
 # Render model definition docs (scope, boundaries, relationships)
-print(get_specs_markdown(Patient))
-print(get_specs_markdown(Observation))
+print(to_markdown(Patient))
+print(to_markdown(Observation))
 ```
 
 ```
@@ -91,7 +91,7 @@ Do not use for diagnoses/problems…
 ```python
 from hacs_models import Patient, Observation, CodeableConcept, Quantity
 from hacs_models.types import ObservationStatus
-from hacs_utils.visualization import resource_to_markdown
+from hacs_utils.visualization import to_markdown
 
 patient = Patient(full_name="John Smith", birth_date="1980-01-15", gender="male")
 obs = Observation(status=ObservationStatus.FINAL,
@@ -101,20 +101,20 @@ obs = Observation(status=ObservationStatus.FINAL,
 
 # Always visualize created records
 print("Patient record:")
-print(resource_to_markdown(patient, include_json=False))
+print(to_markdown(patient, include_json=False))
 print("\nObservation record:")
-print(resource_to_markdown(obs, include_json=False))
+print(to_markdown(obs, include_json=False))
 ```
 
 Markdown visualization (for static docs):
 
 ```python
 # Markdown visualization for any resource
-from hacs_utils.visualization import resource_to_markdown, annotations_to_markdown
+from hacs_utils.visualization import to_markdown, annotations_to_markdown
 from hacs_models import AnnotatedDocument, Extraction, CharInterval
 
-print(resource_to_markdown(patient, include_json=False))
-print(resource_to_markdown(obs, include_json=False))
+print(to_markdown(patient, include_json=False))
+print(to_markdown(obs, include_json=False))
 
 doc = AnnotatedDocument(text="BP 128/82, HR 72",
                         extractions=[Extraction(extraction_class="blood_pressure",

@@ -1,7 +1,0 @@
-{
-  "command": "pip install hacs-core hacs-models hacs-auth hacs-tools hacs-utils hacs-persistence",
-  "returncode": 1,
-  "stdout": "",
-  "stderr": "ERROR: Ignored the following versions that require a different python version: 0.1.0 Requires-Python >=3.10; 0.2.1 Requires-Python >=3.10; 0.2.2 Requires-Python >=3.10; 0.3.0 Requires-Python >=3.11; 0.3.1 Requires-Python >=3.11; 0.4.0 Requires-Python >=3.11; 0.4.3 Requires-Python >=3.11\nERROR: Could not find a version that satisfies the requirement hacs-core (from versions: none)\nERROR: No matching distribution found for hacs-core\n",
-  "timestamp": "2025-08-17T15:54:57.837479"
-}

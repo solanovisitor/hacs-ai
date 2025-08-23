@@ -205,6 +205,24 @@ class DiagnosticReport(DomainResource):
         self.media.append(media)
         return media
 
+    # --- LLM-friendly extractable facade overrides ---
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
+        return [
+            "status",
+            "code",
+            "conclusion",
+            "result",
+            "effective_datetime",
+        ]
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:  # type: ignore[override]
+        return [
+            "- Map cited exams (e.g., 'teste do pezinho') into code.text",
+            "- conclusion and result may be null when not present",
+        ]
+
 
 # Convenience functions for common diagnostic report types
 

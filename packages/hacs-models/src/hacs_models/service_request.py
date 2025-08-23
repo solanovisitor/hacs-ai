@@ -359,3 +359,29 @@ def create_referral_request(
         category=[CodeableConcept(text="Referral")],
         **kwargs,
     )
+
+
+# --- LLM-friendly extractable facade overrides ---
+# Add to ServiceRequest class (need to patch the class after definition)
+def _add_extractable_fields_to_service_request():
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
+        """Return fields that should be extracted by LLMs (3-4 key fields only)."""
+        return [
+            "code",
+            "status",
+            "reason_text",
+        ]
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:  # type: ignore[override]
+        """Return LLM-specific extraction hints for ServiceRequest."""
+        return [
+            "Extract service requests for consultations, referrals, or procedures",
+            "Use reason_text for the clinical indication or reason",
+        ]
+    
+    ServiceRequest.get_extractable_fields = get_extractable_fields
+    ServiceRequest.llm_hints = llm_hints
+
+_add_extractable_fields_to_service_request()

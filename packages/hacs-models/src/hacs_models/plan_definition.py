@@ -67,6 +67,29 @@ class PlanDefinitionGoal(DomainResource):
         ],
     )
 
+    # --- LLM-friendly extractable facade overrides ---
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
+        """Return fields that should be extracted by LLMs (3-4 key fields only)."""
+        return [
+            "category",
+            "description",
+            "priority",
+            "target",
+        ]
+
+    @classmethod
+    def get_canonical_defaults(cls) -> dict[str, Any]:
+        return {"priority": "medium"}
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:  # type: ignore[override]
+        return [
+            "Provide a concise goal description",
+            "Include measurable target(s) when available",
+            "Use simple categories like treatment/dietary/safety",
+        ]
+
 
 class PlanDefinitionAction(DomainResource):
     """Action defined by the plan definition."""
@@ -123,99 +146,47 @@ class PlanDefinitionAction(DomainResource):
 
     documentation: list[str] = Field(
         default_factory=list,
-        description="Supporting documentation for the action",
-        examples=[["AHA/ACC 2017 Guidelines recommend regular monitoring"]],
+        description="Guideline or documentation for the action",
+        examples=[["NICE Hypertension Guideline"], ["AHA BP Measurement Protocol"]],
     )
 
-    goal_id: list[str] = Field(
-        default_factory=list,
-        description="Goals that this action supports",
-        examples=[["goal-1", "goal-blood-pressure"]],
-    )
-
-    trigger: list[dict[str, Any]] = Field(
-        default_factory=list,
-        description="When the action should be triggered",
-        examples=[[{"type": "periodic", "name": "daily-assessment"}]],
-    )
-
-    condition: list[dict[str, Any]] = Field(
-        default_factory=list,
-        description="Conditions that apply to the action",
-        examples=[[{"kind": "applicability", "expression": "systolic_bp > 140"}]],
-    )
-
-    input: list[dict[str, Any]] = Field(
-        default_factory=list,
-        description="Input data requirements",
-        examples=[[{"type": "Patient", "profile": "blood-pressure-capable"}]],
-    )
-
-    output: list[dict[str, Any]] = Field(
-        default_factory=list,
-        description="Output data definition",
-        examples=[[{"type": "Observation", "profile": "blood-pressure-measurement"}]],
-    )
-
-    related_action: list[dict[str, Any]] = Field(
-        default_factory=list,
-        description="Relationship to other actions",
-        examples=[[{"action_id": "assess-bp", "relationship": "before"}]],
-    )
-
-    timing: dict[str, Any] | None = Field(
+    timing_timing: dict[str, Any] | None = Field(
         default=None,
-        description="When the action should occur",
-        examples=[{"repeat": {"frequency": 1, "period": 1, "period_unit": "d"}}],
+        description="When the action should happen",
+        examples=[{"event": ["2024-01-01T09:00:00Z"]}],
     )
 
-    participant: list[dict[str, Any]] = Field(
+    participant: list[str] = Field(
         default_factory=list,
-        description="Who should participate in the action",
-        examples=[[{"type": "practitioner", "role": "primary-care-physician"}]],
+        description="Who should perform the action",
+        examples=[["Practitioner/cardiologist-1"], ["Organization/lab-123"]],
     )
 
-    type_: str | None = Field(
-        default=None,
-        alias="type",
-        description="Type of action (create, update, remove, fire-event)",
-        examples=["create", "update", "remove", "fire-event"],
-    )
+    type: str | None = Field(default=None, description="create | update | remove | fire-event")
 
-    grouping_behavior: str | None = Field(
+    group_behavior: str | None = Field(
         default=None,
-        description="Defines the grouping behavior for the action",
-        examples=["visual-group", "logical-group", "sentence-group"],
+        description="all | any | all-or-none | exactly-one | at-most-one | one-or-more",
     )
 
     selection_behavior: str | None = Field(
         default=None,
-        description="Defines the selection behavior for the action",
-        examples=["any", "all", "all-or-none", "exactly-one", "at-most-one", "one-or-more"],
+        description="any | all | all-or-none | exactly-one | at-most-one | one-or-more",
     )
 
     required_behavior: str | None = Field(
         default=None,
-        description="Defines the required behavior for the action",
-        examples=["must", "could", "must-unless-documented"],
+        description="must | could | must-unless-documented",
     )
 
     precheck_behavior: str | None = Field(
         default=None,
-        description="Defines whether the action should be preselected",
-        examples=["yes", "no"],
+        description="yes | no",
     )
 
     cardinality_behavior: str | None = Field(
         default=None,
-        description="Defines whether the action can be selected multiple times",
-        examples=["single", "multiple"],
-    )
-
-    definition_canonical: str | None = Field(
-        default=None,
-        description="Description of the activity to be performed",
-        examples=["http://example.org/fhir/ActivityDefinition/blood-pressure-measurement"],
+        description="single | multiple",
     )
 
     transform: str | None = Field(
@@ -233,6 +204,30 @@ class PlanDefinitionAction(DomainResource):
     action: list["PlanDefinitionAction"] = Field(
         default_factory=list, description="Sub-actions that are part of this action"
     )
+
+    # --- LLM-friendly extractable facade overrides ---
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
+        """Return fields that should be extracted by LLMs (3-4 key fields only)."""
+        return [
+            "title",
+            "description",
+            "code",
+            "timing_timing",
+        ]
+
+    @classmethod
+    def get_canonical_defaults(cls) -> dict[str, Any]:
+        return {"priority": "routine"}
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:  # type: ignore[override]
+        return [
+            "Prefer short action titles",
+            "Include succinct descriptions for clarity",
+            "Map to a simple code when obvious (SNOMED/LOINC text ok)",
+            "Include when to perform the action if specified",
+        ]
 
 
 class PlanDefinition(DomainResource):
@@ -260,251 +255,58 @@ class PlanDefinition(DomainResource):
 
     resource_type: Literal["PlanDefinition"] = Field(default="PlanDefinition")
 
-    # Identifiers and metadata
-    url: str | None = Field(
-        default=None,
-        description="Canonical identifier for this plan definition",
-        examples=["http://example.org/fhir/PlanDefinition/hypertension-management"],
-    )
+    url: str | None = Field(default=None, description="Canonical URL for this plan definition")
+    identifier: list[str] = Field(default_factory=list, description="Identifiers for this plan")
+    version: str | None = Field(default=None, description="Business version of the plan")
+    name: str | None = Field(default=None, description="Computer-friendly name")
+    title: str | None = Field(default=None, description="Human-readable name")
+    subtitle: str | None = Field(default=None, description="Subordinate title of the plan")
 
-    identifier: list[dict[str, Any]] = Field(
-        default_factory=list,
-        description="Additional identifier for the plan definition",
-        examples=[[{"system": "http://example.org/plan-ids", "value": "HTN-MGMT-2024"}]],
-    )
-
-    version: str = Field(
-        default="1.0.0",
-        description="Business version of the plan definition",
-        examples=["1.0.0", "2.1.5", "draft"],
-    )
-
-    name: str | None = Field(
-        default=None,
-        description="Name for this plan definition (computer friendly)",
-        examples=["HypertensionManagement", "DiabetesCarePlan", "PreOpProtocol"],
-    )
-
-    title: str | None = Field(
-        default=None,
-        description="Human-friendly title of the plan definition",
-        examples=[
-            "Hypertension Management Protocol",
-            "Adult Diabetes Care Plan",
-            "Pre-Operative Assessment",
-        ],
-    )
-
-    subtitle: str | None = Field(
-        default=None,
-        description="Subordinate title for the plan definition",
-        examples=["Primary Care Protocol", "Evidence-Based Guidelines"],
-    )
-
-    # Publication and status
     status: str = Field(
         default="draft",
         description="Publication status (draft, active, retired, unknown)",
-        examples=["draft", "active", "retired", "unknown"],
     )
 
-    experimental: bool = Field(
-        default=False, description="Whether this plan definition is for testing purposes"
-    )
-
+    experimental: bool | None = Field(default=None, description="For testing purposes, not real usage")
     date: datetime | None = Field(default=None, description="Date last changed")
+    publisher: str | None = Field(default=None, description="Name of the publisher")
+    contact: list[str] = Field(default_factory=list, description="Contact details for the publisher")
 
-    publisher: str | None = Field(
-        default=None,
-        description="Name of the publisher (organization or individual)",
-        examples=["American Heart Association", "Mayo Clinic", "NHS England"],
-    )
-
-    contact: list[dict[str, Any]] = Field(
-        default_factory=list,
-        description="Contact details for the publisher",
-        examples=[
-            [
-                {
-                    "name": "Clinical Guidelines Team",
-                    "telecom": [{"system": "email", "value": "guidelines@example.org"}],
-                }
-            ]
-        ],
-    )
-
-    # Content and purpose
-    description: str | None = Field(
-        default=None,
-        description="Natural language description of the plan definition",
-        examples=[
-            "Evidence-based protocol for management of hypertension in primary care settings"
-        ],
-    )
-
-    use_context: list[dict[str, Any]] = Field(
-        default_factory=list,
-        description="Context the content is intended to support",
-        examples=[
-            [
-                {
-                    "code": {"system": "usage-context-type", "code": "venue"},
-                    "valueCodeableConcept": {"text": "primary care"},
-                }
-            ]
-        ],
-    )
-
-    jurisdiction: list[dict[str, Any]] = Field(
-        default_factory=list,
-        description="Intended jurisdiction for plan definition",
-        examples=[
-            [
-                {
-                    "coding": [
-                        {"system": "urn:iso:std:iso:3166", "code": "US", "display": "United States"}
-                    ]
-                }
-            ]
-        ],
-    )
-
+    description: str | None = Field(default=None, description="Natural language description")
     purpose: str | None = Field(
         default=None,
         description="Why this plan definition is defined",
-        examples=["Standardize hypertension care across primary care practices"],
     )
 
-    usage: str | None = Field(
-        default=None,
-        description="Describes the clinical usage of the plan definition",
-        examples=["Use for all adult patients with newly diagnosed hypertension"],
-    )
-
+    use_context: list[str] = Field(default_factory=list, description="Context the content is intended for")
+    jurisdiction: list[str] = Field(default_factory=list, description="Intended jurisdiction")
     copyright: str | None = Field(default=None, description="Use and/or publishing restrictions")
 
-    approval_date: datetime | None = Field(
-        default=None, description="When the plan definition was approved by publisher"
-    )
+    approval_date: datetime | None = Field(default=None, description="When the plan was approved")
+    last_review_date: datetime | None = Field(default=None, description="When the plan was last reviewed")
+    effective_period: dict[str, Any] | None = Field(default=None, description="When the plan is effective")
 
-    last_review_date: datetime | None = Field(
-        default=None, description="When the plan definition was last reviewed"
-    )
+    topic: list[str] = Field(default_factory=list, description="E.g., Education, Treatment, Assessment, etc.")
 
-    effective_period: dict[str, datetime] | None = Field(
-        default=None,
-        description="When the plan definition is expected to be used",
-        examples=[{"start": "2024-01-01T00:00:00Z", "end": "2024-12-31T23:59:59Z"}],
-    )
+    author: list[str] = Field(default_factory=list, description="Who authored the content")
+    editor: list[str] = Field(default_factory=list, description="Who edited the content")
+    reviewer: list[str] = Field(default_factory=list, description="Who reviewed the content")
+    endorser: list[str] = Field(default_factory=list, description="Who endorsed the content")
 
-    # Clinical content
-    topic: list[dict[str, Any]] = Field(
-        default_factory=list,
-        description="Type of individual the plan definition is focused on",
-        examples=[
-            [
-                {
-                    "coding": [
-                        {
-                            "system": "http://snomed.info/sct",
-                            "code": "38341003",
-                            "display": "Hypertension",
-                        }
-                    ]
-                }
-            ]
-        ],
-    )
+    related_artifact: list[str] = Field(default_factory=list, description="Additional documentation, citations")
 
-    author: list[dict[str, Any]] = Field(
-        default_factory=list,
-        description="Who authored the content",
-        examples=[
-            [
-                {
-                    "name": "Dr. Jane Smith",
-                    "telecom": [{"system": "email", "value": "jane.smith@example.org"}],
-                }
-            ]
-        ],
-    )
+    library: list[str] = Field(default_factory=list, description="Logic used by the plan definition")
 
-    editor: list[dict[str, Any]] = Field(default_factory=list, description="Who edited the content")
+    goal: list[PlanDefinitionGoal] = Field(default_factory=list, description="What the plan is trying to accomplish")
+    action: list[PlanDefinitionAction] = Field(default_factory=list, description="Action defined by the plan")
 
-    reviewer: list[dict[str, Any]] = Field(
-        default_factory=list, description="Who reviewed the content"
-    )
-
-    endorser: list[dict[str, Any]] = Field(
-        default_factory=list, description="Who endorsed the content"
-    )
-
-    related_artifact: list[dict[str, Any]] = Field(
-        default_factory=list,
-        description="Additional documentation, citations, etc.",
-        examples=[
-            [
-                {
-                    "type": "citation",
-                    "display": "2017 ACC/AHA Hypertension Guidelines",
-                    "url": "https://example.org/guidelines",
-                }
-            ]
-        ],
-    )
-
-    library: list[str] = Field(
-        default_factory=list,
-        description="Logic libraries used by the plan definition",
-        examples=[["Library/hypertension-logic"]],
-    )
-
-    # Goals and actions
-    goal: list[PlanDefinitionGoal] = Field(
-        default_factory=list,
-        description="Goals that describe what the activities within the plan are intended to achieve",
-    )
-
-    action: list[PlanDefinitionAction] = Field(
-        default_factory=list,
-        description="Actions or action groups that comprise the plan definition",
-    )
-
-    # Plan definition type and subject
-    type_: dict[str, Any] | None = Field(
-        default=None,
-        alias="type",
-        description="Type of plan definition (order-set, clinical-protocol, eca-rule, workflow-definition)",
-        examples=[{"coding": [{"system": "plan-definition-type", "code": "clinical-protocol"}]}],
-    )
-
-    subject_codeable_concept: dict[str, Any] | None = Field(
-        default=None,
-        description="Type of individual the plan is focused on",
-        examples=[
-            {"coding": [{"system": "http://hl7.org/fhir/resource-types", "code": "Patient"}]}
-        ],
-    )
-
-    subject_reference: str | None = Field(
-        default=None,
-        description="Individual the plan is focused on",
-        examples=["Group/adult-hypertension-patients"],
-    )
-
-    def add_goal(
-        self, description: str, category: str | None = None, priority: str | None = None
-    ) -> PlanDefinitionGoal:
-        """Add a goal to the plan definition."""
+    def add_goal(self, description: str, category: str | None = None, priority: str | None = None) -> PlanDefinitionGoal:
         goal = PlanDefinitionGoal(description=description, category=category, priority=priority)
         self.goal.append(goal)
         self.update_timestamp()
         return goal
 
-    def add_action(
-        self, title: str, description: str | None = None, priority: str | None = None
-    ) -> PlanDefinitionAction:
-        """Add an action to the plan definition."""
+    def add_action(self, title: str, description: str | None = None, priority: str | None = None) -> PlanDefinitionAction:
         action = PlanDefinitionAction(title=title, description=description, priority=priority)
         self.action.append(action)
         self.update_timestamp()
@@ -527,3 +329,26 @@ class PlanDefinition(DomainResource):
         goal_count = len(self.goal)
         action_count = len(self.action)
         return f"PlanDefinition('{title_str}', {goal_count} goals, {action_count} actions)"
+
+    # --- LLM-friendly extractable facade overrides ---
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
+        """Return fields that should be extracted by LLMs (3-4 key fields only)."""
+        return [
+            "status",
+            "title",
+            "description",
+            "purpose",
+        ]
+
+    @classmethod
+    def get_canonical_defaults(cls) -> dict[str, Any]:
+        return {"status": "draft"}
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:  # type: ignore[override]
+        return [
+            "Extract a short human-readable title",
+            "Summarize the purpose in one sentence when present",
+            "Use 'draft' status unless explicitly stated otherwise",
+        ]

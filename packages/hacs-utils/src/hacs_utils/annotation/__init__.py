@@ -8,7 +8,7 @@ This module provides a schema-driven, resource-agnostic annotation pipeline:
  - Optional persistence to database with actor-based security
 """
 
-from .data import AlignmentStatus, CharInterval, Extraction, Document, AnnotatedDocument, FormatType
+from .data import AlignmentStatus, CharInterval, ExtractionResults, Document, AnnotatedDocument, FormatType
 from .annotator import Annotator
 from .chunking import select_chunks
 from .conversations import ChatMessage, to_openai_messages, to_anthropic_messages
@@ -16,7 +16,7 @@ from .conversations import ChatMessage, to_openai_messages, to_anthropic_message
 __all__ = [
     "AlignmentStatus",
     "CharInterval",
-    "Extraction",
+    "ExtractionResults",
     "Document",
     "AnnotatedDocument",
     "FormatType",

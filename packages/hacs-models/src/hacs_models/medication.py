@@ -370,6 +370,55 @@ class Medication(DomainResource):
         self.batch = MedicationBatch(lot_number=lot_number, expiration_date=expiration_date)
         return self.batch
 
+    # --- LLM-friendly extractable facade overrides ---
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
+        """Return fields that should be extracted by LLMs (3-4 key fields only)."""
+        return [
+            "code",
+            "form",
+            "strength_description",
+            "status",
+        ]
+
+    @classmethod
+    def get_required_extractables(cls) -> list[str]:
+        """Fields that must be provided for valid extraction."""
+        return ["code"]
+
+    @classmethod
+    def get_canonical_defaults(cls) -> dict[str, Any]:
+        """Default values for system/required fields during extraction."""
+        return {
+            "status": "active",
+            "code": {"text": ""},  # Will be filled by LLM
+        }
+
+    @classmethod
+    def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
+        """Coerce extractable payload to proper types with relaxed validation."""
+        coerced = payload.copy()
+        
+        # Coerce code to CodeableConcept if it's a string
+        if "code" in coerced and isinstance(coerced["code"], str):
+            coerced["code"] = {"text": coerced["code"]}
+        
+        # Coerce form to CodeableConcept if it's a string
+        if "form" in coerced and isinstance(coerced["form"], str):
+            coerced["form"] = {"text": coerced["form"]}
+        
+        return coerced
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:  # type: ignore[override]
+        """Provide LLM-specific extraction hints."""
+        return [
+            "Extract medication name/code (generic or brand name)",
+            "Include dosage form (tablet, capsule, liquid, injection, etc.)",
+            "Capture strength/concentration (e.g., 500mg, 5mg/mL)",
+            "Status should be: active, inactive, or entered-in-error"
+        ]
+
 
 # Convenience functions for common medication types
 

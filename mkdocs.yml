@@ -38,6 +38,7 @@ nav:
       - Connect to database: how-to/connect_postgres.md
       - Generate structured data: how-to/extract_annotations.md
       - Extract citations: how-to/grounded_extraction.md
+      - Validate HACS models: how-to/validate_hacs_models.md
       - Visualize data: how-to/visualize_resources.md
       - Persist Resources: how-to/persist_resources.md
       - Use & Register Tools: how-to/use_register_tools.md

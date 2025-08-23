@@ -270,6 +270,19 @@ class Practitioner(DomainResource):
                         break
         return matching
 
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:
+        """Return fields that should be extracted by LLMs (3-4 key fields only)."""
+        return ["name"]
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:
+        """Return LLM-specific extraction hints for Practitioner."""
+        return [
+            "Fill name with the explicit name text (e.g., 'doutora Ivi')",
+            "Extract only when a healthcare provider is explicitly mentioned",
+        ]
+
 
 # Convenience functions for common practitioner types
 

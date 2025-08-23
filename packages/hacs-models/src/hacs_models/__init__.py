@@ -25,7 +25,8 @@ Version: 0.1.0
 """
 
 # Base classes - Foundation for all models
-from .agent_message import AgentMessage, MessageRole, MessageType
+from .agent_message import AgentMessage
+from .types import MessageRole, MessageType
 
 # NEW - Phase 1 critical resources
 from .allergy_intolerance import (
@@ -101,7 +102,7 @@ from .service_request import (
     create_lab_request,
     create_referral_request,
 )
-from .terminology import ConceptMap, TerminologyConcept, TerminologySystem, ValueSet
+from .terminology import ConceptMap, ConceptMapElement, TerminologyConcept, TerminologySystem, ValueSet
 from .tool_definition import ToolDefinition
 from .types import (
     AddressType,
@@ -171,7 +172,7 @@ from .annotation import (
     DocumentAuthor,
     DocumentEncounter,
     DocumentSection,
-    Extraction,
+    ExtractionResults,
     ExtractionSchemaResource,
     FormatType,
     MappingSpec,
@@ -186,6 +187,13 @@ from .annotation import (
     create_consultation_note,
     create_discharge_summary,
     create_progress_note,
+)
+from .composition import (
+    Composition,
+    CompositionAttester,
+    CompositionAuthor,
+    CompositionEncounter,
+    CompositionSection,
 )
 from .evidence import Evidence, EvidenceType
 from .results import (
@@ -417,8 +425,14 @@ __all__ = [
     "TextChunk",
     "AlignmentStatus",
     "CharInterval",
-    "Extraction",
+    "ExtractionResults",
     "FormatType",
+    # Composition/document structure
+    "Composition",
+    "CompositionSection",
+    "CompositionAuthor",
+    "CompositionAttester",
+    "CompositionEncounter",
     "Document",
     "AnnotatedDocument",
     "DocumentAuthor",

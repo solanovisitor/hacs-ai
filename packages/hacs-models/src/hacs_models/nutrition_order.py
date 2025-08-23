@@ -4,7 +4,7 @@ NutritionOrder model for HACS (minimal).
 HACS-native, FHIR-inspired NutritionOrder to capture diet/feeding orders.
 """
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field
 
@@ -31,3 +31,30 @@ class NutritionOrder(DomainResource):
     enteral_formula_text: str | None = Field(
         default=None, description="Free text enteral formula instructions"
     )
+
+    # --- LLM-friendly extractable facade overrides ---
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
+        """Return fields that should be extracted by LLMs (3-4 key fields only)."""
+        return [
+            "status",
+            "oral_diet_text",
+            "supplement_text",
+            "enteral_formula_text",
+        ]
+
+    @classmethod
+    def get_canonical_defaults(cls) -> dict[str, Any]:
+        return {
+            "status": "active",
+            "intent": "order",
+            "patient_ref": "Patient/UNKNOWN",
+        }
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:  # type: ignore[override]
+        return [
+            "Summarize diet/supplement/formula instructions when mentioned",
+            "Prefer concise free-text rather than enumerating options",
+            "Use 'active' status unless explicitly specified",
+        ]

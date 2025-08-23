@@ -6,7 +6,7 @@ Suitable for indexing clinical notes, certificates, and other binary content
 with minimal required fields and safe defaults.
 """
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field
 
@@ -25,6 +25,8 @@ class DocumentReference(DomainResource):
     - date: ISO 8601 string
     - description: human-readable description
     - attachment_url/content_type: where to access the document and its MIME type
+    - attachment_text: inline textual content (e.g., markdown)
+    - attachment_data_base64: inline base64-encoded binary content (e.g., PDF)
     """
 
     resource_type: Literal["DocumentReference"] = Field(default="DocumentReference")
@@ -61,5 +63,42 @@ class DocumentReference(DomainResource):
         default=None, description="MIME type of the document"
     )
 
+    # Optional inline content
+    attachment_text: str | None = Field(
+        default=None, description="Inline textual content (e.g., markdown)"
+    )
+    attachment_data_base64: str | None = Field(
+        default=None, description="Inline base64-encoded content (e.g., PDF)"
+    )
+
     # Simple author/title fields for convenience
     title: str | None = Field(default=None, description="Document title")
+
+    # --- LLM-friendly extractable facade overrides ---
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
+        """Return fields that should be extracted by LLMs (3-4 key fields only)."""
+        return [
+            "status",
+            "type_text",
+            "title", 
+            "description",
+        ]
+
+    @classmethod
+    def get_canonical_defaults(cls) -> dict[str, Any]:
+        """Default values for system/required fields during extraction."""
+        return {
+            "status": "current",
+            "subject_ref": "Patient/UNKNOWN",
+        }
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:  # type: ignore[override]
+        """Provide LLM-specific extraction hints."""
+        return [
+            "Extract the document kind (type_text) when mentioned",
+            "Prefer literal document titles from the text",
+            "Provide a brief description when available",
+            "Use 'current' status unless explicitly stated otherwise",
+        ]

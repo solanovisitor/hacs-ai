@@ -258,6 +258,25 @@ class Organization(DomainResource):
                     matching.append(contact)
         return matching
 
+    # --- LLM-friendly extractable facade overrides ---
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
+        # Prefer simple name-only minimal extractable shape
+        return [
+            "name",
+            "alias",
+            "type",
+            "telecom",
+            "address",
+        ]
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:  # type: ignore[override]
+        return [
+            "- Prefer extracting the name field when an explicit name is present",
+            "- Aliases can complement the name when available",
+        ]
+
 
 # Convenience functions for common organization types
 

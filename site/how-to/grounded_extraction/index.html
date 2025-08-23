@@ -12,7 +12,7 @@
         <link rel="prev" href="../extract_annotations/">
       
       
-        <link rel="next" href="../visualize_resources/">
+        <link rel="next" href="../validate_hacs_models/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -477,6 +477,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../validate_hacs_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Validate HACS models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../visualize_resources/" class="md-nav__link">
         
   
@@ -915,7 +938,7 @@
     <span class="s2">&quot;Continue current Aspirin 81mg daily for cardioprotection.&quot;</span>
 <span class="p">)</span>
 
-<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-5-mini-2025-08-07&quot;</span><span class="p">)</span>
+<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">)</span>
 
 <span class="n">med_prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">Extract MedicationRequest objects for each medication order in the text.</span>
@@ -994,19 +1017,10 @@
 | subject | Patient/123 |
 | created_at | 2025-08-20T00:00:00Z |
 | updated_at | 2025-08-20T00:00:00Z |
-
-#### Condition
-
-| Field | Value |
-|---|---|
-| resource_type | Condition |
-| id | condition-2 |
-| status | active |
-| code | type 2 diabetes |
-| subject | Patient/123 |
-| created_at | 2025-08-20T00:00:00Z |
-| updated_at | 2025-08-20T00:00:00Z |
 </code></pre></div></p>
+<blockquote>
+<p>Tip: Use <code>injected_fields</code> to pre‑fill stable enum/reference fields (e.g., status, intent, subject) so the model focuses on content extraction. See the injected_fields section in the extraction guide.</p>
+</blockquote>
 <!-- Analysis intentionally omitted for brevity -->
 
 <h2 id="visualize-annotations-with-highlighting">Visualize annotations with highlighting<a class="headerlink" href="#visualize-annotations-with-highlighting" title="Permanent link">&para;</a></h2>

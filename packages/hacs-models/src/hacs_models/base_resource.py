@@ -25,7 +25,7 @@ Design Principles:
 import inspect
 import uuid
 from datetime import UTC, datetime
-from typing import Any, ClassVar, TypeVar
+from typing import Any, ClassVar, TypeVar, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
@@ -85,6 +85,33 @@ except ImportError:
 
 # Type variable for generic base resource operations
 T = TypeVar("T", bound="BaseResource")
+
+
+class CharInterval(BaseModel):
+    """Character interval in source text for grounding."""
+
+    start_pos: int | None = Field(default=None, description="Start character index")
+    end_pos: int | None = Field(default=None, description="End character index (exclusive)")
+
+
+class AgentMeta(BaseModel):
+    """
+    Standardized agent-derived metadata for reasoning and provenance.
+
+    Keep this focused and typed; use agent_context for app-specific payloads.
+    """
+
+    reasoning: str | None = Field(default=None, description="LLM reasoning or justification text")
+    citations: List[str] | None = Field(default=None, description="Evidence snippets")
+    char_intervals: List[CharInterval] | None = Field(
+        default=None, description="Character spans of evidence in source text"
+    )
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    model_id: str | None = Field(default=None, description="Model identifier used")
+    provider: str | None = Field(default=None, description="Provider name")
+    generated_at: datetime | None = Field(default=None, description="Generation timestamp")
+    recipe_id: str | None = Field(default=None, description="Extraction recipe identifier")
+    window_ids: List[str] | None = Field(default=None, description="IDs of windows used")
 
 
 class BaseResource(BaseModel):
@@ -241,6 +268,11 @@ class BaseResource(BaseModel):
         default=None,
         description="Arbitrary, agent-provided context payload for this resource",
         examples=[{"section_key": "free text content"}],
+    )
+
+    # Standardized, typed agent metadata
+    agent_meta: AgentMeta | None = Field(
+        default=None, description="Standardized agent reasoning, citations and provenance"
     )
 
     # Class-level metadata for introspection
@@ -459,6 +491,132 @@ class BaseResource(BaseModel):
             "required": required,
             "canonical_defaults": cls.get_canonical_defaults(),
         }
+
+    # --- LLM-facing facades and helpers ---
+    @classmethod
+    def get_system_fields(cls) -> list[str]:
+        """Return fields considered system-owned (not LLM-generated)."""
+        return [
+            "id",
+            "created_at",
+            "updated_at",
+            "version",
+            "identifier",
+            "language",
+            "implicit_rules",
+            "meta_profile",
+            "meta_source",
+            "meta_security",
+            "meta_tag",
+        ]
+
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:
+        """Default extractable fields for LLM extraction (override in subclasses)."""
+        system = set(cls.get_system_fields())
+        # Exclude internals, agent containers, and frozen resource_type by default
+        excluded = system | {"agent_context", "agent_meta", "resource_type"}
+        fields: list[str] = []
+        try:
+            for name in getattr(cls, "model_fields", {}) or {}:
+                if name.startswith("_"):
+                    continue
+                if name in excluded:
+                    continue
+                fields.append(name)
+        except Exception:
+            pass
+        return fields
+
+    @classmethod
+    def get_llm_schema(cls, minimal: bool = True) -> dict[str, Any]:
+        """LLM-friendly schema with a compact example of extractable fields."""
+        example: dict[str, Any] = {"resource_type": getattr(cls, "__name__", "Resource")}
+        try:
+            defaults = cls.get_canonical_defaults() or {}
+            extractable = set(cls.get_extractable_fields())
+            # Seed with defaults that intersect extractables
+            for k, v in defaults.items():
+                if k in extractable and v is not None:
+                    example[k] = v
+        except Exception:
+            pass
+        # Keep minimal nested structure if available from extraction examples
+        try:
+            examples = cls.get_extraction_examples() or {}
+            obj = examples.get("object")
+            if isinstance(obj, dict):
+                for k in list(obj.keys()):
+                    if k in ("resource_type",) or k in extractable:
+                        example.setdefault(k, obj[k])
+        except Exception:
+            pass
+        return {"title": getattr(cls, "__name__", "Resource"), "example": example}
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:
+        """Resource-specific guidance for extraction prompts."""
+        return []
+
+    @classmethod
+    def get_required_extractables(cls) -> list[str]:
+        """Fields that must be provided for valid extraction (override in subclasses)."""
+        return []
+
+    @classmethod
+    def get_canonical_defaults(cls) -> dict[str, Any]:
+        """Default values for system/required fields during extraction (override in subclasses)."""
+        return {}
+
+    @classmethod
+    def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
+        """Coerce extractable payload to proper types with relaxed validation (override in subclasses)."""
+        return payload.copy()
+
+    def to_facade(self, view: str = "full") -> dict[str, Any]:
+        """Return a dict view of the resource for a given facade.
+
+        - full: model_dump()
+        - system: only system fields
+        - extractable: only extractable fields (+ resource_type)
+        """
+        data = self.model_dump()
+        if view == "full":
+            return data
+        if view == "system":
+            keys = set(self.get_system_fields()) | {"resource_type"}
+            return {k: v for k, v in data.items() if k in keys}
+        if view == "extractable":
+            keys = set(self.get_extractable_fields()) | {"resource_type"}
+            return {k: v for k, v in data.items() if k in keys}
+        return data
+
+    @classmethod
+    def validate_extractable(cls: type[T], payload: dict[str, Any]) -> T:
+        """Validate a minimal extractable payload into a full model instance.
+
+        - Filters unknown keys
+        - Seeds canonical defaults
+        - Injects resource_type if missing
+        """
+        filtered: dict[str, Any] = {}
+        try:
+            model_fields = getattr(cls, "model_fields", {}) or {}
+            for k, v in (payload or {}).items():
+                if k in model_fields:
+                    filtered[k] = v
+        except Exception:
+            filtered = dict(payload or {})
+        # Resource type
+        filtered.setdefault("resource_type", getattr(cls, "__name__", "Resource"))
+        # Seed defaults
+        try:
+            defaults = cls.get_canonical_defaults() or {}
+            for k, v in defaults.items():
+                filtered.setdefault(k, v)
+        except Exception:
+            pass
+        return cls(**filtered)
 
     @classmethod
     def get_specifications(cls, language: str | None = None) -> dict[str, Any]:

@@ -421,6 +421,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../../how-to/validate_hacs_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Validate HACS models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../how-to/visualize_resources/" class="md-nav__link">
         
   
@@ -933,7 +956,7 @@
 
 <span class="c1">### 1) Grounded mentions (optional)</span>
 <span class="c1"># Run extraction with source grounding and chunk alignment to see mentions and spans</span>
-<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-5&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">extractions</span> <span class="o">=</span> <span class="n">generate_chunked_extractions</span><span class="p">(</span>
     <span class="n">client</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
     <span class="n">text</span><span class="o">=</span><span class="n">input_text</span><span class="p">,</span>

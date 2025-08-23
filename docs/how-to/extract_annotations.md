@@ -119,16 +119,16 @@ Do not use for actual medication taking/administration (use MedicationStatement/
 # Initialize the language model for HACS model extraction
 from langchain_openai import ChatOpenAI
 
-llm = ChatOpenAI(model="gpt-5-mini-2025-08-07")
+llm = ChatOpenAI(model="gpt-4o-mini")
 
 print("✓ LLM configured for HACS model extraction")
-print(f"Model: {llm.model_name}")
+print(f"Model: gpt-4o-mini")
 ```
 
 Output:
 ```
 ✓ LLM configured for HACS model extraction
-Model: gpt-5-mini-2025-08-07
+Model: gpt-4o-mini
 ```
 
 ### Step 5: Extract structured HACS models
@@ -153,7 +153,8 @@ print(to_markdown(medication_requests, title="Example Extraction Record"))
 ```
 
 Output:
-```
+
+```markdown
 ### Example Extraction Record
 
 #### MedicationRequest
@@ -161,13 +162,42 @@ Output:
 | Field | Value |
 |---|---|
 | resource_type | MedicationRequest |
-| id | medicationrequest-093872e8 |
+| id | medicationrequest-c921d3cc |
 | status | active |
-| subject | Patient/123 |
-| dosage_instruction | [] |
+| subject | Patient/UNKNOWN |
+| medication_codeable_concept | Lisinopril 10mg |
+| dosage_instruction | Take 10mg daily for hypertension management. |
 | intent | order |
-| created_at | 2025-08-20T02:24:30.881805Z |
-| updated_at | 2025-08-20T02:24:30.881814Z |
+| created_at | 2025-08-23T18:07:02.401678Z |
+| updated_at | 2025-08-23T18:07:02.401689Z |
+
+#### MedicationRequest
+
+| Field | Value |
+|---|---|
+| resource_type | MedicationRequest |
+| id | medicationrequest-4c3f55dc |
+| status | active |
+| subject | Patient/UNKNOWN |
+| medication_codeable_concept | Metformin 500mg |
+| dosage_instruction | Take 500mg twice daily for type 2 diabetes control. |
+| intent | order |
+| created_at | 2025-08-23T18:07:02.401940Z |
+| updated_at | 2025-08-23T18:07:02.401941Z |
+
+#### MedicationRequest
+
+| Field | Value |
+|---|---|
+| resource_type | MedicationRequest |
+| id | medicationrequest-22d00c68 |
+| status | active |
+| subject | Patient/UNKNOWN |
+| medication_codeable_concept | Aspirin 81mg |
+| dosage_instruction | Continue taking 81mg daily for cardioprotection. |
+| intent | order |
+| created_at | 2025-08-23T18:07:02.401974Z |
+| updated_at | 2025-08-23T18:07:02.401974Z |
 ```
 
 **What happens during HACS model extraction:**
@@ -241,8 +271,9 @@ print()
 print(to_markdown(conds, title="Extracted Conditions"))
 ```
 
-Output:
-```
+Output (MedicationRequest):
+
+```markdown
 ### Extracted MedicationRequests
 
 #### MedicationRequest
@@ -250,14 +281,47 @@ Output:
 | Field | Value |
 |---|---|
 | resource_type | MedicationRequest |
-| id | medicationrequest-093872e8 |
+| id | medicationrequest-54fe2fc5 |
 | status | active |
 | subject | Patient/123 |
-| dosage_instruction | [] |
+| medication_codeable_concept | Lisinopril |
+| dosage_instruction | 10mg daily |
 | intent | order |
-| created_at | 2025-08-20T02:24:30.881805Z |
-| updated_at | 2025-08-20T02:24:30.881814Z |
+| created_at | 2025-08-23T18:07:26.327782Z |
+| updated_at | 2025-08-23T18:07:26.327786Z |
 
+#### MedicationRequest
+
+| Field | Value |
+|---|---|
+| resource_type | MedicationRequest |
+| id | medicationrequest-b9211585 |
+| status | active |
+| subject | Patient/123 |
+| medication_codeable_concept | Metformin |
+| dosage_instruction | 500mg twice daily |
+| intent | order |
+| created_at | 2025-08-23T18:07:26.327883Z |
+| updated_at | 2025-08-23T18:07:26.327884Z |
+
+#### MedicationRequest
+
+| Field | Value |
+|---|---|
+| resource_type | MedicationRequest |
+| id | medicationrequest-2653a3d8 |
+| status | active |
+| subject | Patient/123 |
+| medication_codeable_concept | Aspirin |
+| dosage_instruction | 81mg daily |
+| intent | order |
+| created_at | 2025-08-23T18:07:26.327915Z |
+| updated_at | 2025-08-23T18:07:26.327915Z |
+```
+
+Output (Condition):
+
+```markdown
 ### Extracted Conditions
 
 #### Condition
@@ -265,24 +329,36 @@ Output:
 | Field | Value |
 |---|---|
 | resource_type | Condition |
-| id | condition-1 |
+| id | condition-5ad26285 |
 | status | active |
 | code | hypertension |
 | subject | Patient/123 |
-| created_at | 2025-08-20T00:00:00Z |
-| updated_at | 2025-08-20T00:00:00Z |
+| created_at | 2025-08-23T18:07:28.884472Z |
+| updated_at | 2025-08-23T18:07:28.884475Z |
 
 #### Condition
 
 | Field | Value |
 |---|---|
 | resource_type | Condition |
-| id | condition-2 |
+| id | condition-56b673eb |
 | status | active |
 | code | type 2 diabetes |
 | subject | Patient/123 |
-| created_at | 2025-08-20T00:00:00Z |
-| updated_at | 2025-08-20T00:00:00Z |
+| created_at | 2025-08-23T18:07:28.884555Z |
+| updated_at | 2025-08-23T18:07:28.884556Z |
+
+#### Condition
+
+| Field | Value |
+|---|---|
+| resource_type | Condition |
+| id | condition-9358471e |
+| status | active |
+| code | cardioprotection |
+| subject | Patient/123 |
+| created_at | 2025-08-23T18:07:28.884567Z |
+| updated_at | 2025-08-23T18:07:28.884568Z |
 ```
 
 ## Create a clinical document from extracted resources
@@ -347,3 +423,106 @@ Now that you have extracted HACS models and assembled a clinical document, you c
 ### Extract with citations
 
 For cases where you need precise character positions instead of structured models, see the [Extract with citations guide](grounded_extraction.md).
+
+## Guide LLM outputs with injected fields (highly recommended)
+
+Most healthcare resources have required enums and references. To keep the model focused on clinical content while guaranteeing validity, use `injected_fields` to pre‑fill stable fields and let the LLM fill the rest.
+
+- What it does: merges your fields into the LLM result, then re‑validates the object
+- Priority: injected_instance > injected_fields > LLM generated values
+- Unknown keys are ignored by validation
+- Works for both single and list outputs
+
+Common examples:
+
+```python
+# 1) MedicationRequest: lock status, intent, and patient reference
+meds = asyncio.run(extract(
+    llm_provider=llm,
+    prompt=med_prompt,
+    output_model=MedicationRequest,
+    many=True,
+    injected_fields={
+        "status": MedicationRequestStatus.ACTIVE,
+        "intent": MedicationRequestIntent.ORDER,
+        "subject": f"Patient/{patient_id}",
+    },
+    strict=False,
+))
+
+# 2) Condition: ensure clinical and verification statuses are valid
+conds = asyncio.run(extract(
+    llm_provider=llm,
+    prompt=cond_prompt,
+    output_model=Condition,
+    many=True,
+    injected_fields={
+        "clinical_status": ConditionClinicalStatus.ACTIVE,
+        "verification_status": ConditionVerificationStatus.CONFIRMED,
+        "subject": f"Patient/{patient_id}",
+    },
+    strict=False,
+))
+```
+
+Notes:
+- Prefer enums from `hacs_models` for clarity and validation.
+- You can inject any field the model supports (strings, enums, nested structures).
+- This is the easiest way to fix flaky enum/literal fields while keeping the LLM’s job simple.
+
+### Injecting larger templates (advanced)
+
+You can also pass a partial object via `injected_instance` when you already have a resource to merge from. Use this when you want to carry forward system‑generated IDs or shared metadata.
+
+```python
+# Example: carry an existing subject reference and intent from a prior step
+base_fields = {"subject": f"Patient/{patient_id}", "intent": MedicationRequestIntent.ORDER}
+meds = asyncio.run(extract(
+    llm_provider=llm,
+    prompt=med_prompt,
+    output_model=MedicationRequest,
+    many=True,
+    injected_fields=base_fields,
+    strict=False,
+))
+```
+
+---
+
+## Structure resources directly (no long text extraction)
+
+Use `structure()` when you want the model to produce a typed object from concise instructions and context (not chunking). This is useful for generating plans, orders, or summaries given known values.
+
+```python
+from hacs_utils.structured import structure
+from hacs_models import CarePlan
+
+patient_ref = f"Patient/{patient_id}"
+ctx = "Patient has hypertension; reduce BP over 3 months with medication and lifestyle changes."
+
+cp = asyncio.run(structure(
+    llm=llm,
+    prompt=(
+        "Generate a CarePlan object.\n"
+        f"Subject: {patient_ref}.\n"
+        "Include: title, description_text, at least one activity_text item, and one goal_refs placeholder.\n"
+        f"Context: {ctx}"
+    ),
+    output_model=CarePlan,
+    strict=False,
+))
+```
+
+Synchronous convenience wrappers are also available for scripts/CLI:
+
+```python
+from hacs_utils import extract_sync, structure_sync
+
+subset = extract_sync(llm, prompt="Extract: Jane Doe (1985-03-20)", output_model=Patient.pick("full_name","birth_date"), strict=False)
+plan = structure_sync(llm, prompt="Return a CarePlan for Patient/123 with a title and one activity_text", output_model=CarePlan, strict=False)
+```
+
+Implementation details:
+- Descriptive schema is enabled by default; field descriptions and allowed values are injected into prompts.
+- Provider‑native structured outputs (OpenAI Responses.parse, Anthropic tool JSON) are preferred when available; otherwise LangChain function calling is used.
+- Injected fields are merged after parsing, then the object is re‑validated.

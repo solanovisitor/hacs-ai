@@ -11,10 +11,10 @@ Usage
 >>> p = Patient(full_name="Jane Doe", birth_date="1990-01-01", gender="female")
 >>> visualize_resource(p)  # Displays rich HTML in notebooks
 
->>> from hacs_models import AnnotatedDocument, Extraction, CharInterval
+>>> from hacs_models import AnnotatedDocument, ExtractionResults, CharInterval
 >>> from hacs_utils.visualization import visualize_annotations
 >>> doc = AnnotatedDocument(text="BP 128/82, HR 72", extractions=[
-...   Extraction(extraction_class="blood_pressure", extraction_text="128/82",
+...   ExtractionResults(extraction_class="blood_pressure", extraction_text="128/82",
 ...              char_interval=CharInterval(start_pos=3, end_pos=9))
 ... ])
 >>> visualize_annotations(doc)
@@ -329,7 +329,7 @@ def visualize_annotations(
     """
     # Late import to avoid heavy deps on import
     try:
-        from hacs_models import Extraction  # type: ignore
+        from hacs_models import ExtractionResults as Extraction  # type: ignore
     except Exception:  # pragma: no cover
         Extraction = object  # type: ignore
 
@@ -1182,6 +1182,47 @@ def resource_list_to_markdown(
     return header + "\n\n".join(blocks)
 
 
+def composition_to_markdown(resource: Any) -> str:
+    """Render a Composition/Document with sections as Markdown.
+
+    Shows a simple header with title/status and then each section with its text.
+    """
+    try:
+        data = resource.model_dump(mode="json")  # type: ignore[attr-defined]
+    except Exception:
+        try:
+            data = dict(resource)
+        except Exception:
+            data = json.loads(json.dumps(resource, default=str))
+
+    title = data.get("title") or data.get("resource_type", "Document")
+    status = data.get("status")
+    sections = data.get("sections") or []
+
+    lines: list[str] = []
+    lines.append(f"### {title}")
+    if status:
+        lines.append("")
+        lines.append(f"Status: {status}")
+    if data.get("subject_name"):
+        lines.append(f"Subject: {data.get('subject_name')}")
+    lines.append("")
+
+    if not sections:
+        lines.append("_No sections_")
+        return "\n".join(lines)
+
+    for s in sections:
+        st = s.get("title") if isinstance(s, dict) else getattr(s, "title", "Section")
+        tx = s.get("text") if isinstance(s, dict) else getattr(s, "text", "")
+        lines.append(f"#### {st}")
+        lines.append("")
+        lines.append(str(tx or ""))
+        lines.append("")
+
+    return "\n".join(lines)
+
+
 def document_summary_markdown(
     annotated_document: Any,
     *,
@@ -1260,15 +1301,22 @@ def to_markdown(
     if isinstance(obj, dict) and ("documentation" in obj or "fields" in obj or "properties" in obj):
         return _specs_dict_to_markdown(obj)
 
-    # 3) Document-like (has text)
+    # 3) AnnotatedDocument-like (has text and extractions)
     try:
-        if hasattr(obj, "text"):
+        if hasattr(obj, "text") and hasattr(obj, "extractions"):
             return document_summary_markdown(
                 obj,
                 resources=resources,
                 show_annotations=show_annotations,
                 context_chars=context_chars,
             )
+    except Exception:
+        pass
+
+    # 3b) Composition/Document (has sections)
+    try:
+        if hasattr(obj, "sections"):
+            return composition_to_markdown(obj)
     except Exception:
         pass
 

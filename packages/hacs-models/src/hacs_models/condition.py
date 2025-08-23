@@ -371,3 +371,51 @@ class Condition(DomainResource):
         condition_text = self.get_display_text()
         status_str = f" ({self.clinical_status})" if self.clinical_status else ""
         return f"Condition('{condition_text}'{status_str})"
+
+    # --- LLM-friendly extractable facade overrides ---
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
+        """Return fields that should be extracted by LLMs (3-4 key fields only)."""
+        return [
+            "code",
+            "clinical_status",
+            "onset_date_time",
+        ]
+
+    @classmethod
+    def get_required_extractables(cls) -> list[str]:
+        """Fields that must be provided for valid extraction."""
+        return ["code"]
+
+    @classmethod
+    def get_canonical_defaults(cls) -> dict[str, Any]:
+        """Default values for system/required fields during extraction."""
+        return {
+            "clinical_status": "active",
+            "subject": "Patient/UNKNOWN",
+            "code": {"text": ""},
+        }
+
+    @classmethod
+    def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
+        """Coerce simple strings into CodeableConcept for `code`."""
+        coerced = dict(payload or {})
+        val = coerced.get("code")
+        if isinstance(val, str):
+            coerced["code"] = {"text": val}
+        elif isinstance(val, dict):
+            coerced.setdefault("code", {})
+            coerced["code"].setdefault("text", "")
+        elif val is None and relax:
+            # If absent, initialize minimal structure
+            coerced["code"] = {"text": ""}
+        return coerced
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:  # type: ignore[override]
+        """Return LLM-specific extraction hints for Condition."""
+        return [
+            "Set code.text to the condition name (e.g., 'hipertensão', 'DM2', 'diabetes').",
+            "Accept textual descriptions when code is not present; leave code/text=null if absent",
+            "Use clinical_status='active' for current conditions, 'resolved' for past conditions",
+        ]

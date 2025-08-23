@@ -145,8 +145,8 @@ services:
         uv pip install pytest pytest-asyncio &&
         echo 'Waiting for services to be ready...' &&
         sleep 15 &&
-        echo 'Running Phase 2 integration tests...' &&
-        python -m pytest tests/test_phase2_integration.py -v --tb=short &&
+        echo 'Running facade API tests...' &&
+        python -m pytest tests/test_facades.py -v --tb=short &&
         echo 'Running essential CI tests...' &&
         python -m pytest tests/test_ci_essential.py -v --tb=short &&
         echo 'All tests completed successfully!'

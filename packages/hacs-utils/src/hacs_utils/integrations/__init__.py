@@ -48,9 +48,8 @@ except ImportError as e:
 
 try:
     from . import crewai
-except ImportError as e:
+except ImportError:
     crewai = None
-    warnings.warn(f"CrewAI integration not available: {e}", UserWarning)
 
 __version__ = "0.2.0"
 __all__ = [

@@ -37,7 +37,7 @@ class Coding(DomainResource):
     display: str | None = Field(
         default=None,
         description="Representation defined by the system",
-        examples=["Blood pressure", "Systolic blood pressure"],
+        examples=["Blood pressure", "Systolic blood pressure", "Diastolic blood pressure", "Heart rate", "Respiratory rate", "Temperature", "Oxygen saturation", "Body weight", "Body height", "Body mass index"],
         max_length=255,
     )
 
@@ -485,3 +485,63 @@ class Observation(DomainResource):
             result += f" ({interpretation})"
 
         return result
+
+    # --- LLM-friendly extractable facade overrides ---
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
+        # Balanced set of clinically relevant extractable fields
+        return [
+            "status",
+            "code",
+            "value_quantity", 
+            "value_string",
+            "effective_date_time",
+            "interpretation",
+        ]
+
+    @classmethod
+    def get_required_extractables(cls) -> list[str]:
+        """Fields that must be provided for valid extraction."""
+        return ["code"]
+
+    @classmethod
+    def get_canonical_defaults(cls) -> dict[str, Any]:
+        """Default values for system/required fields during extraction."""
+        return {
+            "status": "final",
+            "subject": "Patient/UNKNOWN",
+            "code": {"text": ""},  # Will be filled by LLM
+        }
+
+    @classmethod
+    def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
+        """Coerce extractable payload to proper types with relaxed validation."""
+        coerced = payload.copy()
+        
+        # Coerce code to CodeableConcept if it's a string
+        if "code" in coerced and isinstance(coerced["code"], str):
+            coerced["code"] = {"text": coerced["code"]}
+        
+        # Ensure code has text field
+        if "code" in coerced and isinstance(coerced["code"], dict) and "text" not in coerced["code"]:
+            coerced["code"]["text"] = ""
+            
+        # Coerce value_quantity to proper structure
+        if "value_quantity" in coerced and isinstance(coerced["value_quantity"], (int, float)):
+            coerced["value_quantity"] = {"value": coerced["value_quantity"]}
+            
+        # Coerce interpretation to list of CodeableConcepts
+        if "interpretation" in coerced and isinstance(coerced["interpretation"], str):
+            coerced["interpretation"] = [{"text": coerced["interpretation"]}]
+        elif "interpretation" in coerced and isinstance(coerced["interpretation"], dict):
+            coerced["interpretation"] = [coerced["interpretation"]]
+            
+        return coerced
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:  # type: ignore[override]
+        return [
+            "- Return ONE item per distinct measure (Weight, Height, Head circumference, Apgar, Gestational age, BP/TA, HR, RR, Temp, SpO2, BMI)",
+            "- Prefer value_quantity for numeric values; use value_string for composites (e.g., '90/60')",
+            "- If unit is not explicit, use unit=null; do not invent",
+        ]

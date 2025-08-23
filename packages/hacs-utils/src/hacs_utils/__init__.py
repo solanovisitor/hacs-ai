@@ -28,16 +28,8 @@ from .core_utils import (
     RetryMixin,
     VersionManager,
 )
-from .agent_types import (
-    HealthcareDomain,
-    AgentRole,
-    AgentInteractionStrategy,
-    AgentMemoryStrategy,
-    AgentChainStrategy,
-    AgentRetrievalStrategy,
-    AgentScratchpadEntry,
-    AgentTask,
-)
+# NOTE: Agent type symbols are lazily exposed via __getattr__ to avoid
+# importing optional heavy modules at package import time.
 
 
 # Graceful import handling for optional dependencies
@@ -124,71 +116,23 @@ _has_crewai = None  # Lazy check
 
 # Structured Output (always available)
 try:
-    from .structured import extract
+    from .structured import extract, structure, extract_sync, structure_sync
 
     _has_structured = True
 except ImportError:
     extract = None
+    structure = None
+    extract_sync = None
+    structure_sync = None
     _has_structured = False
 
 
 # Core adapter (always available)
 from .adapter import AbstractAdapter, AdapterConfig
-from .preferences import consult_preferences, inject_preferences
-from .memory_utils import merge_memories, filter_memories, gather_memories, feed_memories
-from .semantic_index import (
-    build_resource_document,
-    build_tool_documents,
-    index_resource,
-    index_tool_catalog,
-    semantic_tool_loadout,
-    semantic_resource_search,
-)
-from .vector_ops import (
-    store_embedding as utils_store_embedding,
-    vector_similarity_search as utils_vector_similarity_search,
-    vector_hybrid_search as utils_vector_hybrid_search,
-    get_vector_collection_stats as utils_get_vector_collection_stats,
-    optimize_vector_collection as utils_optimize_vector_collection,
-)
-from .resource_specific import (
-    calculate_patient_age,
-    add_patient_identifier,
-    get_patient_identifier_by_type,
-    add_patient_care_provider,
-    deactivate_patient,
-    get_observation_value_summary,
-    get_document_full_text,
-    add_condition_stage,
-    # New resource utilities
-    validate_document_metadata,
-    resolve_document_location,
-    register_external_document,
-    link_document_to_record,
-    verify_practitioner_credential,
-    link_practitioner_to_organization,
-    update_practitioner_affiliation,
-    register_organization,
-    link_organization_affiliation,
-    manage_service_locations,
-    validate_service_request,
-    route_service_request,
-    summarize_diagnostic_report,
-    link_report_observations,
-    attach_report_media,
-    validate_report_completeness,
-    validate_prescription,
-    route_prescription,
-    check_allergy_contraindications,
-    check_drug_interactions,
-    create_event,
-    update_event_status_util,
-    add_event_performer_util,
-    schedule_event_util,
-    summarize_event_util,
-)
 
-# Visualization utilities
+# Heavy utilities are exposed lazily via __getattr__ to avoid import-time side effects
+
+# Visualization utilities (import light, but still guard to avoid optional deps noise)
 try:
     from .visualization import (
         visualize_resource,
@@ -203,6 +147,7 @@ try:
         resource_to_schema_markdown,
     )
 except Exception:
+    # Provide stubs so docs imports don't explode; actual usage should import from hacs_utils.visualization
     visualize_resource = None  # type: ignore
     visualize_annotations = None  # type: ignore
     resource_to_markdown = None  # type: ignore
@@ -339,15 +284,7 @@ __all__ = [
     "standardize_messages",
     "RetryMixin",
     "VersionManager",
-    # Agent types
-    "HealthcareDomain",
-    "AgentRole",
-    "AgentInteractionStrategy",
-    "AgentMemoryStrategy",
-    "AgentChainStrategy",
-    "AgentRetrievalStrategy",
-    "AgentScratchpadEntry",
-    "AgentTask",
+    # Agent types (lazy via __getattr__)
     # OpenAI
     "OpenAIClient",
     "OpenAIStructuredGenerator",
@@ -369,6 +306,9 @@ __all__ = [
     "create_langgraph_workflow",
     # Structured Output
     "extract",
+    "structure",
+    "extract_sync",
+    "structure_sync",
     # Visualization
     "visualize_resource",
     "visualize_annotations",
@@ -384,62 +324,7 @@ __all__ = [
     # Core
     "AbstractAdapter",
     "AdapterConfig",
-    # Preferences helpers
-    "consult_preferences",
-    "inject_preferences",
-    # Memory helpers
-    "merge_memories",
-    "filter_memories",
-    "gather_memories",
-    "feed_memories",
-    # Semantic index
-    "build_resource_document",
-    "build_tool_documents",
-    "index_resource",
-    "index_tool_catalog",
-    "semantic_tool_loadout",
-    "semantic_resource_search",
-    # Vector ops (canonical in utils; tools wrap them)
-    "utils_store_embedding",
-    "utils_vector_similarity_search",
-    "utils_vector_hybrid_search",
-    "utils_get_vector_collection_stats",
-    "utils_optimize_vector_collection",
-    # Resource-specific utilities
-    "calculate_patient_age",
-    "add_patient_identifier",
-    "get_patient_identifier_by_type",
-    "add_patient_care_provider",
-    "deactivate_patient",
-    "get_observation_value_summary",
-    "get_document_full_text",
-    "add_condition_stage",
-    # New resource utilities
-    "validate_document_metadata",
-    "resolve_document_location",
-    "register_external_document",
-    "link_document_to_record",
-    "verify_practitioner_credential",
-    "link_practitioner_to_organization",
-    "update_practitioner_affiliation",
-    "register_organization",
-    "link_organization_affiliation",
-    "manage_service_locations",
-    "validate_service_request",
-    "route_service_request",
-    "summarize_diagnostic_report",
-    "link_report_observations",
-    "attach_report_media",
-    "validate_report_completeness",
-    "validate_prescription",
-    "route_prescription",
-    "check_allergy_contraindications",
-    "check_drug_interactions",
-    "create_event",
-    "update_event_status_util",
-    "add_event_performer_util",
-    "schedule_event_util",
-    "summarize_event_util",
+    # Heavy utilities are intentionally not re-exported at top-level to reduce import-time side effects
     # Utilities
     "list_available_integrations",
     "get_integration_info",

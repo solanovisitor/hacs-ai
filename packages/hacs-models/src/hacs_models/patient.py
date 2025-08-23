@@ -831,3 +831,22 @@ class Patient(DomainResource):
         """Human-readable string representation."""
         age_str = f", age {self.age_years}" if self.age_years is not None else ""
         return f"Patient('{self.display_name}'{age_str}, {self.gender or 'unknown gender'})"
+
+    # --- LLM-friendly extractable facade overrides ---
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
+        # Minimal, LLM-safe fields
+        return [
+            "full_name",
+            "name",
+            "birth_date",
+            "age",
+            "gender",
+        ]
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:  # type: ignore[override]
+        return [
+            "- Accept simple textual name (full_name) when structured name is not available",
+            "- Age can be extracted as a number (age) or date (birth_date)",
+        ]

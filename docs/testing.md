@@ -61,7 +61,7 @@ uv pip install pytest pytest-asyncio
 
 # Run specific test categories
 python -m pytest tests/test_ci_essential.py -v                # Essential CI tests
-python -m pytest tests/test_phase2_integration.py -v         # Phase 2 integration tests
+python -m pytest tests/test_facades.py -v                   # Facade API tests
 python -m pytest tests/test_integration_end_to_end.py -v     # End-to-end tests
 
 # Run specific domain tests

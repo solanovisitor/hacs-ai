@@ -110,11 +110,11 @@ run_local_tests() {
             ;;
         "integration")
             print_status "Running integration tests..."
-            python3 -m pytest tests/test_phase2_integration.py -v
+            python3 -m pytest tests/test_facades.py tests/test_registry_extractables.py -v
             ;;
         "phase2")
             print_status "Running Phase 2 integration tests..."
-            python3 -m pytest tests/test_phase2_integration.py -v --tb=short
+            python3 -m pytest tests/test_facades.py tests/test_registry_extractables.py -v --tb=short
             ;;
         "all"|*)
             print_status "Running all available tests..."
@@ -163,7 +163,7 @@ validate_environment() {
         "packages/hacs-models/pyproject.toml"
         "packages/hacs-tools/pyproject.toml"
         "tests/test_ci_essential.py"
-        "tests/test_phase2_integration.py"
+        "tests/test_facades.py"
     )
     
     for file in "${required_files[@]}"; do

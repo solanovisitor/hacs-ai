@@ -28,3 +28,22 @@ class FamilyMemberHistory(DomainResource):
     contributed_to_death: bool | None = Field(
         default=None, description="Whether the condition contributed to death"
     )
+
+    # --- LLM-friendly extractable facade overrides ---
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
+        """Return fields that should be extracted by LLMs (3-4 key fields only)."""
+        return [
+            "relationship_text",
+            "condition_text",
+            "outcome_text",
+        ]
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:  # type: ignore[override]
+        """Return LLM-specific extraction hints for FamilyMemberHistory."""
+        return [
+            "Extract family history when relatives' conditions are mentioned",
+            "Use relationship_text for family relationship (e.g., 'mother', 'father')",
+            "Use condition_text for the medical condition or problem",
+        ]

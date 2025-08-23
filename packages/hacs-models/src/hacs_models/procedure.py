@@ -9,7 +9,7 @@ https://hl7.org/fhir/R4/procedure.html
 """
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field, field_validator
 
@@ -342,6 +342,60 @@ class Procedure(DomainResource):
 
         self.complication.append(complication)
         return complication
+
+    # --- LLM-friendly extractable facade overrides ---
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
+        # Comprehensive set of clinically relevant extractable fields
+        return [
+            "status",
+            "code",
+            "performed_date_time",
+            "performer",
+            "outcome",
+            "body_site",
+            "reason_text",
+        ]
+
+    @classmethod
+    def get_required_extractables(cls) -> list[str]:
+        """Fields that must be provided for valid extraction."""
+        return ["code"]
+
+    @classmethod
+    def get_canonical_defaults(cls) -> dict[str, Any]:
+        """Default values for system/required fields during extraction."""
+        return {
+            "status": "completed",
+            "subject": "Patient/UNKNOWN",
+            "code": {"text": ""},  # Will be filled by LLM
+        }
+
+    @classmethod
+    def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
+        """Coerce extractable payload to proper types with relaxed validation."""
+        coerced = payload.copy()
+        
+        # Coerce code to CodeableConcept if it's a string
+        if "code" in coerced and isinstance(coerced["code"], str):
+            coerced["code"] = {"text": coerced["code"]}
+        
+        # Ensure code has text field
+        if "code" in coerced and isinstance(coerced["code"], dict) and "text" not in coerced["code"]:
+            coerced["code"]["text"] = ""
+            
+        # Coerce performer to list if it's a single reference
+        if "performer" in coerced and isinstance(coerced["performer"], str):
+            coerced["performer"] = [{"actor": coerced["performer"]}]
+            
+        return coerced
+
+    @classmethod
+    def llm_hints(cls) -> list[str]:  # type: ignore[override]
+        return [
+            "- Map textual procedures (e.g., 'aspiração') into code.text",
+            "- performer/date/time may be null when not explicit",
+        ]
 
 
 # Convenience functions for common procedure types

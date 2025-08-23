@@ -13,6 +13,7 @@ Context‑engineering framework for building healthcare AI with structured memor
 - **[API Reference](api-reference.md)** - Complete API documentation  
 - **[HACS Tools](hacs-tools.md)** - 20+ healthcare tools reference
 - **[Testing Guide](testing.md)** - Testing and validation
+- **Extraction**: `ExtractionRunner`, citation‑guided and one‑step typed extraction
 
  
 
@@ -102,17 +103,11 @@ HACS is in active beta. The preferred install is from source to ensure the lates
 
 ## Next steps
 
-- Follow the [Quick Start](quick-start.md) to validate your setup
+- Follow the [Quick Start](quick-start.md) to validate your setup and run ExtractionRunner or one‑step typed extraction
+- Use the CLI: `hacs-tools extract` and `hacs-tools registry --list-extractables`
 - Connect to a database: [Connect to database](how-to/connect_postgres.md)
 - Generate structured data with LLMs: [Generate structured data](how-to/extract_annotations.md)
 - Extract with citations: [Extract citations](how-to/grounded_extraction.md)
 - Persist resources: [Persist Resources](how-to/persist_resources.md)
 
 ---
-
-## Quick Links
-
-- **[Quick Start](quick-start.md)** - Install HACS and build healthcare AI in minutes
-- **[API Reference](api-reference.md)** - Complete API documentation
-- **[HACS Tools](hacs-tools.md)** - Tooling overview and references
-- **[Testing Guide](testing.md)** - Testing and validation
