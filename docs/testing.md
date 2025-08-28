@@ -21,19 +21,19 @@ We provide a convenient test runner script:
 
 ```bash
 # Validate environment setup
-./run_tests.sh validate
+scripts/scripts/run_tests.sh validate
 
 # Run local unit tests
-./run_tests.sh local unit
+scripts/scripts/run_tests.sh local unit
 
 # Run Phase 2 integration tests (persistence, security, vector)
-./run_tests.sh local phase2
+scripts/scripts/run_tests.sh local phase2
 
 # Run all local tests
-./run_tests.sh local all
+scripts/scripts/run_tests.sh local all
 
 # Run full Docker test suite
-./run_tests.sh docker
+scripts/scripts/run_tests.sh docker
 ```
 
 #### 2. Direct Docker Testing
