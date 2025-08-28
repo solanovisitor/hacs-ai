@@ -375,6 +375,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../supabase_connection_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Connect to Supabase
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../extract_annotations/" class="md-nav__link">
         
   
@@ -421,12 +444,58 @@
   
   
     <li class="md-nav__item">
+      <a href="../facade_extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Facade-based extraction
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../validate_hacs_models/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     Validate HACS models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../validation_results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Validation results
     
   </span>
   
@@ -1147,8 +1216,13 @@ discovered_tools: 75
 
 <span class="n">reg</span> <span class="o">=</span> <span class="n">get_global_registry</span><span class="p">()</span>
 <span class="n">snapshots</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">find_resources</span><span class="p">(</span><span class="n">name_pattern</span><span class="o">=</span><span class="s2">&quot;PatientSnapshot&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">snapshots</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;PatientSnapshot resources found:&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">snapshots</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Registry available:&quot;</span><span class="p">,</span> <span class="n">reg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
+<p><strong>Output:</strong>
+<div class="highlight"><pre><span></span><code>PatientSnapshot resources found: False
+Registry available: True
+</code></pre></div></p>
 <h3 id="next-steps">Next steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Use <code>PatientSnapshot.from_resources(patient, observations, risk_band="B")</code> in your pipelines.</li>

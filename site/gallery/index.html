@@ -375,6 +375,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../how-to/supabase_connection_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Connect to Supabase
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../how-to/extract_annotations/" class="md-nav__link">
         
   
@@ -421,12 +444,58 @@
   
   
     <li class="md-nav__item">
+      <a href="../how-to/facade_extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Facade-based extraction
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../how-to/validate_hacs_models/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     Validate HACS models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/validation_results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Validation results
     
   </span>
   
@@ -870,19 +939,19 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#annotated-document-extractions" class="md-nav__link">
+  <a href="#annotated-document" class="md-nav__link">
     <span class="md-ellipsis">
-      Annotated Document (extractions)
+      Annotated Document
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Annotated Document (extractions)">
+    <nav class="md-nav" aria-label="Annotated Document">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#annotations-markdown-preview" class="md-nav__link">
+  <a href="#annotateddocument" class="md-nav__link">
     <span class="md-ellipsis">
-      Annotations (Markdown preview)
+      AnnotatedDocument
     </span>
   </a>
   
@@ -1053,19 +1122,19 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#annotated-document-extractions" class="md-nav__link">
+  <a href="#annotated-document" class="md-nav__link">
     <span class="md-ellipsis">
-      Annotated Document (extractions)
+      Annotated Document
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Annotated Document (extractions)">
+    <nav class="md-nav" aria-label="Annotated Document">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#annotations-markdown-preview" class="md-nav__link">
+  <a href="#annotateddocument" class="md-nav__link">
     <span class="md-ellipsis">
-      Annotations (Markdown preview)
+      AnnotatedDocument
     </span>
   </a>
   
@@ -1225,19 +1294,27 @@
 </tr>
 </tbody>
 </table>
-<h2 id="annotated-document-extractions">Annotated Document (extractions)<a class="headerlink" href="#annotated-document-extractions" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnnotatedDocument</span><span class="p">,</span> <span class="n">Extraction</span><span class="p">,</span> <span class="n">CharInterval</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations_to_markdown</span>
-<span class="n">doc</span> <span class="o">=</span> <span class="n">AnnotatedDocument</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;BP 128/82, HR 72&quot;</span><span class="p">,</span> <span class="n">extractions</span><span class="o">=</span><span class="p">[</span>
-    <span class="n">Extraction</span><span class="p">(</span><span class="n">extraction_class</span><span class="o">=</span><span class="s2">&quot;blood_pressure&quot;</span><span class="p">,</span> <span class="n">extraction_text</span><span class="o">=</span><span class="s2">&quot;128/82&quot;</span><span class="p">,</span> <span class="n">char_interval</span><span class="o">=</span><span class="n">CharInterval</span><span class="p">(</span><span class="n">start_pos</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">end_pos</span><span class="o">=</span><span class="mi">9</span><span class="p">)),</span>
-    <span class="n">Extraction</span><span class="p">(</span><span class="n">extraction_class</span><span class="o">=</span><span class="s2">&quot;heart_rate&quot;</span><span class="p">,</span> <span class="n">extraction_text</span><span class="o">=</span><span class="s2">&quot;72&quot;</span><span class="p">,</span> <span class="n">char_interval</span><span class="o">=</span><span class="n">CharInterval</span><span class="p">(</span><span class="n">start_pos</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">end_pos</span><span class="o">=</span><span class="mi">17</span><span class="p">)),</span>
-<span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">annotations_to_markdown</span><span class="p">(</span><span class="n">doc</span><span class="p">))</span>
+<h2 id="annotated-document">Annotated Document<a class="headerlink" href="#annotated-document" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnnotatedDocument</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">resource_to_markdown</span>
+<span class="n">doc</span> <span class="o">=</span> <span class="n">AnnotatedDocument</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;BP 128/82, HR 72&quot;</span><span class="p">,</span> <span class="n">document_id</span><span class="o">=</span><span class="s2">&quot;vital_signs_001&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">resource_to_markdown</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
 </code></pre></div>
-<h3 id="annotations-markdown-preview">Annotations (Markdown preview)<a class="headerlink" href="#annotations-markdown-preview" title="Permanent link">&para;</a></h3>
-<ul>
-<li>blood_pressure [3-9]: … BP  <strong>128/82</strong> , HR 72 …</li>
-</ul>
+<h3 id="annotateddocument">AnnotatedDocument<a class="headerlink" href="#annotateddocument" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>resource_type</td>
+<td>AnnotatedDocument</td>
+</tr>
+</tbody>
+</table>
 
 
 

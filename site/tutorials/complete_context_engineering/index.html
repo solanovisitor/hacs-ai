@@ -375,6 +375,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../../how-to/supabase_connection_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Connect to Supabase
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../how-to/extract_annotations/" class="md-nav__link">
         
   
@@ -421,12 +444,58 @@
   
   
     <li class="md-nav__item">
+      <a href="../../how-to/facade_extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Facade-based extraction
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../how-to/validate_hacs_models/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     Validate HACS models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/validation_results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Validation results
     
   </span>
   
@@ -1236,7 +1305,8 @@
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;   Full Name:&quot;</span><span class="p">,</span> <span class="n">patient</span><span class="o">.</span><span class="n">full_name</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;   Birth Date:&quot;</span><span class="p">,</span> <span class="n">patient</span><span class="o">.</span><span class="n">birth_date</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;   Chief Complaint:&quot;</span><span class="p">,</span> <span class="n">patient</span><span class="o">.</span><span class="n">agent_context</span><span class="p">[</span><span class="s2">&quot;chief_complaint&quot;</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   Full record size: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">patient</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()))</span><span class="si">}</span><span class="s2"> characters&quot;</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_markdown</span> <span class="k">as</span> <span class="n">_to_md</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   Full record size: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">_to_md</span><span class="p">(</span><span class="n">patient</span><span class="p">,</span><span class="w"> </span><span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span><span class="si">}</span><span class="s2"> characters&quot;</span><span class="p">)</span>
 
 <span class="c1"># Always visualize created records</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">resource_to_markdown</span>
@@ -1292,8 +1362,15 @@
 <h3 id="3-select-extract-essential-clinical-context">3) Select — extract essential clinical context<a class="headerlink" href="#3-select-extract-essential-clinical-context" title="Permanent link">&para;</a></h3>
 <p>Reduce the working set to only fields that matter for the current task, and quantify the reduction.</p>
 <div class="highlight"><pre><span></span><code><span class="n">selected_context</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;patient_core&quot;</span><span class="p">:</span> <span class="n">patient</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;full_name&quot;</span><span class="p">,</span> <span class="s2">&quot;birth_date&quot;</span><span class="p">,</span> <span class="s2">&quot;agent_context&quot;</span><span class="p">}),</span>
-    <span class="s2">&quot;recent_vitals&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">obs</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;value_quantity&quot;</span><span class="p">})</span> <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">observations</span><span class="p">],</span>
+    <span class="s2">&quot;patient_core&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;full_name&quot;</span><span class="p">:</span> <span class="n">patient</span><span class="o">.</span><span class="n">full_name</span><span class="p">,</span> <span class="s2">&quot;birth_date&quot;</span><span class="p">:</span> <span class="n">patient</span><span class="o">.</span><span class="n">birth_date</span><span class="p">,</span> <span class="s2">&quot;agent_context&quot;</span><span class="p">:</span> <span class="n">patient</span><span class="o">.</span><span class="n">agent_context</span><span class="p">},</span>
+    <span class="s2">&quot;recent_vitals&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">obs</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
+            <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="s2">&quot;value_quantity&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="s2">&quot;value_quantity&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">observations</span>
+    <span class="p">],</span>
     <span class="s2">&quot;risk_factors&quot;</span><span class="p">:</span> <span class="n">patient</span><span class="o">.</span><span class="n">agent_context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;family_history&quot;</span><span class="p">,</span> <span class="p">[]),</span>
 <span class="p">}</span>
 
@@ -1302,7 +1379,7 @@
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   Recent vitals: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_context</span><span class="p">[</span><span class="s1">&#39;recent_vitals&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2"> observations&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   Risk factors: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_context</span><span class="p">[</span><span class="s1">&#39;risk_factors&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2"> items&quot;</span><span class="p">)</span>
 
-<span class="n">full_data_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">patient</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()))</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">o</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()))</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">observations</span><span class="p">)</span>
+<span class="n">full_data_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">_to_md</span><span class="p">(</span><span class="n">patient</span><span class="p">,</span> <span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">_to_md</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">observations</span><span class="p">)</span>
 <span class="n">selected_data_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">selected_context</span><span class="p">))</span>
 <span class="n">selection_efficiency</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">selected_data_size</span> <span class="o">/</span> <span class="n">full_data_size</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   Selection efficiency: </span><span class="si">{</span><span class="n">selection_efficiency</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">% data reduction&quot;</span><span class="p">)</span>
@@ -1463,7 +1540,8 @@
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   Full Name: </span><span class="si">{</span><span class="n">patient</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   Birth Date: </span><span class="si">{</span><span class="n">patient</span><span class="o">.</span><span class="n">birth_date</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   Chief Complaint: </span><span class="si">{</span><span class="n">patient</span><span class="o">.</span><span class="n">agent_context</span><span class="p">[</span><span class="s1">&#39;chief_complaint&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   Full record size: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">patient</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()))</span><span class="si">}</span><span class="s2"> characters&quot;</span><span class="p">)</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_markdown</span> <span class="k">as</span> <span class="n">__to_md</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   Full record size: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">__to_md</span><span class="p">(</span><span class="n">patient</span><span class="p">,</span><span class="w"> </span><span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span><span class="si">}</span><span class="s2"> characters&quot;</span><span class="p">)</span>
 
     <span class="c1"># Clinical observations with full context</span>
     <span class="n">observations</span> <span class="o">=</span> <span class="p">[</span>
@@ -1495,11 +1573,13 @@
 
     <span class="c1"># 🎯 SELECT: Extract essential clinical context only</span>
     <span class="n">selected_context</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;patient_core&quot;</span><span class="p">:</span> <span class="n">patient</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">{</span>
-            <span class="s2">&quot;full_name&quot;</span><span class="p">,</span> <span class="s2">&quot;birth_date&quot;</span><span class="p">,</span> <span class="s2">&quot;agent_context&quot;</span>
-        <span class="p">}),</span>
+        <span class="s2">&quot;patient_core&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;full_name&quot;</span><span class="p">:</span> <span class="n">patient</span><span class="o">.</span><span class="n">full_name</span><span class="p">,</span> <span class="s2">&quot;birth_date&quot;</span><span class="p">:</span> <span class="n">patient</span><span class="o">.</span><span class="n">birth_date</span><span class="p">,</span> <span class="s2">&quot;agent_context&quot;</span><span class="p">:</span> <span class="n">patient</span><span class="o">.</span><span class="n">agent_context</span><span class="p">},</span>
         <span class="s2">&quot;recent_vitals&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="n">obs</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="s2">&quot;value_quantity&quot;</span><span class="p">})</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">obs</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
+                <span class="s2">&quot;code&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="s2">&quot;code&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                <span class="s2">&quot;value_quantity&quot;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="s2">&quot;value_quantity&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="p">}</span>
             <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">observations</span>
         <span class="p">],</span>
         <span class="s2">&quot;risk_factors&quot;</span><span class="p">:</span> <span class="n">patient</span><span class="o">.</span><span class="n">agent_context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;family_history&quot;</span><span class="p">,</span> <span class="p">[])</span>
@@ -1511,7 +1591,7 @@
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   Risk factors: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected_context</span><span class="p">[</span><span class="s1">&#39;risk_factors&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2"> items&quot;</span><span class="p">)</span>
 
     <span class="c1"># Calculate selection efficiency</span>
-    <span class="n">full_data_size</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">patient</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())),</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()))</span> <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">observations</span><span class="p">))</span>
+    <span class="n">full_data_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">__to_md</span><span class="p">(</span><span class="n">patient</span><span class="p">,</span> <span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">__to_md</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span> <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">observations</span><span class="p">)</span>
     <span class="n">selected_data_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">selected_context</span><span class="p">))</span>
     <span class="n">selection_efficiency</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">selected_data_size</span> <span class="o">/</span> <span class="n">full_data_size</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span>
 
