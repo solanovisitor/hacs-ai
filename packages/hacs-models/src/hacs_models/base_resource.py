@@ -24,8 +24,15 @@ Design Principles:
 
 import inspect
 import uuid
-from datetime import UTC, datetime
-from typing import Any, ClassVar, Literal, TypeVar, get_args, get_origin
+from datetime import datetime, timezone as _timezone
+try:
+    # Python 3.11+
+    from datetime import UTC  # type: ignore[attr-defined]
+except Exception:  # pragma: no cover
+    # Fallback for Python <3.11
+    UTC = _timezone.utc  # type: ignore[assignment]
+from typing import Any, Callable, ClassVar, Literal, TypeVar, get_args, get_origin
+from dataclasses import dataclass
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
@@ -85,6 +92,45 @@ except ImportError:
 
 # Type variable for generic base resource operations
 T = TypeVar("T", bound="BaseResource")
+
+
+@dataclass
+class FacadeSpec:
+    """
+    Specification for a model extraction facade.
+    
+    Defines a subset of fields to extract with customized guidance and processing.
+    Used to create focused, iterative extractions for specific use cases and 
+    LLM-guided conversational resource creation.
+    
+    Examples:
+        Basic patient info facade:
+        >>> FacadeSpec(
+        ...     fields=["full_name", "gender", "age", "anonymous"],
+        ...     required_fields=["anonymous"],
+        ...     description="Core patient demographics",
+        ...     field_examples={
+        ...         "full_name": "João Silva",
+        ...         "gender": "male",
+        ...         "age": 45,
+        ...         "anonymous": False
+        ...     },
+        ...     llm_guidance="Use this facade for extracting basic patient identification from interviews or clinical notes."
+        ... )
+    """
+    fields: list[str]
+    required_fields: list[str] | None = None
+    field_hints: dict[str, str] | None = None
+    field_examples: dict[str, Any] | None = None
+    field_types: dict[str, str] | None = None
+    description: str = ""
+    llm_guidance: str = ""
+    conversational_prompts: list[str] | None = None
+    post_process: Callable[[Any], Any] | None = None
+    strict: bool = False
+    many: bool = False
+    max_items: int = 10
+    use_descriptive_schema: bool = True
 
 
 class CharInterval(BaseModel):
@@ -170,9 +216,7 @@ class BaseResource(BaseModel):
         json_schema_extra={
             "examples": [
                 {
-                    "id": "resource-a1b2c3d4",
-                    "resource_type": "BaseResource",
-                    "created_at": "2024-08-03T12:00:00Z",
+                    "id": "resource-a1b2c3d4",                    "created_at": "2024-08-03T12:00:00Z",
                     "updated_at": "2024-08-03T12:00:00Z",
                     "language": "pt-BR",
                     "meta_profile": ["http://example.org/fhir/StructureDefinition/MyProfile"],
@@ -368,8 +412,19 @@ class BaseResource(BaseModel):
         from pydantic import ConfigDict as PydConfig
         from pydantic import Field as PydField
 
+        # Support "facade:KEY" to select fields from a facade
         essential_fields = {"id", "resource_type", "created_at", "updated_at"}
-        selected_fields = set(fields) | essential_fields
+        resolved_fields: list[str] = []
+        for f in fields:
+            if isinstance(f, str) and f.startswith("facade:"):
+                key = f.split(":", 1)[1]
+                spec = cls.get_facade_spec(key)
+                if spec:
+                    resolved_fields.extend(spec.fields)
+            else:
+                resolved_fields.append(f)
+
+        selected_fields = set(resolved_fields) | essential_fields
 
         new_fields: dict[str, tuple[Any, Any]] = {}
         original_fields = getattr(cls, "model_fields", {})
@@ -411,6 +466,13 @@ class BaseResource(BaseModel):
         )
 
         return subset_model  # type: ignore[return-value]
+
+    @classmethod
+    def pick_facade(cls: type[T], facade_key: str) -> type[T]:
+        """Return a subset model derived from a facade's field list."""
+        spec = cls.get_facade_spec(facade_key)
+        fields = spec.fields if spec else []
+        return cls.pick(*fields)
 
     def get_age_days(self) -> float | None:
         """
@@ -511,8 +573,14 @@ class BaseResource(BaseModel):
         ]
 
     @classmethod
-    def get_extractable_fields(cls) -> list[str]:
-        """Default extractable fields for LLM extraction (override in subclasses)."""
+    def get_extractable_fields(cls, facade_key: str | None = None) -> list[str]:
+        """Get extractable fields for LLM extraction, optionally for a specific facade."""
+        if facade_key is not None:
+            facades = cls.get_facades()
+            if facade_key in facades:
+                return facades[facade_key].fields
+        
+        # Default behavior (backward compatibility)
         system = set(cls.get_system_fields())
         # Exclude internals, agent containers, and frozen resource_type by default
         excluded = system | {"agent_context", "agent_meta", "resource_type"}
@@ -559,8 +627,12 @@ class BaseResource(BaseModel):
         return []
 
     @classmethod
-    def get_required_extractables(cls) -> list[str]:
-        """Fields that must be provided for valid extraction (override in subclasses)."""
+    def get_required_extractables(cls, facade_key: str | None = None) -> list[str]:
+        """Fields that must be provided for valid extraction, optionally for a specific facade."""
+        if facade_key is not None:
+            facades = cls.get_facades()
+            if facade_key in facades:
+                return facades[facade_key].required_fields or []
         return []
 
     @classmethod
@@ -572,6 +644,121 @@ class BaseResource(BaseModel):
     def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
         """Coerce extractable payload to proper types with relaxed validation (override in subclasses)."""
         return payload.copy()
+
+    @classmethod
+    def normalize_for_validation(
+        cls,
+        payload: dict[str, Any],
+        *,
+        injected_fields: dict[str, Any] | None = None,
+        injection_mode: Literal["guide", "frozen"] = "guide",
+    ) -> dict[str, Any]:
+        """Normalize an incoming extractable dict for model validation.
+
+        Steps:
+        - Drop system-owned fields from payload (keep resource_type)
+        - Ensure resource_type is set
+        - Merge canonical defaults and injected_fields according to injection_mode
+        - Apply model-specific coercion via coerce_extractable(relax=True)
+        - Filter to known model fields (+ resource_type)
+        """
+        # Start from a shallow copy
+        try:
+            data = dict(payload or {})
+        except Exception:
+            data = {}
+
+        # Remove system fields that should not be LLM-supplied
+        try:
+            system = set(cls.get_system_fields())
+            data = {k: v for k, v in data.items() if (k not in system) or (k == "resource_type")}
+        except Exception:
+            pass
+
+        # Ensure resource_type present
+        try:
+            data.setdefault("resource_type", getattr(cls, "__name__", "Resource"))
+        except Exception:
+            data["resource_type"] = getattr(cls, "__name__", "Resource")
+
+        # Merge defaults and injected fields
+        try:
+            defaults = cls.get_canonical_defaults() or {}
+        except Exception:
+            defaults = {}
+
+        merged: dict[str, Any] = {}
+        merged.update(defaults)
+        if injection_mode == "guide":
+            if injected_fields:
+                try:
+                    merged.update(injected_fields)
+                except Exception:
+                    pass
+            try:
+                merged.update(data)
+            except Exception:
+                pass
+        else:  # frozen
+            try:
+                merged.update(data)
+            except Exception:
+                pass
+            if injected_fields:
+                try:
+                    merged.update(injected_fields)
+                except Exception:
+                    pass
+
+        # Apply model-specific coercion if implemented
+        try:
+            coerce = getattr(cls, "coerce_extractable", None)
+            if callable(coerce):
+                merged = coerce(merged, relax=True)
+        except Exception:
+            pass
+
+        # Final filter to known model fields (+ resource_type)
+        try:
+            model_fields = getattr(cls, "model_fields", {}) or {}
+            allowed = set(model_fields.keys()) | {"resource_type"}
+            merged = {k: v for k, v in merged.items() if k in allowed}
+        except Exception:
+            pass
+
+        return merged
+
+    # --- Facade System ---
+    
+    @classmethod
+    def get_facades(cls) -> dict[str, FacadeSpec]:
+        """Return available extraction facades for this model (override in subclasses)."""
+        return {}
+    
+    @classmethod 
+    def get_field_hints(cls, facade_key: str | None = None) -> dict[str, str]:
+        """Get field hints for extraction, optionally for a specific facade."""
+        if facade_key is not None:
+            facades = cls.get_facades()
+            if facade_key in facades:
+                return facades[facade_key].field_hints or {}
+        return {}
+    
+    @classmethod
+    def get_facade_spec(cls, facade_key: str) -> FacadeSpec | None:
+        """Get a specific facade specification.
+        
+        Returns the facade spec if it exists, None otherwise.
+        No fallback synthesis - all facades must be explicitly defined.
+        """
+        facades = cls.get_facades()
+        return facades.get(facade_key)
+    
+    @classmethod
+    def list_facade_keys(cls) -> list[str]:
+        """List available facade keys for this model."""
+        # Return only explicitly defined facades
+        return sorted((cls.get_facades() or {}).keys())
 
     def to_facade(self, view: str = "full") -> dict[str, Any]:
         """Return a dict view of the resource for a given facade.

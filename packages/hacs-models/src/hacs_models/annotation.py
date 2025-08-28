@@ -204,6 +204,32 @@ class ExtractionResults(BaseModel):
     attributes: dict[str, Any] | None = None
 
 
+class ResourceTypeCitation(BaseModel):
+    """Type-only citation for Stage-1 extraction.
+
+    Represents a labeled snippet indicating which HACS resource type was cited
+    in the source text, with optional character interval positions.
+    """
+
+    resource_type: str
+    citation: str
+    char_interval: CharInterval | None = None
+
+
+class ExtractedItem(BaseModel):
+    """Normalized extracted item for Stage-2 outputs.
+
+    Wraps a fully-typed HACS resource record along with its citation and
+    optional character interval. "extracted_fields" can contain the raw
+    extractable subset returned by the LLM prior to defaults/validation.
+    """
+
+    record: BaseResource | dict[str, Any]
+    citation: str
+    char_interval: CharInterval | None = None
+    extracted_fields: dict[str, Any] | None = None
+
+
 class FormatType(str, Enum):
     YAML = "yaml"
     JSON = "json"

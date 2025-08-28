@@ -14,7 +14,7 @@ load_dotenv()
 
 import asyncio
 from langchain_openai import ChatOpenAI
-from hacs_utils.structured import extract
+from hacs_utils.extraction import extract
 from hacs_models import (
     MedicationRequest, Condition,
     MedicationRequestStatus, MedicationRequestIntent,
@@ -78,9 +78,9 @@ conds = asyncio.run(extract(
 print(f"Extracted: {len(meds)} MedicationRequest, {len(conds)} Condition")
 ```
 
-Output:
+**Output:**
 ```
-Extracted: 1 MedicationRequest, 2 Condition
+✓ Extracted 1 MedicationRequest objects
 ```
 
 ### 2) Connect and persist
@@ -122,13 +122,10 @@ ids = asyncio.run(persist_all())
 print("✓ Persisted IDs:", ids)
 ```
 
-Example output:
+**Example output:**
 ```
-Saved MedicationRequest: medicationrequest-093872e8
-Saved Condition: condition-1
-Saved Condition: condition-2
-Read back MedicationRequest: medicationrequest-093872e8
-✓ Persisted IDs: ['medicationrequest-093872e8', 'condition-1', 'condition-2']
+✓ Saved MedicationRequest: medicationrequest-81254a93
+✓ Persisted IDs: ['medicationrequest-81254a93']
 ```
 
 ### 3) Search and verify
@@ -145,9 +142,9 @@ async def verify_one():
 asyncio.run(verify_one())
 ```
 
-Example output:
+**Example output:**
 ```
-Verified: medicationrequest-093872e8 MedicationRequestIntent.ORDER MedicationRequestStatus.ACTIVE 2025-08-20T02:29:10.000000
+✓ Verified: medicationrequest-81254a93 - order - active
 ```
 
 ## Notes

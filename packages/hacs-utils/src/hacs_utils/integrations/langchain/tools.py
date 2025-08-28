@@ -278,9 +278,9 @@ def create_langchain_tool_wrapper(func, name: str, description: str, args_schema
 
 def langchain_tools() -> List:
     """Get all HACS tools as LangChain BaseTool instances using centralized loader."""
-    from ..common.tool_loader import get_all_hacs_tools_sync
+    from ..common.tool_loader import get_sync_tools
 
-    return get_all_hacs_tools_sync(framework="langchain")
+    return get_sync_tools(framework="langchain")
 
 
 def get_tool_by_name(tool_name: str):

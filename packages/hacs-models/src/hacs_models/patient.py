@@ -25,7 +25,7 @@ from typing import Any, Literal
 
 from pydantic import Field, computed_field, field_validator, model_validator
 
-from .base_resource import DomainResource
+from .base_resource import DomainResource, FacadeSpec
 from .types import AddressUse, ContactPointSystem, ContactPointUse, Gender, IdentifierUse, NameUse
 
 
@@ -605,6 +605,12 @@ class Patient(DomainResource):
     # Administrative
     active: bool = Field(default=True, description="Whether this patient record is active")
 
+    # Anonymous patient support for analytics
+    anonymous: bool = Field(
+        default=False,
+        description="Whether this is an anonymous patient record (relaxes name requirements)",
+    )
+
     # AI agent context
     agent_context: dict[str, Any] = Field(
         default_factory=dict,
@@ -638,8 +644,15 @@ class Patient(DomainResource):
             parsed_name = self._parse_full_name(self.full_name)
             self.name.append(parsed_name)
 
-        # Ensure we have at least some name information
-        if not self.name and not self.full_name:
+        # Handle anonymous patients - allow minimal data for analytics
+        if self.anonymous:
+            # For anonymous patients, always override with standard anonymous name
+            # This handles cases where LLM extracted titles like "senhor" as names
+            anonymous_name = HumanName(use="anonymous", given=["Anonymous"], family="Patient")
+            self.name = [anonymous_name]  # Replace any extracted names
+            self.full_name = "Anonymous Patient"  # Override any extracted full_name
+        # Ensure we have at least some name information for non-anonymous patients
+        elif not self.name and not self.full_name:
             raise ValueError("Patient must have at least a name (full_name or structured name)")
 
         # Calculate birth_date from age if needed
@@ -835,18 +848,349 @@ class Patient(DomainResource):
     # --- LLM-friendly extractable facade overrides ---
     @classmethod
     def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
-        # Minimal, LLM-safe fields
+        # Minimal, LLM-safe fields - prioritize most commonly extractable
         return [
-            "full_name",
-            "name",
-            "birth_date",
-            "age",
-            "gender",
+            "full_name",    # Most common and easiest to extract
+            "age",          # Often mentioned in medical contexts
+            "gender",       # Can be inferred from language/context
+            "birth_date",   # Less common but valuable when present
+            "anonymous",    # Flag for anonymous patients when name can't be extracted
         ]
+
+    @classmethod
+    def get_required_extractables(cls) -> list[str]:
+        """Fields that are absolutely required for a valid Patient extraction."""
+        return []  # No fields are strictly required for extraction - allow partial data
+
+    @classmethod
+    def get_canonical_defaults(cls) -> dict[str, Any]:
+        """Default values for system/required fields during extraction."""
+        return {
+            "active": True,  # Default to active patient
+            "anonymous": False,  # Required by facades for extraction
+            "full_name": "Unknown Patient",  # Default name for facades that don't extract names
+        }
+
+    @classmethod
+    def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
+        """Coerce extractable payload to proper Patient field types."""
+        coerced = payload.copy()
+        
+        # Handle full_name -> name conversion
+        if "full_name" in coerced:
+            full_name = coerced.pop("full_name")
+            if isinstance(full_name, str) and full_name.strip():
+                # Parse full_name into proper HumanName structure
+                name_parts = full_name.strip().split()
+                if len(name_parts) >= 2:
+                    # Assume first part(s) are given names, last part is family
+                    family = name_parts[-1]
+                    given = name_parts[:-1]
+                    coerced["name"] = [{"family": family, "given": given, "use": "usual"}]
+                else:
+                    # Single name goes to given
+                    coerced["name"] = [{"given": [full_name.strip()], "use": "usual"}]
+        
+        # Keep age as-is (age_years is computed from age)
+        if "age" in coerced and isinstance(coerced["age"], (int, float)):
+            coerced["age"] = int(coerced["age"])
+        
+        # Handle gender string to enum conversion
+        if "gender" in coerced and isinstance(coerced["gender"], str):
+            gender_str = coerced["gender"].lower()
+            if gender_str in ["masculino", "male", "m"]:
+                coerced["gender"] = "male"
+            elif gender_str in ["feminino", "female", "f"]:
+                coerced["gender"] = "female"
+            elif gender_str in ["outro", "other", "o"]:
+                coerced["gender"] = "other"
+            elif gender_str in ["desconhecido", "unknown", "u"]:
+                coerced["gender"] = "unknown"
+        
+        # Handle birth_date string conversion
+        if "birth_date" in coerced and isinstance(coerced["birth_date"], str):
+            birth_date_str = coerced["birth_date"]
+            try:
+                # Try to parse various date formats
+                from datetime import datetime
+                for fmt in ["%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"]:
+                    try:
+                        date_obj = datetime.strptime(birth_date_str, fmt).date()
+                        coerced["birth_date"] = date_obj
+                        break
+                    except ValueError:
+                        continue
+            except Exception:
+                # If parsing fails, remove the field
+                coerced.pop("birth_date", None)
+        
+        # Handle telecom field - ensure proper ContactPoint structure
+        if "telecom" in coerced:
+            telecom_data = coerced["telecom"]
+            if isinstance(telecom_data, list):
+                processed_telecom = []
+                for item in telecom_data:
+                    if isinstance(item, dict):
+                        # Ensure required ContactPoint fields
+                        if "system" in item and "value" in item:
+                            processed_telecom.append(item)
+                coerced["telecom"] = processed_telecom
+            else:
+                # If not a list, remove it
+                coerced.pop("telecom", None)
+        
+        # Handle phone - ensure it's a string
+        if "phone" in coerced and isinstance(coerced["phone"], str):
+            phone_str = coerced["phone"].strip()
+            if phone_str:
+                coerced["phone"] = phone_str
+            else:
+                coerced.pop("phone", None)
+        
+        # Handle email - ensure it's a valid string
+        if "email" in coerced and isinstance(coerced["email"], str):
+            email_str = coerced["email"].strip()
+            if email_str and "@" in email_str:
+                coerced["email"] = email_str
+            else:
+                coerced.pop("email", None)
+        
+        # Handle address field - ensure proper Address structure
+        if "address" in coerced:
+            address_data = coerced["address"]
+            if isinstance(address_data, list):
+                processed_addresses = []
+                for item in address_data:
+                    if isinstance(item, dict):
+                        # Ensure it has some address content
+                        if any(key in item for key in ["line", "city", "state", "postal_code", "country", "text"]):
+                            processed_addresses.append(item)
+                coerced["address"] = processed_addresses
+            elif isinstance(address_data, dict):
+                # Single address object, convert to list
+                if any(key in address_data for key in ["line", "city", "state", "postal_code", "country", "text"]):
+                    coerced["address"] = [address_data]
+                else:
+                    coerced.pop("address", None)
+            else:
+                # If not dict or list, remove it
+                coerced.pop("address", None)
+        
+        # Handle address_text - ensure it's a string
+        if "address_text" in coerced and isinstance(coerced["address_text"], str):
+            address_text_str = coerced["address_text"].strip()
+            if address_text_str:
+                coerced["address_text"] = address_text_str
+            else:
+                coerced.pop("address_text", None)
+        
+        # Remove system fields that shouldn't be LLM-generated
+        system_fields = ["id", "created_at", "updated_at", "version", "identifier", "meta_tag"]
+        for field in system_fields:
+            coerced.pop(field, None)
+        
+        return coerced
+
+    @classmethod
+    def get_extraction_examples(cls) -> dict[str, Any]:
+        """Return extraction examples showing different extractable field scenarios."""
+        # Named patient example
+        named_example = {            "full_name": "Maria Silva",
+            "age": 35,
+            "gender": "female",
+            "anonymous": False,
+        }
+
+        # Anonymous patient example
+        anonymous_example = {            "age": 67,
+            "gender": "male",
+            "anonymous": True,
+        }
+
+        # Minimal patient example (age only)
+        minimal_example = {            "age": 42,
+            "anonymous": True,
+        }
+
+        return {
+            "object": named_example,
+            "array": [named_example, anonymous_example, minimal_example],
+            "scenarios": {
+                "named": named_example,
+                "anonymous": anonymous_example,
+                "minimal": minimal_example,
+            }
+        }
 
     @classmethod
     def llm_hints(cls) -> list[str]:  # type: ignore[override]
         return [
-            "- Accept simple textual name (full_name) when structured name is not available",
-            "- Age can be extracted as a number (age) or date (birth_date)",
+            "- Extract patient name from: 'Nome:', 'chamado', direct mentions like 'Helena', 'Maria'",
+            "- Extract age from: 'anos', 'idade:', 'tem X anos', numeric age mentions",
+            "- Infer gender from: Portuguese gendered language, names, pronouns (ele/ela)",
+            "- Set anonymous=true if no identifiable patient name can be extracted",
+            "- DO NOT extract titles as names: 'senhor', 'senhora', 'doutor', 'doutora', 'sr.', 'sra.'",
+            "- Ignore generic references: 'paciente', 'pessoa', 'indivíduo', 'cliente'",
+            "- Accept partial information - age, gender can be extracted even without names",
+            "- Focus on the person receiving medical care, not doctors or family members",
         ]
+
+    @classmethod
+    def get_facades(cls) -> dict[str, FacadeSpec]:
+        """Return available extraction facades for Patient."""
+        return {
+            "info": FacadeSpec(
+                fields=["full_name", "gender", "age", "birth_date", "anonymous"],
+                required_fields=["anonymous"],
+                field_hints={
+                    "full_name": "Patient's complete name as mentioned (e.g., 'João Silva', 'Maria Santos')",
+                    "anonymous": "Set to true if no clear patient identification (default: false)",
+                    "gender": "Patient gender: 'male', 'female', 'other', or 'unknown'", 
+                    "age": "Patient age in years (integer, e.g., 45, 72)",
+                    "birth_date": "Birth date in YYYY-MM-DD format (e.g., '1975-03-15')",
+                },
+                field_examples={
+                    "full_name": "João Silva",
+                    "gender": "male",
+                    "age": 45,
+                    "birth_date": "1978-03-15",
+                    "anonymous": False
+                },
+                field_types={
+                    "full_name": "string",
+                    "gender": "enum(male|female|other|unknown)",
+                    "age": "integer",
+                    "birth_date": "date(YYYY-MM-DD)",
+                    "anonymous": "boolean"
+                },
+                description="Core patient demographics - name, gender, age/birth date",
+                llm_guidance="Use for extracting basic patient identification from clinical notes, interviews, or conversations. Always set anonymous=false if patient is identified by name.",
+                conversational_prompts=[
+                    "What is the patient's name?",
+                    "How old is the patient?", 
+                    "What is the patient's gender?",
+                    "When was the patient born?"
+                ],
+                strict=False,
+            ),
+            
+            "address": FacadeSpec(
+                fields=["address", "address_text", "anonymous"],
+                required_fields=["anonymous"],
+                field_hints={
+                    "address": "Structured address with street, city, state, postal code",
+                    "address_text": "Complete address as free text (e.g., 'Rua das Flores 123, São Paulo, SP')",
+                    "anonymous": "Set to true if patient is not identified",
+                },
+                field_examples={
+                    "address": [{"use": "home", "line": ["Rua das Flores 123"], "city": "São Paulo", "state": "SP", "postal_code": "01234-567"}],
+                    "address_text": "Rua das Flores 123, São Paulo, SP, 01234-567",
+                    "anonymous": False
+                },
+                field_types={
+                    "address": "array[Address]",
+                    "address_text": "string",
+                    "anonymous": "boolean"
+                },
+                description="Patient address information",
+                llm_guidance="Extract patient residential address from conversations or medical records. Use address_text for simple text format.",
+                conversational_prompts=[
+                    "What is the patient's address?",
+                    "Where does the patient live?",
+                    "What is the patient's home address?"
+                ],
+                strict=False,
+            ),
+            
+            "telecom": FacadeSpec(
+                fields=["telecom", "phone", "email", "anonymous"],
+                required_fields=["anonymous"],
+                field_hints={
+                    "telecom": "Structured contact information (phone, email, fax)",
+                    "phone": "Primary phone number in format (11) 99999-9999",
+                    "email": "Email address if mentioned (e.g., joao.silva@email.com)",
+                    "anonymous": "Set to true if patient is not identified",
+                },
+                field_examples={
+                    "telecom": [{"system": "phone", "value": "(11) 99999-9999", "use": "mobile"}],
+                    "phone": "(11) 99999-9999",
+                    "email": "joao.silva@email.com",
+                    "anonymous": False
+                },
+                field_types={
+                    "telecom": "array[ContactPoint]",
+                    "phone": "string",
+                    "email": "string",
+                    "anonymous": "boolean"
+                },
+                description="Patient contact information",
+                llm_guidance="Extract phone numbers, email addresses from patient information. Use phone field for primary number.",
+                conversational_prompts=[
+                    "What is the patient's phone number?",
+                    "How can we contact the patient?",
+                    "What is the patient's email address?"
+                ],
+                strict=False,
+            ),
+            
+            "identifiers": FacadeSpec(
+                fields=["identifier", "mrn", "tax_id", "anonymous"],
+                required_fields=["anonymous"],
+                field_hints={
+                    "identifier": "System identifiers (CPF, RG, medical record number)",
+                    "mrn": "Medical record number if available",
+                    "tax_id": "CPF or similar tax identifier",
+                    "anonymous": "Set to true if patient is not identified",
+                },
+                field_examples={
+                    "identifier": [{"use": "usual", "system": "CPF", "value": "123.456.789-00"}],
+                    "mrn": "12345678",
+                    "tax_id": "123.456.789-00",
+                    "anonymous": False
+                },
+                field_types={
+                    "identifier": "array[Identifier]",
+                    "mrn": "string",
+                    "tax_id": "string", 
+                    "anonymous": "boolean"
+                },
+                description="Patient identifiers and registration numbers",
+                llm_guidance="Extract official identification numbers like CPF, RG, medical record numbers from patient records.",
+                conversational_prompts=[
+                    "What is the patient's CPF?",
+                    "What is the medical record number?",
+                    "Does the patient have an ID number?"
+                ],
+                strict=False,
+            ),
+            
+            "contacts": FacadeSpec(
+                fields=["contact", "emergency_contact", "anonymous"],
+                required_fields=["anonymous"],
+                field_hints={
+                    "contact": "Family members, guardians, or designated contacts",
+                    "emergency_contact": "Emergency contact person with phone number",
+                    "anonymous": "Set to true if patient is not identified",
+                },
+                field_examples={
+                    "contact": [{"relationship": [{"text": "spouse"}], "name": {"family": "Silva", "given": ["Maria"]}, "telecom": [{"system": "phone", "value": "(11) 88888-8888"}]}],
+                    "emergency_contact": "Maria Silva - (11) 88888-8888",
+                    "anonymous": False
+                },
+                field_types={
+                    "contact": "array[PatientContact]",
+                    "emergency_contact": "string",
+                    "anonymous": "boolean"
+                },
+                description="Patient emergency contacts and relatives",
+                llm_guidance="Extract information about patient's family members, emergency contacts, or responsible persons.",
+                conversational_prompts=[
+                    "Who is the patient's emergency contact?",
+                    "Who should we contact in case of emergency?",
+                    "Does the patient have any family members we should contact?"
+                ],
+                strict=False,
+                many=True,
+                max_items=3,
+            ),
+        }

@@ -11,7 +11,7 @@ from typing import Any, Literal
 
 from pydantic import Field, field_validator, model_validator
 
-from .base_resource import DomainResource
+from .base_resource import DomainResource, FacadeSpec
 from .types import ObservationStatus
 
 
@@ -539,9 +539,149 @@ class Observation(DomainResource):
         return coerced
 
     @classmethod
+    def get_extraction_examples(cls) -> dict[str, Any]:
+        """Return extraction examples showing different extractable field scenarios."""
+        # Numeric measurement example
+        numeric_example = {            "status": "final",
+            "code": {"text": "pressão arterial"},
+            "value_quantity": {"value": 120, "unit": "mmHg"},
+            "interpretation": [{"text": "normal"}],
+        }
+
+        # String value example (composite measurement)
+        string_example = {
+            "status": "final",
+            "code": {"text": "pressão arterial"},
+            "value_string": "120/80",
+        }
+
+        # Simple measurement without units
+        simple_example = {            "status": "final",
+            "code": {"text": "peso"},
+            "value_quantity": {"value": 70},
+        }
+
+        return {
+            "object": numeric_example,
+            "array": [numeric_example, string_example, simple_example],
+            "scenarios": {
+                "numeric": numeric_example,
+                "string_value": string_example,
+                "simple": simple_example,
+            }
+        }
+
+    @classmethod
     def llm_hints(cls) -> list[str]:  # type: ignore[override]
         return [
             "- Return ONE item per distinct measure (Weight, Height, Head circumference, Apgar, Gestational age, BP/TA, HR, RR, Temp, SpO2, BMI)",
             "- Prefer value_quantity for numeric values; use value_string for composites (e.g., '90/60')",
             "- If unit is not explicit, use unit=null; do not invent",
+            "- Set code.text from the Portuguese label of the measure (e.g., 'pressão arterial', 'frequência cardíaca')",
         ]
+
+    @classmethod
+    def get_facades(cls) -> dict[str, FacadeSpec]:
+        """Return available extraction facades for Observation."""
+        return {
+            "core": FacadeSpec(
+                fields=["code", "value_quantity", "value_string", "effective_date_time", "status", "interpretation"],
+                required_fields=["code"],
+                field_hints={
+                    "code": "Type of observation in Portuguese (vital sign, lab result, physical exam)",
+                    "value_quantity": "Numeric value with unit when applicable (e.g., blood pressure, weight)",
+                    "value_string": "Text value for composite measurements or qualitative results",
+                    "effective_date_time": "Date/time when observation was taken",
+                    "status": "Observation status: 'final', 'preliminary', 'cancelled'",
+                    "interpretation": "Clinical interpretation: 'normal', 'high', 'low', 'critical'",
+                },
+                field_examples={
+                    "code": {"text": "pressão arterial"},
+                    "value_quantity": {"value": 120, "unit": "mmHg"},
+                    "value_string": "120/80 mmHg",
+                    "effective_date_time": "2024-01-15T14:30:00",
+                    "status": "final",
+                    "interpretation": [{"text": "normal"}]
+                },
+                field_types={
+                    "code": "CodeableConcept",
+                    "value_quantity": "Quantity",
+                    "value_string": "string",
+                    "effective_date_time": "datetime",
+                    "status": "enum(registered|preliminary|final|amended|corrected|cancelled|entered-in-error|unknown)",
+                    "interpretation": "array[CodeableConcept]"
+                },
+                description="Core observation data - what was measured and the result",
+                llm_guidance="Extract clinical measurements, vital signs, lab results, or physical exam findings. Focus on the measurement type, value, and clinical significance.",
+                conversational_prompts=[
+                    "What was measured or observed?",
+                    "What is the result or value?",
+                    "When was this measurement taken?",
+                    "Is this result normal or abnormal?"
+                ],
+                strict=False,
+            ),
+            
+            "components": FacadeSpec(
+                fields=["component", "value_quantity", "value_string"],
+                required_fields=[],
+                field_hints={
+                    "component": "Multiple components of complex observations (e.g., systolic/diastolic BP)",
+                    "value_quantity": "Numeric values for each component",
+                    "value_string": "Text values for each component",
+                },
+                field_examples={
+                    "component": [
+                        {"code": {"text": "sistólica"}, "value_quantity": {"value": 120, "unit": "mmHg"}},
+                        {"code": {"text": "diastólica"}, "value_quantity": {"value": 80, "unit": "mmHg"}}
+                    ]
+                },
+                field_types={
+                    "component": "array[ObservationComponent]",
+                    "value_quantity": "Quantity",
+                    "value_string": "string"
+                },
+                description="Multi-component observations like blood pressure",
+                llm_guidance="Extract complex observations with multiple measured components. Common for vital signs like blood pressure (systolic/diastolic) or lab panels.",
+                conversational_prompts=[
+                    "What are the different components of this measurement?",
+                    "What are the individual values for each component?",
+                    "How should this multi-part measurement be broken down?"
+                ],
+                strict=False,
+                many=True,
+                max_items=5,
+            ),
+            
+            "method_body_site": FacadeSpec(
+                fields=["method", "body_site", "device", "performer"],
+                required_fields=[],
+                field_hints={
+                    "method": "Method used for observation (e.g., 'auscultation', 'palpation', 'measurement')",
+                    "body_site": "Anatomical location where observation was taken",
+                    "device": "Medical device or instrument used for measurement",
+                    "performer": "Healthcare professional who performed the observation",
+                },
+                field_examples={
+                    "method": {"text": "auscultação"},
+                    "body_site": {"text": "braço direito"},
+                    "device": {"reference": "Device/sphygmomanometer-001"},
+                    "performer": [{"reference": "Practitioner/dr-silva"}]
+                },
+                field_types={
+                    "method": "CodeableConcept",
+                    "body_site": "CodeableConcept",
+                    "device": "Reference[Device]",
+                    "performer": "array[Reference[Practitioner|Patient|RelatedPerson]]"
+                },
+                description="Method and location details for the observation",
+                llm_guidance="Extract information about how the observation was performed, where on the body, what equipment was used, and who did it.",
+                conversational_prompts=[
+                    "How was this measurement taken?",
+                    "Where on the body was this observed?",
+                    "What equipment or device was used?",
+                    "Who performed this observation?"
+                ],
+                strict=False,
+            ),
+        }

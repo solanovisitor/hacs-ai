@@ -13,6 +13,96 @@ HACS tools work in **two modes**:
 
 All examples show both patterns where applicable.
 
+### Important notes (updated)
+
+- Tool discovery is centralized in `hacs_utils.integrations.common.tool_loader`.
+- To avoid recursion, the utils-based loader path that previously called back into itself has been disabled. Tools are now loaded from the HACS Registry (preferred) or via direct `hacs_tools` import as a fallback. Framework adaptation (LangGraph, MCP) is performed by the loader when needed.
+- Async tools are adapted correctly by the loader to prevent "coroutine was never awaited" warnings.
+- Database CRUD tools accept either an `Actor` instance or inject a default system actor when one is not provided.
+- **Config and State Injection**: All tools now support automatic injection of `HACSSettings` (config) and `HACSState` (session/request state) parameters. These are hidden from LLM schemas and injected at runtime.
+- **Actor Context**: Tools no longer accept `Actor` as input parameters. Instead, they access the current authenticated Actor via `config.current_actor` for permissions and audit trails.
+- Tool input schemas inherit from `HACSCommonInput` to provide consistent config/state injection across all domains.
+
+## Config and State Injection
+
+HACS tools support automatic injection of configuration and state parameters that are hidden from LLM schemas but available to tool implementations.
+
+### Available Injected Parameters
+
+- **`config: HACSSettings`** - Runtime configuration from `hacs_core.config.get_settings()`
+  - Includes `current_actor: Actor` for permissions and audit trails
+- **`state: HACSState`** - Session/request state with `session_id`, `user_id`, and arbitrary context
+- **`actor_name: str`** - Current actor identifier (derived from database connection)
+- **`db_adapter: Adapter`** - Database adapter instance
+- **`vector_store: VectorStore`** - Vector store instance (when available)
+
+### Setting Injected Values
+
+```python
+from hacs_utils.integrations.common.tool_loader import set_injected_params, get_sync_tools
+from hacs_core.config import get_settings, HACSState
+
+# Set custom actor and state for tools
+from hacs_models import Actor
+
+custom_actor = Actor(name="physician-user", role="physician", permissions=["patient:read", "patient:write"])
+custom_config = get_settings()
+custom_config.current_actor = custom_actor
+
+set_injected_params({
+    "config": custom_config,
+    "state": HACSState(
+        session_id="sess-123",
+        user_id="user-456", 
+        context={"source": "agent", "workflow": "patient_intake"}
+    )
+})
+
+# Get tools - injected params are automatically hidden from LLM schema
+tools = get_sync_tools(framework='langgraph')
+```
+
+### Creating Custom Tools with Injection
+
+```python
+from hacs_tools.common import HACSCommonInput
+from pydantic import Field
+
+class MyToolInput(HACSCommonInput):
+    """Example tool input with automatic config/state injection."""
+    text: str = Field(description="Input text to process")
+    options: dict = Field(default_factory=dict, description="Processing options")
+    # config and state are inherited and will be automatically injected
+
+@register_tool("my_tool", domain="custom")
+async def my_tool(data: MyToolInput) -> HACSResult:
+    # Access injected config and state
+    if data.config:
+        model = data.config.openai_model
+        # Access current actor for permissions/audit
+        current_actor = data.config.current_actor
+        if current_actor:
+            print(f"Tool called by: {current_actor.name} ({current_actor.role})")
+    
+    if data.state:
+        session_id = data.state.session_id
+    
+    # Alternative: use the helper function
+    from hacs_core.config import get_current_actor
+    actor = get_current_actor()  # Returns current actor or default system actor
+    
+    # Tool implementation...
+    return HACSResult(success=True, message="Processed")
+```
+
+### Framework Integration
+
+The injection system is framework-agnostic, and the loader adapts tools for your runtime:
+
+- Reserved parameters are filtered from the function schema presented to LLMs
+- Values are injected at runtime before tool execution
+- Works with LangGraph and MCP via `framework` argument in the loader
+
 ## Quick Start: Save and retrieve a patient
 
 ### Prerequisites
@@ -53,7 +143,7 @@ else:
     print(f"✗ Error: {result.message}")
 
 # Output:
-# ✓ Created Patient: patient_a1b2c3d4
+# ✓ Created Patient: patient-07089860
 
 # 3. Save to database
 save_result = await save_resource(resource=patient_resource)
@@ -97,9 +187,6 @@ response = requests.post("http://localhost:8000/", json={
 tools = response.json()["result"]["tools"]
 print(f"Found {len(tools)} tools")
 
-# Output:
-# Found 23 tools
-
 # 2. Save a patient
 response = requests.post("http://localhost:8000/", json={
     "jsonrpc": "2.0",
@@ -119,9 +206,6 @@ response = requests.post("http://localhost:8000/", json={
 })
 result = response.json()["result"]
 print(f"✓ Patient ID: {result['data']['resource']['id']}")
-
-# Output:
-# ✓ Patient ID: patient_x9y8z7w6
 ```
 
 ## Core Workflow Tools
@@ -145,16 +229,13 @@ result = await save_resource(
     index_semantic=True      # Create vector embeddings for search
 )
 
-# Example output:
+# Example output (actual):
 # HACSResult(
 #   success=True,
-#   message="Resource saved successfully",
+#   message="Successfully instantiated Patient",
 #   data={
-#     "resource_id": "patient_abc123",
-#     "resource_type": "Patient", 
-#     "schema": "hacs_clinical",
-#     "table": "patient",
-#     "semantic_indexed": True
+#     "resource_id": "patient-e240e20d",
+#     "resource_type": "Patient"
 #   }
 # )
 
@@ -429,17 +510,22 @@ med_data = {
     }]
 }
 
-result = pin_resource("MedicationRequest", med_data)
+result = pin_resource("Patient", {
+    "full_name": "Jane Doe",
+    "birth_date": "1990-01-01", 
+    "gender": "female",
+    "active": True
+})
 if result.success:
     resource = result.data["resource"]
-    print(f"✓ Created MedicationRequest: {resource['id']}")
-    print(f"Status: {resource['status']}")
-    print(f"Medication: {resource['medication_codeable_concept']['text']}")
+    print(f"✓ Created Patient: {resource['id']}")
+    print(f"Name: {resource['full_name']}")
+    print(f"Gender: {resource['gender']}")
 
-# Example output:
-# ✓ Created MedicationRequest: medreq_def456
-# Status: active
-# Medication: Lisinopril 10mg
+# Example output (actual):
+# ✓ Created Patient: patient-e240e20d
+# Name: Jane Doe
+# Gender: female
 ```
 
 #### `compose_bundle`
@@ -520,8 +606,8 @@ result = write_scratchpad(
 
 print(f"✓ Recorded entry: {result.data['entry_id']}")
 
-# Example output:
-# ✓ Recorded entry: scratchpad_ghi789
+# Example output (actual):
+# ✓ Recorded entry: scratchpadentry-b99d1846
 ```
 
 ##### `read_scratchpad`
@@ -558,7 +644,6 @@ result = create_todo(
     content="Order cardiac enzymes and chest X-ray for patient with chest pain",
     priority="high",
     clinical_urgency="urgent",
-    due_date="2024-01-15T16:00:00Z",
     context={
         "patient_id": "patient_abc123",
         "session_id": "visit_20240115"
@@ -567,8 +652,8 @@ result = create_todo(
 
 print(f"✓ Created todo: {result.data['todo_id']}")
 
-# Example output:
-# ✓ Created todo: todo_urgent_jkl012
+# Example output (actual):
+# ✓ Created todo: agenttodo-4552c76f
 ```
 
 ##### `list_todos`
@@ -617,8 +702,8 @@ result = store_memory(
 
 print(f"✓ Stored memory: {result.data['memory_id']}")
 
-# Example output:
-# ✓ Stored memory: memory_mno345
+# Example output (actual):
+# ✓ Stored memory: 017a6111-7105-4210-8b08-a4ab27b8940f
 ```
 
 ##### `retrieve_memories`
@@ -871,6 +956,88 @@ for tool in modeling_tools:
 | **🏥 Resource-specific** | 15+ | Specialized tools for Patient, Observation, etc. |
 
 For implementation examples and integration patterns, see the [Quick Start](quick-start.md) guide.
+
+## Error Handling and Plans
+
+All HACS tools now include enhanced error handling with actionable error plans. When a tool fails, it returns not just an error message, but also a structured plan with:
+
+- **Issues**: Clear identification of what went wrong
+- **Suggestions**: Specific actionable steps to resolve the problem  
+- **Next Steps**: Recommended follow-up actions
+
+### Example Error Response
+
+```python
+# When a tool fails, it returns:
+HACSResult(
+    success=False,
+    message="Failed to save resource",
+    error="Validation failed: missing required field 'name'",
+    data={
+        "plan": {
+            "issues": [
+                {
+                    "type": "validation_error", 
+                    "description": "Missing required field 'name' in Patient resource",
+                    "severity": "high"
+                }
+            ],
+            "suggestions": [
+                "Add a 'name' field to the Patient resource",
+                "Use 'full_name' field for automatic name parsing",
+                "Set 'anonymous=true' if patient identification is not available"
+            ],
+            "next_steps": [
+                "Correct the resource structure and retry",
+                "Use describe_resource('Patient') to see field requirements",
+                "Consider using the 'info' facade for simplified patient creation"
+            ]
+        }
+    }
+)
+```
+
+This enhanced error handling helps agents and developers quickly understand and resolve issues without extensive debugging.
+
+## Composition patterns (atomic tools)
+
+Prefer composing small tools step-by-step so agents can reason between steps. Avoid monolithic wrappers.
+
+### Extract → Validate → Save
+
+```python
+from hacs_utils.extraction.api import extract_facade
+from hacs_tools.domains.modeling import validate_resource
+from hacs_tools.domains.database import save_resource
+from hacs_models import Patient
+
+# 1) Extract focused data (facade)
+patient = await extract_facade(llm, Patient, "info", source_text=text)
+
+# 2) Validate
+vres = validate_resource(patient.model_dump() if hasattr(patient, 'model_dump') else dict(patient))
+assert vres.success, vres.data.get('plan') if vres.data else vres.message
+
+# 3) Save
+sres = await save_resource(vres.data["resource"] if vres.data and vres.data.get("resource") else (patient.model_dump() if hasattr(patient, 'model_dump') else dict(patient)))
+assert sres.success, sres.data.get('plan') if sres.data else sres.message
+```
+
+### Compose a document step-by-step
+
+```python
+from hacs_tools.domains.modeling import create_document, add_entries, validate_bundle
+
+doc = create_document(title="Clinical Note").data["document"]
+
+entries = [patient_dict, obs_bp_dict, obs_hr_dict]
+added = add_entries(document=doc, entries=entries)
+assert added.success
+
+bundle = validate_bundle(added.data["document"]).data["bundle"]
+```
+
+These patterns encourage transparency, better recovery, and agent autonomy.
 
 ---
 

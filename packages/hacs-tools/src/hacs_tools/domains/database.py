@@ -22,6 +22,8 @@ from datetime import datetime
 
 from hacs_models import HACSResult, BaseResource
 from hacs_core import Actor
+from hacs_tools.common import HACSCommonInput, build_error_plan
+from hacs_utils.extraction.validation import apply_injection_and_validation
 from hacs_models import get_model_registry
 from hacs_persistence.adapter import create_postgres_adapter
 from hacs_persistence.migrations import run_migration, get_migration_status
@@ -46,41 +48,38 @@ except Exception:  # pragma: no cover
         return None
 
 
+
+
+
 # ===== Pydantic input models for database tools =====
-class SaveResourceInput(BaseModel):
+class SaveResourceInput(HACSCommonInput):
     resource: Dict[str, Any]
     as_typed: bool = Field(default=True)
     schema_name: Optional[str] = Field(default=None, alias="schema")
     index_semantic: bool = Field(default=False)
-    config: Optional[Dict[str, Any]] = None
-    state: Optional[Dict[str, Any]] = None
 
 
-class ReadResourceInput(BaseModel):
+class ReadResourceInput(HACSCommonInput):
     resource_type: str
     resource_id: str
     as_typed: bool = Field(default=True)
     schema_name: Optional[str] = Field(default=None, alias="schema")
-    config: Optional[Dict[str, Any]] = None
-    state: Optional[Dict[str, Any]] = None
 
 
-class UpdateResourceInput(BaseModel):
+class UpdateResourceInput(HACSCommonInput):
     resource_type: str
     resource_id: str
     patch: Dict[str, Any]
     as_typed: bool = Field(default=True)
     schema_name: Optional[str] = Field(default=None, alias="schema")
-    config: Optional[Dict[str, Any]] = None
-    state: Optional[Dict[str, Any]] = None
 
 
-class DeleteResourceInput(BaseModel):
+class DeleteResourceInput(HACSCommonInput):
     resource_type: str
     resource_id: str
     schema_name: Optional[str] = Field(default=None, alias="schema")
-    config: Optional[Dict[str, Any]] = None
-    state: Optional[Dict[str, Any]] = None
+## Removed high-level wrapper per instruction to avoid adding new tools
+
 
 
 @register_tool(
@@ -104,6 +103,7 @@ async def save_resource(
         schema: Optional schema name override (defaults to appropriate schema)
         index_semantic: If True, create semantic embeddings for search
 
+
     Returns:
         HACSResult with saved resource ID and type
     """
@@ -118,13 +118,29 @@ async def save_resource(
         # Create adapter
         adapter = await create_postgres_adapter()
 
-        # Instantiate resource object
+        # Normalize and validate with canonical defaults and coercion before instantiating
         model_registry = get_model_registry()
         resource_class = model_registry.get(resource_type, BaseResource)
-        instance = resource_class(**resource)
+        try:
+            normalized = apply_injection_and_validation(
+                resource,
+                resource_class,  # type: ignore[arg-type]
+                injected_fields=None,
+                injection_mode="guide",
+            )
+            filtered_resource = normalized.model_dump() if hasattr(normalized, "model_dump") else dict(normalized)
+        except Exception as e:
+            plan = build_error_plan(resource_type, resource, e)
+            return HACSResult(success=False, message="Validation failed", error=str(e), data={"plan": plan})
+        
+        instance = resource_class(**filtered_resource)
 
-        # Create actor for audit
-        actor = Actor(name="hacs_tools")
+        # Resolve audit actor from injected config (current_actor) or default system actor
+        try:
+            from hacs_core.config import get_current_actor
+            audit_actor = get_current_actor()
+        except Exception:
+            audit_actor = Actor(name="hacs_tools", role="system", permissions=["*:write"])
 
         if as_typed:
             # Use typed table via granular adapter
@@ -137,10 +153,10 @@ async def save_resource(
             except ImportError:
                 # Fallback to generic adapter
                 logger.warning("Typed adapter not available, using generic storage")
-                saved = await adapter.save(instance, actor)
+                saved = await adapter.save(instance, audit_actor)
         else:
             # Use generic JSONB storage
-            saved = await adapter.save(instance, actor)
+            saved = await adapter.save(instance, audit_actor)
 
         # Optional semantic indexing
         if index_semantic:
@@ -164,7 +180,10 @@ async def save_resource(
         )
 
     except Exception as e:
-        return HACSResult(success=False, message="Failed to save resource", error=str(e))
+        plan = build_error_plan(resource.get("resource_type"), resource, e)
+        return HACSResult(
+            success=False, message="Failed to save resource", error=str(e), data={"plan": plan}
+        )
 
 
 # Attach args
@@ -209,10 +228,28 @@ async def read_resource(
             except ImportError:
                 # Fallback to generic adapter
                 logger.warning("Typed adapter not available, using generic storage")
-                resource = await adapter.read(resource_id)
+                # Create actor for the read operation (use current_actor when available)
+                try:
+                    from hacs_core.config import get_current_actor
+                    actor = get_current_actor()
+                except Exception:
+                    actor = Actor(name="hacs_tools", role="system", permissions=["*:read"])
+                # Get model class for proper typing
+                from hacs_models import get_model_registry
+                model_registry = get_model_registry()
+                resource_class = model_registry.get(resource_type, BaseResource)
+                resource = await adapter.read(resource_class, resource_id, actor)
         else:
             # Use generic storage
-            resource = await adapter.read(resource_id)
+            try:
+                from hacs_core.config import get_current_actor
+                actor = get_current_actor()
+            except Exception:
+                actor = Actor(name="hacs_tools", role="system", permissions=["*:read"])
+            from hacs_models import get_model_registry
+            model_registry = get_model_registry()
+            resource_class = model_registry.get(resource_type, BaseResource)
+            resource = await adapter.read(resource_class, resource_id, actor)
 
         if not resource:
             return HACSResult(
@@ -230,7 +267,10 @@ async def read_resource(
         )
 
     except Exception as e:
-        return HACSResult(success=False, message="Failed to read resource", error=str(e))
+        plan = build_error_plan(resource_type, {"resource_type": resource_type, "resource_id": resource_id}, e)
+        return HACSResult(
+            success=False, message="Failed to read resource", error=str(e), data={"plan": plan}
+        )
 
 
 read_resource._tool_args = ReadResourceInput  # type: ignore[attr-defined]
@@ -285,7 +325,8 @@ async def update_resource(
             return save_result
 
     except Exception as e:
-        return HACSResult(success=False, message="Failed to update resource", error=str(e))
+        plan = build_error_plan(resource_type, {"resource_type": resource_type, "resource_id": resource_id, "patch": patch}, e)
+        return HACSResult(success=False, message="Failed to update resource", error=str(e), data={"plan": plan})
 
 
 update_resource._tool_args = UpdateResourceInput  # type: ignore[attr-defined]
@@ -316,10 +357,17 @@ async def delete_resource(
         adapter = await create_postgres_adapter()
 
         # Create actor for audit
-        actor = Actor(name="hacs_tools")
+        try:
+            from hacs_core.config import get_current_actor
+            actor = get_current_actor()
+        except Exception:
+            actor = Actor(name="hacs_tools", role="system", permissions=["*:delete"])
 
-        # Attempt deletion
-        deleted = await adapter.delete(resource_id, actor)
+        # Attempt deletion with proper resource type
+        from hacs_models import get_model_registry
+        model_registry = get_model_registry()
+        resource_class = model_registry.get(resource_type, BaseResource)
+        deleted = await adapter.delete(resource_class, resource_id, actor)
 
         return HACSResult(
             success=True,
@@ -328,7 +376,8 @@ async def delete_resource(
         )
 
     except Exception as e:
-        return HACSResult(success=False, message="Failed to delete resource", error=str(e))
+        plan = build_error_plan(resource_type, {"resource_type": resource_type, "resource_id": resource_id}, e)
+        return HACSResult(success=False, message="Failed to delete resource", error=str(e), data={"plan": plan})
 
 
 delete_resource._tool_args = DeleteResourceInput  # type: ignore[attr-defined]
@@ -373,7 +422,11 @@ async def register_model_version(
 
         # For now, store as generic resource
         adapter = await create_postgres_adapter()
-        actor = Actor(name="hacs_tools")
+        try:
+            from hacs_core.config import get_current_actor
+            actor = get_current_actor()
+        except Exception:
+            actor = Actor(name="hacs_tools")
 
         # Create a BaseResource wrapper
         resource = BaseResource(resource_type="ModelVersion", **model_version)

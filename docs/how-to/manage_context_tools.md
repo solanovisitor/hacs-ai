@@ -40,13 +40,13 @@ print(md)
 | Field | Value |
 |---|---|
 | resource_type | Patient |
-| id | patient-b1a81c01 |
+| id | patient-7ed2a539 |
 | status | active |
 | full_name | Jane Doe |
 | gender | female |
 | birth_date | 1990-01-01 |
-| created_at | 2025-08-18T22:36:50.762540Z |
-| updated_at | 2025-08-18T22:36:50.762544Z |
+| created_at | 2025-08-26T15:12:39.985070Z |
+| updated_at | 2025-08-26T15:12:39.985074Z |
 ```
 
 ## 3) Write to scratchpad

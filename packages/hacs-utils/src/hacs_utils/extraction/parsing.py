@@ -47,6 +47,23 @@ def parse_to_model(response_text: str, output_model: Type[T]) -> T:
             return create_fallback_instance(output_model)
 
 
+def parse_loose_to_dict(response_text: str) -> Any:
+    """Parse response text to a Python dict/list without model validation.
+
+    - Extracts fenced content
+    - Tries JSON first, then YAML
+    - Returns dict, list, or None if parse fails
+    """
+    txt = extract_fenced(response_text)
+    try:
+        return json.loads(txt)
+    except Exception:
+        try:
+            return yaml.safe_load(txt)
+        except Exception:
+            return None
+
+
 def parse_to_model_list(response_text: str, output_model: Type[T], *, max_items: int) -> list[T]:
     """Parse response text to a list of Pydantic model instances."""
     response_text = extract_fenced(response_text)

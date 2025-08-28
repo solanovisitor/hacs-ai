@@ -6,9 +6,9 @@ supporting environment-based configuration and validation.
 """
 
 from enum import Enum
-from typing import Any
+from typing import Any, Dict, Optional
 
-from pydantic import Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -295,6 +295,21 @@ class HACSSettings(BaseSettings):
         env="HACS_QDRANT_COLLECTION_NAME",
     )
 
+    # Current authenticated actor context (optional, injected at runtime)
+    # This allows tools to access the current Actor (permissions, role, id) via config injection
+    try:
+        from hacs_models import Actor as _HACSActor  # type: ignore
+
+        current_actor: _HACSActor | None = Field(
+            default=None,
+            description="Current authenticated Actor context for tool execution (injected).",
+        )
+    except Exception:  # pragma: no cover
+        current_actor: Any | None = Field(
+            default=None,
+            description="Current authenticated Actor context for tool execution (injected).",
+        )
+
     # Persistence Settings - PostgreSQL
     postgres_url: str | None = Field(
         default=None, description="PostgreSQL connection URL.", env="HACS_POSTGRES_URL"
@@ -523,10 +538,52 @@ def configure_hacs(**kwargs: Any) -> HACSSettings:
     return _settings
 
 
+def get_current_actor():
+    """Get the current authenticated Actor from settings, or return a default system Actor.
+    
+    This is a convenience function for tools that need to access the current Actor
+    for permissions, audit trails, or authentication purposes.
+    
+    Returns:
+        Actor: Current authenticated Actor or default system Actor
+    """
+    try:
+        settings = get_settings()
+        if getattr(settings, "current_actor", None) is not None:
+            return settings.current_actor
+        
+        # Import Actor here to avoid circular imports
+        from hacs_models import Actor
+        return Actor(name="hacs_tools", role="system", permissions=["*:read", "*:write"])
+    except Exception:
+        # Fallback if models aren't available
+        from hacs_models import Actor
+        return Actor(name="hacs_tools", role="system")
+
+
+class HACSState(BaseModel):
+    """
+    Represents the minimal, developer-facing request/session state for HACS tools.
+    This object is designed to be injected into tool calls and should not contain
+    sensitive runtime internals that the LLM should not see or control.
+    """
+    session_id: Optional[str] = Field(
+        default=None, description="Unique identifier for the current session or conversation."
+    )
+    user_id: Optional[str] = Field(
+        default=None, description="Identifier for the end-user or actor initiating the request."
+    )
+    context: Optional[Dict[str, Any]] = Field(
+        default_factory=dict, description="Arbitrary key-value pairs for additional context."
+    )
+
+
 __all__ = [
     "HACSSettings",
+    "HACSState",
     "LogLevel",
     "get_settings",
     "reset_settings",
     "configure_hacs",
+    "get_current_actor",
 ]

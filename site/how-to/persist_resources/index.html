@@ -375,6 +375,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../supabase_connection_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Connect to Supabase
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../extract_annotations/" class="md-nav__link">
         
   
@@ -421,12 +444,58 @@
   
   
     <li class="md-nav__item">
+      <a href="../facade_extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Facade-based extraction
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../validate_hacs_models/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     Validate HACS models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../validation_results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Validation results
     
   </span>
   
@@ -991,7 +1060,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.structured</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.extraction</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">MedicationRequest</span><span class="p">,</span> <span class="n">Condition</span><span class="p">,</span>
     <span class="n">MedicationRequestStatus</span><span class="p">,</span> <span class="n">MedicationRequestIntent</span><span class="p">,</span>
@@ -1054,8 +1123,8 @@
 
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Extracted: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">meds</span><span class="p">)</span><span class="si">}</span><span class="s2"> MedicationRequest, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">conds</span><span class="p">)</span><span class="si">}</span><span class="s2"> Condition&quot;</span><span class="p">)</span>
 </code></pre></div>
-<p>Output:
-<div class="highlight"><pre><span></span><code>Extracted: 1 MedicationRequest, 2 Condition
+<p><strong>Output:</strong>
+<div class="highlight"><pre><span></span><code>✓ Extracted 1 MedicationRequest objects
 </code></pre></div></p>
 <h3 id="2-connect-and-persist">2) Connect and persist<a class="headerlink" href="#2-connect-and-persist" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span><span class="o">,</span><span class="w"> </span><span class="nn">asyncio</span>
@@ -1093,12 +1162,9 @@
 <span class="n">ids</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">persist_all</span><span class="p">())</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✓ Persisted IDs:&quot;</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span>
 </code></pre></div>
-<p>Example output:
-<div class="highlight"><pre><span></span><code>Saved MedicationRequest: medicationrequest-093872e8
-Saved Condition: condition-1
-Saved Condition: condition-2
-Read back MedicationRequest: medicationrequest-093872e8
-✓ Persisted IDs: [&#39;medicationrequest-093872e8&#39;, &#39;condition-1&#39;, &#39;condition-2&#39;]
+<p><strong>Example output:</strong>
+<div class="highlight"><pre><span></span><code>✓ Saved MedicationRequest: medicationrequest-81254a93
+✓ Persisted IDs: [&#39;medicationrequest-81254a93&#39;]
 </code></pre></div></p>
 <h3 id="3-search-and-verify">3) Search and verify<a class="headerlink" href="#3-search-and-verify" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
@@ -1111,8 +1177,8 @@ Read back MedicationRequest: medicationrequest-093872e8
 
 <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">verify_one</span><span class="p">())</span>
 </code></pre></div>
-<p>Example output:
-<div class="highlight"><pre><span></span><code>Verified: medicationrequest-093872e8 MedicationRequestIntent.ORDER MedicationRequestStatus.ACTIVE 2025-08-20T02:29:10.000000
+<p><strong>Example output:</strong>
+<div class="highlight"><pre><span></span><code>✓ Verified: medicationrequest-81254a93 - order - active
 </code></pre></div></p>
 <h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link">&para;</a></h2>
 <ul>

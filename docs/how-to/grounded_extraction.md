@@ -1,6 +1,6 @@
-## Extract with citations
+## Extract with citations (concise, end‑to‑end)
 
-Use a minimal multi-resource example to extract typed HACS resources (MedicationRequest and Condition) from the same clinical text. No mocks; runs with your real API key.
+Minimal example that extracts type-only citations, then typed resources with spans from the same text. No mocks; runs with your real API key.
 
 Prerequisites:
 - `uv pip install -U "hacs-utils[langchain]"`
@@ -12,15 +12,14 @@ load_dotenv()
 
 import asyncio
 from langchain_openai import ChatOpenAI
-from hacs_utils.structured import extract
-from hacs_utils.visualization import to_markdown
-from hacs_models import (
-    MedicationRequest, Condition,
-    MedicationRequestStatus, MedicationRequestIntent,
-    ConditionClinicalStatus, ConditionVerificationStatus,
+from hacs_utils.extraction import (
+    extract_type_citations,
+    extract_citations,
 )
+from hacs_utils.visualization import to_markdown, annotations_to_markdown
+from hacs_models import MedicationRequest, Condition, AnnotatedDocument, Extraction, CharInterval
 
-clinical_text = (
+text = (
     "Patient was prescribed Lisinopril 10mg daily for hypertension management.\n"
     "Started Metformin 500mg twice daily for type 2 diabetes control.\n"
     "Continue current Aspirin 81mg daily for cardioprotection."
@@ -28,126 +27,108 @@ clinical_text = (
 
 llm = ChatOpenAI(model="gpt-4o-mini")
 
-med_prompt = f"""
-Extract MedicationRequest objects for each medication order in the text.
-- Set medication_codeable_concept.text and dosage_instruction[0].text
-- Do not invent fields you cannot infer.
-Text:
-{clinical_text}
-""".strip()
-
-cond_prompt = f"""
-Extract Condition objects for each condition mentioned.
-- Set code.text (e.g., "hypertension")
-- Set clinical_status and verification_status
-Text:
-{clinical_text}
-""".strip()
-
-meds = asyncio.run(extract(
-    llm_provider=llm,
-    prompt=med_prompt,
-    output_model=MedicationRequest,
-    many=True,
-    use_descriptive_schema=True,
-    injected_fields={
-        "status": MedicationRequestStatus.ACTIVE,
-        "intent": MedicationRequestIntent.ORDER,
-        "subject": "Patient/123",
-    },
-    strict=False,
+# 1) Find type-only citations across the text
+type_cites = asyncio.run(extract_type_citations(
+    llm,
+    source_text=text,
+    max_items=10,
 ))
 
-conds = asyncio.run(extract(
-    llm_provider=llm,
-    prompt=cond_prompt,
-    output_model=Condition,
-    many=True,
-    use_descriptive_schema=True,
-    injected_fields={
-        "clinical_status": ConditionClinicalStatus.ACTIVE,
-        "verification_status": ConditionVerificationStatus.CONFIRMED,
-        "subject": "Patient/123",
-    },
-    strict=False,
+print("Type-only citations (first 3):")
+print(type_cites[:3])
+
+# 2) Extract typed resources with citations/spans
+meds = asyncio.run(extract_citations(
+    llm,
+    source_text=text,
+    resource_model=MedicationRequest,
+    injected_fields={"status": "active", "intent": "order", "subject": "Patient/123"},
+    max_items=5,
 ))
 
-print(to_markdown(meds, title="Extracted MedicationRequests"))
-print()
-print(to_markdown(conds, title="Extracted Conditions"))
+conds = asyncio.run(extract_citations(
+    llm,
+    source_text=text,
+    resource_model=Condition,
+    injected_fields={"clinical_status": "active", "verification_status": "confirmed", "subject": "Patient/123"},
+    max_items=5,
+))
+
+print(to_markdown([m["record"] for m in meds], title="MedicationRequest (first)"))
+print("\nCitation:", meds[0]["citation"])  # literal snippet
+print("Span:", meds[0]["char_interval"])   # start/end positions
+
+print(to_markdown([c["record"] for c in conds], title="Condition (first)"))
+print("\nCitation:", conds[0]["citation"])  # literal snippet
+print("Span:", conds[0]["char_interval"])   # start/end positions
+
+# 3) Optional: Build an AnnotatedDocument for visualization
+annotations = [
+    Extraction(
+        extraction_class=it["record"].resource_type,
+        extraction_text=it["citation"],
+        char_interval=CharInterval(
+            start_pos=it["char_interval"]["start_pos"],
+            end_pos=it["char_interval"]["end_pos"],
+        ),
+    )
+    for it in (meds + conds)
+]
+
+annotated = AnnotatedDocument(text=text, extractions=annotations)
+print("\nMentions table (±30 chars):")
+print(annotations_to_markdown(annotated, context_chars=30))
 ```
 
-Output:
+**Example output:**
 ```
-### Extracted MedicationRequests
+Type-only citations (first 3):
+[
+  {"resource_type": "MedicationRequest", "citation": "Lisinopril 10mg daily", "start_pos": 24, "end_pos": 44},
+  {"resource_type": "Condition", "citation": "hypertension", "start_pos": 49, "end_pos": 61},
+  {"resource_type": "MedicationRequest", "citation": "Metformin 500mg twice daily", "start_pos": 82, "end_pos": 109}
+]
+
+### MedicationRequest (first)
 
 #### MedicationRequest
 
 | Field | Value |
 |---|---|
 | resource_type | MedicationRequest |
-| id | medicationrequest-093872e8 |
+| id | medicationrequest-... |
 | status | active |
-| subject | Patient/123 |
-| dosage_instruction | [] |
 | intent | order |
-| created_at | 2025-08-20T02:24:30.881805Z |
-| updated_at | 2025-08-20T02:24:30.881814Z |
+| subject | Patient/123 |
+| medication_codeable_concept | Lisinopril |
+| dosage_instruction | 10mg daily |
 
-### Extracted Conditions
+Citation: Lisinopril 10mg daily
+Span: {'start_pos': 24, 'end_pos': 44}
+
+### Condition (first)
 
 #### Condition
 
 | Field | Value |
 |---|---|
 | resource_type | Condition |
-| id | condition-1 |
-| status | active |
+| id | condition-... |
+| clinical_status | active |
+| verification_status | confirmed |
 | code | hypertension |
 | subject | Patient/123 |
-| created_at | 2025-08-20T00:00:00Z |
-| updated_at | 2025-08-20T00:00:00Z |
-```
 
-> Tip: Use `injected_fields` to pre‑fill stable enum/reference fields (e.g., status, intent, subject) so the model focuses on content extraction. See the injected_fields section in the extraction guide.
+Citation: hypertension
+Span: {'start_pos': 49, 'end_pos': 61}
 
-<!-- Analysis intentionally omitted for brevity -->
-
-## Visualize annotations with highlighting
-
-```python
-from hacs_utils.visualization import annotations_to_markdown, visualize_annotations
-
-# Generate markdown with highlighted spans
-print("Grounded Mentions Visualization:")
-mention_table = annotations_to_markdown(annotated_doc, context_chars=30)
-print(mention_table)
-
-# Create HTML visualization with color coding
-html_output = visualize_annotations(
-    annotated_doc,
-    show_legend=True  # Show color legend
-)
-
-print(f"\n✓ HTML visualization created ({len(html_output)} characters)")
-print("Features: Color-coded spans, hover tooltips, extraction legend")
-```
-
-**Output:**
-```
-Grounded Mentions Visualization:
+Mentions table (±30 chars):
 | Class | Span | Snippet |
 |---|---|---|
-| Medication Mention | [23-44] | … Patient was prescribed **Lisinopril 10mg daily** for hypertension management. … |
-| Medication Mention | [82-109] | … Started **Metformin 500mg twice daily** for type 2 diabetes control. … |
-| Medication Mention | [156-174] | … Continue current **Aspirin 81mg daily** for cardioprotection. … |
-
-✓ HTML visualization created (1919 characters)
-Features: Color-coded spans, hover tooltips, extraction legend
+| MedicationRequest | [24-44] | … prescribed **Lisinopril 10mg daily** for hyper… |
+| Condition | [49-61] | … 10mg daily for **hypertension** management. Sta… |
+| MedicationRequest | [82-109] | … Started **Metformin 500mg twice daily** for typ… |
+| MedicationRequest | [156-174] | … current **Aspirin 81mg daily** for cardioprotec… |
 ```
 
-<!-- Custom chunking examples removed to keep focus on the minimal flow -->
-
-<!-- Single-pass example omitted; use the chunked unified call above for reproducibility -->
-
-<!-- Performance and long-form guidance removed to keep guide minimal and runnable -->
+> Tip: `injected_fields` pre‑fills enums and references (status, intent, subject), letting the model focus on clinical content while keeping outputs valid.

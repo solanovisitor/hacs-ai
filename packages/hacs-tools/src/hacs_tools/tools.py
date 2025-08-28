@@ -221,9 +221,9 @@ def get_tool_handle(name: str, framework: str = "langchain"):
     if framework == "langchain":
         try:
             # Lazy import to avoid circular deps at module load
-            from hacs_utils.integrations.common.tool_loader import get_all_hacs_tools_sync  # type: ignore
+            from hacs_utils.integrations.common.tool_loader import get_sync_tools  # type: ignore
 
-            tools = get_all_hacs_tools_sync(framework="langchain")
+            tools = get_sync_tools(framework="langchain")
             for t in tools:
                 if getattr(t, "name", None) == name:
                     return t
@@ -258,9 +258,9 @@ def load_tool(name: str, framework: str = "langchain"):
     """
     if framework == "langchain":
         try:
-            from hacs_utils.integrations.common.tool_loader import get_all_hacs_tools_sync  # type: ignore
+            from hacs_utils.integrations.common.tool_loader import get_sync_tools  # type: ignore
 
-            tools = get_all_hacs_tools_sync(framework="langchain")
+            tools = get_sync_tools(framework="langchain")
             for t in tools:
                 if getattr(t, "name", None) == name:
                     return t
@@ -285,9 +285,9 @@ def load_domain_tools(selector: str, framework: str = "langchain"):
         defs = reg.search_tools(domain=domain)
         names = {d.name for d in defs}
         if framework == "langchain":
-            from hacs_utils.integrations.common.tool_loader import get_all_hacs_tools_sync  # type: ignore
+            from hacs_utils.integrations.common.tool_loader import get_sync_tools  # type: ignore
 
-            all_tools = get_all_hacs_tools_sync(framework="langchain")
+            all_tools = get_sync_tools(framework="langchain")
             return [t for t in all_tools if getattr(t, "name", None) in names]
         else:
             return [get_tool(n) for n in names if get_tool(n) is not None]

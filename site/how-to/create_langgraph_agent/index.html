@@ -375,6 +375,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../supabase_connection_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Connect to Supabase
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../extract_annotations/" class="md-nav__link">
         
   
@@ -421,12 +444,58 @@
   
   
     <li class="md-nav__item">
+      <a href="../facade_extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Facade-based extraction
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../validate_hacs_models/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     Validate HACS models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../validation_results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Validation results
     
   </span>
   
@@ -844,17 +913,21 @@
 
 <h1 id="create-a-simple-agent-with-langgraph">Create a simple agent with LangGraph<a class="headerlink" href="#create-a-simple-agent-with-langgraph" title="Permanent link">&para;</a></h1>
 <div class="highlight"><pre><span></span><code><span class="c1"># Prereq: uv pip install -U hacs-utils[langchain,langgraph]</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">langgraph.prebuilt</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_react_agent</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.integrations.langchain.tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">langchain_tools</span>
 
 <span class="c1"># Provision tools</span>
 <span class="n">tools</span> <span class="o">=</span> <span class="n">langchain_tools</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Tools ready:&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tools</span><span class="p">),</span> <span class="s2">&quot;tools&quot;</span><span class="p">)</span>
 
-<span class="c1"># Minimal agent</span>
-<span class="n">agent</span> <span class="o">=</span> <span class="n">create_react_agent</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;anthropic:claude-3-7-sonnet-latest&quot;</span><span class="p">,</span> <span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">,</span>
-                           <span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;You are a healthcare assistant using HACS tools.&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Agent ready with&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tools</span><span class="p">),</span> <span class="s2">&quot;tools&quot;</span><span class="p">)</span>
+<span class="c1"># Optional: Create agent (requires langgraph and API keys)</span>
+<span class="c1"># from langgraph.prebuilt import create_react_agent</span>
+<span class="c1"># agent = create_react_agent(model=&quot;anthropic:claude-3-7-sonnet-latest&quot;, tools=tools,</span>
+<span class="c1">#                            prompt=&quot;You are a healthcare assistant using HACS tools.&quot;)</span>
+<span class="c1"># print(&quot;Agent ready with&quot;, len(tools), &quot;tools&quot;)</span>
 </code></pre></div>
+<p><strong>Output:</strong>
+<div class="highlight"><pre><span></span><code>Tools ready: 41 tools
+</code></pre></div></p>
 
 
 

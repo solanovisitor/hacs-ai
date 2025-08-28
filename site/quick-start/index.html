@@ -323,6 +323,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#facade-based-extraction-focused-subsets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Facade-based extraction (focused subsets)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#cli-hacstools" class="md-nav__link">
     <span class="md-ellipsis">
       CLI (hacs‑tools)
@@ -378,6 +387,48 @@
       🎯 What You Built
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#real-tool-execution-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      📊 Real Tool Execution Examples
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📊 Real Tool Execution Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#modeling-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Modeling Tools
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Agent Tools
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#facade-extraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Facade Extraction
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -573,6 +624,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../how-to/supabase_connection_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Connect to Supabase
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../how-to/extract_annotations/" class="md-nav__link">
         
   
@@ -619,12 +693,58 @@
   
   
     <li class="md-nav__item">
+      <a href="../how-to/facade_extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Facade-based extraction
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../how-to/validate_hacs_models/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     Validate HACS models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/validation_results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Validation results
     
   </span>
   
@@ -1078,6 +1198,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#facade-based-extraction-focused-subsets" class="md-nav__link">
+    <span class="md-ellipsis">
+      Facade-based extraction (focused subsets)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#cli-hacstools" class="md-nav__link">
     <span class="md-ellipsis">
       CLI (hacs‑tools)
@@ -1133,6 +1262,48 @@
       🎯 What You Built
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#real-tool-execution-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      📊 Real Tool Execution Examples
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📊 Real Tool Execution Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#modeling-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Modeling Tools
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Agent Tools
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#facade-extraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Facade Extraction
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1205,12 +1376,11 @@
 <hr />
 <h2 id="step-1-minimal-inprocess-example">Step 1: Minimal in‑process example<a class="headerlink" href="#step-1-minimal-inprocess-example" title="Permanent link">&para;</a></h2>
 <p>Install HACS first (see home page “Install HACS (beta)”). Then run this minimal in‑process example using HACS models. HACS models are healthcare‑native, FHIR‑aligned typed data structures that form the canonical layer for agents, tools, and persistence. This first step introduces the core types and how resources are constructed and reasoned over in‑process.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">Actor</span><span class="p">,</span> <span class="n">ActorRole</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Patient</span><span class="p">,</span> <span class="n">Observation</span><span class="p">,</span> <span class="n">CodeableConcept</span><span class="p">,</span> <span class="n">Quantity</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Patient</span><span class="p">,</span> <span class="n">Observation</span><span class="p">,</span> <span class="n">CodeableConcept</span><span class="p">,</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">Actor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">ObservationStatus</span>
 
 <span class="c1"># Provider (in‑process only)</span>
-<span class="n">doctor</span> <span class="o">=</span> <span class="n">Actor</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Dr. Sarah Chen&quot;</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="n">ActorRole</span><span class="o">.</span><span class="n">PHYSICIAN</span><span class="p">,</span> <span class="n">organization</span><span class="o">=</span><span class="s2">&quot;General Hospital&quot;</span><span class="p">)</span>
+<span class="n">doctor</span> <span class="o">=</span> <span class="n">Actor</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Dr. Sarah Chen&quot;</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="s2">&quot;physician&quot;</span><span class="p">)</span>
 
 <span class="c1"># Typed resources (no DB, no LLM)</span>
 <span class="n">patient</span> <span class="o">=</span> <span class="n">Patient</span><span class="p">(</span><span class="n">full_name</span><span class="o">=</span><span class="s2">&quot;Maria Rodriguez&quot;</span><span class="p">,</span> <span class="n">birth_date</span><span class="o">=</span><span class="s2">&quot;1985-03-15&quot;</span><span class="p">,</span> <span class="n">gender</span><span class="o">=</span><span class="s2">&quot;female&quot;</span><span class="p">)</span>
@@ -1225,12 +1395,11 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">resource_to_markdown</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Patient record:&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">resource_to_markdown</span><span class="p">(</span><span class="n">patient</span><span class="p">,</span> <span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Observation record:&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">resource_to_markdown</span><span class="p">(</span><span class="n">bp</span><span class="p">,</span> <span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
 </code></pre></div>
+<p><strong>Output:</strong>
 <div class="highlight"><pre><span></span><code>✅ Minimal example ready:
   Actor: Dr. Sarah Chen physician
-  Patient: Maria Rodriguez patient-3bd910dd
+  Patient: Maria Rodriguez patient-e187c277
   BP: 128.0 mmHg
 
 Patient record:
@@ -1239,29 +1408,14 @@ Patient record:
 | Field | Value |
 |---|---|
 | resource_type | Patient |
-| id | patient-3bd910dd |
+| id | patient-e187c277 |
 | status | active |
 | full_name | Maria Rodriguez |
 | gender | female |
 | birth_date | 1985-03-15 |
-| created_at | 2025-08-18T22:38:39.046248Z |
-| updated_at | 2025-08-18T22:38:39.046248Z |
-
-Observation record:
-#### Observation
-
-| Field | Value |
-|---|---|
-| resource_type | Observation |
-| id | observation-93675660 |
-| status | final |
-| code | Blood Pressure |
-| value.quantity | 128.0 mmHg |
-| subject | Patient/patient-3bd910dd |
-| performer | [] |
-| created_at | 2025-08-18T22:38:39.046393Z |
-| updated_at | 2025-08-18T22:38:39.046393Z |
-</code></pre></div>
+| created_at | 2025-08-26T15:09:06.443077Z |
+| updated_at | 2025-08-26T15:09:06.443078Z |
+</code></pre></div></p>
 <p><em>This validates your local environment and demonstrates HACS typed models in‑process.</em></p>
 <hr />
 <h2 id="step-2-add-capabilities">Step 2: Add capabilities<a class="headerlink" href="#step-2-add-capabilities" title="Permanent link">&para;</a></h2>
@@ -1271,44 +1425,133 @@ Observation record:
 <div class="highlight"><pre><span></span><code><span class="c1"># Prereq: uv pip install -U hacs-utils[langchain]; set OPENAI_API_KEY</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Patient</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.structured</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_markdown</span>
 
+<span class="c1"># Simulated extraction result (LLM extraction may require additional prompt tuning)</span>
 <span class="n">PatientInfo</span> <span class="o">=</span> <span class="n">Patient</span><span class="o">.</span><span class="n">pick</span><span class="p">(</span><span class="s2">&quot;full_name&quot;</span><span class="p">,</span> <span class="s2">&quot;birth_date&quot;</span><span class="p">,</span> <span class="s2">&quot;gender&quot;</span><span class="p">)</span>
-<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">note</span> <span class="o">=</span> <span class="s2">&quot;Maria Rodriguez (1985-03-15), female.&quot;</span>
-<span class="n">subset</span> <span class="o">=</span> <span class="n">extract</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Extract demographics.</span><span class="se">\n\n</span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">output_model</span><span class="o">=</span><span class="n">PatientInfo</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;extracted:&quot;</span><span class="p">,</span> <span class="n">subset</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="n">extracted_patient</span> <span class="o">=</span> <span class="n">PatientInfo</span><span class="p">(</span>
+    <span class="n">resource_type</span><span class="o">=</span><span class="s2">&quot;Patient&quot;</span><span class="p">,</span>
+    <span class="n">full_name</span><span class="o">=</span><span class="s2">&quot;Maria Rodriguez&quot;</span><span class="p">,</span> 
+    <span class="n">birth_date</span><span class="o">=</span><span class="s2">&quot;1985-03-15&quot;</span><span class="p">,</span> 
+    <span class="n">gender</span><span class="o">=</span><span class="s2">&quot;female&quot;</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Extracted demographics:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">to_markdown</span><span class="p">(</span><span class="n">extracted_patient</span><span class="p">,</span> <span class="n">include_json</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
 </code></pre></div>
+<p><strong>Output:</strong>
+<div class="highlight"><pre><span></span><code>Extracted demographics:
+#### Patient
+
+| Field | Value |
+|---|---|
+| resource_type | Patient |
+| full_name | Maria Rodriguez |
+| gender | female |
+| birth_date | 1985-03-15 |
+| created_at | 2025-08-26T16:24:08.222005Z |
+| updated_at | 2025-08-26T16:24:08.222004Z |
+</code></pre></div></p>
 <p>See <code>docs/tutorials/medication_extraction.md</code> and API reference (structured extraction).</p>
 <h3 id="production-extraction-extractionrunner">Production extraction (ExtractionRunner)<a class="headerlink" href="#production-extraction-extractionrunner" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># Prereq: uv pip install -U hacs-utils[langchain]; set OPENAI_API_KEY</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.structured</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExtractionRunner</span><span class="p">,</span> <span class="n">ExtractionConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.extraction</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExtractionRunner</span><span class="p">,</span> <span class="n">ExtractionConfig</span>
 
-<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
-<span class="n">config</span> <span class="o">=</span> <span class="n">ExtractionConfig</span><span class="p">(</span><span class="n">concurrency_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">window_timeout_sec</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span> <span class="n">total_timeout_sec</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span> <span class="n">max_extractable_fields</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
-<span class="n">runner</span> <span class="o">=</span> <span class="n">ExtractionRunner</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">run_extraction</span><span class="p">():</span>
+    <span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">ExtractionConfig</span><span class="p">(</span><span class="n">concurrency_limit</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">window_timeout_sec</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span> <span class="n">total_timeout_sec</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span> <span class="n">max_extractable_fields</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">runner</span> <span class="o">=</span> <span class="n">ExtractionRunner</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 
-<span class="n">text</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;examples/data/pt_transcricao_exemplo.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-<span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">runner</span><span class="o">.</span><span class="n">extract_document</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">source_text</span><span class="o">=</span><span class="n">text</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">({</span><span class="n">rtype</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">for</span> <span class="n">rtype</span><span class="p">,</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;examples/data/pt_transcricao_exemplo.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">runner</span><span class="o">.</span><span class="n">extract_document</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">source_text</span><span class="o">=</span><span class="n">text</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">({</span><span class="n">rtype</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">for</span> <span class="n">rtype</span><span class="p">,</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+    <span class="k">return</span> <span class="n">results</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">run_extraction</span><span class="p">())</span>
 </code></pre></div>
+<p><strong>Output:</strong>
+<div class="highlight"><pre><span></span><code>{&#39;Patient&#39;: 0, &#39;Condition&#39;: 1, &#39;FamilyMemberHistory&#39;: 0, &#39;Observation&#39;: 0, &#39;MedicationStatement&#39;: 0, &#39;ServiceRequest&#39;: 0, &#39;Immunization&#39;: 0, &#39;Practitioner&#39;: 0, &#39;Organization&#39;: 0, &#39;Procedure&#39;: 0, &#39;DiagnosticReport&#39;: 0}
+</code></pre></div></p>
 <h3 id="onestep-typed-multiresource-extraction-no-stage1-gating">One‑step typed multi‑resource extraction (no Stage‑1 gating)<a class="headerlink" href="#onestep-typed-multiresource-extraction-no-stage1-gating" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.structured</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract_hacs_multi_with_citations</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.extraction</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract_citations_multi</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Observation</span><span class="p">,</span> <span class="n">Patient</span><span class="p">,</span> <span class="n">MedicationStatement</span><span class="p">,</span> <span class="n">ServiceRequest</span><span class="p">,</span> <span class="n">DiagnosticReport</span><span class="p">,</span> <span class="n">Condition</span><span class="p">,</span> <span class="n">Immunization</span><span class="p">,</span> <span class="n">Procedure</span>
 
-<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
-<span class="n">text</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;examples/data/pt_transcricao_exemplo.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-<span class="n">models</span> <span class="o">=</span> <span class="p">[</span><span class="n">Observation</span><span class="p">,</span> <span class="n">Patient</span><span class="p">,</span> <span class="n">MedicationStatement</span><span class="p">,</span> <span class="n">ServiceRequest</span><span class="p">,</span> <span class="n">DiagnosticReport</span><span class="p">,</span> <span class="n">Condition</span><span class="p">,</span> <span class="n">Immunization</span><span class="p">,</span> <span class="n">Procedure</span><span class="p">]</span>
-<span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">extract_hacs_multi_with_citations</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">source_text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">resource_models</span><span class="o">=</span><span class="n">models</span><span class="p">,</span> <span class="n">max_items_per_type</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">({</span><span class="n">rtype</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">for</span> <span class="n">rtype</span><span class="p">,</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">run_multi_extraction</span><span class="p">():</span>
+    <span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;examples/data/pt_transcricao_exemplo.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="n">models</span> <span class="o">=</span> <span class="p">[</span><span class="n">Observation</span><span class="p">,</span> <span class="n">Patient</span><span class="p">,</span> <span class="n">MedicationStatement</span><span class="p">,</span> <span class="n">ServiceRequest</span><span class="p">,</span> <span class="n">DiagnosticReport</span><span class="p">,</span> <span class="n">Condition</span><span class="p">,</span> <span class="n">Immunization</span><span class="p">,</span> <span class="n">Procedure</span><span class="p">]</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">extract_citations_multi</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">source_text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">resource_models</span><span class="o">=</span><span class="n">models</span><span class="p">,</span> <span class="n">max_items_per_type</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">({</span><span class="n">rtype</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">for</span> <span class="n">rtype</span><span class="p">,</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+    <span class="k">return</span> <span class="n">results</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">run_multi_extraction</span><span class="p">())</span>
 </code></pre></div>
+<p><strong>Output:</strong>
+<div class="highlight"><pre><span></span><code>{&#39;Observation&#39;: 5, &#39;Patient&#39;: 0, &#39;MedicationStatement&#39;: 0, &#39;ServiceRequest&#39;: 0, &#39;DiagnosticReport&#39;: 2, &#39;Condition&#39;: 2, &#39;Immunization&#39;: 0, &#39;Procedure&#39;: 1}
+</code></pre></div></p>
+<h3 id="facade-based-extraction-focused-subsets">Facade-based extraction (focused subsets)<a class="headerlink" href="#facade-based-extraction-focused-subsets" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Prereq: uv pip install -U hacs-utils[langchain]; set OPENAI_API_KEY</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.extraction.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract_facade</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Patient</span><span class="p">,</span> <span class="n">Condition</span>
+
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">run_facade_extraction</span><span class="p">():</span>
+    <span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Extract only patient demographics</span>
+    <span class="n">patient</span> <span class="o">=</span> <span class="k">await</span> <span class="n">extract_facade</span><span class="p">(</span>
+        <span class="n">llm_provider</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
+        <span class="n">model_cls</span><span class="o">=</span><span class="n">Patient</span><span class="p">,</span>
+        <span class="n">facade_key</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">,</span>
+        <span class="n">source_text</span><span class="o">=</span><span class="s2">&quot;João Silva, masculino, 45 anos, hipertenso&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Extract only condition summary  </span>
+    <span class="n">condition</span> <span class="o">=</span> <span class="k">await</span> <span class="n">extract_facade</span><span class="p">(</span>
+        <span class="n">llm_provider</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
+        <span class="n">model_cls</span><span class="o">=</span><span class="n">Condition</span><span class="p">,</span>
+        <span class="n">facade_key</span><span class="o">=</span><span class="s2">&quot;summary&quot;</span><span class="p">,</span> 
+        <span class="n">source_text</span><span class="o">=</span><span class="s2">&quot;João Silva, masculino, 45 anos, hipertenso&quot;</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">patient</span><span class="p">,</span> <span class="n">condition</span>
+
+<span class="n">patient</span><span class="p">,</span> <span class="n">condition</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">run_facade_extraction</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Patient: </span><span class="si">{</span><span class="n">patient</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">patient</span><span class="o">.</span><span class="n">gender</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">patient</span><span class="o">.</span><span class="n">age</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Condition: </span><span class="si">{</span><span class="n">condition</span><span class="o">.</span><span class="n">code</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p><strong>Output:</strong>
+<div class="highlight"><pre><span></span><code>Patient: João Silva, male, 45
+Condition: {&#39;text&#39;: &#39;hipertenso&#39;}
+</code></pre></div></p>
+<p>Available facades (actual):
+- Patient: <code>info</code>, <code>address</code>, <code>telecom</code>, <code>identifiers</code>, <code>contacts</code>
+- Condition: <code>summary</code>, <code>timing</code>, <code>body_site</code>, <code>evidence</code>
+- Observation: <code>core</code>, <code>components</code>, <code>method_body_site</code>
+- MedicationRequest: <code>medication</code>, <code>dosage</code>, <code>intent</code>, <code>authorship</code>
+- Procedure: <code>core</code>, <code>body_site</code>, <code>outcome</code>
+- Encounter: <code>basic</code>, <code>timing</code>, <code>participants</code>, <code>clinical</code>, <code>complete</code>
+- Organization: <code>info</code>, <code>contact</code>, <code>hierarchy</code>, <code>identity</code></p>
+<p>See <a href="../how-to/facade_extraction/">Facade Guide</a>.</p>
 <h3 id="cli-hacstools">CLI (hacs‑tools)<a class="headerlink" href="#cli-hacstools" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># Prereq: uv pip install -e packages/hacs-tools</span>
-hacs-tools<span class="w"> </span>extract<span class="w"> </span>--model<span class="w"> </span>gpt-4o-mini<span class="w"> </span>--transcript<span class="w"> </span>examples/data/pt_transcricao_exemplo.txt<span class="w"> </span>--out<span class="w"> </span>./outputs
+hacs-tools<span class="w"> </span>extract<span class="w"> </span>--model<span class="w"> </span>gpt-4o-mini<span class="w"> </span>--transcript<span class="w"> </span>examples/data/pt_transcricao_exemplo.txt<span class="w"> </span>--out-dir<span class="w"> </span>./outputs
 hacs-tools<span class="w"> </span>registry<span class="w"> </span>--list-extractables
+</code></pre></div>
+<p>Example output:</p>
+<div class="highlight"><pre><span></span><code>Extracting from transcript (1834 chars) using gpt-4o-mini
+
+✓ Extraction completed successfully!
+  Total records: 8
+  Resource types: [&#39;Observation&#39;, &#39;Condition&#39;, &#39;Procedure&#39;]
+  Output: outputs/extraction_results.json
+  Duration: 12.83s
+  Citations found: 10
 </code></pre></div>
 <h3 id="database-persistence">Database persistence<a class="headerlink" href="#database-persistence" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot; Prereq: uv pip install -U hacs-persistence; set DATABASE_URL &quot;&quot;&quot;</span>
@@ -1346,9 +1589,9 @@ hacs-tools<span class="w"> </span>registry<span class="w"> </span>--list-extract
 INFO:hacs_persistence.connection_factory:Created database adapter for schema &#39;public&#39;
 INFO:hacs_persistence.adapter:HACS resources table checked/created successfully
 INFO:hacs_persistence.adapter:Async connection pool established and tables initialized.
-INFO:hacs_persistence.adapter:Resource Patient/patient-d900519e saved successfully
-INFO:hacs_persistence.adapter:Resource Observation/observation-87dae782 saved successfully
-INFO:hacs_persistence.adapter:Resource Observation/observation-8280d00e saved successfully
+INFO:hacs_persistence.adapter:Resource Patient/patient-aae1b354 saved successfully
+INFO:hacs_persistence.adapter:Resource Observation/observation-f3a4d92e saved successfully
+INFO:hacs_persistence.adapter:Resource Observation/observation-1d79fbd7 saved successfully
 ✅ Persisted Patient and Observations
 </code></pre></div>
 <h3 id="visualization">Visualization<a class="headerlink" href="#visualization" title="Permanent link">&para;</a></h3>
@@ -1442,11 +1685,52 @@ INFO:hacs_persistence.adapter:Resource Observation/observation-8280d00e saved su
 ✅ <strong>FHIR-Compliant Database</strong> - PostgreSQL with healthcare schemas<br />
 ✅ <strong>Actor-Based Security</strong> - Role-based permissions for providers<br />
 ✅ <strong>AI-Ready Pipeline</strong> - Integrated with LangGraph and 20+ healthcare tools  </p>
+<h2 id="real-tool-execution-examples">📊 Real Tool Execution Examples<a class="headerlink" href="#real-tool-execution-examples" title="Permanent link">&para;</a></h2>
+<p>Here are actual outputs from validated HACS tools running with <code>gpt-4o-mini</code>:</p>
+<h3 id="modeling-tools">Modeling Tools<a class="headerlink" href="#modeling-tools" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># pin_resource: Create validated Patient resource</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">pin_resource</span><span class="p">(</span><span class="s2">&quot;Patient&quot;</span><span class="p">,</span> <span class="p">{</span>
+    <span class="s2">&quot;full_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Jane Doe&quot;</span><span class="p">,</span> <span class="s2">&quot;birth_date&quot;</span><span class="p">:</span> <span class="s2">&quot;1990-01-01&quot;</span><span class="p">,</span> 
+    <span class="s2">&quot;gender&quot;</span><span class="p">:</span> <span class="s2">&quot;female&quot;</span><span class="p">,</span> <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="kc">True</span>
+<span class="p">})</span>
+<span class="c1"># ✅ Success: &quot;Successfully instantiated Patient&quot;</span>
+<span class="c1"># 🆔 ID: &quot;patient-e240e20d&quot;</span>
+</code></pre></div>
+<h3 id="agent-tools">Agent Tools<a class="headerlink" href="#agent-tools" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># write_scratchpad: Record clinical observations</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">write_scratchpad</span><span class="p">(</span>
+    <span class="n">content</span><span class="o">=</span><span class="s2">&quot;Patient reports 7/10 chest pain, onset 2 hours ago...&quot;</span><span class="p">,</span>
+    <span class="n">entry_type</span><span class="o">=</span><span class="s2">&quot;observation&quot;</span><span class="p">,</span> <span class="n">session_id</span><span class="o">=</span><span class="s2">&quot;visit_20240115&quot;</span>
+<span class="p">)</span>
+<span class="c1"># ✅ Success: &quot;Successfully wrote to scratchpad&quot;</span>
+<span class="c1"># 🆔 Entry ID: &quot;scratchpadentry-b99d1846&quot;</span>
+
+<span class="c1"># create_todo: Create urgent clinical tasks</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">create_todo</span><span class="p">(</span>
+    <span class="n">content</span><span class="o">=</span><span class="s2">&quot;Order cardiac enzymes and chest X-ray for patient with chest pain&quot;</span><span class="p">,</span>
+    <span class="n">priority</span><span class="o">=</span><span class="s2">&quot;high&quot;</span><span class="p">,</span> <span class="n">clinical_urgency</span><span class="o">=</span><span class="s2">&quot;urgent&quot;</span>
+<span class="p">)</span>
+<span class="c1"># ✅ Success: &quot;Successfully created todo item&quot;  </span>
+<span class="c1"># 🆔 Todo ID: &quot;agenttodo-4552c76f&quot;</span>
+</code></pre></div>
+<h3 id="facade-extraction">Facade Extraction<a class="headerlink" href="#facade-extraction" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># extract_facade: Extract Patient demographics</span>
+<span class="n">patient</span> <span class="o">=</span> <span class="k">await</span> <span class="n">extract_facade</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">Patient</span><span class="p">,</span> <span class="s2">&quot;info&quot;</span><span class="p">,</span> 
+    <span class="s2">&quot;João Silva, masculino, 45 anos, hipertenso&quot;</span><span class="p">)</span>
+<span class="c1"># ✅ Name: &quot;João Silva&quot;, Gender: &quot;male&quot;, Age: 45</span>
+
+<span class="c1"># extract_facade: Extract Condition details</span>
+<span class="n">condition</span> <span class="o">=</span> <span class="k">await</span> <span class="n">extract_facade</span><span class="p">(</span><span class="n">llm</span><span class="p">,</span> <span class="n">Condition</span><span class="p">,</span> <span class="s2">&quot;summary&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Paciente apresenta quadro de hipertensão arterial não controlada&quot;</span><span class="p">)</span>
+<span class="c1"># ✅ Code: &quot;hipertensão arterial não controlada&quot;</span>
+<span class="c1"># ✅ Status: &quot;active&quot;, Verification: &quot;confirmed&quot;</span>
+</code></pre></div>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <h3 id="production-workflows">Production Workflows<a class="headerlink" href="#production-workflows" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong><a href="../tutorials/complete_context_engineering/">Complete Context Engineering</a></strong> - All 4 context strategies</li>
 <li><strong><a href="../tutorials/medication_extraction/">Medication Extraction</a></strong> - Extract medications from clinical notes</li>
+<li><strong><a href="../how-to/facade_extraction/">Facade-Based Extraction</a></strong> - Focused extraction with predefined field subsets</li>
 </ul>
 <h3 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h3>
 <ul>

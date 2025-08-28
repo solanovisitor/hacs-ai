@@ -5,7 +5,7 @@ HACS-native minimal version inspired by FHIR R4 MedicationStatement, focused on
 capturing medications reported as being taken (vs. prescribed).
 """
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field, field_validator
 
@@ -162,12 +162,53 @@ class MedicationStatement(DomainResource):
     # --- LLM-friendly extractable facade overrides ---
     @classmethod
     def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
-        """Return fields that should be extracted by LLMs (3-4 key fields only)."""
+        """Return fields that should be extracted by LLMs - expanded for better coverage."""
         return [
-            "medication_codeable_concept",
-            "dosage",
-            "effective_date_time",
+            "status",                          # Statement status (active, completed, stopped)
+            "medication_codeable_concept",     # Medication name
+            "dosage",                          # Dosage instruction when mentioned
+            "effective_date_time",             # When medication taken/started
+            "effective_period_end",            # When medication stopped (if mentioned)
+            "taken",                           # Whether medication was taken (y/n/unk)
         ]
+
+    @classmethod
+    def get_extraction_examples(cls) -> dict[str, Any]:
+        """Return extraction examples showing different extractable field scenarios."""
+        # Current medication
+        current_example = {
+            "status": "active",
+            "medication_codeable_concept": {"text": "Losartana 50mg"},
+            "dosage": [{"text": "1 comprimido ao dia"}],
+            "effective_date_time": "2024-01-15",
+            "taken": "y",
+        }
+
+        # Stopped medication
+        stopped_example = {
+            "status": "stopped",
+            "medication_codeable_concept": {"text": "Rivotril"},
+            "effective_date_time": "2024-01-01",
+            "effective_period_end": "2024-06-15",
+            "taken": "y",
+        }
+
+        # Simple medication without details
+        simple_example = {
+            "status": "active",
+            "medication_codeable_concept": {"text": "Paracetamol"},
+            "taken": "y",
+        }
+
+        return {
+            "object": current_example,
+            "array": [current_example, stopped_example, simple_example],
+            "scenarios": {
+                "current": current_example,
+                "stopped": stopped_example,
+                "simple": simple_example,
+            }
+        }
 
     @classmethod
     def llm_hints(cls) -> list[str]:  # type: ignore[override]

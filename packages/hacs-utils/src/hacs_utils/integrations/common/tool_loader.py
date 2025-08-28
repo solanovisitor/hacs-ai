@@ -214,7 +214,17 @@ def _compute_injected_values(required: set[str]) -> Dict[str, Any]:
         except Exception:
             pass
 
-    # session_id/state only from overrides; do not synthesize by default
+    # State injection
+    if ("state" in required) and ("state" not in injected):
+        try:
+            # Create minimal default state if not overridden
+            from hacs_core.config import HACSState  # type: ignore
+            
+            injected["state"] = HACSState()
+        except Exception:
+            pass
+
+    # session_id only from overrides; do not synthesize by default
     return injected
 
 
@@ -269,15 +279,12 @@ def _wrap_with_injection(fn: Callable) -> Callable:
                     for n in sig.parameters.keys()
                     if n not in ("self", "args", "kwargs") and n not in _RESERVED_PARAMS
                 ]
-                if args_model is not None and validated is not None and len(non_reserved) == 1:
-                    # Model-first signature: pass the validated model instance to the single param (e.g., 'payload')
-                    call_kwargs[non_reserved[0]] = validated
-                else:
-                    for name, param in sig.parameters.items():
-                        if name in ("self", "args", "kwargs"):
-                            continue
-                        if name in payload:
-                            call_kwargs[name] = payload[name]
+                # Always pass primitives/kwargs, not the Pydantic model instance itself
+                for name, param in sig.parameters.items():
+                    if name in ("self", "args", "kwargs"):
+                        continue
+                    if name in payload:
+                        call_kwargs[name] = payload[name]
             else:
                 call_kwargs = dict(payload)
             # Merge injected reserved (override any user-provided)
@@ -319,14 +326,12 @@ def _wrap_with_injection(fn: Callable) -> Callable:
                     for n in sig.parameters.keys()
                     if n not in ("self", "args", "kwargs") and n not in _RESERVED_PARAMS
                 ]
-                if args_model is not None and validated is not None and len(non_reserved) == 1:
-                    call_kwargs[non_reserved[0]] = validated
-                else:
-                    for name, param in sig.parameters.items():
-                        if name in ("self", "args", "kwargs"):
-                            continue
-                        if name in payload:
-                            call_kwargs[name] = payload[name]
+                # Always pass primitives/kwargs, not the Pydantic model instance itself
+                for name, param in sig.parameters.items():
+                    if name in ("self", "args", "kwargs"):
+                        continue
+                    if name in payload:
+                        call_kwargs[name] = payload[name]
             else:
                 call_kwargs = dict(payload)
             # Merge injected reserved (override any user-provided)
@@ -384,24 +389,20 @@ def get_hacs_tools_from_registry() -> List[Any]:
 @lru_cache(maxsize=1)
 def get_hacs_tools_from_utils() -> List[Any]:
     """
-    Load HACS tools from utils integration with caching.
+    Load HACS tools via the utils integration (DISABLED to avoid recursion).
 
-    Returns:
-        List of tools from HACS utils, empty list if unavailable
+    Historical note:
+    - Previous implementations called hacs_utils.integrations.langchain.tools.langchain_tools(),
+      which itself delegates back to this loader, causing an infinite recursion loop that
+      produced repeated "0 tools" logs and returned an empty list.
+
+    Resolution:
+    - This path is now a no-op. Tool loading is handled via the HACS Registry when available,
+      or via direct hacs_tools import fallback (see get_hacs_tools_direct). LangChain adaptation
+      is performed here when framework=="langchain".
     """
-    if not _AVAILABILITY["hacs_utils_langchain"]:
-        logger.debug("HACS Utils LangChain integration not available for tool loading")
-        return []
-
-    try:
-        from hacs_utils.integrations.langchain.tools import langchain_tools
-
-        tools = langchain_tools()
-        logger.info(f"✅ Loaded {len(tools)} tools from HACS Utils")
-        return tools
-    except Exception as e:
-        logger.warning(f"Failed to load tools from HACS Utils: {e}")
-        return []
+    logger.debug("Skipping utils-based tool loading to avoid recursion; using registry/direct import")
+    return []
 
 
 def get_hacs_tools_direct() -> List[Any]:
@@ -615,6 +616,39 @@ async def get_all_hacs_tools(framework: str = "langgraph") -> List[Any]:
                 create_model = None
             reserved_params = _RESERVED_PARAMS
             adapted = []
+            
+            def _filtered_args_schema(explicit_model):
+                """Return a schema that hides reserved/injected params from the LLM.
+
+                If Pydantic is not available, or introspection fails, return the
+                explicit_model unchanged.
+                """
+                if create_model is None or not hasattr(explicit_model, "model_fields"):
+                    return explicit_model
+                try:
+                    fields = {}
+                    for name, info in explicit_model.model_fields.items():  # type: ignore[attr-defined]
+                        if name in reserved_params:
+                            continue
+                        ann = getattr(info, "annotation", None) or Any  # type: ignore[name-defined]
+                        # Properly handle default values and required fields
+                        if hasattr(info, 'is_required') and info.is_required():
+                            default = ...
+                        else:
+                            default = getattr(info, 'default', None)
+                            if default is None and hasattr(info, 'default_factory'):
+                                default_factory = getattr(info, 'default_factory')
+                                if default_factory is not None:
+                                    try:
+                                        default = default_factory()
+                                    except Exception:
+                                        default = None
+                        fields[name] = (ann, default)
+                    if not fields:
+                        return explicit_model
+                    return create_model(f"{explicit_model.__name__}Public", **fields)
+                except Exception:
+                    return explicit_model
             for fn in tools:
                 try:
                     # Optionally build a reduced args schema that hides reserved/injected params
@@ -622,7 +656,7 @@ async def get_all_hacs_tools(framework: str = "langgraph") -> List[Any]:
                     # Prefer explicit Pydantic model attached by domains
                     explicit_model = getattr(fn, "_tool_args", None)
                     if explicit_model is not None:
-                        args_schema = explicit_model
+                        args_schema = _filtered_args_schema(explicit_model)
                     elif create_model is not None:
                         sig = inspect.signature(fn)
                         fields = {}
@@ -637,8 +671,17 @@ async def get_all_hacs_tools(framework: str = "langgraph") -> List[Any]:
                             fields[name] = (ann, default)
                         if fields:
                             args_schema = create_model(f"{fn.__name__}Input", **fields)
-                    # Ensure the underlying func is the injection wrapper
-                    adapted.append(StructuredTool.from_function(func=fn, args_schema=args_schema))
+                    # Check if function is async and create appropriate tool
+                    if asyncio.iscoroutinefunction(fn):
+                        # Create async tool - pass func=None and coroutine=fn
+                        adapted.append(StructuredTool.from_function(
+                            func=None,
+                            coroutine=fn,
+                            args_schema=args_schema
+                        ))
+                    else:
+                        # Create sync tool
+                        adapted.append(StructuredTool.from_function(func=fn, args_schema=args_schema))
                 except Exception:
                     # Skip functions that cannot be adapted
                     continue
@@ -654,7 +697,7 @@ async def get_all_hacs_tools(framework: str = "langgraph") -> List[Any]:
     return tools
 
 
-def get_all_hacs_tools_sync(framework: str = "langgraph") -> List[Any]:
+def get_sync_tools(framework: str = "langgraph") -> List[Any]:
     """Synchronous wrapper for get_all_hacs_tools that works inside running event loops.
 
     If called from within an active asyncio loop (e.g., inside the LangGraph dev server),
@@ -700,7 +743,7 @@ def get_all_hacs_tools_sync(framework: str = "langgraph") -> List[Any]:
 __all__ = [
     "get_availability",
     "get_all_hacs_tools",
-    "get_all_hacs_tools_sync",
+    "get_sync_tools",
     "load_hacs_tools",
     "load_hacs_tools_sync",
     # Injected params API

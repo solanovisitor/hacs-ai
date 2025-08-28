@@ -64,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#authenticate-an-actor-with-permissions" class="md-skip">
+        <a href="#configure-actor-context-for-hacs-tools" class="md-skip">
           Skip to content
         </a>
       
@@ -379,45 +379,27 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#verify-token-and-inspect-claims" class="md-nav__link">
+  <a href="#check-permissions-and-access" class="md-nav__link">
     <span class="md-ellipsis">
-      Verify token and inspect claims
+      Check permissions and access
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#permission-checks-exact-wildcard-admin" class="md-nav__link">
+  <a href="#admin-actor-with-wildcard-permissions" class="md-nav__link">
     <span class="md-ellipsis">
-      Permission checks (exact, wildcard, admin)
+      Admin actor with wildcard permissions
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#security-level-validation" class="md-nav__link">
+  <a href="#using-actors-with-hacs-tools" class="md-nav__link">
     <span class="md-ellipsis">
-      Security level validation
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#refresh-token-flow" class="md-nav__link">
-    <span class="md-ellipsis">
-      Refresh token flow
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#decorators-for-write-operations" class="md-nav__link">
-    <span class="md-ellipsis">
-      Decorators for write operations
+      Using actors with HACS tools
     </span>
   </a>
   
@@ -463,6 +445,29 @@
   
   <span class="md-ellipsis">
     Connect to database
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../supabase_connection_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Connect to Supabase
     
   </span>
   
@@ -526,12 +531,58 @@
   
   
     <li class="md-nav__item">
+      <a href="../facade_extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Facade-based extraction
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../validate_hacs_models/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     Validate HACS models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../validation_results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Validation results
     
   </span>
   
@@ -930,45 +981,27 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#verify-token-and-inspect-claims" class="md-nav__link">
+  <a href="#check-permissions-and-access" class="md-nav__link">
     <span class="md-ellipsis">
-      Verify token and inspect claims
+      Check permissions and access
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#permission-checks-exact-wildcard-admin" class="md-nav__link">
+  <a href="#admin-actor-with-wildcard-permissions" class="md-nav__link">
     <span class="md-ellipsis">
-      Permission checks (exact, wildcard, admin)
+      Admin actor with wildcard permissions
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#security-level-validation" class="md-nav__link">
+  <a href="#using-actors-with-hacs-tools" class="md-nav__link">
     <span class="md-ellipsis">
-      Security level validation
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#refresh-token-flow" class="md-nav__link">
-    <span class="md-ellipsis">
-      Refresh token flow
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#decorators-for-write-operations" class="md-nav__link">
-    <span class="md-ellipsis">
-      Decorators for write operations
+      Using actors with HACS tools
     </span>
   </a>
   
@@ -1008,129 +1041,136 @@
 
 
 
-<h1 id="authenticate-an-actor-with-permissions">Authenticate an Actor with permissions<a class="headerlink" href="#authenticate-an-actor-with-permissions" title="Permanent link">&para;</a></h1>
-<p>This guide shows how to create and validate an access token with role-based permissions.</p>
-<div class="highlight"><pre><span></span><code><span class="c1"># Prereq (demo secret): export HACS_JWT_SECRET=&quot;this_is_a_demo_secret_key_with_length_over_32_chars________&quot;</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_auth.auth_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">AuthManager</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_auth.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">require_permission</span>
+<h1 id="configure-actor-context-for-hacs-tools">Configure Actor Context for HACS Tools<a class="headerlink" href="#configure-actor-context-for-hacs-tools" title="Permanent link">&para;</a></h1>
+<p>This guide shows how to create and configure an Actor with role-based permissions for HACS tools.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Actor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_current_actor</span><span class="p">,</span> <span class="n">configure_hacs</span>
 
-<span class="n">am</span> <span class="o">=</span> <span class="n">AuthManager</span><span class="p">()</span>
-<span class="c1"># Physician with read/write to patient</span>
-<span class="n">token</span> <span class="o">=</span> <span class="n">am</span><span class="o">.</span><span class="n">create_access_token</span><span class="p">(</span>
-    <span class="n">user_id</span><span class="o">=</span><span class="s2">&quot;dr_chen&quot;</span><span class="p">,</span>
+<span class="c1"># Create physician with read/write permissions</span>
+<span class="n">physician</span> <span class="o">=</span> <span class="n">Actor</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Dr. Chen&quot;</span><span class="p">,</span>
     <span class="n">role</span><span class="o">=</span><span class="s2">&quot;physician&quot;</span><span class="p">,</span>
-    <span class="n">permissions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;patient:read&quot;</span><span class="p">,</span> <span class="s2">&quot;patient:write&quot;</span><span class="p">],</span>
-    <span class="n">organization</span><span class="o">=</span><span class="s2">&quot;General Hospital&quot;</span><span class="p">,</span>
+    <span class="n">permissions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;patient:read&quot;</span><span class="p">,</span> <span class="s2">&quot;patient:write&quot;</span><span class="p">]</span>
 <span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;token_prefix:&quot;</span><span class="p">,</span> <span class="n">token</span><span class="p">[:</span><span class="mi">24</span><span class="p">])</span>
 
-<span class="nd">@require_permission</span><span class="p">(</span><span class="s2">&quot;patient:read&quot;</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_patient</span><span class="p">(</span><span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;ok&quot;</span><span class="p">}</span>
+<span class="c1"># Configure HACS with this actor</span>
+<span class="n">configure_hacs</span><span class="p">(</span><span class="n">current_actor</span><span class="o">=</span><span class="n">physician</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">get_patient</span><span class="p">(</span><span class="s2">&quot;patient-123&quot;</span><span class="p">,</span> <span class="n">token</span><span class="o">=</span><span class="n">token</span><span class="p">))</span>
+<span class="c1"># Verify the current actor</span>
+<span class="n">current</span> <span class="o">=</span> <span class="n">get_current_actor</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Actor configured:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Name: </span><span class="si">{</span><span class="n">current</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Role: </span><span class="si">{</span><span class="n">current</span><span class="o">.</span><span class="n">role</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Permissions: </span><span class="si">{</span><span class="n">current</span><span class="o">.</span><span class="n">permissions</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code>token_prefix: eyJhbGciOiJIUzI1NiIsInR5
-{&#39;id&#39;: &#39;patient-123&#39;, &#39;status&#39;: &#39;ok&#39;}
-</code></pre></div>
-<h2 id="verify-token-and-inspect-claims">Verify token and inspect claims<a class="headerlink" href="#verify-token-and-inspect-claims" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_auth.auth_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">AuthError</span>
+<p><strong>Output:</strong>
+<div class="highlight"><pre><span></span><code>Actor configured:
+  Name: Dr. Chen
+  Role: physician
+  Permissions: [&#39;patient:read&#39;, &#39;patient:write&#39;]
+</code></pre></div></p>
+<h2 id="check-permissions-and-access">Check permissions and access<a class="headerlink" href="#check-permissions-and-access" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># Check specific permissions</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Permission checks:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Has patient:read: </span><span class="si">{</span><span class="s1">&#39;patient:read&#39;</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">current</span><span class="o">.</span><span class="n">permissions</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Has patient:write: </span><span class="si">{</span><span class="s1">&#39;patient:write&#39;</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">current</span><span class="o">.</span><span class="n">permissions</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Has admin permissions: </span><span class="si">{</span><span class="s1">&#39;admin:*&#39;</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">current</span><span class="o">.</span><span class="n">permissions</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-<span class="c1"># Decode and verify token</span>
-<span class="n">claims</span> <span class="o">=</span> <span class="n">am</span><span class="o">.</span><span class="n">verify_token</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;User:&quot;</span><span class="p">,</span> <span class="n">claims</span><span class="o">.</span><span class="n">user_id</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Role:&quot;</span><span class="p">,</span> <span class="n">claims</span><span class="o">.</span><span class="n">role</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Permissions:&quot;</span><span class="p">,</span> <span class="n">claims</span><span class="o">.</span><span class="n">permissions</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Org:&quot;</span><span class="p">,</span> <span class="n">claims</span><span class="o">.</span><span class="n">organization</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Issued:&quot;</span><span class="p">,</span> <span class="n">claims</span><span class="o">.</span><span class="n">issued_at</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Expires:&quot;</span><span class="p">,</span> <span class="n">claims</span><span class="o">.</span><span class="n">expires_at</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;TTL (s):&quot;</span><span class="p">,</span> <span class="n">am</span><span class="o">.</span><span class="n">get_token_ttl</span><span class="p">(</span><span class="n">claims</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Expired?&quot;</span><span class="p">,</span> <span class="n">am</span><span class="o">.</span><span class="n">is_token_expired</span><span class="p">(</span><span class="n">claims</span><span class="p">))</span>
+<span class="c1"># Show how tools access the current actor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_core.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_settings</span>
+<span class="n">settings</span> <span class="o">=</span> <span class="n">get_settings</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Tools access:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Current actor in settings: </span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">current_actor</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">settings</span><span class="o">.</span><span class="n">current_actor</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;None&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Tools use config.current_actor for permissions&quot;</span><span class="p">)</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code>User: dr_chen
-Role: physician
-Permissions: [&#39;patient:read&#39;, &#39;patient:write&#39;]
-Org: General Hospital
-Issued: 2025-08-19 19:07:46.184696+00:00
-Expires: 2025-08-19 19:22:46.184696+00:00
-TTL (s): 899
-Expired? False
-</code></pre></div>
-<h2 id="permission-checks-exact-wildcard-admin">Permission checks (exact, wildcard, admin)<a class="headerlink" href="#permission-checks-exact-wildcard-admin" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="c1"># Exact permission</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Has patient:read?&quot;</span><span class="p">,</span> <span class="n">am</span><span class="o">.</span><span class="n">has_permission</span><span class="p">(</span><span class="n">claims</span><span class="p">,</span> <span class="s2">&quot;patient:read&quot;</span><span class="p">))</span>
+<p><strong>Output:</strong>
+<div class="highlight"><pre><span></span><code>Permission checks:
+  Has patient:read: True
+  Has patient:write: True
+  Has admin permissions: False
 
-<span class="c1"># Wildcard permission example (admin:* overrides everything)</span>
-<span class="n">admin_token</span> <span class="o">=</span> <span class="n">am</span><span class="o">.</span><span class="n">create_access_token</span><span class="p">(</span>
-    <span class="n">user_id</span><span class="o">=</span><span class="s2">&quot;sec_admin&quot;</span><span class="p">,</span>
+Tools access:
+  Current actor in settings: Dr. Chen
+  Tools use config.current_actor for permissions
+</code></pre></div></p>
+<h2 id="admin-actor-with-wildcard-permissions">Admin actor with wildcard permissions<a class="headerlink" href="#admin-actor-with-wildcard-permissions" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># Create admin actor with wildcard permissions</span>
+<span class="n">admin</span> <span class="o">=</span> <span class="n">Actor</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;System Admin&quot;</span><span class="p">,</span>
     <span class="n">role</span><span class="o">=</span><span class="s2">&quot;admin&quot;</span><span class="p">,</span>
-    <span class="n">permissions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;admin:*&quot;</span><span class="p">],</span>
-    <span class="n">organization</span><span class="o">=</span><span class="s2">&quot;General Hospital&quot;</span><span class="p">,</span>
+    <span class="n">permissions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;admin:*&quot;</span><span class="p">]</span>  <span class="c1"># Wildcard grants all permissions</span>
 <span class="p">)</span>
-<span class="n">admin_claims</span> <span class="o">=</span> <span class="n">am</span><span class="o">.</span><span class="n">verify_token</span><span class="p">(</span><span class="n">admin_token</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Admin has patient:write?&quot;</span><span class="p">,</span> <span class="n">am</span><span class="o">.</span><span class="n">has_permission</span><span class="p">(</span><span class="n">admin_claims</span><span class="p">,</span> <span class="s2">&quot;patient:write&quot;</span><span class="p">))</span>
+<span class="n">configure_hacs</span><span class="p">(</span><span class="n">current_actor</span><span class="o">=</span><span class="n">admin</span><span class="p">)</span>
+<span class="n">admin_current</span> <span class="o">=</span> <span class="n">get_current_actor</span><span class="p">()</span>
 
-<span class="c1"># Enforce required permission (raises AuthError if missing)</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">am</span><span class="o">.</span><span class="n">require_permission</span><span class="p">(</span><span class="n">claims</span><span class="p">,</span> <span class="s2">&quot;patient:delete&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Delete allowed (unexpected)&quot;</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">AuthError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Delete denied:&quot;</span><span class="p">,</span> <span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
-</code></pre></div>
-<div class="highlight"><pre><span></span><code>Has patient:read? True
-Admin has patient:write? True
-Delete denied: Permission denied: patient:delete required
-</code></pre></div>
-<h2 id="security-level-validation">Security level validation<a class="headerlink" href="#security-level-validation" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="c1"># Token created above has default security_level=&quot;medium&quot;</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Meets &#39;low&#39;?&quot;</span><span class="p">,</span> <span class="n">am</span><span class="o">.</span><span class="n">validate_security_level</span><span class="p">(</span><span class="n">claims</span><span class="p">,</span> <span class="s2">&quot;low&quot;</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Meets &#39;high&#39;?&quot;</span><span class="p">,</span> <span class="n">am</span><span class="o">.</span><span class="n">validate_security_level</span><span class="p">(</span><span class="n">claims</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">))</span>
-</code></pre></div>
-<div class="highlight"><pre><span></span><code>Meets &#39;low&#39;? True
-Meets &#39;high&#39;? False
-</code></pre></div>
-<h2 id="refresh-token-flow">Refresh token flow<a class="headerlink" href="#refresh-token-flow" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="c1"># Issue and verify a refresh token</span>
-<span class="n">refresh</span> <span class="o">=</span> <span class="n">am</span><span class="o">.</span><span class="n">create_refresh_token</span><span class="p">(</span><span class="n">user_id</span><span class="o">=</span><span class="n">claims</span><span class="o">.</span><span class="n">user_id</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;refresh_prefix:&quot;</span><span class="p">,</span> <span class="n">refresh</span><span class="p">[:</span><span class="mi">24</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Admin actor:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Name: </span><span class="si">{</span><span class="n">admin_current</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Role: </span><span class="si">{</span><span class="n">admin_current</span><span class="o">.</span><span class="n">role</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Has wildcard: </span><span class="si">{</span><span class="s1">&#39;admin:*&#39;</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">admin_current</span><span class="o">.</span><span class="n">permissions</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-<span class="n">user_from_refresh</span> <span class="o">=</span> <span class="n">am</span><span class="o">.</span><span class="n">verify_refresh_token</span><span class="p">(</span><span class="n">refresh</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;user_from_refresh:&quot;</span><span class="p">,</span> <span class="n">user_from_refresh</span><span class="p">)</span>
+<span class="c1"># Test permission enforcement</span>
+<span class="n">physician_perms</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;patient:read&quot;</span><span class="p">,</span> <span class="s2">&quot;patient:write&quot;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Permission test:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Physician can delete: </span><span class="si">{</span><span class="s1">&#39;patient:delete&#39;</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">physician_perms</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Admin can delete: </span><span class="si">{</span><span class="s1">&#39;admin:*&#39;</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">admin_current</span><span class="o">.</span><span class="n">permissions</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p><strong>Output:</strong>
+<div class="highlight"><pre><span></span><code>Admin actor:
+  Name: System Admin
+  Role: admin
+  Has wildcard: True
 
-<span class="c1"># Mint a new access token using refresh identity</span>
-<span class="n">new_token</span> <span class="o">=</span> <span class="n">am</span><span class="o">.</span><span class="n">create_access_token</span><span class="p">(</span>
-    <span class="n">user_id</span><span class="o">=</span><span class="n">user_from_refresh</span><span class="p">,</span>
-    <span class="n">role</span><span class="o">=</span><span class="n">claims</span><span class="o">.</span><span class="n">role</span><span class="p">,</span>
-    <span class="n">permissions</span><span class="o">=</span><span class="n">claims</span><span class="o">.</span><span class="n">permissions</span><span class="p">,</span>
-    <span class="n">organization</span><span class="o">=</span><span class="n">claims</span><span class="o">.</span><span class="n">organization</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;new_token_prefix:&quot;</span><span class="p">,</span> <span class="n">new_token</span><span class="p">[:</span><span class="mi">24</span><span class="p">])</span>
-</code></pre></div>
-<div class="highlight"><pre><span></span><code>refresh_prefix: eyJhbGciOiJIUzI1NiIsInR5
-user_from_refresh: dr_chen
-new_token_prefix: eyJhbGciOiJIUzI1NiIsInR5
-</code></pre></div>
-<h2 id="decorators-for-write-operations">Decorators for write operations<a class="headerlink" href="#decorators-for-write-operations" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="nd">@require_permission</span><span class="p">(</span><span class="s2">&quot;patient:write&quot;</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">update_patient</span><span class="p">(</span><span class="n">patient_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">patient_id</span><span class="p">,</span> <span class="s2">&quot;updated&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;payload_keys&quot;</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">keys</span><span class="p">())}</span>
+Permission test:
+  Physician can delete: False
+  Admin can delete: True
+</code></pre></div></p>
+<h2 id="using-actors-with-hacs-tools">Using actors with HACS tools<a class="headerlink" href="#using-actors-with-hacs-tools" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.integrations.common.tool_loader</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_injected_params</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">update_patient</span><span class="p">(</span><span class="s2">&quot;patient-123&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;allergies&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;penicillin&quot;</span><span class="p">]},</span> <span class="n">token</span><span class="o">=</span><span class="n">token</span><span class="p">))</span>
+<span class="c1"># Set up tool injection with configured actor</span>
+<span class="n">settings</span> <span class="o">=</span> <span class="n">get_settings</span><span class="p">()</span>
+<span class="n">set_injected_params</span><span class="p">({</span><span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="n">settings</span><span class="p">})</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Tool integration:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Actor in config: </span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">current_actor</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Actor role: </span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">current_actor</span><span class="o">.</span><span class="n">role</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Tools will use this actor for permissions&quot;</span><span class="p">)</span>
+
+<span class="c1"># Example: Tools automatically use the configured actor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_tools.domains.modeling</span><span class="w"> </span><span class="kn">import</span> <span class="n">pin_resource</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">pin_resource</span><span class="p">(</span><span class="s2">&quot;Patient&quot;</span><span class="p">,</span> <span class="p">{</span>
+    <span class="s2">&quot;full_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Test Patient&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;birth_date&quot;</span><span class="p">:</span> <span class="s2">&quot;1990-01-01&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;gender&quot;</span><span class="p">:</span> <span class="s2">&quot;female&quot;</span>
+<span class="p">})</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Tool execution:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Result: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">success</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Used actor: </span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">current_actor</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (automatically)&quot;</span><span class="p">)</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code>{&#39;id&#39;: &#39;patient-123&#39;, &#39;updated&#39;: True, &#39;payload_keys&#39;: [&#39;allergies&#39;]}
-</code></pre></div>
+<p><strong>Output:</strong>
+<div class="highlight"><pre><span></span><code>Tool integration:
+  Actor in config: Dr. Chen
+  Actor role: physician
+  Tools will use this actor for permissions
+
+Tool execution:
+  Result: True
+  Used actor: Dr. Chen (automatically)
+</code></pre></div></p>
 <h2 id="tips">Tips<a class="headerlink" href="#tips" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Use strong secrets; set <code>HACS_JWT_SECRET</code> to a 32+ char value. In production, HTTPS and MFA are enforced via <code>AuthConfig</code>.</li>
-<li>Default access token expiry is 15 min; adjust via <code>HACS_TOKEN_EXPIRE_MINUTES</code> (min 5, max 60).</li>
-<li>Use <code>admin:*</code> sparingly; prefer fine-grained permissions like <code>patient:read</code> and <code>patient:write</code>.</li>
+<li>Use specific permissions like <code>patient:read</code> and <code>patient:write</code> for precise access control</li>
+<li>Use <code>admin:*</code> sparingly; prefer fine-grained permissions for security</li>
+<li>Configure actors once and let tools access them automatically via <code>config.current_actor</code></li>
+<li>All HACS tools support automatic actor injection for consistent permission enforcement</li>
 </ul>
 <h2 id="next-steps">Next steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Connect to a database and persist resources: see <a href="../connect_postgres/">Connect to a database</a></li>
-<li>Validate models and structure: see <a href="../validate_hacs_models/">Validate HACS Models</a></li>
+<li>Use HACS tools with configured actors: see <a href="../../hacs-tools/">HACS Tools Reference</a></li>
 <li>Visualize resources and outputs: see <a href="../visualize_resources/">Visualize Resources</a></li>
 </ul>
 

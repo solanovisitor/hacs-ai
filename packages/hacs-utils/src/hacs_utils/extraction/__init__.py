@@ -11,21 +11,22 @@ This module splits the large structured.py into focused components:
 - metrics: Performance tracking
 """
 
-# Re-export main APIs for backward compatibility
-from ..structured import (
+# Re-export main APIs through the public API facade
+from .api import (
     # Core functions
     extract,
     structure,
     extract_sync,
     structure_sync,
+    extract_iterative,
     
-    # HACS extraction functions
-    extract_hacs_resources_with_citations,
-    extract_hacs_multi_with_citations,
-    extract_hacs_document_with_citations,
-    extract_hacs_resource_type_citations,
-    extract_hacs_document_with_citation_guidance,
+    # Concise extraction functions
     extract_whole_records_with_spans,
+    extract_citations,
+    extract_citations_multi,
+    extract_document_citations,
+    extract_type_citations,
+    extract_citations_guided,
     
     # Runner and config
     ExtractionRunner,
@@ -33,8 +34,7 @@ from ..structured import (
     ExtractionMetrics,
     
     # Utilities
-    group_records_by_type,
-    group_resource_type_citations,
+    group_type_citations,
     FormatType,
 )
 
@@ -44,14 +44,15 @@ __all__ = [
     "structure", 
     "extract_sync",
     "structure_sync",
+    "extract_iterative",
     
-    # HACS extraction functions
-    "extract_hacs_resources_with_citations",
-    "extract_hacs_multi_with_citations", 
-    "extract_hacs_document_with_citations",
-    "extract_hacs_resource_type_citations",
-    "extract_hacs_document_with_citation_guidance",
+    # Concise extraction functions
     "extract_whole_records_with_spans",
+    "extract_citations",
+    "extract_citations_multi",
+    "extract_document_citations",
+    "extract_type_citations",
+    "extract_citations_guided",
     
     # Runner and config
     "ExtractionRunner",
@@ -59,7 +60,6 @@ __all__ = [
     "ExtractionMetrics",
     
     # Utilities
-    "group_records_by_type",
-    "group_resource_type_citations",
+    "group_type_citations",
     "FormatType",
 ]

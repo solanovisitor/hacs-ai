@@ -9,7 +9,7 @@ https://hl7.org/fhir/R4/practitioner.html
 """
 
 from datetime import date
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field, field_validator
 
@@ -121,6 +121,12 @@ class Practitioner(DomainResource):
         description="A language the practitioner can use in patient communication",
     )
 
+    # Anonymous practitioner support for analytics
+    anonymous: bool = Field(
+        default=False,
+        description="Whether this is an anonymous practitioner record (relaxes name requirements)",
+    )
+
     @field_validator("active")
     @classmethod
     def validate_active_status(cls, v):
@@ -155,6 +161,10 @@ class Practitioner(DomainResource):
     @property
     def display_name(self) -> str:
         """Get a display name for the practitioner."""
+        # Handle anonymous practitioners
+        if self.anonymous and not self.name:
+            return "Anonymous Practitioner"
+
         primary = self.primary_name
         if primary and hasattr(primary, "text") and primary.text:
             return primary.text
@@ -273,15 +283,219 @@ class Practitioner(DomainResource):
     @classmethod
     def get_extractable_fields(cls) -> list[str]:
         """Return fields that should be extracted by LLMs (3-4 key fields only)."""
-        return ["name"]
+        return ["name", "anonymous"]
+
+    @classmethod
+    def get_required_extractables(cls) -> list[str]:
+        """Fields that are absolutely required for a valid Practitioner extraction."""
+        return []  # No fields strictly required - allow anonymous practitioners
+
+    @classmethod
+    def get_canonical_defaults(cls) -> dict[str, Any]:
+        """Default values for system/required fields during extraction."""
+        return {
+            "active": True,  # Default to active practitioner
+            "anonymous": False,  # Required by facades for extraction
+        }
+
+    @classmethod
+    def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
+        """Coerce extractable payload to proper Practitioner field types."""
+        coerced = payload.copy()
+        
+        # Handle name field - ensure it's a list of HumanName objects
+        if "name" in coerced:
+            name_data = coerced["name"]
+            if isinstance(name_data, str):
+                # Convert string to proper HumanName structure
+                name_parts = name_data.strip().split()
+                if len(name_parts) >= 2:
+                    family = name_parts[-1]
+                    given = name_parts[:-1]
+                    coerced["name"] = [{"family": family, "given": given, "use": "usual"}]
+                else:
+                    coerced["name"] = [{"given": [name_data.strip()], "use": "usual"}]
+            elif isinstance(name_data, list):
+                # Ensure each name is properly structured
+                processed_names = []
+                for name_item in name_data:
+                    if isinstance(name_item, dict):
+                        # Remove any extra fields that aren't valid HumanName fields
+                        valid_fields = ["family", "given", "use", "prefix", "suffix"]
+                        cleaned_name = {k: v for k, v in name_item.items() if k in valid_fields}
+                        processed_names.append(cleaned_name)
+                    elif isinstance(name_item, str):
+                        # Parse string to proper structure
+                        name_parts = name_item.strip().split()
+                        if len(name_parts) >= 2:
+                            family = name_parts[-1]
+                            given = name_parts[:-1]
+                            processed_names.append({"family": family, "given": given, "use": "usual"})
+                        else:
+                            processed_names.append({"given": [name_item.strip()], "use": "usual"})
+                coerced["name"] = processed_names
+        
+        # Handle gender string conversion
+        if "gender" in coerced and isinstance(coerced["gender"], str):
+            gender_str = coerced["gender"].lower()
+            if gender_str in ["masculino", "male", "m"]:
+                coerced["gender"] = "male"
+            elif gender_str in ["feminino", "female", "f"]:
+                coerced["gender"] = "female"
+            elif gender_str in ["outro", "other", "o"]:
+                coerced["gender"] = "other"
+            elif gender_str in ["desconhecido", "unknown", "u"]:
+                coerced["gender"] = "unknown"
+        
+        # Handle identifier field - ensure proper structure
+        if "identifier" in coerced and isinstance(coerced["identifier"], list):
+            processed_identifiers = []
+            for id_item in coerced["identifier"]:
+                if isinstance(id_item, dict):
+                    # Clean up identifier structure
+                    valid_fields = ["value", "type", "use", "system"]
+                    cleaned_id = {k: v for k, v in id_item.items() if k in valid_fields}
+                    processed_identifiers.append(cleaned_id)
+                elif isinstance(id_item, str):
+                    processed_identifiers.append({"value": id_item, "use": "usual"})
+            coerced["identifier"] = processed_identifiers
+        
+        # Handle qualification field - ensure proper structure
+        if "qualification" in coerced and isinstance(coerced["qualification"], list):
+            processed_qualifications = []
+            for qual_item in coerced["qualification"]:
+                if isinstance(qual_item, dict):
+                    # Ensure qualification has required code field
+                    if "code" in qual_item:
+                        processed_qualifications.append(qual_item)
+                    elif "text" in qual_item:
+                        # Convert text to code structure
+                        processed_qualifications.append({
+                            "code": {"text": qual_item["text"]}
+                        })
+            coerced["qualification"] = processed_qualifications
+        
+        # Remove system fields that shouldn't be LLM-generated
+        system_fields = ["id", "created_at", "updated_at", "version", "meta_tag"]
+        for field in system_fields:
+            coerced.pop(field, None)
+        
+        return coerced
 
     @classmethod
     def llm_hints(cls) -> list[str]:
         """Return LLM-specific extraction hints for Practitioner."""
         return [
-            "Fill name with the explicit name text (e.g., 'doutora Ivi')",
-            "Extract only when a healthcare provider is explicitly mentioned",
+            "- Extract practitioner name from: 'Dr.', 'doutora', 'médico', explicit healthcare provider mentions",
+            "- Set anonymous=true if healthcare provider mentioned but no identifiable name given",
+            "- Extract only when a healthcare provider is explicitly mentioned",
+            "- Focus on doctors, nurses, therapists, not patients or family members",
         ]
+
+    @classmethod
+    def get_facades(cls) -> dict[str, "FacadeSpec"]:
+        """Return available extraction facades for Practitioner."""
+        from .base_resource import FacadeSpec
+        
+        return {
+            "identity": FacadeSpec(
+                fields=["name", "gender", "anonymous", "active"],
+                required_fields=["anonymous"],
+                field_examples={
+                    "name": [{"family": "Santos", "given": ["Maria", "Clara"], "use": "official", "prefix": ["Dr."]}],
+                    "gender": "female",
+                    "anonymous": False,
+                    "active": True
+                },
+                field_types={
+                    "name": "list[HumanName]",
+                    "gender": "Gender | None",
+                    "anonymous": "bool", 
+                    "active": "bool | None"
+                },
+                description="Core practitioner identification and basic demographics",
+                llm_guidance="Use this facade for extracting healthcare provider identity from clinical documentation. Focus on names, titles, and basic information mentioned.",
+                conversational_prompts=[
+                    "Who is the attending physician?",
+                    "Which doctor is providing care?",
+                    "What healthcare providers are involved?"
+                ]
+            ),
+            
+            "contact": FacadeSpec(
+                fields=["name", "telecom", "address", "anonymous"],
+                required_fields=["anonymous"],
+                field_examples={
+                    "name": [{"text": "Dr. João Silva", "use": "official"}],
+                    "telecom": [{"system": "phone", "value": "(11) 98765-4321", "use": "work"}],
+                    "address": [{"use": "work", "line": ["Consultório Médico"], "city": "São Paulo"}],
+                    "anonymous": False
+                },
+                field_types={
+                    "name": "list[HumanName]",
+                    "telecom": "list[ContactPoint]",
+                    "address": "list[Address]",
+                    "anonymous": "bool"
+                },
+                description="Practitioner contact and location information",
+                llm_guidance="Extract contact details when provider contact information, office location, or communication details are mentioned.",
+                conversational_prompts=[
+                    "How can I contact my doctor?",
+                    "What is the provider's office address?",
+                    "Where can I reach the healthcare provider?"
+                ]
+            ),
+            
+            "qualifications": FacadeSpec(
+                fields=["name", "qualification", "communication", "anonymous"],
+                required_fields=["anonymous"],
+                field_examples={
+                    "name": [{"text": "Dr. Ana Cardiologista", "use": "professional"}],
+                    "qualification": [{"code": {"text": "Cardiology Specialty"}}],
+                    "communication": [{"text": "Portuguese"}, {"text": "English"}],
+                    "anonymous": False
+                },
+                field_types={
+                    "name": "list[HumanName]",
+                    "qualification": "list[PractitionerQualification]",
+                    "communication": "list[CodeableConcept]",
+                    "anonymous": "bool"
+                },
+                description="Practitioner specialties, certifications, and languages",
+                llm_guidance="Use when extracting provider specialties, board certifications, training, or language capabilities mentioned in documentation.",
+                conversational_prompts=[
+                    "What is the doctor's specialty?",
+                    "What languages does the provider speak?",
+                    "What are the provider's qualifications?"
+                ]
+            ),
+            
+            "professional": FacadeSpec(
+                fields=["name", "identifier", "qualification", "active", "anonymous"],
+                required_fields=["anonymous"],
+                field_examples={
+                    "name": [{"family": "Silva", "given": ["Roberto"], "prefix": ["Dr."], "use": "official"}],
+                    "identifier": [{"value": "CRM-123456", "type": "license"}],
+                    "qualification": [{"code": {"text": "Medical License"}}],
+                    "active": True,
+                    "anonymous": False
+                },
+                field_types={
+                    "name": "list[HumanName]",
+                    "identifier": "list[Identifier]",
+                    "qualification": "list[PractitionerQualification]",
+                    "active": "bool | None",
+                    "anonymous": "bool"
+                },
+                description="Complete professional practitioner profile with licenses and credentials",
+                llm_guidance="Extract comprehensive practitioner information when license numbers, professional credentials, or full professional identity is documented.",
+                conversational_prompts=[
+                    "What are the provider's professional credentials?",
+                    "What is the practitioner's license information?",
+                    "Who is the qualified healthcare professional?"
+                ]
+            )
+        }
 
 
 # Convenience functions for common practitioner types

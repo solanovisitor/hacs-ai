@@ -375,6 +375,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../supabase_connection_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Connect to Supabase
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../extract_annotations/" class="md-nav__link">
         
   
@@ -421,12 +444,58 @@
   
   
     <li class="md-nav__item">
+      <a href="../facade_extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Facade-based extraction
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../validate_hacs_models/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     Validate HACS models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../validation_results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Validation results
     
   </span>
   
@@ -999,13 +1068,13 @@
 
 <span class="c1"># Execute tools directly</span>
 <span class="n">bmi_result</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">get_tool_function</span><span class="p">(</span><span class="s2">&quot;compute_bmi&quot;</span><span class="p">)(</span><span class="mi">175</span><span class="p">,</span> <span class="mi">70</span><span class="p">)</span>
-<span class="n">pin_result</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">get_tool_function</span><span class="p">(</span><span class="s2">&quot;pin_resource&quot;</span><span class="p">)(</span><span class="s2">&quot;Patient&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;full_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Alice Nguyen&quot;</span><span class="p">,</span> <span class="s2">&quot;gender&quot;</span><span class="p">:</span> <span class="s2">&quot;female&quot;</span><span class="p">,</span> <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="mi">34</span><span class="p">})</span>
+<span class="n">pin_result</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">get_tool_function</span><span class="p">(</span><span class="s2">&quot;pin_resource&quot;</span><span class="p">)(</span><span class="s2">&quot;Patient&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;full_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Alice Nguyen&quot;</span><span class="p">,</span> <span class="s2">&quot;gender&quot;</span><span class="p">:</span> <span class="s2">&quot;female&quot;</span><span class="p">,</span> <span class="s2">&quot;birth_date&quot;</span><span class="p">:</span> <span class="s2">&quot;1990-01-01&quot;</span><span class="p">})</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;bmi:&quot;</span><span class="p">,</span> <span class="n">bmi_result</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;pin_success:&quot;</span><span class="p">,</span> <span class="n">pin_result</span><span class="o">.</span><span class="n">success</span><span class="p">)</span>
 </code></pre></div>
-<p>Example output:
-<div class="highlight"><pre><span></span><code>discovered: 75
+<p><strong>Output:</strong>
+<div class="highlight"><pre><span></span><code>discovered: 41
 bmi: {&#39;bmi&#39;: 22.9}
 pin_success: True
 </code></pre></div></p>
@@ -1015,9 +1084,9 @@ pin_success: True
 <span class="n">pin_tool</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">get_tool</span><span class="p">(</span><span class="s2">&quot;pin_resource&quot;</span><span class="p">)</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;modeling:&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">modeling_tools</span><span class="p">[:</span><span class="mi">5</span><span class="p">]])</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;pin_metadata:&quot;</span><span class="p">,</span> <span class="n">pin_tool</span><span class="o">.</span><span class="n">domain</span><span class="p">,</span> <span class="n">pin_tool</span><span class="o">.</span><span class="n">requires_actor</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;pin_metadata:&quot;</span><span class="p">,</span> <span class="n">pin_tool</span><span class="o">.</span><span class="n">domain</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">pin_tool</span><span class="p">,</span> <span class="s1">&#39;requires_actor&#39;</span><span class="p">,</span> <span class="s1">&#39;unknown&#39;</span><span class="p">))</span>
 </code></pre></div>
-<p>Example output:
+<p><strong>Output:</strong>
 <div class="highlight"><pre><span></span><code>modeling: [&#39;pin_resource&#39;, &#39;compose_bundle&#39;, &#39;validate_resource&#39;, &#39;diff_resources&#39;, &#39;validate_bundle&#39;]
 pin_metadata: modeling False
 </code></pre></div></p>

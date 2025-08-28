@@ -26,7 +26,7 @@ load_dotenv()  # Load API keys from .env file
 import asyncio
 from hacs_models import MedicationRequest, AnnotatedDocument, Observation, Condition
 from hacs_models.annotation import FormatType
-from hacs_utils.structured import extract
+from hacs_utils.extraction import extract
 from hacs_utils.visualization import visualize_annotations, annotations_to_markdown
 from langchain_openai import ChatOpenAI
 ```
@@ -53,7 +53,7 @@ print(f"  Text length: {len(annotated_doc.text)} characters")
 print(f"  Content preview: \"{annotated_doc.text[:50]}...\"")
 ```
 
-Output:
+**Output:**
 ```
 ✓ Created AnnotatedDocument:
   ID: clinical_note_001
@@ -125,7 +125,7 @@ print("✓ LLM configured for HACS model extraction")
 print(f"Model: gpt-4o-mini")
 ```
 
-Output:
+**Output:**
 ```
 ✓ LLM configured for HACS model extraction
 Model: gpt-4o-mini
@@ -152,52 +152,23 @@ medication_requests = asyncio.run(extract(
 print(to_markdown(medication_requests, title="Example Extraction Record"))
 ```
 
-Output:
+**Output:**
 
 ```markdown
-### Example Extraction Record
+### Extracted MedicationRequests
 
 #### MedicationRequest
 
 | Field | Value |
 |---|---|
 | resource_type | MedicationRequest |
-| id | medicationrequest-c921d3cc |
+| id | medicationrequest-359812c9 |
 | status | active |
-| subject | Patient/UNKNOWN |
-| medication_codeable_concept | Lisinopril 10mg |
-| dosage_instruction | Take 10mg daily for hypertension management. |
-| intent | order |
-| created_at | 2025-08-23T18:07:02.401678Z |
-| updated_at | 2025-08-23T18:07:02.401689Z |
-
-#### MedicationRequest
-
-| Field | Value |
-|---|---|
-| resource_type | MedicationRequest |
-| id | medicationrequest-4c3f55dc |
-| status | active |
-| subject | Patient/UNKNOWN |
-| medication_codeable_concept | Metformin 500mg |
-| dosage_instruction | Take 500mg twice daily for type 2 diabetes control. |
-| intent | order |
-| created_at | 2025-08-23T18:07:02.401940Z |
-| updated_at | 2025-08-23T18:07:02.401941Z |
-
-#### MedicationRequest
-
-| Field | Value |
-|---|---|
-| resource_type | MedicationRequest |
-| id | medicationrequest-22d00c68 |
-| status | active |
-| subject | Patient/UNKNOWN |
-| medication_codeable_concept | Aspirin 81mg |
-| dosage_instruction | Continue taking 81mg daily for cardioprotection. |
-| intent | order |
-| created_at | 2025-08-23T18:07:02.401974Z |
-| updated_at | 2025-08-23T18:07:02.401974Z |
+| subject | default_subject |
+| dosage_instruction | [] |
+| intent | proposal |
+| created_at | 2025-08-26T15:41:10.928063Z |
+| updated_at | 2025-08-26T15:41:10.928067Z |
 ```
 
 **What happens during HACS model extraction:**
@@ -494,7 +465,7 @@ meds = asyncio.run(extract(
 Use `structure()` when you want the model to produce a typed object from concise instructions and context (not chunking). This is useful for generating plans, orders, or summaries given known values.
 
 ```python
-from hacs_utils.structured import structure
+from hacs_utils.extraction import structure
 from hacs_models import CarePlan
 
 patient_ref = f"Patient/{patient_id}"

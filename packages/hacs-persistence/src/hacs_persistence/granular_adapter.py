@@ -572,3 +572,6 @@ def create_granular_postgres_adapter() -> GranularPostgreSQLAdapter:
         database_url=database_url,
         schema_name=config["schema_name"],
     )
+
+
+

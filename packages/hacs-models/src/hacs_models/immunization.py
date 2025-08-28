@@ -58,15 +58,15 @@ class Immunization(DomainResource):
     # --- LLM-friendly extractable facade overrides ---
     @classmethod
     def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
-        # Comprehensive set of clinically relevant extractable fields
+        # Focus on essential immunization info LLMs can extract reliably
         return [
-            "status",
-            "vaccine_code",
-            "occurrence_datetime",
-            "dose_quantity",
-            "site_text",
-            "route_text",
-            "lot_number",
+            "status",              # Immunization status (completed, not-done, etc.)
+            "vaccine_code",        # Vaccine name/type
+            "occurrence_datetime", # Date of vaccination when mentioned
+            "dose_quantity",       # Dose amount when specified
+            "site_text",           # Injection site when mentioned
+            "route_text",          # Route of administration when mentioned
+            "reason_text",         # Reason for vaccination when given
         ]
 
     @classmethod
@@ -97,6 +97,45 @@ class Immunization(DomainResource):
             coerced["vaccine_code"]["text"] = ""
 
         return coerced
+
+    @classmethod
+    def get_extraction_examples(cls) -> dict[str, Any]:
+        """Return extraction examples showing different extractable field scenarios."""
+        # Complete vaccination record
+        complete_example = {
+            "status": "completed",
+            "vaccine_code": {"text": "vacina COVID-19"},
+            "occurrence_datetime": "2024-08-15T10:00:00",
+            "dose_quantity": {"value": 0.5, "unit": "mL"},
+            "site_text": "braço direito",
+            "route_text": "intramuscular",
+            "reason_text": ["prevenção COVID-19"],
+        }
+
+        # Simple vaccination
+        simple_example = {
+            "status": "completed",
+            "vaccine_code": {"text": "pneumo 13"},
+            "occurrence_datetime": "2024-08-10",
+        }
+
+        # Vaccination with site/route
+        detailed_example = {
+            "status": "completed",
+            "vaccine_code": {"text": "influenza"},
+            "site_text": "deltoide esquerdo",
+            "route_text": "via intramuscular",
+        }
+
+        return {
+            "object": complete_example,
+            "array": [complete_example, simple_example, detailed_example],
+            "scenarios": {
+                "complete": complete_example,
+                "simple": simple_example,
+                "detailed": detailed_example,
+            }
+        }
 
     @classmethod
     def llm_hints(cls) -> list[str]:  # type: ignore[override]

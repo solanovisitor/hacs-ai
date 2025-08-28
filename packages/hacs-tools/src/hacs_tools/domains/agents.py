@@ -26,6 +26,7 @@ from hacs_models import (
     ScratchpadTodo,
     MessageDefinition,
 )
+from hacs_tools.common import HACSCommonInput
 from hacs_utils.memory_utils import gather_memories, merge_memories, filter_memories
 from hacs_utils.preferences import merge_preferences, inject_preferences as _inject_preferences
 from hacs_utils.semantic_index import semantic_tool_loadout
@@ -46,23 +47,19 @@ except Exception:  # pragma: no cover
 
 
 # ===== Pydantic input models for agents tools =====
-class WriteScratchpadInput(BaseModel):
+class WriteScratchpadInput(HACSCommonInput):
     content: str
     entry_type: str = Field(default="note")
     session_id: Optional[str] = None
     tags: Optional[List[str]] = None
-    messages: Optional[List[Dict[str, Any]]] = None
-    config: Optional[Dict[str, Any]] = None
-    state: Optional[Dict[str, Any]] = None
+    # messages removed: tools must read messages from injected state
 
 
 class ReadScratchpadInput(BaseModel):
     session_id: Optional[str] = None
     entry_type: Optional[str] = None
     limit: int = 10
-    messages: Optional[List[Dict[str, Any]]] = None
-    config: Optional[Dict[str, Any]] = None
-    state: Optional[Dict[str, Any]] = None
+    # messages/config/state not exposed; use injection
 
 
 class CreateTodoInput(BaseModel):
@@ -74,9 +71,7 @@ class CreateTodoInput(BaseModel):
     category: Optional[str] = None
     due_date: Optional[str] = None
     context: Optional[Dict[str, Any]] = None
-    messages: Optional[List[Dict[str, Any]]] = None
-    config: Optional[Dict[str, Any]] = None
-    state: Optional[Dict[str, Any]] = None
+    # messages/config/state not exposed; use injection
 
 
 class ListTodosInput(BaseModel):
@@ -84,17 +79,13 @@ class ListTodosInput(BaseModel):
     category: Optional[str] = None
     priority_min: Optional[int] = None
     limit: int = 20
-    messages: Optional[List[Dict[str, Any]]] = None
-    config: Optional[Dict[str, Any]] = None
-    state: Optional[Dict[str, Any]] = None
+    # messages/config/state not exposed; use injection
 
 
 class CompleteTodoInput(BaseModel):
     todo_id: str
     completion_notes: Optional[str] = None
-    messages: Optional[List[Dict[str, Any]]] = None
-    config: Optional[Dict[str, Any]] = None
-    state: Optional[Dict[str, Any]] = None
+    # messages/config/state not exposed; use injection
 
 
 class StoreMemoryInput(BaseModel):
@@ -103,9 +94,7 @@ class StoreMemoryInput(BaseModel):
     actor_id: Optional[str] = None
     context: Optional[Dict[str, Any]] = None
     tags: Optional[List[str]] = None
-    messages: Optional[List[Dict[str, Any]]] = None
-    config: Optional[Dict[str, Any]] = None
-    state: Optional[Dict[str, Any]] = None
+    # messages/config/state not exposed; use injection
 
 
 class RetrieveMemoriesInput(BaseModel):
@@ -114,18 +103,14 @@ class RetrieveMemoriesInput(BaseModel):
     memory_type: Optional[str] = None
     tags: Optional[List[str]] = None
     limit: int = 10
-    messages: Optional[List[Dict[str, Any]]] = None
-    config: Optional[Dict[str, Any]] = None
-    state: Optional[Dict[str, Any]] = None
+    # messages/config/state not exposed; use injection
 
 
 class InjectPreferencesInput(BaseModel):
     message: Dict[str, Any]
     actor_id: str
     preference_scope: str = Field(default="response_format")
-    messages: Optional[List[Dict[str, Any]]] = None
-    config: Optional[Dict[str, Any]] = None
-    state: Optional[Dict[str, Any]] = None
+    # messages/config/state not exposed; use injection
 
 
 class SelectToolsForTaskInput(BaseModel):
@@ -133,18 +118,14 @@ class SelectToolsForTaskInput(BaseModel):
     max_tools: int = 10
     domain_filter: Optional[str] = None
     exclude_tools: Optional[List[str]] = None
-    messages: Optional[List[Dict[str, Any]]] = None
-    config: Optional[Dict[str, Any]] = None
-    state: Optional[Dict[str, Any]] = None
+    # messages/config/state not exposed; use injection
 
 
 class SummarizeStateInput(BaseModel):
     state_data: Dict[str, Any]
     focus_areas: Optional[List[str]] = None
     compression_ratio: float = 0.3
-    messages: Optional[List[Dict[str, Any]]] = None
-    config: Optional[Dict[str, Any]] = None
-    state: Optional[Dict[str, Any]] = None
+    # messages/config/state not exposed; use injection
 
 
 class PruneStateInput(BaseModel):
@@ -152,9 +133,7 @@ class PruneStateInput(BaseModel):
     keep_fields: Optional[List[str]] = None
     max_messages: int = 20
     max_tools: int = 30
-    messages: Optional[List[Dict[str, Any]]] = None
-    config: Optional[Dict[str, Any]] = None
-    state: Optional[Dict[str, Any]] = None
+    # messages/config/state not exposed; use injection
 
 
 @register_tool(
@@ -165,7 +144,7 @@ def write_scratchpad(
     entry_type: str = "note",
     session_id: Optional[str] = None,
     tags: Optional[List[str]] = None,
-    messages: Optional[List[Dict[str, Any]]] = None,
+    *,
     config: Optional[Dict[str, Any]] = None,
     state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:
@@ -212,7 +191,7 @@ def read_scratchpad(
     session_id: Optional[str] = None,
     entry_type: Optional[str] = None,
     limit: int = 10,
-    messages: Optional[List[Dict[str, Any]]] = None,
+    *,
     config: Optional[Dict[str, Any]] = None,
     state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:
@@ -274,7 +253,7 @@ def create_todo(
     category: Optional[str] = None,
     due_date: Optional[str] = None,
     context: Optional[Dict[str, Any]] = None,
-    messages: Optional[List[Dict[str, Any]]] = None,
+    *,
     config: Optional[Dict[str, Any]] = None,
     state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:
@@ -356,7 +335,7 @@ def list_todos(
     category: Optional[str] = None,
     priority_min: Optional[int] = None,
     limit: int = 20,
-    messages: Optional[List[Dict[str, Any]]] = None,
+    *,
     config: Optional[Dict[str, Any]] = None,
     state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:
@@ -425,7 +404,7 @@ list_todos._tool_args = ListTodosInput  # type: ignore[attr-defined]
 def complete_todo(
     todo_id: str,
     completion_notes: Optional[str] = None,
-    messages: Optional[List[Dict[str, Any]]] = None,
+    *,
     config: Optional[Dict[str, Any]] = None,
     state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:
@@ -470,7 +449,7 @@ def store_memory(
     actor_id: Optional[str] = None,
     context: Optional[Dict[str, Any]] = None,
     tags: Optional[List[str]] = None,
-    messages: Optional[List[Dict[str, Any]]] = None,
+    *,
     config: Optional[Dict[str, Any]] = None,
     state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:
@@ -528,7 +507,7 @@ def retrieve_memories(
     memory_type: Optional[str] = None,
     tags: Optional[List[str]] = None,
     limit: int = 10,
-    messages: Optional[List[Dict[str, Any]]] = None,
+    *,
     config: Optional[Dict[str, Any]] = None,
     state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:
@@ -584,7 +563,7 @@ def inject_preferences(
     message: Dict[str, Any],
     actor_id: str,
     preference_scope: str = "response_format",
-    messages: Optional[List[Dict[str, Any]]] = None,
+    *,
     config: Optional[Dict[str, Any]] = None,
     state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:
@@ -637,7 +616,7 @@ def select_tools_for_task(
     max_tools: int = 10,
     domain_filter: Optional[str] = None,
     exclude_tools: Optional[List[str]] = None,
-    messages: Optional[List[Dict[str, Any]]] = None,
+    *,
     config: Optional[Dict[str, Any]] = None,
     state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:
@@ -689,7 +668,7 @@ def summarize_state(
     state_data: Dict[str, Any],
     focus_areas: Optional[List[str]] = None,
     compression_ratio: float = 0.3,
-    messages: Optional[List[Dict[str, Any]]] = None,
+    *,
     config: Optional[Dict[str, Any]] = None,
     state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:
@@ -759,7 +738,7 @@ def prune_state(
     keep_fields: Optional[List[str]] = None,
     max_messages: int = 20,
     max_tools: int = 30,
-    messages: Optional[List[Dict[str, Any]]] = None,
+    *,
     config: Optional[Dict[str, Any]] = None,
     state: Optional[Dict[str, Any]] = None,
 ) -> HACSResult:

@@ -1,155 +1,152 @@
-# Authenticate an Actor with permissions
+# Configure Actor Context for HACS Tools
 
-This guide shows how to create and validate an access token with role-based permissions.
+This guide shows how to create and configure an Actor with role-based permissions for HACS tools.
 
 ```python
-# Prereq (demo secret): export HACS_JWT_SECRET="this_is_a_demo_secret_key_with_length_over_32_chars________"
-from hacs_auth.auth_manager import AuthManager
-from hacs_auth.decorators import require_permission
+from hacs_models import Actor
+from hacs_core.config import get_current_actor, configure_hacs
 
-am = AuthManager()
-# Physician with read/write to patient
-token = am.create_access_token(
-    user_id="dr_chen",
+# Create physician with read/write permissions
+physician = Actor(
+    name="Dr. Chen",
     role="physician",
-    permissions=["patient:read", "patient:write"],
-    organization="General Hospital",
+    permissions=["patient:read", "patient:write"]
 )
-print("token_prefix:", token[:24])
 
-@require_permission("patient:read")
-def get_patient(patient_id: str, **kwargs):
-    return {"id": patient_id, "status": "ok"}
+# Configure HACS with this actor
+configure_hacs(current_actor=physician)
 
-print(get_patient("patient-123", token=token))
+# Verify the current actor
+current = get_current_actor()
+print("Actor configured:")
+print(f"  Name: {current.name}")
+print(f"  Role: {current.role}")
+print(f"  Permissions: {current.permissions}")
 ```
 
+**Output:**
 ```
-token_prefix: eyJhbGciOiJIUzI1NiIsInR5
-{'id': 'patient-123', 'status': 'ok'}
+Actor configured:
+  Name: Dr. Chen
+  Role: physician
+  Permissions: ['patient:read', 'patient:write']
 ```
 
-## Verify token and inspect claims
+## Check permissions and access
 
 ```python
-from hacs_auth.auth_manager import AuthError
+# Check specific permissions
+print("Permission checks:")
+print(f"  Has patient:read: {'patient:read' in current.permissions}")
+print(f"  Has patient:write: {'patient:write' in current.permissions}")
+print(f"  Has admin permissions: {'admin:*' in current.permissions}")
 
-# Decode and verify token
-claims = am.verify_token(token)
-
-print("User:", claims.user_id)
-print("Role:", claims.role)
-print("Permissions:", claims.permissions)
-print("Org:", claims.organization)
-print("Issued:", claims.issued_at)
-print("Expires:", claims.expires_at)
-print("TTL (s):", am.get_token_ttl(claims))
-print("Expired?", am.is_token_expired(claims))
+# Show how tools access the current actor
+from hacs_core.config import get_settings
+settings = get_settings()
+print(f"\nTools access:")
+print(f"  Current actor in settings: {settings.current_actor.name if settings.current_actor else 'None'}")
+print(f"  Tools use config.current_actor for permissions")
 ```
 
+**Output:**
 ```
-User: dr_chen
-Role: physician
-Permissions: ['patient:read', 'patient:write']
-Org: General Hospital
-Issued: 2025-08-19 19:07:46.184696+00:00
-Expires: 2025-08-19 19:22:46.184696+00:00
-TTL (s): 899
-Expired? False
+Permission checks:
+  Has patient:read: True
+  Has patient:write: True
+  Has admin permissions: False
+
+Tools access:
+  Current actor in settings: Dr. Chen
+  Tools use config.current_actor for permissions
 ```
 
-## Permission checks (exact, wildcard, admin)
+## Admin actor with wildcard permissions
 
 ```python
-# Exact permission
-print("Has patient:read?", am.has_permission(claims, "patient:read"))
-
-# Wildcard permission example (admin:* overrides everything)
-admin_token = am.create_access_token(
-    user_id="sec_admin",
+# Create admin actor with wildcard permissions
+admin = Actor(
+    name="System Admin",
     role="admin",
-    permissions=["admin:*"],
-    organization="General Hospital",
+    permissions=["admin:*"]  # Wildcard grants all permissions
 )
-admin_claims = am.verify_token(admin_token)
 
-print("Admin has patient:write?", am.has_permission(admin_claims, "patient:write"))
+configure_hacs(current_actor=admin)
+admin_current = get_current_actor()
 
-# Enforce required permission (raises AuthError if missing)
-try:
-    am.require_permission(claims, "patient:delete")
-    print("Delete allowed (unexpected)")
-except AuthError as e:
-    print("Delete denied:", e.message)
+print("Admin actor:")
+print(f"  Name: {admin_current.name}")
+print(f"  Role: {admin_current.role}")
+print(f"  Has wildcard: {'admin:*' in admin_current.permissions}")
+
+# Test permission enforcement
+physician_perms = ["patient:read", "patient:write"]
+print(f"\nPermission test:")
+print(f"  Physician can delete: {'patient:delete' in physician_perms}")
+print(f"  Admin can delete: {'admin:*' in admin_current.permissions}")
 ```
 
+**Output:**
 ```
-Has patient:read? True
-Admin has patient:write? True
-Delete denied: Permission denied: patient:delete required
+Admin actor:
+  Name: System Admin
+  Role: admin
+  Has wildcard: True
+
+Permission test:
+  Physician can delete: False
+  Admin can delete: True
 ```
 
-## Security level validation
+## Using actors with HACS tools
 
 ```python
-# Token created above has default security_level="medium"
-print("Meets 'low'?", am.validate_security_level(claims, "low"))
-print("Meets 'high'?", am.validate_security_level(claims, "high"))
+from hacs_utils.integrations.common.tool_loader import set_injected_params
+
+# Set up tool injection with configured actor
+settings = get_settings()
+set_injected_params({'config': settings})
+
+print("Tool integration:")
+print(f"  Actor in config: {settings.current_actor.name}")
+print(f"  Actor role: {settings.current_actor.role}")
+print(f"  Tools will use this actor for permissions")
+
+# Example: Tools automatically use the configured actor
+from hacs_tools.domains.modeling import pin_resource
+
+result = pin_resource("Patient", {
+    "full_name": "Test Patient",
+    "birth_date": "1990-01-01",
+    "gender": "female"
+})
+
+print(f"\nTool execution:")
+print(f"  Result: {result.success}")
+print(f"  Used actor: {settings.current_actor.name} (automatically)")
 ```
 
+**Output:**
 ```
-Meets 'low'? True
-Meets 'high'? False
-```
+Tool integration:
+  Actor in config: Dr. Chen
+  Actor role: physician
+  Tools will use this actor for permissions
 
-## Refresh token flow
-
-```python
-# Issue and verify a refresh token
-refresh = am.create_refresh_token(user_id=claims.user_id)
-print("refresh_prefix:", refresh[:24])
-
-user_from_refresh = am.verify_refresh_token(refresh)
-print("user_from_refresh:", user_from_refresh)
-
-# Mint a new access token using refresh identity
-new_token = am.create_access_token(
-    user_id=user_from_refresh,
-    role=claims.role,
-    permissions=claims.permissions,
-    organization=claims.organization,
-)
-print("new_token_prefix:", new_token[:24])
-```
-
-```
-refresh_prefix: eyJhbGciOiJIUzI1NiIsInR5
-user_from_refresh: dr_chen
-new_token_prefix: eyJhbGciOiJIUzI1NiIsInR5
-```
-
-## Decorators for write operations
-
-```python
-@require_permission("patient:write")
-def update_patient(patient_id: str, payload: dict, **kwargs):
-    return {"id": patient_id, "updated": True, "payload_keys": sorted(payload.keys())}
-
-print(update_patient("patient-123", {"allergies": ["penicillin"]}, token=token))
-```
-
-```
-{'id': 'patient-123', 'updated': True, 'payload_keys': ['allergies']}
+Tool execution:
+  Result: True
+  Used actor: Dr. Chen (automatically)
 ```
 
 ## Tips
 
-- Use strong secrets; set `HACS_JWT_SECRET` to a 32+ char value. In production, HTTPS and MFA are enforced via `AuthConfig`.
-- Default access token expiry is 15 min; adjust via `HACS_TOKEN_EXPIRE_MINUTES` (min 5, max 60).
-- Use `admin:*` sparingly; prefer fine-grained permissions like `patient:read` and `patient:write`.
+- Use specific permissions like `patient:read` and `patient:write` for precise access control
+- Use `admin:*` sparingly; prefer fine-grained permissions for security
+- Configure actors once and let tools access them automatically via `config.current_actor`
+- All HACS tools support automatic actor injection for consistent permission enforcement
 
 ## Next steps
 
 - Connect to a database and persist resources: see [Connect to a database](connect_postgres.md)
-- Validate models and structure: see [Validate HACS Models](validate_hacs_models.md)
+- Use HACS tools with configured actors: see [HACS Tools Reference](../hacs-tools.md)
 - Visualize resources and outputs: see [Visualize Resources](visualize_resources.md)

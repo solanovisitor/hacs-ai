@@ -9,7 +9,7 @@
       
       
       
-        <link rel="prev" href="../connect_postgres/">
+        <link rel="prev" href="../supabase_connection_guide/">
       
       
         <link rel="next" href="../grounded_extraction/">
@@ -372,6 +372,29 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../supabase_connection_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Connect to Supabase
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -627,12 +650,58 @@
   
   
     <li class="md-nav__item">
+      <a href="../facade_extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Facade-based extraction
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../validate_hacs_models/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     Validate HACS models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../validation_results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Validation results
     
   </span>
   
@@ -1236,7 +1305,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">MedicationRequest</span><span class="p">,</span> <span class="n">AnnotatedDocument</span><span class="p">,</span> <span class="n">Observation</span><span class="p">,</span> <span class="n">Condition</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models.annotation</span><span class="w"> </span><span class="kn">import</span> <span class="n">FormatType</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.structured</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.extraction</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">visualize_annotations</span><span class="p">,</span> <span class="n">annotations_to_markdown</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>
 </code></pre></div>
@@ -1259,7 +1328,7 @@
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Text length: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">annotated_doc</span><span class="o">.</span><span class="n">text</span><span class="p">)</span><span class="si">}</span><span class="s2"> characters&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Content preview: </span><span class="se">\&quot;</span><span class="si">{</span><span class="n">annotated_doc</span><span class="o">.</span><span class="n">text</span><span class="p">[:</span><span class="mi">50</span><span class="p">]</span><span class="si">}</span><span class="s2">...</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">)</span>
 </code></pre></div>
-<p>Output:
+<p><strong>Output:</strong>
 <div class="highlight"><pre><span></span><code>✓ Created AnnotatedDocument:
   ID: clinical_note_001
   Text length: 196 characters
@@ -1321,7 +1390,7 @@ Do not use for actual medication taking/administration (use MedicationStatement/
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✓ LLM configured for HACS model extraction&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Model: gpt-4o-mini&quot;</span><span class="p">)</span>
 </code></pre></div>
-<p>Output:
+<p><strong>Output:</strong>
 <div class="highlight"><pre><span></span><code>✓ LLM configured for HACS model extraction
 Model: gpt-4o-mini
 </code></pre></div></p>
@@ -1343,50 +1412,21 @@ Model: gpt-4o-mini
 
 <span class="nb">print</span><span class="p">(</span><span class="n">to_markdown</span><span class="p">(</span><span class="n">medication_requests</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Example Extraction Record&quot;</span><span class="p">))</span>
 </code></pre></div>
-<p>Output:</p>
-<div class="highlight"><pre><span></span><code><span class="gu">### Example Extraction Record</span>
+<p><strong>Output:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="gu">### Extracted MedicationRequests</span>
 
 <span class="gu">#### MedicationRequest</span>
 
 | Field | Value |
 |---|---|
 | resource_type | MedicationRequest |
-| id | medicationrequest-c921d3cc |
+| id | medicationrequest-359812c9 |
 | status | active |
-| subject | Patient/UNKNOWN |
-| medication_codeable_concept | Lisinopril 10mg |
-| dosage_instruction | Take 10mg daily for hypertension management. |
-| intent | order |
-| created_at | 2025-08-23T18:07:02.401678Z |
-| updated_at | 2025-08-23T18:07:02.401689Z |
-
-<span class="gu">#### MedicationRequest</span>
-
-| Field | Value |
-|---|---|
-| resource_type | MedicationRequest |
-| id | medicationrequest-4c3f55dc |
-| status | active |
-| subject | Patient/UNKNOWN |
-| medication_codeable_concept | Metformin 500mg |
-| dosage_instruction | Take 500mg twice daily for type 2 diabetes control. |
-| intent | order |
-| created_at | 2025-08-23T18:07:02.401940Z |
-| updated_at | 2025-08-23T18:07:02.401941Z |
-
-<span class="gu">#### MedicationRequest</span>
-
-| Field | Value |
-|---|---|
-| resource_type | MedicationRequest |
-| id | medicationrequest-22d00c68 |
-| status | active |
-| subject | Patient/UNKNOWN |
-| medication_codeable_concept | Aspirin 81mg |
-| dosage_instruction | Continue taking 81mg daily for cardioprotection. |
-| intent | order |
-| created_at | 2025-08-23T18:07:02.401974Z |
-| updated_at | 2025-08-23T18:07:02.401974Z |
+| subject | default_subject |
+| dosage_instruction | [] |
+| intent | proposal |
+| created_at | 2025-08-26T15:41:10.928063Z |
+| updated_at | 2025-08-26T15:41:10.928067Z |
 </code></pre></div>
 <p><strong>What happens during HACS model extraction:</strong></p>
 <ol>
@@ -1648,7 +1688,7 @@ Model: gpt-4o-mini
 <hr />
 <h2 id="structure-resources-directly-no-long-text-extraction">Structure resources directly (no long text extraction)<a class="headerlink" href="#structure-resources-directly-no-long-text-extraction" title="Permanent link">&para;</a></h2>
 <p>Use <code>structure()</code> when you want the model to produce a typed object from concise instructions and context (not chunking). This is useful for generating plans, orders, or summaries given known values.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.structured</span><span class="w"> </span><span class="kn">import</span> <span class="n">structure</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.extraction</span><span class="w"> </span><span class="kn">import</span> <span class="n">structure</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CarePlan</span>
 
 <span class="n">patient_ref</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Patient/</span><span class="si">{</span><span class="n">patient_id</span><span class="si">}</span><span class="s2">&quot;</span>

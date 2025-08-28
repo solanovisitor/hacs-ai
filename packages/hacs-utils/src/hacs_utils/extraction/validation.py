@@ -66,54 +66,68 @@ def apply_injection_and_validation(
     Returns:
         Validated HACS resource instance
     """
-    # Build canonical defaults from model (preferred) else empty
+    # Prefer model-provided normalization if available
+    normalized: dict[str, Any] | None = None
     try:
-        canonical_defaults = getattr(output_model, "get_canonical_defaults", lambda: {})() or {}
+        normalize = getattr(output_model, "normalize_for_validation", None)
+        if callable(normalize):
+            normalized = normalize(
+                record_data,
+                injected_fields=injected_fields,
+                injection_mode=injection_mode,
+            )
     except Exception:
-        canonical_defaults = {}
-    
-    # Merge according to injection_mode
-    if injection_mode == "guide":
-        merged = {}
-        merged.update(canonical_defaults)
-        if injected_fields:
+        normalized = None
+
+    # Fallback normalization path when model helper isn't available
+    if normalized is None:
+        # Build canonical defaults from model (preferred) else empty
+        try:
+            canonical_defaults = getattr(output_model, "get_canonical_defaults", lambda: {})() or {}
+        except Exception:
+            canonical_defaults = {}
+
+        if injection_mode == "guide":
+            merged = {}
+            merged.update(canonical_defaults)
+            if injected_fields:
+                try:
+                    merged.update(injected_fields)
+                except Exception:
+                    pass
             try:
-                merged.update(injected_fields)
+                merged.update(record_data)
             except Exception:
                 pass
-        try:
-            merged.update(record_data)
-        except Exception:
-            pass
-    else:  # frozen
-        merged = {}
-        merged.update(canonical_defaults)
-        try:
-            merged.update(record_data)
-        except Exception:
-            pass
-        if injected_fields:
+        else:  # frozen
+            merged = {}
+            merged.update(canonical_defaults)
             try:
-                merged.update(injected_fields)
+                merged.update(record_data)
             except Exception:
                 pass
-    
+            if injected_fields:
+                try:
+                    merged.update(injected_fields)
+                except Exception:
+                    pass
+        normalized = merged
+
     # Coerce and validate via model's extractable methods when available, then create full record
     try:
-        # First apply coercion to handle type mismatches
-        coerce_extractable = getattr(output_model, "coerce_extractable", None)
-        if callable(coerce_extractable):
-            merged = coerce_extractable(merged, relax=True)
-        
+        # If normalize_for_validation wasn't provided, apply coercion here
+        if not hasattr(output_model, "normalize_for_validation"):
+            coerce_extractable = getattr(output_model, "coerce_extractable", None)
+            if callable(coerce_extractable):
+                normalized = coerce_extractable(normalized, relax=True)  # type: ignore[arg-type]
+
         # Then validate the extractable subset
         validate_extractable = getattr(output_model, "validate_extractable", None)
         if callable(validate_extractable):
-            validated_subset = validate_extractable(merged)
-            # Then create full record with validated + injected fields
-            full_data = validated_subset.model_dump() if hasattr(validated_subset, "model_dump") else dict(validated_subset)  # type: ignore[arg-type]
-            record_obj = output_model(**full_data)
+            # validate_extractable already returns a complete, valid object - use it directly
+            record_obj = validate_extractable(normalized)
         else:
-            record_obj = output_model(**merged)
+            record_obj = output_model(**(normalized or {}))
         
         return record_obj
     except Exception as e:

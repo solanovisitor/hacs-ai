@@ -8,7 +8,7 @@ code duplication and ensure consistent behavior.
 from .tool_loader import (
     get_availability,
     get_all_hacs_tools,
-    get_all_hacs_tools_sync,
+    get_sync_tools,
     load_hacs_tools,
     load_hacs_tools_sync,
 )
@@ -16,7 +16,7 @@ from .tool_loader import (
 __all__ = [
     "get_availability",
     "get_all_hacs_tools",
-    "get_all_hacs_tools_sync",
+    "get_sync_tools",
     "load_hacs_tools",
     "load_hacs_tools_sync",
 ]

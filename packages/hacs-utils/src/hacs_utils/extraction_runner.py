@@ -18,11 +18,12 @@ from typing import Any, Type, Sequence, Literal, Dict, List
 from dataclasses import dataclass, field
 from pydantic import BaseModel
 
-from .structured import (
-    extract_hacs_document_with_citation_guidance,
-    extract_hacs_multi_with_citations,
-    extract_hacs_resources_with_citations,
+from .extraction.api import (
+    extract_citations_guided,
+    extract_citations_multi,
+    extract_citations,
 )
+from .extraction.dedupe import dedupe_by_semantic_key
 
 
 @dataclass
@@ -246,7 +247,7 @@ class ExtractionRunner:
                 if attempt > 0:
                     prefix += f"_retry_{attempt}"
                 
-                result = await extract_hacs_document_with_citation_guidance(
+                result = await extract_citations_guided(
                     llm_provider,
                     source_text=source_text,
                     resource_models=resource_models,
@@ -293,7 +294,7 @@ class ExtractionRunner:
                 if attempt > 0:
                     prefix += f"_retry_{attempt}"
                 
-                result = await extract_hacs_resources_with_citations(
+                result = await extract_citations(
                     llm_provider,
                     source_text=source_text,
                     resource_model=resource_model,
@@ -335,7 +336,7 @@ class ExtractionRunner:
                 if attempt > 0:
                     prefix += f"_retry_{attempt}"
                 
-                result = await extract_hacs_multi_with_citations(
+                result = await extract_citations_multi(
                     llm_provider,
                     source_text=source_text,
                     resource_models=resource_models,
@@ -381,8 +382,8 @@ class ExtractionRunner:
                         self.metrics.validation_failures += 1
                     continue
             
-            # Apply semantic deduplication (reuse logic from citation guidance)
-            deduped_items = self._dedupe_by_semantic_key(resource_type, validated_items)
+            # Apply semantic deduplication using dedicated module
+            deduped_items = dedupe_by_semantic_key(resource_type, validated_items)
             processed[resource_type] = deduped_items
         
         return processed
@@ -409,60 +410,7 @@ class ExtractionRunner:
                     self.metrics.validation_failures += 1
                 continue
         
-        # Apply deduplication
-        return self._dedupe_by_semantic_key(resource_type, validated_items)
+        # Apply deduplication using dedicated module
+        return dedupe_by_semantic_key(resource_type, validated_items)
     
-    def _dedupe_by_semantic_key(
-        self, 
-        resource_type: str, 
-        items: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        """Apply semantic deduplication based on resource type."""
-        
-        seen: set[tuple] = set()
-        deduped: List[Dict[str, Any]] = []
-        
-        for item in items:
-            rec = item.get("record")
-            citation_val = (item.get("citation") or "").strip().lower()
-            
-            try:
-                data = rec.model_dump() if hasattr(rec, "model_dump") else dict(rec)  # type: ignore[arg-type]
-            except Exception:
-                data = {}
-            
-            # Generate semantic key based on resource type
-            key: tuple
-            if resource_type in ("Organization", "Practitioner"):
-                name = (data.get("name") or citation_val or "").strip().lower()
-                key = (resource_type, name)
-            elif resource_type == "Observation":
-                code_text = (((data.get("code") or {}).get("text")) or "").strip().lower()
-                vq = (data.get("value_quantity") or {})
-                val = vq.get("value")
-                unit = (vq.get("unit") or "").strip().lower()
-                vstr = (data.get("value_string") or "").strip().lower()
-                key = (resource_type, code_text, val, unit, vstr)
-            elif resource_type == "Condition":
-                code_text = (((data.get("code") or {}).get("text")) or "").strip().lower()
-                key = (resource_type, code_text, citation_val)
-            elif resource_type == "Immunization":
-                vtext = ((((data.get("vaccine_code") or {}).get("text")) or "").strip().lower())
-                occ = (data.get("occurrence_date_time") or "").strip().lower() if isinstance(data.get("occurrence_date_time"), str) else str(data.get("occurrence_date_time"))
-                dose = str(data.get("dose_number")) if data.get("dose_number") is not None else ""
-                key = (resource_type, vtext, occ, dose)
-            elif resource_type == "DiagnosticReport":
-                code_text = (((data.get("code") or {}).get("text")) or "").strip().lower()
-                concl = (data.get("conclusion") or "").strip().lower()
-                key = (resource_type, code_text, concl)
-            else:
-                # Generic fallback
-                key = (resource_type, citation_val)
-            
-            if key in seen:
-                continue
-            
-            seen.add(key)
-            deduped.append(item)
-        
-        return deduped
+# Removed: _dedupe_by_semantic_key() - now using extraction.dedupe.dedupe_by_semantic_key()

@@ -12,7 +12,7 @@
         <link rel="prev" href="../authenticate_actor/">
       
       
-        <link rel="next" href="../extract_annotations/">
+        <link rel="next" href="../supabase_connection_guide/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -495,6 +495,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#database-inspection-utilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      Database Inspection Utilities
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#next-steps" class="md-nav__link">
     <span class="md-ellipsis">
       Next steps
@@ -507,6 +516,29 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../supabase_connection_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Connect to Supabase
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -565,12 +597,58 @@
   
   
     <li class="md-nav__item">
+      <a href="../facade_extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Facade-based extraction
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../validate_hacs_models/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     Validate HACS models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../validation_results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Validation results
     
   </span>
   
@@ -1062,6 +1140,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#database-inspection-utilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      Database Inspection Utilities
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#next-steps" class="md-nav__link">
     <span class="md-ellipsis">
       Next steps
@@ -1098,11 +1185,16 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Database URL configured:&quot;</span><span class="p">,</span> <span class="nb">bool</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DATABASE_URL&quot;</span><span class="p">)))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;URL preview:&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DATABASE_URL&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)[:</span><span class="mi">30</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;...&quot;</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DATABASE_URL&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;Not set&quot;</span><span class="p">)</span>
+<span class="n">db_url</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DATABASE_URL&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+<span class="k">if</span> <span class="n">db_url</span><span class="p">:</span>
+    <span class="n">preview</span> <span class="o">=</span> <span class="n">db_url</span><span class="p">[:</span><span class="mi">30</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;...&quot;</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">db_url</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">30</span> <span class="k">else</span> <span class="n">db_url</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;URL preview: </span><span class="si">{</span><span class="n">preview</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;URL preview: Not set&quot;</span><span class="p">)</span>
 </code></pre></div>
-<p>Output:
+<p><strong>Output:</strong>
 <div class="highlight"><pre><span></span><code>Database URL configured: True
-URL preview: postgresql://postgres:hB4NrD4l...
+URL preview: postgresql://hacs:hB4NrD4lF66X...
 </code></pre></div></p>
 <h3 id="production-database-configuration">Production database configuration<a class="headerlink" href="#production-database-configuration" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># Production-ready database configuration</span>
@@ -1317,6 +1409,47 @@ Schema breakdown: {&#39;hacs_core&#39;: 7, &#39;hacs_clinical&#39;: 21, &#39;hac
   Retrieved by: dr_martinez
   Version: 1.0.0
   Active: True
+</code></pre></div></p>
+<h2 id="database-inspection-utilities">Database Inspection Utilities<a class="headerlink" href="#database-inspection-utilities" title="Permanent link">&para;</a></h2>
+<p>HACS provides high-level utilities to inspect your database without writing raw SQL:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_persistence</span><span class="w"> </span><span class="kn">import</span> <span class="n">verify_database_environment</span><span class="p">,</span> <span class="n">get_generic_table_status</span>
+
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">inspect_database</span><span class="p">():</span>
+    <span class="c1"># Comprehensive environment check</span>
+    <span class="n">env_result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">verify_database_environment</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;🔧 Environment Status:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Database URL source: </span><span class="si">{</span><span class="n">env_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;database_url_source&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Not found&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">connection</span> <span class="o">=</span> <span class="n">env_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;connection_test&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="k">if</span> <span class="s2">&quot;error&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">connection</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  PostgreSQL: </span><span class="si">{</span><span class="n">connection</span><span class="p">[</span><span class="s1">&#39;postgresql_version&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Database: </span><span class="si">{</span><span class="n">connection</span><span class="p">[</span><span class="s1">&#39;database_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Check generic HACS table</span>
+    <span class="n">generic_status</span> <span class="o">=</span> <span class="k">await</span> <span class="n">get_generic_table_status</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">generic_status</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;table_exists&quot;</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">📊 Generic HACS Table:&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Total resources: </span><span class="si">{</span><span class="n">generic_status</span><span class="p">[</span><span class="s1">&#39;total_resources&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Resource types: </span><span class="si">{</span><span class="n">generic_status</span><span class="p">[</span><span class="s1">&#39;resource_types_count&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">breakdown</span> <span class="o">=</span> <span class="n">generic_status</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;resource_breakdown&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">for</span> <span class="n">resource_type</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">breakdown</span><span class="o">.</span><span class="n">items</span><span class="p">())[:</span><span class="mi">5</span><span class="p">]:</span>  <span class="c1"># Top 5</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    - </span><span class="si">{</span><span class="n">resource_type</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">inspect_database</span><span class="p">())</span>
+</code></pre></div>
+<p><strong>Output:</strong>
+<div class="highlight"><pre><span></span><code>🔧 Environment Status:
+  Database URL source: DATABASE_URL
+  PostgreSQL: PostgreSQL 17.4
+  Database: postgres
+
+📊 Generic HACS Table:
+  Total resources: 6
+  Resource types: 1
+    - Patient: 6
 </code></pre></div></p>
 <h2 id="next-steps">Next steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <p>Now that you have a configured database with authenticated actors, you can:</p>

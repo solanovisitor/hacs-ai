@@ -71,26 +71,69 @@ anthropic_structured_extract = _safe_import(
 
 # Provider selection helpers (explicit only; no env-based selection)
 def create_llm(model: str, provider: str | None = None):
-    """Create a LangChain chat model from a model string and optional provider.
+    """Create a LangChain chat model with normalized parameters from environment.
 
-    - If provider is "openai"/"anthropic", build the respective LC chat if available.
-    - If provider is None, infer from model name prefix (gpt-*, claude-*).
-    - Returns a LangChain chat model or raises ImportError if SDK missing.
+    Normalized knobs (read from env, applied to any provider when supported):
+    - HACS_LLM_TEMPERATURE (float, default 0.2)
+    - HACS_LLM_MAX_TOKENS (int, optional)
+    - HACS_LLM_TIMEOUT (seconds, default 45)
+    - HACS_LLM_MAX_RETRIES (int, default 2)
+
+    Provider detection:
+    - provider="openai"/"anthropic" or inferred by model prefix (gpt-/claude-)
     """
-    prov = (provider or ("openai" if model.startswith("gpt-") else ("anthropic" if model.startswith("claude-") else None)))
+    import os
+
+    prov = (
+        provider
+        or ("openai" if model.startswith("gpt-") else ("anthropic" if model.startswith("claude-") else None))
+    )
+
+    # Normalized parameters from env
+    try:
+        temperature = float(os.getenv("HACS_LLM_TEMPERATURE", "0.2"))
+    except Exception:
+        temperature = 0.2
+    try:
+        max_tokens_env = os.getenv("HACS_LLM_MAX_TOKENS")
+        max_tokens = int(max_tokens_env) if max_tokens_env else None
+    except Exception:
+        max_tokens = None
+    try:
+        timeout = float(os.getenv("HACS_LLM_TIMEOUT", "45"))
+    except Exception:
+        timeout = 45.0
+    try:
+        max_retries = int(os.getenv("HACS_LLM_MAX_RETRIES", "2"))
+    except Exception:
+        max_retries = 2
+
     if prov == "openai":
         try:
             from langchain_openai import ChatOpenAI  # type: ignore
         except Exception as e:
             raise ImportError(f"langchain-openai not available: {e}")
-        return ChatOpenAI(model=model)
+        return ChatOpenAI(
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            timeout=timeout,
+            max_retries=max_retries,
+        )
     if prov == "anthropic":
         try:
             from langchain_anthropic import ChatAnthropic  # type: ignore
         except Exception as e:
             raise ImportError(f"langchain-anthropic not available: {e}")
-        return ChatAnthropic(model=model)
-    raise ValueError("Unsupported provider; specify provider or use a supported model prefix (gpt-/claude-)")
+        # ChatAnthropic supports temperature and timeout; max_tokens via default kwargs
+        kwargs = {"model": model, "temperature": temperature, "timeout": timeout}
+        if max_tokens is not None:
+            kwargs["max_tokens"] = max_tokens
+        # LangChain handles retries; attach via .with_retry if needed, but pass through here
+        return ChatAnthropic(**kwargs)  # type: ignore[arg-type]
+    raise ValueError(
+        "Unsupported provider; specify provider or use a supported model prefix (gpt-/claude-)"
+    )
 
 
 # Pinecone Integration
@@ -114,16 +157,15 @@ create_langgraph_workflow = _safe_import(
 # CrewAI Integration (maintained for backward compatibility) - lazy loading
 _has_crewai = None  # Lazy check
 
-# Structured Output (always available)
+# Structured Output (from new extraction API)
 try:
-    from .structured import extract, structure, extract_sync, structure_sync
-
+    from .extraction.api import extract, structure, extract_sync, structure_sync
     _has_structured = True
-except ImportError:
-    extract = None
-    structure = None
-    extract_sync = None
-    structure_sync = None
+except Exception:
+    extract = None  # type: ignore
+    structure = None  # type: ignore
+    extract_sync = None  # type: ignore
+    structure_sync = None  # type: ignore
     _has_structured = False
 
 

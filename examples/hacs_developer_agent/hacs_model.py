@@ -17,7 +17,7 @@ def get_default_model() -> LanguageModelLike:
         try:
             from langchain_anthropic import ChatAnthropic
 
-            return ChatAnthropic(model="claude-sonnet-4-20250514", temperature=0.1, max_tokens=4000)
+            return ChatAnthropic(model="claude-sonnet-4-20250514", temperature=0, max_tokens=4000)
         except ImportError:
             pass
 
@@ -26,7 +26,7 @@ def get_default_model() -> LanguageModelLike:
         try:
             from langchain_openai import ChatOpenAI
 
-            return ChatOpenAI(model="gpt-4", temperature=0.1, max_tokens=4000)
+            return ChatOpenAI(model="gpt-4", temperature=0, max_tokens=4000)
         except ImportError:
             pass
 

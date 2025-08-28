@@ -1,7 +1,12 @@
 """
-Deprecated LangChain shim for HACS. Minimal stubs kept only for backwards compatibility
-of get_hacs_tools imports. Prefer using hacs_utils.integrations.common.tool_loader
-or hacs_utils.integrations.langgraph.hacs_agent_tools.
+DEPRECATED: LangChain shim for HACS.
+
+This module is retained temporarily for backward compatibility with older
+examples and integrations. Prefer using:
+- hacs_utils.integrations.common.tool_loader
+- hacs_utils.integrations.langgraph.hacs_agent_tools
+
+This module will be removed in a future release.
 """
 
 from .tools import (

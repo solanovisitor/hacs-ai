@@ -233,10 +233,10 @@ class VersionManager:
     """Utility for managing consistent versioning across packages."""
 
     # Define version categories for different package types
-    CORE_VERSION = "0.3.0"  # Core packages (hacs-core, hacs-models)
-    INTEGRATION_VERSION = "0.2.0"  # Integration packages (hacs-openai, hacs-anthropic)
-    TOOL_VERSION = "1.3.0"  # Tool packages (hacs-tools)
-    UTILITY_VERSION = "0.1.0"  # Utility packages (hacs-cli, hacs-api)
+    CORE_VERSION = "0.3.1"  # Core packages (hacs-core, hacs-models)
+    INTEGRATION_VERSION = "0.2.1"  # Integration packages (hacs-openai, hacs-anthropic)
+    TOOL_VERSION = "1.3.1"  # Tool packages (hacs-tools)
+    UTILITY_VERSION = "0.1.1"  # Utility packages (hacs-cli, hacs-api)
 
     @classmethod
     def get_version_for_package(cls, package_name: str) -> str:
@@ -304,3 +304,19 @@ def _get_resource_class(resource_type: str):
         return model_map.get(resource_type)
     except ImportError:
         return None
+
+
+def group_records_by_type(records_with_spans: list[dict[str, Any]]) -> dict[str, list[Any]]:
+    """Group returned records by their HACS resource_type.
+
+    Accepts items shaped like {"record": <BaseResource or dict>, ...} and
+    returns a mapping of resource_type -> list of typed records.
+    """
+    grouped: dict[str, list[Any]] = {}
+    for item in records_with_spans or []:
+        rec = item.get("record")
+        if rec is None:
+            continue
+        rtype = getattr(rec, "resource_type", None) or getattr(rec, "__class__", type("_", (), {})).__name__
+        grouped.setdefault(str(rtype), []).append(rec)
+    return grouped

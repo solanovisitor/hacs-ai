@@ -21,15 +21,15 @@ def compute_bmi(height_cm: float, weight_kg: float) -> dict:
 
 # Execute tools directly
 bmi_result = reg.get_tool_function("compute_bmi")(175, 70)
-pin_result = reg.get_tool_function("pin_resource")("Patient", {"full_name": "Alice Nguyen", "gender": "female", "age": 34})
+pin_result = reg.get_tool_function("pin_resource")("Patient", {"full_name": "Alice Nguyen", "gender": "female", "birth_date": "1990-01-01"})
 
 print("bmi:", bmi_result)
 print("pin_success:", pin_result.success)
 ```
 
-Example output:
+**Output:**
 ```
-discovered: 75
+discovered: 41
 bmi: {'bmi': 22.9}
 pin_success: True
 ```
@@ -42,10 +42,10 @@ modeling_tools = reg.search_tools(domain="modeling")
 pin_tool = reg.get_tool("pin_resource")
 
 print("modeling:", [t.name for t in modeling_tools[:5]])
-print("pin_metadata:", pin_tool.domain, pin_tool.requires_actor)
+print("pin_metadata:", pin_tool.domain, getattr(pin_tool, 'requires_actor', 'unknown'))
 ```
 
-Example output:
+**Output:**
 ```
 modeling: ['pin_resource', 'compose_bundle', 'validate_resource', 'diff_resources', 'validate_bundle']
 pin_metadata: modeling False

@@ -16,13 +16,18 @@ load_dotenv()  # Load DATABASE_URL from .env
 
 import os
 print("Database URL configured:", bool(os.getenv("DATABASE_URL")))
-print("URL preview:", (os.getenv("DATABASE_URL") or "")[:30] + "..." if os.getenv("DATABASE_URL") else "Not set")
+db_url = os.getenv("DATABASE_URL") or ""
+if db_url:
+    preview = db_url[:30] + "..." if len(db_url) > 30 else db_url
+    print(f"URL preview: {preview}")
+else:
+    print("URL preview: Not set")
 ```
 
-Output:
+**Output:**
 ```
 Database URL configured: True
-URL preview: postgresql://postgres:hB4NrD4l...
+URL preview: postgresql://hacs:hB4NrD4lF66X...
 ```
 
 ### Production database configuration
@@ -262,6 +267,53 @@ Output:
   Version: 1.0.0
   Active: True
 ``` 
+
+## Database Inspection Utilities
+
+HACS provides high-level utilities to inspect your database without writing raw SQL:
+
+```python
+import asyncio
+from hacs_persistence import verify_database_environment, get_generic_table_status
+
+async def inspect_database():
+    # Comprehensive environment check
+    env_result = await verify_database_environment()
+    
+    print("🔧 Environment Status:")
+    print(f"  Database URL source: {env_result.get('database_url_source', 'Not found')}")
+    
+    connection = env_result.get("connection_test", {})
+    if "error" not in connection:
+        print(f"  PostgreSQL: {connection['postgresql_version']}")
+        print(f"  Database: {connection['database_name']}")
+    
+    # Check generic HACS table
+    generic_status = await get_generic_table_status()
+    if generic_status.get("table_exists"):
+        print(f"\n📊 Generic HACS Table:")
+        print(f"  Total resources: {generic_status['total_resources']}")
+        print(f"  Resource types: {generic_status['resource_types_count']}")
+        
+        breakdown = generic_status.get("resource_breakdown", {})
+        for resource_type, count in list(breakdown.items())[:5]:  # Top 5
+            print(f"    - {resource_type}: {count}")
+
+asyncio.run(inspect_database())
+```
+
+**Output:**
+```
+🔧 Environment Status:
+  Database URL source: DATABASE_URL
+  PostgreSQL: PostgreSQL 17.4
+  Database: postgres
+
+📊 Generic HACS Table:
+  Total resources: 6
+  Resource types: 1
+    - Patient: 6
+```
 
 ## Next steps
 

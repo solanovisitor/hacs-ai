@@ -375,6 +375,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../../how-to/supabase_connection_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Connect to Supabase
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../how-to/extract_annotations/" class="md-nav__link">
         
   
@@ -421,12 +444,58 @@
   
   
     <li class="md-nav__item">
+      <a href="../../how-to/facade_extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Facade-based extraction
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../how-to/validate_hacs_models/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     Validate HACS models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/validation_results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Validation results
     
   </span>
   
@@ -773,6 +842,57 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#2-persist-to-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      2) Persist to Database
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-advanced-multiple-resource-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      3) Advanced: Multiple Resource Types
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Summary
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Summary">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-features-used" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Features Used
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Next Steps
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -903,6 +1023,57 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#2-persist-to-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      2) Persist to Database
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-advanced-multiple-resource-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      3) Advanced: Multiple Resource Types
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Summary
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Summary">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-features-used" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Features Used
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Next Steps
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -935,9 +1106,14 @@
 <li>A LangChain ChatModel API key (OpenAI, Anthropic, etc.)</li>
 <li>A running Postgres if you plan to persist records (set <code>DATABASE_URL</code>)</li>
 </ul>
-<p><div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.structured</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_chunked_extractions</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChunkingPolicy</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>  <span class="c1"># or any ChatModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dotenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dotenv</span>
+<span class="n">load_dotenv</span><span class="p">()</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.extraction</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">MedicationRequest</span><span class="p">,</span> <span class="n">MedicationRequestStatus</span><span class="p">,</span> <span class="n">MedicationRequestIntent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_markdown</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">langchain_openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChatOpenAI</span>
 
 <span class="c1"># Input text</span>
 <span class="n">input_text</span> <span class="o">=</span> <span class="p">(</span>
@@ -946,121 +1122,184 @@
     <span class="s2">&quot;his Metformin 500mg dose which should be taken twice daily for diabetes.</span><span class="se">\n</span><span class="s2">&quot;</span>
 <span class="p">)</span>
 
-<span class="c1"># Prompt with grouping rule</span>
-<span class="n">prompt</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">&quot;Extract medications with their details, using attributes to group related information:</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-    <span class="s2">&quot;1. Extract entities in the order they appear in the text</span><span class="se">\n</span><span class="s2">&quot;</span>
-    <span class="s2">&quot;2. Each entity must have a &#39;medication_group&#39; attribute linking it to its medication</span><span class="se">\n</span><span class="s2">&quot;</span>
-    <span class="s2">&quot;3. All details about a medication should share the same medication_group value</span><span class="se">\n</span><span class="s2">&quot;</span>
-<span class="p">)</span>
+<span class="c1">### 1) Extract medications using current HACS API</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">extract_medications</span><span class="p">():</span>
+    <span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-<span class="c1">### 1) Grounded mentions (optional)</span>
-<span class="c1"># Run extraction with source grounding and chunk alignment to see mentions and spans</span>
-<span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">extractions</span> <span class="o">=</span> <span class="n">generate_chunked_extractions</span><span class="p">(</span>
-    <span class="n">client</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
-    <span class="n">text</span><span class="o">=</span><span class="n">input_text</span><span class="p">,</span>
-    <span class="n">base_prompt</span><span class="o">=</span><span class="n">prompt</span><span class="p">,</span>
-    <span class="n">policy</span><span class="o">=</span><span class="n">ChunkingPolicy</span><span class="p">(</span><span class="n">max_chars</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mi">100</span><span class="p">),</span>
-    <span class="n">provider</span><span class="o">=</span><span class="s2">&quot;openai&quot;</span><span class="p">,</span>
-<span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;🔍 Extracting medications from clinical text...&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Text: </span><span class="si">{</span><span class="n">input_text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-<span class="c1"># Group by medication_group attribute</span>
-<span class="n">med_groups</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">extractions</span><span class="p">:</span>
-    <span class="n">attrs</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="s2">&quot;attributes&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
-    <span class="n">group</span> <span class="o">=</span> <span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;medication_group&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">group</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: Missing medication_group for </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">extraction_text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">continue</span>
-    <span class="n">med_groups</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="c1"># Extract MedicationRequest objects</span>
+    <span class="n">medications</span> <span class="o">=</span> <span class="k">await</span> <span class="n">extract</span><span class="p">(</span>
+        <span class="n">llm_provider</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
+        <span class="n">prompt</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;Extract each medication as a separate MedicationRequest object from this clinical text:</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input text: </span><span class="si">{</span><span class="n">input_text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Extracted Medications:&quot;</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">med</span><span class="p">,</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">med_groups</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">* </span><span class="si">{</span><span class="n">med</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
-        <span class="n">pos</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">char_interval</span> <span class="ow">and</span> <span class="n">e</span><span class="o">.</span><span class="n">char_interval</span><span class="o">.</span><span class="n">start_pos</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">e</span><span class="o">.</span><span class="n">char_interval</span><span class="o">.</span><span class="n">end_pos</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">pos</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot; (pos: </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">char_interval</span><span class="o">.</span><span class="n">start_pos</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">char_interval</span><span class="o">.</span><span class="n">end_pos</span><span class="si">}</span><span class="s2">)&quot;</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  • </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">extraction_class</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">extraction_text</span><span class="si">}{</span><span class="n">pos</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="s2">        </span><span class="si">{</span><span class="n">input_text</span><span class="si">}</span>
 
-<span class="c1"># Visualize extractions</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_utils.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">visualize_annotations</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnnotatedDocument</span>
-<span class="n">annotated</span> <span class="o">=</span> <span class="n">AnnotatedDocument</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">input_text</span><span class="p">,</span> <span class="n">extractions</span><span class="o">=</span><span class="n">extractions</span><span class="p">)</span>
-<span class="n">visualize_annotations</span><span class="p">(</span><span class="n">annotated</span><span class="p">)</span>
+<span class="s2">        For each medication, identify the medication name and any dosage information.&quot;&quot;&quot;</span><span class="p">,</span>
+        <span class="n">output_model</span><span class="o">=</span><span class="n">MedicationRequest</span><span class="p">,</span>
+        <span class="n">many</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">use_descriptive_schema</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">injected_fields</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">MedicationRequestStatus</span><span class="o">.</span><span class="n">ACTIVE</span><span class="p">,</span>
+            <span class="s2">&quot;intent&quot;</span><span class="p">:</span> <span class="n">MedicationRequestIntent</span><span class="o">.</span><span class="n">ORDER</span><span class="p">,</span>
+            <span class="s2">&quot;subject&quot;</span><span class="p">:</span> <span class="s2">&quot;Patient/medication-tutorial&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">✅ Extracted </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">medications</span><span class="p">)</span><span class="si">}</span><span class="s2"> medication(s)&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">to_markdown</span><span class="p">(</span><span class="n">medications</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Extracted Medications&quot;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">medications</span>
+
+<span class="c1"># Run the extraction</span>
+<span class="n">medications</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">extract_medications</span><span class="p">())</span>
 </code></pre></div>
-[Visualization] annotations HTML type: str
-[Visualization] annotations HTML length: 1555
-<div class="highlight"><pre><span></span><code>Rendered (Markdown):
+<p><strong>Output:</strong>
+<div class="highlight"><pre><span></span><code>🔍 Extracting medications from clinical text...
+Text: The patient was prescribed Lisinopril and Metformin last month.
+He takes the Lisinopril 10mg daily for hypertension, but often misses
+his Metformin 500mg dose which should be taken twice daily for diabetes.
 
-Annotations preview:
+✅ Extracted 1 medication(s)
+### Extracted Medications
 
-| Class | Span | Snippet |
-|---|---|---|
-| Blood Pressure | [3-9] | … BP  **128/82** , HR 72 … |
+#### MedicationRequest
 
-### 2) Structured records (typed) with pick() + persist
-from hacs_models import MedicationRequest, Patient
-from hacs_utils.structured import extract
-from hacs_tools.domains.modeling import pin_resource, make_reference, set_reference
-from hacs_tools.domains.database import save_record
-from hacs_models.composition import Composition
-
-# Define a subset schema for MedicationRequest (typed)
-MedicationRequestInfo = MedicationRequest.pick(&quot;status&quot;, &quot;intent&quot;, &quot;medication_codeable_concept&quot;, &quot;dosage_instruction&quot;)
-
-# Extract a list of medication requests from text (typed, many=True)
-mr_list = extract(
-  llm,
-  prompt=(
-    &quot;From the text, extract medication requests with status, intent, medication_codeable_concept, and dosage_instruction.\n&quot;
-    &quot;Use the medication name as displayed in the text.&quot;
-    f&quot;\n\nTEXT:\n{input_text}&quot;
-  ),
-  output_model=MedicationRequestInfo,
-  many=True,
-)
-
-# Instantiate and persist Patient and MedicationRequests
-patient_res = pin_resource(&quot;Patient&quot;, {&quot;full_name&quot;: &quot;Eve Everywoman&quot;})
-pat_dict = (patient_res.data or {}).get(&quot;resource&quot;, {})
-
-# Always visualize created records
-from hacs_utils.visualization import resource_to_markdown
-print(&quot;Created Patient:&quot;)
-print(resource_to_markdown(pat_dict, include_json=False))
-
-save_record(resource=pat_dict)
-
-pat_ref = make_reference(resource=pat_dict).data[&quot;reference&quot;]
-persisted_mrs = []
-for mri in mr_list:
-  mr_res = pin_resource(&quot;MedicationRequest&quot;, mri.model_dump())
-  mr_dict = (mr_res.data or {}).get(&quot;resource&quot;, {})
-
-  # Always visualize created medication records
-  print(f&quot;Created MedicationRequest:&quot;)
-  print(resource_to_markdown(mr_dict, include_json=False))
-
-  # Set subject reference to patient
-  mr_with_subject = set_reference(mr_dict, field=&quot;subject&quot;, reference=pat_ref).data[&quot;resource&quot;]
-  save_record(resource=mr_with_subject)
-  persisted_mrs.append(mr_with_subject)
-
-### 3) Build a Composition with a medications section and persist
-comp = Composition(title=&quot;Medications on Discharge&quot;)
-lines = []
-for group, items in med_groups.items():
-  details = &quot;, &quot;.join(e.extraction_text for e in items if e.extraction_class != &quot;medication&quot;)
-  lines.append(f&quot;{group}: {details}&quot;)
-comp.add_section(title=&quot;Medications&quot;, text=&quot;\n&quot;.join(lines))
-save_record(resource=comp.model_dump())
+| Field | Value |
+|---|---|
+| resource_type | MedicationRequest |
+| id | medicationrequest-a7945341 |
+| status | active |
+| subject | Patient/medication-tutorial |
+| dosage_instruction | [] |
+| intent | order |
+| created_at | 2025-08-26T16:16:43.492202Z |
+| updated_at | 2025-08-26T16:16:43.492206Z |
 </code></pre></div></p>
-<p>Notes:
-- <code>generate_chunked_extractions</code> performs chunking, extraction, alignment, and best‑effort deduplication, mirroring LangExtract’s approach.
-- For large texts, increase <code>extraction_passes</code> by calling the function per pass and merging results.</p>
+<h3 id="2-persist-to-database">2) Persist to Database<a class="headerlink" href="#2-persist-to-database" title="Permanent link">&para;</a></h3>
+<p>Now let's save the extracted medications to a database using HACS persistence:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_persistence.adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_postgres_adapter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Actor</span><span class="p">,</span> <span class="n">Patient</span>
+
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">persist_medications</span><span class="p">():</span>
+    <span class="c1"># Extract medications (reusing previous function)</span>
+    <span class="n">medications</span> <span class="o">=</span> <span class="k">await</span> <span class="n">extract_medications</span><span class="p">()</span>
+
+    <span class="c1"># Set up database connection</span>
+    <span class="n">database_url</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DATABASE_URL&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">database_url</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;HACS_DATABASE_URL&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">database_url</span>
+
+    <span class="c1"># Create database adapter and actor for audit trails</span>
+    <span class="n">adapter</span> <span class="o">=</span> <span class="k">await</span> <span class="n">create_postgres_adapter</span><span class="p">()</span>
+    <span class="n">actor</span> <span class="o">=</span> <span class="n">Actor</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;medication-tutorial&quot;</span><span class="p">,</span>
+        <span class="n">role</span><span class="o">=</span><span class="s2">&quot;system&quot;</span><span class="p">,</span>
+        <span class="n">permissions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;patient:write&quot;</span><span class="p">,</span> <span class="s2">&quot;medicationrequest:write&quot;</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;💾 Persisting to database...&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Create a patient first</span>
+    <span class="n">patient</span> <span class="o">=</span> <span class="n">Patient</span><span class="p">(</span>
+        <span class="n">full_name</span><span class="o">=</span><span class="s2">&quot;Tutorial Patient&quot;</span><span class="p">,</span>
+        <span class="n">birth_date</span><span class="o">=</span><span class="s2">&quot;1980-01-15&quot;</span><span class="p">,</span>
+        <span class="n">gender</span><span class="o">=</span><span class="s2">&quot;unknown&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">saved_patient</span> <span class="o">=</span> <span class="k">await</span> <span class="n">adapter</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">patient</span><span class="p">,</span> <span class="n">actor</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Saved Patient: </span><span class="si">{</span><span class="n">saved_patient</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Update medication subjects to reference the patient</span>
+    <span class="n">saved_medications</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">med</span> <span class="ow">in</span> <span class="n">medications</span><span class="p">:</span>
+        <span class="n">med</span><span class="o">.</span><span class="n">subject</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Patient/</span><span class="si">{</span><span class="n">saved_patient</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">saved_med</span> <span class="o">=</span> <span class="k">await</span> <span class="n">adapter</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">med</span><span class="p">,</span> <span class="n">actor</span><span class="p">)</span>
+        <span class="n">saved_medications</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">saved_med</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Saved MedicationRequest: </span><span class="si">{</span><span class="n">saved_med</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Verify by reading back</span>
+    <span class="k">if</span> <span class="n">saved_medications</span><span class="p">:</span>
+        <span class="n">read_med</span> <span class="o">=</span> <span class="k">await</span> <span class="n">adapter</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">MedicationRequest</span><span class="p">,</span> <span class="n">saved_medications</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">actor</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Verified: </span><span class="si">{</span><span class="n">read_med</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> references </span><span class="si">{</span><span class="n">read_med</span><span class="o">.</span><span class="n">subject</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">saved_patient</span><span class="p">,</span> <span class="n">saved_medications</span>
+
+<span class="c1"># Run persistence example (requires DATABASE_URL in .env)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">patient</span><span class="p">,</span> <span class="n">medications</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">persist_medications</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">🎉 Tutorial complete! Saved 1 patient and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">medications</span><span class="p">)</span><span class="si">}</span><span class="s2"> medications to database.&quot;</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ Database persistence skipped: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;💡 Set DATABASE_URL in .env to enable persistence&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="3-advanced-multiple-resource-types">3) Advanced: Multiple Resource Types<a class="headerlink" href="#3-advanced-multiple-resource-types" title="Permanent link">&para;</a></h3>
+<p>Extract both medications and their associated conditions:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">hacs_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Condition</span><span class="p">,</span> <span class="n">ConditionClinicalStatus</span><span class="p">,</span> <span class="n">ConditionVerificationStatus</span>
+
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">extract_medications_and_conditions</span><span class="p">():</span>
+    <span class="c1"># Enhanced clinical text</span>
+    <span class="n">enhanced_text</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    Patient was prescribed Lisinopril 10mg daily for hypertension management.</span>
+<span class="s2">    Started Metformin 500mg twice daily for type 2 diabetes control.</span>
+<span class="s2">    Continue current Aspirin 81mg daily for cardioprotection.</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+
+    <span class="n">llm</span> <span class="o">=</span> <span class="n">ChatOpenAI</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;🔍 Extracting medications and conditions...&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Extract conditions  </span>
+    <span class="n">conditions</span> <span class="o">=</span> <span class="k">await</span> <span class="n">extract</span><span class="p">(</span>
+        <span class="n">llm_provider</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
+        <span class="n">prompt</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;Extract Condition objects for each medical condition mentioned:</span>
+
+<span class="s2">        </span><span class="si">{</span><span class="n">enhanced_text</span><span class="si">}</span>
+
+<span class="s2">        Look for conditions like hypertension, diabetes, etc.&quot;&quot;&quot;</span><span class="p">,</span>
+        <span class="n">output_model</span><span class="o">=</span><span class="n">Condition</span><span class="p">,</span>
+  <span class="n">many</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">use_descriptive_schema</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">injected_fields</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;clinical_status&quot;</span><span class="p">:</span> <span class="n">ConditionClinicalStatus</span><span class="o">.</span><span class="n">ACTIVE</span><span class="p">,</span>
+            <span class="s2">&quot;verification_status&quot;</span><span class="p">:</span> <span class="n">ConditionVerificationStatus</span><span class="o">.</span><span class="n">CONFIRMED</span><span class="p">,</span>
+            <span class="s2">&quot;subject&quot;</span><span class="p">:</span> <span class="s2">&quot;Patient/tutorial-123&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Also extracted </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">conditions</span><span class="p">)</span><span class="si">}</span><span class="s2"> conditions:&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">cond</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">conditions</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">. </span><span class="si">{</span><span class="n">cond</span><span class="o">.</span><span class="n">code</span><span class="si">}</span><span class="s2"> - Status: </span><span class="si">{</span><span class="n">cond</span><span class="o">.</span><span class="n">clinical_status</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">conditions</span>
+
+<span class="c1"># Run enhanced extraction</span>
+<span class="n">conditions</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">extract_medications_and_conditions</span><span class="p">())</span>
+</code></pre></div>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<p>This tutorial demonstrated:</p>
+<ol>
+<li><strong>Basic medication extraction</strong> using the current HACS <code>extract()</code> API</li>
+<li><strong>Database persistence</strong> with proper audit trails and actor authentication</li>
+<li><strong>Multiple resource types</strong> - extracting both medications and conditions</li>
+</ol>
+<h3 id="key-features-used">Key Features Used<a class="headerlink" href="#key-features-used" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>hacs_utils.extraction.extract()</code> - Core LLM extraction with HACS models</li>
+<li><code>injected_fields</code> - Pre-filling stable enum fields for consistency</li>
+<li><code>use_descriptive_schema=True</code> - Providing rich context to LLMs</li>
+<li>Database persistence with <code>hacs_persistence</code> adapters</li>
+<li>Actor-based audit trails for all operations</li>
+</ul>
+<h3 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><a href="../../how-to/persist_resources/">Persist Resources</a></strong> - Learn more about database operations</li>
+<li><strong><a href="../../how-to/extract_annotations/">Extract Annotations</a></strong> - Advanced extraction patterns  </li>
+<li><strong><a href="../complete_context_engineering/">Complete Context Engineering</a></strong> - Full workflow examples</li>
+</ul>
 
 
 

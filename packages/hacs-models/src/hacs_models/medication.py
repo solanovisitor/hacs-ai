@@ -419,6 +419,150 @@ class Medication(DomainResource):
             "Status should be: active, inactive, or entered-in-error"
         ]
 
+    @classmethod
+    def get_facades(cls) -> dict[str, "FacadeSpec"]:
+        """Return available extraction facades for Medication."""
+        from .base_resource import FacadeSpec
+        
+        return {
+            "basic": FacadeSpec(
+                fields=["code", "form", "strength_description", "status"],
+                required_fields=["code"],
+                field_examples={
+                    "code": {"text": "Paracetamol"},
+                    "form": {"text": "tablet"},
+                    "strength_description": "500mg",
+                    "status": "active"
+                },
+                field_types={
+                    "code": "CodeableConcept | None",
+                    "form": "CodeableConcept | None", 
+                    "strength_description": "str | None",
+                    "status": "MedicationStatus | None"
+                },
+                description="Essential medication identification and form",
+                llm_guidance="Use this facade for extracting basic medication information from prescriptions or clinical notes. Focus on drug name, dosage form, and strength.",
+                conversational_prompts=[
+                    "What medication was prescribed?",
+                    "What is the dosage form and strength?",
+                    "Which drugs are mentioned in the treatment?"
+                ]
+            ),
+            
+            "clinical": FacadeSpec(
+                fields=["code", "generic_name", "brand_name", "form", "strength_description", "category", "status"],
+                required_fields=["code"],
+                field_examples={
+                    "code": {"text": "acetaminophen 500mg tablet"},
+                    "generic_name": "acetaminophen",
+                    "brand_name": "Tylenol",
+                    "form": {"text": "tablet"},
+                    "strength_description": "500mg",
+                    "category": [{"text": "analgesic"}],
+                    "status": "active"
+                },
+                field_types={
+                    "code": "CodeableConcept | None",
+                    "generic_name": "str | None",
+                    "brand_name": "str | None",
+                    "form": "CodeableConcept | None",
+                    "strength_description": "str | None",
+                    "category": "list[CodeableConcept]",
+                    "status": "MedicationStatus | None"
+                },
+                description="Comprehensive medication information with generic and brand names",
+                llm_guidance="Extract detailed medication information when both generic and brand names are mentioned, or when drug classification is discussed.",
+                conversational_prompts=[
+                    "What is the generic name of this medication?",
+                    "What brand name was prescribed?",
+                    "What class of medication is this?"
+                ]
+            ),
+            
+            "manufacturing": FacadeSpec(
+                fields=["code", "manufacturer", "batch", "ndc", "form", "status"],
+                required_fields=["code"],
+                field_examples={
+                    "code": {"text": "Aspirin 81mg tablet"},
+                    "manufacturer": {"reference": "Organization/bayer-pharma"},
+                    "batch": {"lot_number": "LOT123456", "expiration_date": "2025-12-31"},
+                    "ndc": "0123-4567-89",
+                    "form": {"text": "tablet"},
+                    "status": "active"
+                },
+                field_types={
+                    "code": "CodeableConcept | None",
+                    "manufacturer": "ResourceReference | None",
+                    "batch": "MedicationBatch | None",
+                    "ndc": "str | None",
+                    "form": "CodeableConcept | None",
+                    "status": "MedicationStatus | None"
+                },
+                description="Medication manufacturing and batch information",
+                llm_guidance="Use when extracting pharmaceutical manufacturing details, lot numbers, expiration dates, or NDC codes from medication labels or pharmacy data.",
+                conversational_prompts=[
+                    "What is the lot number of this medication?",
+                    "When does this medication expire?",
+                    "Who manufactured this drug?"
+                ]
+            ),
+            
+            "controlled": FacadeSpec(
+                fields=["code", "schedule", "category", "special_handling", "status"],
+                required_fields=["code"],
+                field_examples={
+                    "code": {"text": "morphine 10mg tablet"},
+                    "schedule": {"text": "Schedule II", "coding": [{"code": "C-II", "display": "Schedule II"}]},
+                    "category": [{"text": "controlled substance"}, {"text": "opioid"}],
+                    "special_handling": [{"text": "secure storage required"}],
+                    "status": "active"
+                },
+                field_types={
+                    "code": "CodeableConcept | None",
+                    "schedule": "CodeableConcept | None",
+                    "category": "list[CodeableConcept]",
+                    "special_handling": "list[CodeableConcept]",
+                    "status": "MedicationStatus | None"
+                },
+                description="Controlled substance and special handling information",
+                llm_guidance="Extract controlled substance information when DEA schedules, special storage requirements, or regulatory classifications are mentioned.",
+                conversational_prompts=[
+                    "What is the controlled substance schedule?",
+                    "Are there special handling requirements?",
+                    "What regulatory classification applies?"
+                ]
+            ),
+            
+            "ingredients": FacadeSpec(
+                fields=["code", "ingredient", "strength_description", "form", "status"],
+                required_fields=["code"],
+                field_examples={
+                    "code": {"text": "acetaminophen/codeine combination"},
+                    "ingredient": [
+                        {"item_codeable_concept": {"text": "acetaminophen"}, "is_active": True},
+                        {"item_codeable_concept": {"text": "codeine phosphate"}, "is_active": True}
+                    ],
+                    "strength_description": "300mg/30mg",
+                    "form": {"text": "tablet"},
+                    "status": "active"
+                },
+                field_types={
+                    "code": "CodeableConcept | None",
+                    "ingredient": "list[MedicationIngredient]",
+                    "strength_description": "str | None",
+                    "form": "CodeableConcept | None",
+                    "status": "MedicationStatus | None"
+                },
+                description="Detailed medication ingredient composition",
+                llm_guidance="Use when extracting complex medication formulations with multiple active ingredients or when ingredient-specific information is documented.",
+                conversational_prompts=[
+                    "What are the active ingredients?",
+                    "What is the composition of this medication?",
+                    "Are there multiple components in this drug?"
+                ]
+            )
+        }
+
 
 # Convenience functions for common medication types
 
