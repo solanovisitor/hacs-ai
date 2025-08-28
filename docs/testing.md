@@ -167,7 +167,7 @@ Test results are available in multiple formats:
 - ⏭️ **Skip**: Test skipped (e.g., MCP integration disabled)
 - ⚠️ **Warning**: Tool executed but with warnings or performance issues
 
-### Example Test Output (real)
+### Example Test Output
 
 ```
 🚀 HACS Tools Test Suite

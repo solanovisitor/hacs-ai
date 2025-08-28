@@ -42,12 +42,14 @@ class Appointment(DomainResource):
     # --- LLM-friendly extractable facade overrides ---
     @classmethod
     def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
-        """Return fields that should be extracted by LLMs (3-4 key fields only)."""
+        """Return fields that should be extracted by LLMs - expanded for better coverage."""
         return [
-            "status",
-            "start",
-            "reason_text",
-            "description",
+            "status",           # Appointment status (booked, arrived, fulfilled, cancelled)
+            "start",            # Appointment start time
+            "end",              # Appointment end time when mentioned
+            "reason_text",      # Reason for appointment
+            "description",      # Appointment description
+            "specialty",        # Medical specialty when mentioned
         ]
 
     @classmethod
@@ -68,6 +70,44 @@ class Appointment(DomainResource):
         """Coerce extractable payload to proper types with relaxed validation."""
         # Appointment fields are mostly strings, minimal coercion needed
         return payload.copy()
+
+    @classmethod
+    def get_extraction_examples(cls) -> dict[str, Any]:
+        """Return extraction examples showing different extractable field scenarios."""
+        # Scheduled appointment
+        scheduled_example = {
+            "status": "booked",
+            "start": "2024-08-20T14:00:00",
+            "end": "2024-08-20T14:30:00",
+            "reason_text": "consulta de rotina",
+            "specialty": "cardiologia",
+            "description": "Consulta de acompanhamento cardiológico",
+        }
+
+        # Follow-up appointment
+        followup_example = {
+            "status": "booked",
+            "start": "2024-08-25T09:00:00",
+            "reason_text": "retorno",
+            "description": "Retorno para avaliar exames",
+        }
+
+        # Cancelled appointment
+        cancelled_example = {
+            "status": "cancelled",
+            "start": "2024-08-18T16:00:00",
+            "reason_text": "consulta pediatria",
+        }
+
+        return {
+            "object": scheduled_example,
+            "array": [scheduled_example, followup_example, cancelled_example],
+            "scenarios": {
+                "scheduled": scheduled_example,
+                "followup": followup_example,
+                "cancelled": cancelled_example,
+            }
+        }
 
     @classmethod
     def llm_hints(cls) -> list[str]:  # type: ignore[override]

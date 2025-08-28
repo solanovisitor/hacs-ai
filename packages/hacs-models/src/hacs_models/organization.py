@@ -8,7 +8,7 @@ FHIR R4 Specification:
 https://hl7.org/fhir/R4/organization.html
 """
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field, field_validator
 
@@ -117,6 +117,12 @@ class Organization(DomainResource):
         description="Technical endpoints providing access to services operated for the organization",
     )
 
+    # Anonymous organization support for analytics
+    anonymous: bool = Field(
+        default=False,
+        description="Whether this is an anonymous organization record (relaxes name requirements)",
+    )
+
     @field_validator("name")
     @classmethod
     def validate_name(cls, v):
@@ -138,6 +144,10 @@ class Organization(DomainResource):
     @property
     def display_name(self) -> str:
         """Get display name for the organization."""
+        # Handle anonymous organizations
+        if self.anonymous and not self.name and not self.alias:
+            return "Anonymous Organization"
+
         if self.name:
             return self.name
         elif self.alias:
@@ -261,21 +271,175 @@ class Organization(DomainResource):
     # --- LLM-friendly extractable facade overrides ---
     @classmethod
     def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
-        # Prefer simple name-only minimal extractable shape
+        # Focus on essential organization info LLMs can reliably extract
         return [
-            "name",
-            "alias",
-            "type",
-            "telecom",
-            "address",
+            "name",           # Primary organization name
+            "type",           # Organization type/specialty
+            "anonymous",      # Flag for anonymous facilities
+            "description",    # Brief description when mentioned
         ]
+
+    @classmethod
+    def get_required_extractables(cls) -> list[str]:
+        """Fields that are absolutely required for a valid Organization extraction."""
+        return []  # No fields strictly required - allow anonymous organizations
+
+    @classmethod
+    def get_canonical_defaults(cls) -> dict[str, Any]:
+        """Default values for system/required fields during extraction."""
+        return {
+            "active": True,  # Default to active organization
+            "anonymous": False,  # Required by facades for extraction
+        }
+
+    @classmethod
+    def get_extraction_examples(cls) -> dict[str, Any]:
+        """Return extraction examples showing different extractable field scenarios."""
+        # Named healthcare organization
+        named_example = {
+            "name": "Hospital Santa Casa",
+            "type": [{"text": "hospital"}],
+            "anonymous": False,
+        }
+
+        # Anonymous healthcare facility
+        anonymous_example = {
+            "type": [{"text": "clínica"}],
+            "anonymous": True,
+        }
+
+        # Specialized facility with description
+        specialized_example = {
+            "name": "Centro de Cardiologia",
+            "type": [{"text": "specialty clinic"}],
+            "description": "Centro especializado em cardiologia",
+            "anonymous": False,
+        }
+
+        return {
+            "object": named_example,
+            "array": [named_example, anonymous_example, specialized_example],
+            "scenarios": {
+                "named": named_example,
+                "anonymous": anonymous_example,
+                "specialized": specialized_example,
+            }
+        }
 
     @classmethod
     def llm_hints(cls) -> list[str]:  # type: ignore[override]
         return [
-            "- Prefer extracting the name field when an explicit name is present",
-            "- Aliases can complement the name when available",
+            "- Extract organization name from: 'Hospital', 'Clínica', 'Centro Médico', facility mentions",
+            "- Set anonymous=true if healthcare facility mentioned but no identifiable name given",
+            "- Include organization type/specialty in type field (hospital, clinic, pharmacy)",
+            "- Extract only when a healthcare organization/facility is explicitly mentioned",
+            "- Focus on healthcare facilities, not general businesses or personal names",
         ]
+
+    @classmethod
+    def get_facades(cls) -> dict[str, "FacadeSpec"]:
+        """Return available extraction facades for Organization."""
+        from .base_resource import FacadeSpec
+        
+        return {
+            "info": FacadeSpec(
+                fields=["name", "type", "anonymous", "description"],
+                required_fields=["anonymous"],
+                field_examples={
+                    "name": "Hospital Santa Casa",
+                    "type": [{"text": "hospital"}],
+                    "anonymous": False,
+                    "description": "Regional teaching hospital"
+                },
+                field_types={
+                    "name": "str | None",
+                    "type": "list[CodeableConcept]",
+                    "anonymous": "bool",
+                    "description": "str | None"
+                },
+                description="Core organization identification and classification",
+                llm_guidance="Use this facade for extracting basic organization identity from clinical notes or documents. Focus on healthcare facilities mentioned in context.",
+                conversational_prompts=[
+                    "What healthcare organizations are mentioned?",
+                    "Where did this encounter take place?",
+                    "Which hospital or clinic was involved?"
+                ]
+            ),
+            
+            "contact": FacadeSpec(
+                fields=["name", "telecom", "address", "anonymous"],
+                required_fields=["anonymous"],
+                field_examples={
+                    "name": "Centro Médico Regional",
+                    "telecom": [{"system": "phone", "value": "(11) 9999-9999", "use": "work"}],
+                    "address": [{"use": "work", "line": ["Rua das Flores, 123"], "city": "São Paulo"}],
+                    "anonymous": False
+                },
+                field_types={
+                    "name": "str | None",
+                    "telecom": "list[ContactPoint]",
+                    "address": "list[Address]",
+                    "anonymous": "bool"
+                },
+                description="Organization contact and location information",
+                llm_guidance="Extract contact details when organization location, phone, or address information is mentioned in the text.",
+                conversational_prompts=[
+                    "What is the organization's contact information?",
+                    "Where is this facility located?",
+                    "How can this organization be reached?"
+                ]
+            ),
+            
+            "hierarchy": FacadeSpec(
+                fields=["name", "type", "part_of", "anonymous"],
+                required_fields=["anonymous"],
+                field_examples={
+                    "name": "Cardiology Department",
+                    "type": [{"text": "department"}],
+                    "part_of": {"reference": "Organization/hospital-main"},
+                    "anonymous": False
+                },
+                field_types={
+                    "name": "str | None",
+                    "type": "list[CodeableConcept]",
+                    "part_of": "ResourceReference | None", 
+                    "anonymous": "bool"
+                },
+                description="Organization structure and parent relationships",
+                llm_guidance="Use when extracting departmental or subsidiary organization information that shows hierarchical relationships.",
+                conversational_prompts=[
+                    "Which department or unit is involved?",
+                    "What is the organizational structure?",
+                    "Which facility is this part of?"
+                ]
+            ),
+            
+            "identity": FacadeSpec(
+                fields=["name", "identifier", "alias", "active", "anonymous"],
+                required_fields=["anonymous"],
+                field_examples={
+                    "name": "Hospital das Clínicas",
+                    "identifier": [{"value": "1234567890", "type": "NPI"}],
+                    "alias": ["HC", "Hospital das Clínicas SP"],
+                    "active": True,
+                    "anonymous": False
+                },
+                field_types={
+                    "name": "str | None",
+                    "identifier": "list[Identifier]",
+                    "alias": "list[str]",
+                    "active": "bool | None",
+                    "anonymous": "bool"
+                },
+                description="Complete organization identification and alternative names",
+                llm_guidance="Extract comprehensive organization identity when multiple names, codes, or identifiers are mentioned.",
+                conversational_prompts=[
+                    "What are all the names this organization is known by?",
+                    "What are the organization's official identifiers?",
+                    "Is this organization currently active?"
+                ]
+            )
+        }
 
 
 # Convenience functions for common organization types

@@ -152,7 +152,14 @@ from hacs_registry import get_global_registry
 
 reg = get_global_registry()
 snapshots = reg.find_resources(name_pattern="PatientSnapshot")
-print(len(snapshots) > 0)
+print("PatientSnapshot resources found:", len(snapshots) > 0)
+print("Registry available:", reg is not None)
+```
+
+**Output:**
+```
+PatientSnapshot resources found: False
+Registry available: True
 ```
 
 ### Next steps

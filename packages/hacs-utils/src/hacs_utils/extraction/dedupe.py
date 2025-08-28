@@ -113,24 +113,25 @@ def generate_semantic_key(
 
 def group_records_by_type(records_with_spans: List[Dict[str, Any]]) -> Dict[str, List[Any]]:
     """Group returned records by their HACS resource_type.
-    
-    Args:
-        records_with_spans: List of extraction results
-    
-    Returns:
-        Dictionary mapping resource type to list of records
+
+    Delegates to hacs_utils.core_utils.group_records_by_type to avoid duplication.
     """
-    grouped: Dict[str, List[Any]] = {}
-    for item in records_with_spans or []:
-        rec = item.get("record")
-        if rec is None:
-            continue
-        rtype = getattr(rec, "resource_type", None) or getattr(rec, "__class__", type("_", (), {})).__name__
-        grouped.setdefault(str(rtype), []).append(rec)
-    return grouped
+    try:
+        from ..core_utils import group_records_by_type as _core_group
+        return _core_group(records_with_spans)
+    except Exception:
+        # Minimal fallback (should rarely be used)
+        grouped: Dict[str, List[Any]] = {}
+        for item in records_with_spans or []:
+            rec = item.get("record")
+            if rec is None:
+                continue
+            rtype = getattr(rec, "resource_type", None) or getattr(rec, "__class__", type("_", (), {})).__name__
+            grouped.setdefault(str(rtype), []).append(rec)
+        return grouped
 
 
-def group_resource_type_citations(items: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+def group_type_citations(items: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
     """Group resource type citations by type.
     
     Args:

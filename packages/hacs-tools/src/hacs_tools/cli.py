@@ -138,7 +138,7 @@ async def cmd_extract(args: argparse.Namespace) -> int:
         llm_provider = ChatOpenAI(
             model=args.model,
             timeout=args.window_timeout,
-            temperature=0.1,
+            temperature=0,
         )
     except Exception as e:
         print(f"Error creating LLM provider: {e}")

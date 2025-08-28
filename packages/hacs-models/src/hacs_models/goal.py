@@ -379,6 +379,41 @@ class Goal(DomainResource):
         return coerced
 
     @classmethod
+    def get_extraction_examples(cls) -> dict[str, Any]:
+        """Return extraction examples showing different extractable field scenarios."""
+        # Weight loss goal with target
+        weight_loss_example = {
+            "lifecycle_status": "active",
+            "description": {"text": "perder peso"},
+            "target": [{"measure": {"text": "peso corporal"}, "detail_quantity": {"value": 80, "unit": "kg"}}],
+            "start_date": "2024-08-15",
+        }
+
+        # Blood pressure control goal
+        bp_example = {
+            "lifecycle_status": "active",
+            "description": {"text": "controlar pressão arterial"},
+            "target": [{"measure": {"text": "pressão arterial"}, "detail_string": "abaixo de 130/80"}],
+        }
+
+        # Simple goal without measurable target
+        simple_example = {
+            "lifecycle_status": "proposed",
+            "description": {"text": "melhorar qualidade do sono"},
+            "start_date": "2024-09-01",
+        }
+
+        return {
+            "object": weight_loss_example,
+            "array": [weight_loss_example, bp_example, simple_example],
+            "scenarios": {
+                "weight_loss": weight_loss_example,
+                "blood_pressure": bp_example,
+                "simple": simple_example,
+            }
+        }
+
+    @classmethod
     def llm_hints(cls) -> list[str]:  # type: ignore[override]
         """Provide LLM-specific extraction hints."""
         return [

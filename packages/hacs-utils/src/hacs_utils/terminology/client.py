@@ -122,6 +122,26 @@ class UMLSClient:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+    def get_atoms(self, cui: str, version: str = "current", page_size: int = 25) -> Dict[str, Any]:
+        """Return atoms (source-specific entries) for a given CUI.
+
+        Useful to obtain source codes (e.g., SNOMED, LOINC, RXNORM) from a CUI.
+        """
+        key = self._ensure_key()
+        if not key:
+            return {"success": False, "error": "Missing UMLS_API_KEY"}
+        try:
+            import requests
+
+            params = {"apiKey": key, "pageSize": page_size}
+            resp = requests.get(
+                f"{self.base_url}/content/{version}/CUI/{cui}/atoms", params=params, timeout=20
+            )
+            resp.raise_for_status()
+            return {"success": True, "data": resp.json()}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
     def source_lookup(self, source: str, code: str, version: str = "current") -> Dict[str, Any]:
         key = self._ensure_key()
         if not key:

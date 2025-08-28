@@ -14,7 +14,16 @@ from concurrent.futures import ThreadPoolExecutor
 
 from hacs_registry.tool_registry import register_tool, VersionStatus
 from hacs_models import HACSResult, get_model_registry
-from hacs_models.annotation import ExtractionRecipe, Extraction
+from hacs_models.annotation import ExtractionRecipe
+# Note: Extraction class may be in hacs_models.annotation or hacs_models depending on version
+try:
+    from hacs_models.annotation import Extraction
+except ImportError:
+    # Fallback for older versions
+    class Extraction:
+        """Placeholder for Extraction class."""
+        pass
+from hacs_tools.common import HACSCommonInput, build_error_plan
 
 try:
     from pydantic import BaseModel, Field
@@ -27,7 +36,7 @@ except Exception:  # pragma: no cover
         return None
 
 
-class ExtractFieldsInput(BaseModel):
+class ExtractFieldsInput(HACSCommonInput):
     text: str = Field(description="Input text/context to extract from")
     resource_type: str = Field(description="Target HACS resource class name (e.g., Observation)")
     fields: List[str] | None = Field(
@@ -90,7 +99,8 @@ def extract_hacs_fields(
             try:
                 output_model = resource_class.pick(*fields)  # type: ignore[attr-defined]
             except Exception as e:
-                return HACSResult(success=False, message="Invalid field subset", error=str(e))
+                plan = build_error_plan(resource_type, {"resource_type": resource_type, "fields": fields}, e)
+                return HACSResult(success=False, message="Invalid field subset", error=str(e), data={"plan": plan})
 
         # Prompt
         obs_hint = ""
@@ -215,7 +225,8 @@ def extract_hacs_fields(
         )
         
     except Exception as e:
-        return HACSResult(success=False, message="Extraction failed", error=str(e))
+        plan = build_error_plan(resource_type, {"resource_type": resource_type, "text": text[:100] + "..." if len(text) > 100 else text}, e, extra_suggestions=["Check model API key configuration", "Verify text contains extractable content"])
+        return HACSResult(success=False, message="Extraction failed", error=str(e), data={"plan": plan})
 
 
 extract_hacs_fields._tool_args = ExtractFieldsInput  # type: ignore[attr-defined]

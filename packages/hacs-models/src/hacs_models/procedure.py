@@ -13,7 +13,7 @@ from typing import Any, Literal
 
 from pydantic import Field, field_validator
 
-from .base_resource import DomainResource
+from .base_resource import DomainResource, FacadeSpec
 from .observation import CodeableConcept
 from .types import (
     ProcedureStatus,
@@ -346,15 +346,14 @@ class Procedure(DomainResource):
     # --- LLM-friendly extractable facade overrides ---
     @classmethod
     def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
-        # Comprehensive set of clinically relevant extractable fields
+        # Focus on essential procedure info LLMs can extract reliably
         return [
-            "status",
-            "code",
-            "performed_date_time",
-            "performer",
-            "outcome",
-            "body_site",
-            "reason_text",
+            "status",                # Procedure status (completed, in-progress, etc.)
+            "code",                  # Procedure name/code
+            "performed_date_time",   # When the procedure was performed
+            "outcome",               # Outcome/result when mentioned
+            "body_site",             # Body site/location when specified
+            "reason_code",           # Reason for procedure (better than reason_text)
         ]
 
     @classmethod
@@ -391,11 +390,198 @@ class Procedure(DomainResource):
         return coerced
 
     @classmethod
+    def get_extraction_examples(cls) -> dict[str, Any]:
+        """Return extraction examples showing different extractable field scenarios."""
+        # Surgical procedure
+        surgical_example = {
+            "status": "completed",
+            "code": {"text": "apendicectomia"},
+            "performed_date_time": "2024-08-15T14:30:00",
+            "outcome": {"text": "sucesso, sem complicações"},
+            "body_site": [{"text": "abdome"}],
+            "reason_code": [{"text": "apendicite aguda"}],
+        }
+
+        # Diagnostic procedure
+        diagnostic_example = {
+            "status": "completed",
+            "code": {"text": "endoscopia digestiva alta"},
+            "performed_date_time": "2024-08-15T09:00:00",
+            "outcome": {"text": "mucosa normal"},
+        }
+
+        # Simple procedure without outcome
+        simple_example = {
+            "status": "completed",
+            "code": {"text": "aspiração"},
+            "body_site": [{"text": "vias aéreas"}],
+        }
+
+        return {
+            "object": surgical_example,
+            "array": [surgical_example, diagnostic_example, simple_example],
+            "scenarios": {
+                "surgical": surgical_example,
+                "diagnostic": diagnostic_example,
+                "simple": simple_example,
+            }
+        }
+
+    @classmethod
     def llm_hints(cls) -> list[str]:  # type: ignore[override]
         return [
             "- Map textual procedures (e.g., 'aspiração') into code.text",
             "- performer/date/time may be null when not explicit",
         ]
+
+    @classmethod
+    def get_facades(cls) -> dict[str, FacadeSpec]:
+        """Return available extraction facades for Procedure."""
+        return {
+            "core": FacadeSpec(
+                fields=["code", "status", "performed_date_time", "performed_period", "category"],
+                required_fields=["code"],
+                field_hints={
+                    "code": "Procedure name in Portuguese (e.g., 'cirurgia cardíaca', 'endoscopia digestiva')",
+                    "status": "Procedure status: 'completed', 'in-progress', 'not-done', 'stopped'",
+                    "performed_date_time": "Specific date/time when procedure was performed",
+                    "performed_period": "Time period if procedure spans multiple sessions",
+                    "category": "Procedure category: 'surgical', 'diagnostic', 'therapeutic'",
+                },
+                field_examples={
+                    "code": {"text": "endoscopia digestiva alta"},
+                    "status": "completed",
+                    "performed_date_time": "2024-01-15T09:00:00",
+                    "performed_period": {"start": "2024-01-15T09:00:00", "end": "2024-01-15T10:30:00"},
+                    "category": {"text": "diagnostic"}
+                },
+                field_types={
+                    "code": "CodeableConcept",
+                    "status": "enum(preparation|in-progress|not-done|on-hold|stopped|completed|entered-in-error|unknown)",
+                    "performed_date_time": "datetime",
+                    "performed_period": "Period",
+                    "category": "CodeableConcept"
+                },
+                description="Core procedure identification and timing",
+                llm_guidance="Extract the specific procedure performed, its completion status, and when it took place. Focus on the procedure type and timing.",
+                conversational_prompts=[
+                    "What procedure was performed?",
+                    "When was this procedure done?",
+                    "Was the procedure completed successfully?",
+                    "What type of procedure was this (surgical, diagnostic, etc.)?"
+                ],
+                strict=False,
+            ),
+            
+            "body_site": FacadeSpec(
+                fields=["body_site", "location", "laterality"],
+                required_fields=[],
+                field_hints={
+                    "body_site": "Anatomical site of procedure (e.g., 'abdome', 'joelho direito', 'coração')",
+                    "location": "Healthcare facility or location where procedure was performed",
+                    "laterality": "Laterality if applicable: 'left', 'right', 'bilateral'",
+                },
+                field_examples={
+                    "body_site": [{"text": "abdome superior"}],
+                    "location": {"reference": "Location/hospital-suite-3"},
+                    "laterality": "right"
+                },
+                field_types={
+                    "body_site": "array[CodeableConcept]",
+                    "location": "Reference[Location]",
+                    "laterality": "string"
+                },
+                description="Anatomical location and site information",
+                llm_guidance="Extract where on/in the body the procedure was performed and the physical location. Include laterality for paired organs.",
+                conversational_prompts=[
+                    "Where on the body was this procedure performed?",
+                    "Which side was involved (left, right, both)?",
+                    "Where did this procedure take place?"
+                ],
+                strict=False,
+                many=True,
+                max_items=3,
+            ),
+            
+            "outcome": FacadeSpec(
+                fields=["outcome", "complication", "follow_up", "note"],
+                required_fields=[],
+                field_hints={
+                    "outcome": "Procedure result or outcome (successful, unsuccessful, partial)",
+                    "complication": "Complications that occurred during or after procedure",
+                    "follow_up": "Post-procedure follow-up instructions or requirements",
+                    "note": "Additional clinical notes about the procedure",
+                },
+                field_examples={
+                    "outcome": {"text": "procedimento realizado com sucesso"},
+                    "complication": [{"text": "sangramento mínimo"}],
+                    "follow_up": [{"text": "retorno em 1 semana para avaliação"}],
+                    "note": [{"text": "Procedimento transcorreu sem intercorrências significativas"}]
+                },
+                field_types={
+                    "outcome": "CodeableConcept",
+                    "complication": "array[CodeableConcept]",
+                    "follow_up": "array[CodeableConcept]",
+                    "note": "array[Annotation]"
+                },
+                description="Procedure outcomes and follow-up information",
+                llm_guidance="Extract the results of the procedure, any complications encountered, and post-procedure care instructions.",
+                conversational_prompts=[
+                    "How did the procedure go?",
+                    "Were there any complications?",
+                    "What follow-up is needed?",
+                    "Are there any special notes about this procedure?"
+                ],
+                strict=False,
+            ),
+        }
+
+    # --- LLM-friendly extractable overrides ---
+    @classmethod
+    def get_extractable_fields(cls) -> list[str]:  # type: ignore[override]
+        """Return fields that should be extracted by LLMs (3-4 key fields only)."""
+        return [
+            "code",
+            "status", 
+            "performed_date_time",
+            "category",
+        ]
+
+    @classmethod
+    def get_required_extractables(cls) -> list[str]:
+        """Fields that must be provided for valid extraction."""
+        return ["code"]
+
+    @classmethod
+    def get_canonical_defaults(cls) -> dict[str, Any]:
+        """Default values for system/required fields during extraction."""
+        return {
+            "status": "completed",
+            "subject": "Patient/UNKNOWN",
+            "code": {"text": ""},  # Will be filled by LLM
+        }
+
+    @classmethod
+    def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
+        """Coerce extractable payload to proper types with relaxed validation."""
+        coerced = payload.copy()
+        
+        # Convert string-based code to CodeableConcept if needed
+        if "code" in coerced and isinstance(coerced["code"], str):
+            coerced["code"] = {"text": coerced["code"]}
+        
+        # Convert string-based category to CodeableConcept if needed
+        if "category" in coerced and isinstance(coerced["category"], str):
+            coerced["category"] = {"text": coerced["category"]}
+        
+        # Remove system fields that should be auto-generated (LLM should not provide these)
+        system_fields = ["id", "created_at", "updated_at", "version", "identifier", 
+                        "language", "implicit_rules", "meta_profile", "meta_source", 
+                        "meta_security", "meta_tag", "resource_type"]
+        for field in system_fields:
+            coerced.pop(field, None)
+        
+        return coerced
 
 
 # Convenience functions for common procedure types

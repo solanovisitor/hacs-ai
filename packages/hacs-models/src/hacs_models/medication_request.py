@@ -14,7 +14,7 @@ from typing import Any, Literal
 
 from pydantic import Field, field_validator
 
-from .base_resource import DomainResource
+from .base_resource import DomainResource, FacadeSpec
 from .observation import CodeableConcept
 from .types import (
     MedicationRequestIntent,
@@ -469,14 +469,181 @@ class MedicationRequest(DomainResource):
         return coerced
 
     @classmethod
+    def get_extraction_examples(cls) -> dict[str, Any]:
+        """Return extraction examples showing different extractable field scenarios."""
+        # Complete medication request
+        complete_example = {            "status": "active",
+            "medication_codeable_concept": {"text": "Losartana 50mg"},
+            "dosage_instruction": [{"text": "1 comprimido pela manhã"}],
+            "reason_code": [{"text": "hipertensão"}],
+        }
+
+        # Simple medication without dosage
+        simple_example = {            "status": "active",
+            "medication_codeable_concept": {"text": "Paracetamol"},
+        }
+
+        # Medication with dosage but no reason
+        dosage_example = {            "status": "active",
+            "medication_codeable_concept": {"text": "Metformina 850mg"},
+            "dosage_instruction": [{"text": "2 vezes ao dia"}],
+        }
+
+        return {
+            "object": complete_example,
+            "array": [complete_example, simple_example, dosage_example],
+            "scenarios": {
+                "complete": complete_example,
+                "simple": simple_example,
+                "with_dosage": dosage_example,
+            }
+        }
+
+    @classmethod
     def llm_hints(cls) -> list[str]:  # type: ignore[override]
         """Provide LLM-specific extraction hints."""
         return [
             "Extract medication name/code from prescription text",
             "Include dosage instructions (dose, frequency, duration)",
-            "Capture reason for prescription when mentioned",
+            "Capture reason for prescription when mentioned (reason_code.text)",
             "Status should be: active, completed, cancelled, or stopped"
         ]
+
+    @classmethod
+    def get_facades(cls) -> dict[str, FacadeSpec]:
+        """Return available extraction facades for MedicationRequest."""
+        return {
+            "medication": FacadeSpec(
+                fields=["medication_codeable_concept", "medication_reference", "medication_text"],
+                required_fields=["medication_codeable_concept"],
+                field_hints={
+                    "medication_codeable_concept": "Medication name and strength (e.g., 'losartana 50mg', 'paracetamol 500mg')",
+                    "medication_reference": "Reference to a Medication resource if available",
+                    "medication_text": "Free text description of the medication",
+                },
+                field_examples={
+                    "medication_codeable_concept": {"text": "losartana 50mg"},
+                    "medication_reference": {"reference": "Medication/losartan-50mg"},
+                    "medication_text": "Losartana potássica 50mg comprimidos"
+                },
+                field_types={
+                    "medication_codeable_concept": "CodeableConcept",
+                    "medication_reference": "Reference[Medication]",
+                    "medication_text": "string"
+                },
+                description="Medication identification and coding",
+                llm_guidance="Extract the specific medication being prescribed, including name, strength, and formulation. Focus on the active ingredient and dosage form.",
+                conversational_prompts=[
+                    "What medication is being prescribed?",
+                    "What is the strength or dose of this medication?",
+                    "What is the brand name or generic name?",
+                    "What formulation is this (tablet, capsule, liquid)?"
+                ],
+                strict=False,
+            ),
+            
+            "dosage": FacadeSpec(
+                fields=["dosage_instruction", "dose_and_rate", "frequency", "timing", "route"],
+                required_fields=[],
+                field_hints={
+                    "dosage_instruction": "Free text dosage instructions as written by prescriber",
+                    "dose_and_rate": "Structured dose amount and administration rate",
+                    "frequency": "How often to take medication (e.g., '2x daily', 'every 8 hours')",
+                    "timing": "Structured timing information for administration",
+                    "route": "Route of administration (oral, injectable, topical, etc.)",
+                },
+                field_examples={
+                    "dosage_instruction": [{"text": "Tomar 1 comprimido 2 vezes ao dia após as refeições"}],
+                    "dose_and_rate": [{"dose_quantity": {"value": 50, "unit": "mg"}}],
+                    "frequency": "2x ao dia",
+                    "route": {"text": "oral"},
+                    "timing": {"repeat": {"frequency": 2, "period": 1, "period_unit": "d"}}
+                },
+                field_types={
+                    "dosage_instruction": "array[DosageInstruction]",
+                    "dose_and_rate": "array[DoseAndRate]",
+                    "frequency": "string",
+                    "timing": "Timing",
+                    "route": "CodeableConcept"
+                },
+                description="Dosage instructions and administration details",
+                llm_guidance="Extract how the medication should be taken: dose amount, frequency, timing, and route. Include both structured and free-text instructions.",
+                conversational_prompts=[
+                    "How much of this medication should be taken?",
+                    "How often should this medication be taken?",
+                    "When should this medication be taken?",
+                    "How should this medication be administered?"
+                ],
+                strict=False,
+            ),
+            
+            "intent": FacadeSpec(
+                fields=["intent", "category", "priority", "status"],
+                required_fields=["intent"],
+                field_hints={
+                    "intent": "Prescription intent: 'proposal', 'plan', 'order', 'original-order'",
+                    "category": "Prescription category: 'inpatient', 'outpatient', 'community', 'discharge'",
+                    "priority": "Request priority: 'routine', 'urgent', 'asap', 'stat'",
+                    "status": "Current status: 'active', 'on-hold', 'cancelled', 'completed'",
+                },
+                field_examples={
+                    "intent": "order",
+                    "category": [{"text": "outpatient"}],
+                    "priority": "routine",
+                    "status": "active"
+                },
+                field_types={
+                    "intent": "enum(proposal|plan|order|original-order|reflex-order|filler-order|instance-order|option)",
+                    "category": "array[CodeableConcept]",
+                    "priority": "enum(routine|urgent|asap|stat)",
+                    "status": "enum(active|on-hold|cancelled|completed|entered-in-error|stopped|draft|unknown)"
+                },
+                description="Request intent and administrative status",
+                llm_guidance="Extract the clinical intent behind the medication request and its administrative priority and status.",
+                conversational_prompts=[
+                    "Is this a firm order or just a plan/proposal?",
+                    "What is the urgency of this prescription?",
+                    "What is the current status of this prescription?",
+                    "Is this for inpatient or outpatient use?"
+                ],
+                strict=False,
+            ),
+            
+            "authorship": FacadeSpec(
+                fields=["requester", "authored_on", "encounter", "reason_code", "note"],
+                required_fields=[],
+                field_hints={
+                    "requester": "Healthcare professional who prescribed the medication",
+                    "authored_on": "Date/time when prescription was written",
+                    "encounter": "Clinical encounter when prescription was made",
+                    "reason_code": "Indication for prescription (diagnosis, symptom, condition)",
+                    "note": "Additional notes or instructions about the prescription",
+                },
+                field_examples={
+                    "requester": {"reference": "Practitioner/dr-silva"},
+                    "authored_on": "2024-01-15T10:30:00",
+                    "encounter": {"reference": "Encounter/visit-20240115"},
+                    "reason_code": [{"text": "hipertensão arterial"}],
+                    "note": [{"text": "Continuar monitoramento da pressão arterial"}]
+                },
+                field_types={
+                    "requester": "Reference[Practitioner|PractitionerRole]",
+                    "authored_on": "datetime",
+                    "encounter": "Reference[Encounter]",
+                    "reason_code": "array[CodeableConcept]",
+                    "note": "array[Annotation]"
+                },
+                description="Prescriber information and clinical context",
+                llm_guidance="Extract information about who prescribed the medication, when, and why. Include clinical rationale and any special instructions.",
+                conversational_prompts=[
+                    "Who prescribed this medication?",
+                    "When was this prescription written?",
+                    "Why was this medication prescribed?",
+                    "Are there any special notes about this prescription?"
+                ],
+                strict=False,
+            ),
+        }
 
 
 # Convenience functions for common medication request types

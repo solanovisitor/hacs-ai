@@ -8,7 +8,7 @@ FHIR R4 Specification:
 https://hl7.org/fhir/R4/diagnosticreport.html
 """
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field, field_validator
 
@@ -217,10 +217,41 @@ class DiagnosticReport(DomainResource):
         ]
 
     @classmethod
+    def get_extraction_examples(cls) -> dict[str, Any]:
+        """Return extraction examples showing different extractable field scenarios."""
+        # Complete diagnostic report
+        complete_example = {            "status": "final",
+            "code": {"text": "hemograma completo"},
+            "conclusion": "Valores dentro da normalidade",
+            "effective_datetime": "2024-08-15",
+        }
+
+        # Report without conclusion
+        no_conclusion_example = {            "status": "final",
+            "code": {"text": "raio-X tórax"},
+        }
+
+        # Preliminary report
+        preliminary_example = {            "status": "preliminary",
+            "code": {"text": "ultrassom abdome"},
+            "conclusion": "Exame sem alterações significativas",
+        }
+
+        return {
+            "object": complete_example,
+            "array": [complete_example, no_conclusion_example, preliminary_example],
+            "scenarios": {
+                "complete": complete_example,
+                "no_conclusion": no_conclusion_example,
+                "preliminary": preliminary_example,
+            }
+        }
+
+    @classmethod
     def llm_hints(cls) -> list[str]:  # type: ignore[override]
         return [
-            "- Map cited exams (e.g., 'teste do pezinho') into code.text",
-            "- conclusion and result may be null when not present",
+            "- Map cited exams (e.g., 'teste do pezinho', 'hemograma', 'raio-x') into code.text",
+            "- conclusion and result may be null when not present; do not invent",
         ]
 
 

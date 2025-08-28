@@ -11,7 +11,7 @@ from typing import Any, Literal
 
 from pydantic import ConfigDict, Field
 
-from .base_resource import DomainResource
+from .base_resource import DomainResource, FacadeSpec
 from .types import ConditionClinicalStatus, ConditionVerificationStatus
 
 
@@ -412,10 +412,174 @@ class Condition(DomainResource):
         return coerced
 
     @classmethod
+    def get_extraction_examples(cls) -> dict[str, Any]:
+        """Return extraction examples showing different extractable field scenarios."""
+        # Active chronic condition
+        chronic_example = {            "code": {"text": "hipertensão"},
+            "clinical_status": "active",
+        }
+
+        # Condition with onset date
+        dated_example = {
+            "resource_type": "Condition",
+            "code": {"text": "diabetes tipo 2"},
+            "clinical_status": "active",
+            "onset_date_time": "2020-03-15",
+        }
+
+        # Resolved condition
+        resolved_example = {            "code": {"text": "pneumonia"},
+            "clinical_status": "resolved",
+        }
+
+        return {
+            "object": chronic_example,
+            "array": [chronic_example, dated_example, resolved_example],
+            "scenarios": {
+                "chronic": chronic_example,
+                "with_onset": dated_example,
+                "resolved": resolved_example,
+            }
+        }
+
+    @classmethod
     def llm_hints(cls) -> list[str]:  # type: ignore[override]
         """Return LLM-specific extraction hints for Condition."""
         return [
-            "Set code.text to the condition name (e.g., 'hipertensão', 'DM2', 'diabetes').",
-            "Accept textual descriptions when code is not present; leave code/text=null if absent",
-            "Use clinical_status='active' for current conditions, 'resolved' for past conditions",
+            "Set code.text to the condition name in Portuguese when present (e.g., 'hipertensão', 'diabetes tipo 2').",
+            "If condition name isn't explicit, leave code.text=null; do not invent.",
+            "Use clinical_status='active' for current conditions; 'resolved' for clearly past conditions.",
         ]
+
+    @classmethod
+    def get_facades(cls) -> dict[str, FacadeSpec]:
+        """Return available extraction facades for Condition."""
+        return {
+            "summary": FacadeSpec(
+                fields=["code", "clinical_status", "verification_status", "category", "severity"],
+                required_fields=["code"],
+                field_hints={
+                    "code": "Medical condition name in Portuguese (e.g., 'hipertensão arterial', 'diabetes tipo 2')",
+                    "clinical_status": "Current status: 'active' for current conditions, 'resolved' for past",
+                    "verification_status": "Verification level: 'confirmed', 'provisional', 'differential'",
+                    "category": "Condition category: 'problem-list-item', 'encounter-diagnosis'", 
+                    "severity": "Severity if mentioned: 'mild', 'moderate', 'severe'",
+                },
+                field_examples={
+                    "code": {"text": "hipertensão arterial sistêmica"},
+                    "clinical_status": "active",
+                    "verification_status": "confirmed",
+                    "category": [{"text": "problem-list-item"}],
+                    "severity": {"text": "moderate"}
+                },
+                field_types={
+                    "code": "CodeableConcept",
+                    "clinical_status": "enum(active|inactive|resolved)",
+                    "verification_status": "enum(unconfirmed|provisional|differential|confirmed|refuted|entered-in-error)",
+                    "category": "array[CodeableConcept]",
+                    "severity": "CodeableConcept"
+                },
+                description="Core condition identification and status",
+                llm_guidance="Extract medical conditions, diagnoses, or health problems from clinical notes or conversations. Focus on the primary diagnosis or concern.",
+                conversational_prompts=[
+                    "What medical condition does the patient have?",
+                    "What is the patient's diagnosis?",
+                    "What health problems is the patient experiencing?",
+                    "Is this condition active or resolved?"
+                ],
+                strict=False,
+            ),
+            
+            "timing": FacadeSpec(
+                fields=["onset_date_time", "onset_age", "onset_period", "onset_string", "abatement_date_time", "abatement_age", "abatement_string"],
+                required_fields=[],
+                field_hints={
+                    "onset_date_time": "Specific date when condition started (YYYY-MM-DD format)",
+                    "onset_age": "Age when condition began (as Quantity with years unit)",
+                    "onset_period": "Time period when condition started (as Period object)",
+                    "onset_string": "Free text description of onset timing",
+                    "abatement_date_time": "Date when condition ended or resolved",
+                    "abatement_age": "Age when condition ended (as Quantity)",
+                    "abatement_string": "Free text description of resolution",
+                },
+                field_examples={
+                    "onset_date_time": "2020-03-15",
+                    "onset_age": {"value": 45, "unit": "anos"},
+                    "onset_string": "durante a pandemia",
+                    "abatement_date_time": "2024-01-20",
+                    "abatement_string": "após tratamento com medicação"
+                },
+                field_types={
+                    "onset_date_time": "datetime",
+                    "onset_age": "Quantity",
+                    "onset_period": "Period",
+                    "onset_string": "string",
+                    "abatement_date_time": "datetime",
+                    "abatement_age": "Quantity", 
+                    "abatement_string": "string"
+                },
+                description="Timing information for condition onset and resolution",
+                llm_guidance="Extract temporal information about when the medical condition started and ended. Use specific dates when available, otherwise use age or descriptive text.",
+                conversational_prompts=[
+                    "When did this condition start?",
+                    "How long has the patient had this condition?",
+                    "At what age did this begin?",
+                    "Has this condition resolved? When?"
+                ],
+                strict=False,
+            ),
+            
+            "body_site": FacadeSpec(
+                fields=["body_site", "anatomical_location"],
+                required_fields=[],
+                field_hints={
+                    "body_site": "Anatomical site affected by the condition (as CodeableConcept array)",
+                    "anatomical_location": "Detailed anatomical location if available",
+                },
+                field_examples={
+                    "body_site": [{"text": "coração"}],
+                    "anatomical_location": {"text": "ventrículo esquerdo"}
+                },
+                field_types={
+                    "body_site": "array[CodeableConcept]",
+                    "anatomical_location": "CodeableConcept"
+                },
+                description="Anatomical location and body site information",
+                llm_guidance="Extract anatomical locations where the medical condition is present. Use specific body parts, organs, or regions mentioned.",
+                conversational_prompts=[
+                    "Where in the body is this condition located?",
+                    "Which body part is affected?",
+                    "What anatomical region is involved?"
+                ],
+                strict=False,
+            ),
+            
+            "evidence": FacadeSpec(
+                fields=["evidence", "note", "asserter"],
+                required_fields=[],
+                field_hints={
+                    "evidence": "Clinical evidence supporting the diagnosis (observations, tests, symptoms)",
+                    "note": "Additional notes or comments about the condition",
+                    "asserter": "Healthcare provider who asserted/diagnosed this condition",
+                },
+                field_examples={
+                    "evidence": [{"detail": {"text": "pressão arterial elevada em múltiplas medições"}}],
+                    "note": [{"text": "Paciente relata histórico familiar de hipertensão"}],
+                    "asserter": {"reference": "Practitioner/dr-silva"}
+                },
+                field_types={
+                    "evidence": "array[ConditionEvidence]",
+                    "note": "array[Annotation]", 
+                    "asserter": "Reference[Practitioner|Patient|RelatedPerson]"
+                },
+                description="Supporting evidence and clinical notes",
+                llm_guidance="Extract clinical evidence, test results, symptoms, or observations that support the diagnosis. Include relevant clinical notes and the healthcare provider responsible.",
+                conversational_prompts=[
+                    "What evidence supports this diagnosis?",
+                    "What symptoms or signs indicate this condition?",
+                    "Who diagnosed this condition?",
+                    "Are there any additional notes about this condition?"
+                ],
+                strict=False,
+            ),
+        }

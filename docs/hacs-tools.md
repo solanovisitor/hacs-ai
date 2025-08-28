@@ -111,8 +111,8 @@ The injection system is framework-agnostic, and the loader adapts tools for your
 # Install HACS with database support
 uv pip install -U hacs-tools hacs-persistence
 
-# Set up environment
-export DATABASE_URL="postgresql://hacs:hacs_dev@localhost:5432/hacs"
+# Set up environment 
+export DATABASE_URL="postgresql://user:pass@localhost/hacs"  
 export OPENAI_API_KEY="sk-..."  # Optional, for extraction tools
 ```
 

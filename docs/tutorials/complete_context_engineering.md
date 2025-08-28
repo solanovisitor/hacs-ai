@@ -73,7 +73,8 @@ print("   Patient ID:", patient.id)
 print("   Full Name:", patient.full_name)
 print("   Birth Date:", patient.birth_date)
 print("   Chief Complaint:", patient.agent_context["chief_complaint"])
-print(f"   Full record size: {len(str(patient.model_dump()))} characters")
+from hacs_utils.visualization import to_markdown as _to_md
+print(f"   Full record size: {len(_to_md(patient, include_json=False))} characters")
 
 # Always visualize created records
 from hacs_utils.visualization import resource_to_markdown
@@ -135,8 +136,15 @@ Reduce the working set to only fields that matter for the current task, and quan
 
 ```python
 selected_context = {
-    "patient_core": patient.model_dump(include={"full_name", "birth_date", "agent_context"}),
-    "recent_vitals": [obs.model_dump(include={"status", "code", "value_quantity"}) for obs in observations],
+    "patient_core": {"full_name": patient.full_name, "birth_date": patient.birth_date, "agent_context": patient.agent_context},
+    "recent_vitals": [
+        {
+            "status": obs.status,
+            "code": getattr(getattr(obs, "code", None), "text", None),
+            "value_quantity": getattr(getattr(obs, "value_quantity", None), "value", None),
+        }
+        for obs in observations
+    ],
     "risk_factors": patient.agent_context.get("family_history", []),
 }
 
@@ -145,7 +153,7 @@ print(f"   Patient core fields: {len(selected_context['patient_core'])} fields")
 print(f"   Recent vitals: {len(selected_context['recent_vitals'])} observations")
 print(f"   Risk factors: {len(selected_context['risk_factors'])} items")
 
-full_data_size = len(str(patient.model_dump())) + sum(len(str(o.model_dump())) for o in observations)
+full_data_size = len(_to_md(patient, include_json=False)) + sum(len(_to_md(o, include_json=False)) for o in observations)
 selected_data_size = len(str(selected_context))
 selection_efficiency = (1 - selected_data_size / full_data_size) * 100
 print(f"   Selection efficiency: {selection_efficiency:.1f}% data reduction")
@@ -328,7 +336,8 @@ def healthcare_context_engineering_demo():
     print(f"   Full Name: {patient.full_name}")
     print(f"   Birth Date: {patient.birth_date}")
     print(f"   Chief Complaint: {patient.agent_context['chief_complaint']}")
-    print(f"   Full record size: {len(str(patient.model_dump()))} characters")
+    from hacs_utils.visualization import to_markdown as __to_md
+    print(f"   Full record size: {len(__to_md(patient, include_json=False))} characters")
     
     # Clinical observations with full context
     observations = [
@@ -360,11 +369,13 @@ def healthcare_context_engineering_demo():
     
     # 🎯 SELECT: Extract essential clinical context only
     selected_context = {
-        "patient_core": patient.model_dump(include={
-            "full_name", "birth_date", "agent_context"
-        }),
+        "patient_core": {"full_name": patient.full_name, "birth_date": patient.birth_date, "agent_context": patient.agent_context},
         "recent_vitals": [
-            obs.model_dump(include={"status", "code", "value_quantity"})
+            {
+                "status": obs.status,
+                "code": getattr(getattr(obs, "code", None), "text", None),
+                "value_quantity": getattr(getattr(obs, "value_quantity", None), "value", None),
+            }
             for obs in observations
         ],
         "risk_factors": patient.agent_context.get("family_history", [])
@@ -376,7 +387,7 @@ def healthcare_context_engineering_demo():
     print(f"   Risk factors: {len(selected_context['risk_factors'])} items")
     
     # Calculate selection efficiency
-    full_data_size = sum(len(str(patient.model_dump())), sum(len(str(obs.model_dump())) for obs in observations))
+    full_data_size = len(__to_md(patient, include_json=False)) + sum(len(__to_md(obs, include_json=False)) for obs in observations)
     selected_data_size = len(str(selected_context))
     selection_efficiency = (1 - selected_data_size / full_data_size) * 100
     

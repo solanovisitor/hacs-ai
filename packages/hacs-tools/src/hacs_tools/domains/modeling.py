@@ -17,7 +17,7 @@ import inspect
 from typing import Dict, List, Any, Optional, Set
 
 from hacs_models import HACSResult, BaseResource, DomainResource, Reference
-from hacs_registry.tool_registry import register_tool, VersionStatus
+from hacs_registry.tool_registry import register_tool, VersionStatus, get_global_registry as get_tool_registry
 
 try:
     from pydantic import BaseModel, Field
@@ -29,6 +29,9 @@ except Exception:  # pragma: no cover
     def Field(*args, **kwargs):  # type: ignore
         return None
 
+# Import common input schema
+from hacs_tools.common import HACSCommonInput, build_error_plan
+
 
 from hacs_models import get_model_registry, ResourceBundle, BundleEntry, Document
 from hacs_models.utils import set_nested_field
@@ -38,7 +41,7 @@ from hacs_models.utils import set_nested_field
 logger = logging.getLogger(__name__)
 
 
-class PinResourceInput(BaseModel):
+class PinResourceInput(HACSCommonInput):
     resource_type: str = Field(description="HACS resource type (e.g., Patient)")
     resource_data: Dict[str, Any] = Field(description="Resource payload")
 
@@ -115,7 +118,7 @@ def pin_resources(items: List[Dict[str, Any]]) -> HACSResult:
     )
 
 
-class ComposeBundleInput(BaseModel):
+class ComposeBundleInput(HACSCommonInput):
     entries: List[Dict[str, Any]]
     bundle_type: str = Field(default="document")
     title: Optional[str] = None
@@ -197,7 +200,7 @@ def compose_bundle(
 compose_bundle._tool_args = ComposeBundleInput  # type: ignore[attr-defined]
 
 
-class ValidateResourceInput(BaseModel):
+class ValidateResourceInput(HACSCommonInput):
     resource: Dict[str, Any]
 
 
@@ -299,7 +302,7 @@ def validate_resources(resources: List[Dict[str, Any]]) -> HACSResult:
     )
 
 
-class DiffResourcesInput(BaseModel):
+class DiffResourcesInput(HACSCommonInput):
     before: Dict[str, Any]
     after: Dict[str, Any]
 
@@ -373,7 +376,7 @@ def diff_pairs(pairs: List[Dict[str, Any]]) -> HACSResult:
     return HACSResult(success=True, message=f"Computed {len(diffs)} diffs", data={"results": diffs})
 
 
-class ValidateBundleInput(BaseModel):
+class ValidateBundleInput(HACSCommonInput):
     bundle: Dict[str, Any]
 
 
@@ -639,38 +642,8 @@ def list_models() -> HACSResult:
         return HACSResult(success=False, message="Failed to list models", error=str(e))
 
 
-class DescribeModelInput(BaseModel):
+class DescribeResourceInput(BaseModel):
     resource_type: str
-
-
-@register_tool(
-    name="describe_model", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE
-)
-def describe_model(resource_type: str) -> HACSResult:
-    """
-    Return a lightweight descriptive schema for a model (title, docstring, fields).
-    """
-    try:
-        registry = get_model_registry()
-        resource_class = registry.get(resource_type)
-        if not resource_class:
-            return HACSResult(success=False, message=f"Unknown resource type: {resource_type}")
-
-        if hasattr(resource_class, "get_specifications"):
-            schema = resource_class.get_specifications()
-        else:
-            # Fallback: build minimal schema
-            fields: Dict[str, Any] = {}
-            for name, field in getattr(resource_class, "model_fields", {}).items():
-                fields[name] = {
-                    "type": str(getattr(field, "annotation", "")),
-                    "description": getattr(field, "description", None),
-                }
-            schema = {"title": resource_type, "fields": fields}
-
-        return HACSResult(success=True, message="Model description", data={"schema": schema})
-    except Exception as e:
-        return HACSResult(success=False, message="Failed to describe model", error=str(e))
 
 
 class DescribeModelsInput(BaseModel):
@@ -678,23 +651,23 @@ class DescribeModelsInput(BaseModel):
 
 
 @register_tool(
-    name="describe_models", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE
+    name="describe_resources", domain="modeling", tags=["domain:modeling"], status=VersionStatus.ACTIVE
 )
-def describe_models(resource_types: List[str]) -> HACSResult:
+def describe_resources(resource_types: List[str]) -> HACSResult:
     """Describe multiple models at once."""
     items: List[Dict[str, Any]] = []
     for rt in resource_types or []:
-        single = describe_model(rt)
+        single = describe_resource(rt)
         items.append(
             {
                 "resource_type": rt,
-                "definition": (single.data or {}).get("schema"),
+                "definition": (single.data or {}),
                 "success": single.success,
             }
         )
     return HACSResult(
         success=all(i.get("success") for i in items),
-        message=f"Described {len(items)} models",
+        message=f"Described {len(items)} resources",
         data={"results": items},
     )
 
@@ -732,7 +705,203 @@ def list_model_fields(resource_type: str) -> HACSResult:
             success=True, message=f"Listed {len(fields)} fields", data={"fields": fields}
         )
     except Exception as e:
-        return HACSResult(success=False, message="Failed to list fields", error=str(e))
+        plan = build_error_plan(resource_type, None, e)
+        return HACSResult(success=False, message="Failed to list fields", error=str(e), data={"plan": plan})
+
+
+class ListModelFacadesInput(BaseModel):
+    resource_type: str
+
+
+@register_tool(
+    name="list_model_facades",
+    domain="modeling",
+    tags=["domain:modeling"],
+    status=VersionStatus.ACTIVE,
+)
+def list_model_facades(resource_type: str) -> HACSResult:
+    """List available facades for a model with brief summaries."""
+    try:
+        registry = get_model_registry()
+        resource_class = registry.get(resource_type)
+        if not resource_class:
+            return HACSResult(success=False, message=f"Unknown resource type: {resource_type}")
+
+        facades = {}
+        if hasattr(resource_class, "get_facades"):
+            for key, spec in (resource_class.get_facades() or {}).items():
+                facades[key] = {
+                    "description": getattr(spec, "description", ""),
+                    "fields": list(getattr(spec, "fields", [])),
+                    "required": list(getattr(spec, "required_fields", []) or []),
+                    "many": bool(getattr(spec, "many", False)),
+                    "max_items": int(getattr(spec, "max_items", 0)),
+                    "field_hints": getattr(spec, "field_hints", {}) or {},
+                    "field_examples": getattr(spec, "field_examples", {}) or {},
+                    "field_types": getattr(spec, "field_types", {}) or {},
+                    "llm_guidance": getattr(spec, "llm_guidance", ""),
+                    "conversational_prompts": getattr(spec, "conversational_prompts", []) or [],
+                }
+
+        return HACSResult(
+            success=True,
+            message=f"Found {len(facades)} facades for {resource_type}",
+            data={"resource_type": resource_type, "facades": facades},
+        )
+    except Exception as e:
+        plan = build_error_plan(resource_type, None, e)
+        return HACSResult(success=False, message="Failed to list facades", error=str(e), data={"plan": plan})
+list_model_facades._tool_args = ListModelFacadesInput  # type: ignore[attr-defined]
+
+
+class DescribeModelEnrichedInput(BaseModel):
+    resource_type: str
+
+
+@register_tool(
+    name="describe_resource",
+    domain="modeling",
+    tags=["domain:modeling"],
+    status=VersionStatus.ACTIVE,
+)
+def describe_resource(resource_type: str) -> HACSResult:
+    """Describe a model including scope, facades, and resource-specific tools."""
+    try:
+        registry = get_model_registry()
+        resource_class = registry.get(resource_type)
+        if not resource_class:
+            return HACSResult(success=False, message=f"Unknown resource type: {resource_type}")
+
+        # Base specifications
+        if hasattr(resource_class, "get_specifications"):
+            base = resource_class.get_specifications()
+        else:
+            base = {"title": resource_type}
+
+        # Facades
+        facades = (resource_class.get_facades() or {}) if hasattr(resource_class, "get_facades") else {}
+        facade_map: Dict[str, Any] = {}
+        for key, spec in facades.items():
+            facade_map[key] = {
+                "description": getattr(spec, "description", ""),
+                "fields": list(getattr(spec, "fields", [])),
+                "required": list(getattr(spec, "required_fields", []) or []),
+                "many": bool(getattr(spec, "many", False)),
+                "max_items": int(getattr(spec, "max_items", 0)),
+                "hints": getattr(spec, "field_hints", {}) or {},
+            }
+
+        # Resource-specific tools (by tag resource:<lower>)
+        tools_section: List[Dict[str, Any]] = []
+        try:
+            tool_reg = get_tool_registry()
+            tag_key = f"resource:{resource_type.lower()}"
+            resource_tools = tool_reg.get_tools_by_tag(tag_key)
+            for t in resource_tools:
+                tools_section.append({
+                    "name": t.name,
+                    "description": t.description,
+                    "domain": t.domain,
+                    "tags": t.tags,
+                })
+        except Exception:
+            pass
+
+        pack = {
+            "resource": base,
+            "facades": facade_map,
+            "tools": tools_section,
+        }
+        return HACSResult(success=True, message="Resource description", data=pack)
+    except Exception as e:
+        plan = build_error_plan(resource_type, None, e)
+        return HACSResult(success=False, message="Failed to describe resource", error=str(e), data={"plan": plan})
+describe_resource._tool_args = DescribeModelEnrichedInput  # type: ignore[attr-defined]
+
+
+class DescribeModelSubsetInput(BaseModel):
+    resource_type: str
+    fields: Optional[List[str]] = None
+    facade: Optional[str] = None
+
+
+@register_tool(
+    name="describe_model_subset",
+    domain="modeling",
+    tags=["domain:modeling"],
+    status=VersionStatus.ACTIVE,
+)
+def describe_model_subset(resource_type: str, fields: Optional[List[str]] = None, facade: Optional[str] = None) -> HACSResult:
+    """Describe a subset schema (manual fields or facade). Useful with pick()."""
+    try:
+        registry = get_model_registry()
+        resource_class = registry.get(resource_type)
+        if not resource_class:
+            return HACSResult(success=False, message=f"Unknown resource type: {resource_type}")
+
+        selected: List[str]
+        hints: Dict[str, str] = {}
+        required: List[str] = []
+        field_examples: Dict[str, Any] = {}
+        field_types: Dict[str, str] = {}
+        llm_guidance: str = ""
+        conversational_prompts: List[str] = []
+
+        if facade:
+            spec = resource_class.get_facade_spec(facade) if hasattr(resource_class, "get_facade_spec") else None
+            if not spec:
+                return HACSResult(success=False, message=f"Unknown facade '{facade}' for {resource_type}")
+            selected = list(spec.fields)
+            hints = spec.field_hints or {}
+            required = list(spec.required_fields or [])
+            field_examples = spec.field_examples or {}
+            field_types = spec.field_types or {}
+            llm_guidance = spec.llm_guidance or ""
+            conversational_prompts = spec.conversational_prompts or []
+        else:
+            selected = list(fields or [])
+
+        # Field detail map
+        field_defs: Dict[str, Any] = {}
+        mf = getattr(resource_class, "model_fields", {}) or {}
+        for name in selected:
+            if name in mf:
+                f = mf[name]
+                field_defs[name] = {
+                    "type": field_types.get(name, str(getattr(f, "annotation", ""))),
+                    "description": getattr(f, "description", None),
+                    "required": getattr(f, "is_required", False) or (name in required),
+                    "hint": hints.get(name),
+                    "example": field_examples.get(name),
+                }
+
+        # Provide a compact example via pick_facade or pick
+        try:
+            if facade:
+                subset_cls = resource_class.pick_facade(facade)  # type: ignore[attr-defined]
+            else:
+                subset_cls = resource_class.pick(*selected)
+            example = subset_cls.model_json_schema().get("examples") or []  # type: ignore[attr-defined]
+        except Exception:
+            example = []
+
+        data = {
+            "resource_type": resource_type,
+            "fields": field_defs,
+            "facade": facade,
+            "required": required,
+            "hints": hints,
+            "field_examples": field_examples,
+            "field_types": field_types,
+            "llm_guidance": llm_guidance,
+            "conversational_prompts": conversational_prompts,
+            "example": example,
+        }
+        return HACSResult(success=True, message="Subset description", data=data)
+    except Exception as e:
+        plan = build_error_plan(resource_type, {"fields": fields or [], "facade": facade, "resource_type": resource_type}, e)
+        return HACSResult(success=False, message="Failed to describe subset", error=str(e), data={"plan": plan})
+describe_model_subset._tool_args = DescribeModelSubsetInput  # type: ignore[attr-defined]
 
 
 class ListFieldsInput(BaseModel):
@@ -818,7 +987,8 @@ def project_resource_fields(resource: Dict[str, Any], fields: List[str]) -> HACS
     try:
         resource_type = resource.get("resource_type")
         if not resource_type:
-            return HACSResult(success=False, message="Resource missing 'resource_type'")
+            plan = build_error_plan(None, resource, "Missing resource_type")
+            return HACSResult(success=False, message="Resource missing 'resource_type'", data={"plan": plan})
 
         registry = get_model_registry()
         resource_class = registry.get(resource_type)

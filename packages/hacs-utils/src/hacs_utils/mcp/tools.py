@@ -111,9 +111,9 @@ class HACSToolsLoader:
         """Load tools using priority-based strategy."""
         try:
             # Priority 1: Use centralized loader from hacs-utils
-            from hacs_utils.integrations.common.tool_loader import get_all_hacs_tools_sync
+            from hacs_utils.integrations.common.tool_loader import get_sync_tools
 
-            tools = get_all_hacs_tools_sync(framework="mcp")
+            tools = get_sync_tools(framework="mcp")
             self._register_tools(tools)
             logger.info(f"✅ Loaded {len(tools)} tools via centralized loader")
         except ImportError:

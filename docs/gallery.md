@@ -70,18 +70,17 @@ print(resource_to_markdown(report, include_json=False))
 | updated_at | … |
 | code.text | Chest X-Ray |
 
-## Annotated Document (extractions)
+## Annotated Document
 
 ```python
-from hacs_models import AnnotatedDocument, Extraction, CharInterval
-from hacs_utils.visualization import annotations_to_markdown
-doc = AnnotatedDocument(text="BP 128/82, HR 72", extractions=[
-    Extraction(extraction_class="blood_pressure", extraction_text="128/82", char_interval=CharInterval(start_pos=3, end_pos=9)),
-    Extraction(extraction_class="heart_rate", extraction_text="72", char_interval=CharInterval(start_pos=15, end_pos=17)),
-])
-print(annotations_to_markdown(doc))
+from hacs_models import AnnotatedDocument
+from hacs_utils.visualization import resource_to_markdown
+doc = AnnotatedDocument(text="BP 128/82, HR 72", document_id="vital_signs_001")
+print(resource_to_markdown(doc, include_json=False))
 ```
 
-### Annotations (Markdown preview)
+### AnnotatedDocument
 
-- blood_pressure [3-9]: … BP  **128/82** , HR 72 …
+| Field | Value |
+|---|---|
+| resource_type | AnnotatedDocument |

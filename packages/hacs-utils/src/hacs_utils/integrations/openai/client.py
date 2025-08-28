@@ -295,7 +295,16 @@ class OpenAIToolRegistry:
     def register_function(
         self, name: str, function: Callable, description: str, parameters: dict[str, Any]
     ):
-        """Register a function for OpenAI function calling (legacy)."""
+        """[DEPRECATED] Register a function for legacy OpenAI function calling.
+
+        Use register_tool() or framework adapters instead. This will be removed.
+        """
+        import warnings as _warnings
+        _warnings.warn(
+            "OpenAIToolRegistry.register_function is deprecated; use register_tool instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.functions[name] = {
             "name": name,
             "description": description,

@@ -16,7 +16,7 @@ from typing import Any, Type, get_origin, get_args, Literal
 from enum import Enum
 from pydantic import BaseModel
 
-from ..structured import FormatType
+from hacs_models.annotation import FormatType
 
 
 def get_compact_extractable_fields(
@@ -273,6 +273,7 @@ def build_schema_context(resource_class: Type[BaseModel]) -> str:
     - Title
     - Brief description (first line)
     - Scope of use (from get_specifications)
+    - Boundaries information to guide LLM on what belongs in this resource
     """
     lines: list[str] = []
 
@@ -287,16 +288,40 @@ def build_schema_context(resource_class: Type[BaseModel]) -> str:
             brief_desc = (desc.split(". ")[0] + ("." if desc else "")).strip() if desc else None
             docs = specs.get("documentation") or {}
             scope = docs.get("scope_usage")
+            boundaries = docs.get("boundaries")
             lines.append(f"Schema: {title}")
             if brief_desc:
                 lines.append(brief_desc)
             if scope:
                 lines.append(f"Scope: {scope}")
+            if boundaries:
+                lines.append(f"Boundaries: {boundaries}")
             return "\n".join([line for line in lines if line])
     except Exception:
         pass
 
-    # Fallback: class name and first line of docstring
+    # Fallback: check for direct _doc_boundaries attribute (from __init__.py seeding)
+    try:
+        boundaries = getattr(resource_class, "_doc_boundaries", None)
+        scope_usage = getattr(resource_class, "_doc_scope_usage", None)
+        title = getattr(resource_class, "__name__", "Resource")
+        doc = inspect.getdoc(resource_class) or ""
+        brief_desc = (doc.splitlines()[0] if doc else "").strip()
+        
+        lines.append(f"Schema: {title}")
+        if brief_desc:
+            lines.append(brief_desc)
+        if scope_usage:
+            lines.append(f"Scope: {scope_usage}")
+        if boundaries:
+            lines.append(f"Boundaries: {boundaries}")
+        
+        if lines:
+            return "\n".join([line for line in lines if line])
+    except Exception:
+        pass
+
+    # Final fallback: class name and first line of docstring only
     try:
         title = getattr(resource_class, "__name__", "Resource")
         doc = inspect.getdoc(resource_class) or ""
@@ -425,7 +450,7 @@ def build_repair_prompt(
     override_schema_example: str | None = None,
 ) -> str:
     """Build a repair prompt for fixing malformed LLM output."""
-    from ..structured import _extract_fenced  # Import here to avoid circular dependency
+    from .parsing import extract_fenced  # Use shared fenced extractor
     
     fmt = "JSON" if format_type == FormatType.JSON else "YAML"
     fence_open = (
@@ -454,7 +479,7 @@ def build_repair_prompt(
             f"{fence_open}\n{schema_example}\n{fence_close}",
             "",
             "Previous response:",
-            f"{fence_open}\n{_extract_fenced(previous_output_text)}\n{fence_close}",
+            f"{fence_open}\n{extract_fenced(previous_output_text)}\n{fence_close}",
         ]
     )
     return "\n".join(parts)

@@ -174,6 +174,48 @@ class CarePlan(DomainResource):
         }
 
     @classmethod
+    def coerce_extractable(cls, payload: dict[str, Any], relax: bool = True) -> dict[str, Any]:
+        """Coerce extractable payload to proper CarePlan field types."""
+        coerced = payload.copy()
+        
+        # Handle status string validation
+        if "status" in coerced and isinstance(coerced["status"], str):
+            status_str = coerced["status"].lower()
+            valid_statuses = ["draft", "active", "on-hold", "revoked", "completed", "entered-in-error", "unknown"]
+            if status_str not in valid_statuses:
+                # Map common variations
+                if status_str in ["ativo", "active"]:
+                    coerced["status"] = "active"
+                elif status_str in ["completo", "finalizado", "completed"]:
+                    coerced["status"] = "completed"
+                elif status_str in ["rascunho", "draft"]:
+                    coerced["status"] = "draft"
+                else:
+                    coerced["status"] = "active"  # Default fallback
+        
+        # Handle category - ensure proper CodeableConcept structure
+        if "category" in coerced:
+            category_data = coerced["category"]
+            if isinstance(category_data, str):
+                # Convert string to CodeableConcept
+                coerced["category"] = [{"text": category_data}]
+            elif isinstance(category_data, list):
+                processed_categories = []
+                for cat_item in category_data:
+                    if isinstance(cat_item, str):
+                        processed_categories.append({"text": cat_item})
+                    elif isinstance(cat_item, dict):
+                        processed_categories.append(cat_item)
+                coerced["category"] = processed_categories
+        
+        # Remove system fields that shouldn't be LLM-generated
+        system_fields = ["id", "created_at", "updated_at", "version", "meta_tag"]
+        for field in system_fields:
+            coerced.pop(field, None)
+        
+        return coerced
+
+    @classmethod
     def llm_hints(cls) -> list[str]:  # type: ignore[override]
         """Provide LLM-specific extraction hints."""
         return [
@@ -182,3 +224,56 @@ class CarePlan(DomainResource):
             "Include high-level category labels if available",
             "Use 'active' status unless explicitly specified otherwise",
         ]
+
+    @classmethod
+    def get_facades(cls) -> dict[str, "FacadeSpec"]:
+        """Return available extraction facades for CarePlan."""
+        from .base_resource import FacadeSpec
+        
+        return {
+            "basic": FacadeSpec(
+                fields=["status", "title", "description_text"],
+                required_fields=["status"],
+                field_examples={
+                    "status": "active",
+                    "title": "Diabetes Management Plan",
+                    "description_text": "Comprehensive care plan for type 2 diabetes management"
+                },
+                field_types={
+                    "status": "CarePlanStatus",
+                    "title": "str | None",
+                    "description_text": "str | None"
+                },
+                description="Essential care plan information and description",
+                llm_guidance="Use this facade for extracting basic care plan details from clinical notes. Focus on plan title, status, and general description.",
+                conversational_prompts=[
+                    "What care plan was established?",
+                    "What is the treatment plan?",
+                    "What are the care management goals?"
+                ]
+            ),
+            
+            "complete": FacadeSpec(
+                fields=["status", "title", "description_text", "category"],
+                required_fields=["status"],
+                field_examples={
+                    "status": "active",
+                    "title": "Comprehensive Cardiac Rehabilitation Plan",
+                    "description_text": "Post-surgical cardiac rehabilitation including exercise, diet, and medication management",
+                    "category": [{"text": "cardiac rehabilitation"}, {"text": "post-operative care"}]
+                },
+                field_types={
+                    "status": "CarePlanStatus",
+                    "title": "str | None",
+                    "description_text": "str | None",
+                    "category": "list[CodeableConcept]"
+                },
+                description="Comprehensive care plan information with categorization",
+                llm_guidance="Use for extracting detailed care plan information when comprehensive planning documentation is available, including care categories and classifications.",
+                conversational_prompts=[
+                    "Can you provide the complete care plan details?",
+                    "What are all aspects of the treatment plan?",
+                    "Document the full care management approach"
+                ]
+            )
+        }

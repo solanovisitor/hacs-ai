@@ -11,6 +11,7 @@ from typing import Dict, List, Any, Optional
 
 from hacs_models import HACSResult
 from hacs_registry.tool_registry import register_tool, VersionStatus
+from hacs_tools.common import HACSCommonInput, build_error_plan
 from hacs_utils.resources import (
     # patient
     calculate_patient_age,
@@ -62,7 +63,7 @@ except Exception:  # pragma: no cover
         return None
 
 
-class CalculateAgeInput(BaseModel):
+class CalculateAgeInput(HACSCommonInput):
     patient_data: Dict[str, Any]
     reference_date: Optional[str] = None
 
@@ -283,7 +284,8 @@ def calculate_age(patient_data: Dict[str, Any], reference_date: Optional[str] = 
         )
 
     except Exception as e:
-        return HACSResult(success=False, message="Failed to calculate patient age", error=str(e))
+        plan = build_error_plan("Patient", patient_data, e, extra_suggestions=["Check birth_date field format", "Verify patient_data structure"])
+        return HACSResult(success=False, message="Failed to calculate patient age", error=str(e), data={"plan": plan})
 
 
 calculate_age._tool_args = CalculateAgeInput  # type: ignore[attr-defined]
@@ -325,7 +327,8 @@ def add_identifier(
         )
 
     except Exception as e:
-        return HACSResult(success=False, message="Failed to add patient identifier", error=str(e))
+        plan = build_error_plan("Patient", patient_data, e, extra_suggestions=["Check patient_data structure", "Verify identifier fields"])
+        return HACSResult(success=False, message="Failed to add patient identifier", error=str(e), data={"plan": plan})
 
 
 add_identifier._tool_args = AddIdentifierInput  # type: ignore[attr-defined]

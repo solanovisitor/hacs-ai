@@ -5,7 +5,7 @@ HACS-native, FHIR-inspired ServiceRequest for ordering services, referrals,
 or diagnostic procedures. Lightweight with safe defaults.
 """
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field
 
@@ -350,18 +350,50 @@ def _add_extractable_fields_to_service_request():
         return [
             "code",
             "status",
-            "reason_text",
+            "reason_code",
         ]
+
+    @classmethod
+    def get_extraction_examples(cls) -> dict[str, Any]:
+        """Return extraction examples showing different extractable field scenarios."""
+        # Service request with reason
+        with_reason_example = {            "code": {"text": "consulta cardiologia"},
+            "status": "active",
+            "reason_code": [{"text": "hipertensão"}],
+        }
+
+        # Simple service request
+        simple_example = {            "code": {"text": "hemograma completo"},
+            "status": "active",
+        }
+
+        # Procedure request
+        procedure_example = {
+            "code": {"text": "ultrassom abdome"},
+            "status": "active",
+            "reason_code": [{"text": "dor abdominal"}],
+        }
+
+        return {
+            "object": with_reason_example,
+            "array": [with_reason_example, simple_example, procedure_example],
+            "scenarios": {
+                "with_reason": with_reason_example,
+                "simple": simple_example,
+                "procedure": procedure_example,
+            }
+        }
 
     @classmethod
     def llm_hints(cls) -> list[str]:  # type: ignore[override]
         """Return LLM-specific extraction hints for ServiceRequest."""
         return [
             "Extract service requests for consultations, referrals, or procedures",
-            "Use reason_text for the clinical indication or reason",
+            "Use reason_code.text for the clinical indication or reason (leave null if absent)",
         ]
 
     ServiceRequest.get_extractable_fields = get_extractable_fields
+    ServiceRequest.get_extraction_examples = get_extraction_examples
     ServiceRequest.llm_hints = llm_hints
 
 _add_extractable_fields_to_service_request()

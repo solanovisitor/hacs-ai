@@ -18,14 +18,15 @@ from .api import (
     structure,
     extract_sync,
     structure_sync,
+    extract_iterative,
     
-    # HACS extraction functions
-    extract_hacs_resources_with_citations,
-    extract_hacs_multi_with_citations,
-    extract_hacs_document_with_citations,
-    extract_hacs_resource_type_citations,
-    extract_hacs_document_with_citation_guidance,
+    # Concise extraction functions
     extract_whole_records_with_spans,
+    extract_citations,
+    extract_citations_multi,
+    extract_document_citations,
+    extract_type_citations,
+    extract_citations_guided,
     
     # Runner and config
     ExtractionRunner,
@@ -33,8 +34,7 @@ from .api import (
     ExtractionMetrics,
     
     # Utilities
-    group_records_by_type,
-    group_resource_type_citations,
+    group_type_citations,
     FormatType,
 )
 
@@ -44,14 +44,15 @@ __all__ = [
     "structure", 
     "extract_sync",
     "structure_sync",
+    "extract_iterative",
     
-    # HACS extraction functions
-    "extract_hacs_resources_with_citations",
-    "extract_hacs_multi_with_citations", 
-    "extract_hacs_document_with_citations",
-    "extract_hacs_resource_type_citations",
-    "extract_hacs_document_with_citation_guidance",
+    # Concise extraction functions
     "extract_whole_records_with_spans",
+    "extract_citations",
+    "extract_citations_multi",
+    "extract_document_citations",
+    "extract_type_citations",
+    "extract_citations_guided",
     
     # Runner and config
     "ExtractionRunner",
@@ -59,7 +60,6 @@ __all__ = [
     "ExtractionMetrics",
     
     # Utilities
-    "group_records_by_type",
-    "group_resource_type_citations",
+    "group_type_citations",
     "FormatType",
 ]

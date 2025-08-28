@@ -4,7 +4,7 @@ FamilyMemberHistory model for HACS (lightweight).
 Captures significant conditions in family members relevant to patient care.
 """
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field
 
@@ -38,6 +38,39 @@ class FamilyMemberHistory(DomainResource):
             "condition_text",
             "outcome_text",
         ]
+
+    @classmethod
+    def get_extraction_examples(cls) -> dict[str, Any]:
+        """Return extraction examples showing different extractable field scenarios."""
+        # Mother with cancer history
+        mother_example = {
+            "relationship_text": "mãe",
+            "condition_text": "câncer de mama",
+            "outcome_text": "faleceu aos 65 anos",
+        }
+
+        # Father with diabetes
+        father_example = {
+            "relationship_text": "pai",
+            "condition_text": "diabetes tipo 2",
+        }
+
+        # Sibling with living condition
+        sibling_example = {
+            "relationship_text": "irmão",
+            "condition_text": "hipertensão",
+            "outcome_text": "controlada com medicação",
+        }
+
+        return {
+            "object": mother_example,
+            "array": [mother_example, father_example, sibling_example],
+            "scenarios": {
+                "deceased": mother_example,
+                "living": father_example,
+                "controlled": sibling_example,
+            }
+        }
 
     @classmethod
     def llm_hints(cls) -> list[str]:  # type: ignore[override]

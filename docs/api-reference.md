@@ -31,7 +31,7 @@ print(to_markdown(pat, include_json=False))
 print(to_markdown(obs, include_json=False))
 ```
 
-**Output (real):**
+**Output:**
 ```
 #### Patient
 

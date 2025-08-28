@@ -53,6 +53,24 @@ except ImportError:
     _get_migration_status = None
     MIGRATIONS_AVAILABLE = False
 
+# Import database utilities
+try:
+    from .database_utils import (
+        check_hacs_tables_exist,
+        get_database_info,
+        get_generic_table_status,
+        get_hacs_schema_summary,
+        verify_database_environment,
+    )
+    DATABASE_UTILS_AVAILABLE = True
+except ImportError:
+    get_database_info = None
+    get_hacs_schema_summary = None
+    check_hacs_tables_exist = None
+    verify_database_environment = None
+    get_generic_table_status = None
+    DATABASE_UTILS_AVAILABLE = False
+
 # Vector store integration (conditional import to avoid circular dependencies)
 QdrantVectorStore = None  # Available via dependency injection
 
@@ -92,8 +110,15 @@ __all__ = [
     "EncounterRepository",
     "RepositoryFactory",
     "create_repository_factory",
+    # Database utilities
+    "get_database_info",
+    "get_hacs_schema_summary",
+    "check_hacs_tables_exist",
+    "verify_database_environment",
+    "get_generic_table_status",
     # Availability flags
     "REPOSITORIES_AVAILABLE",
+    "DATABASE_UTILS_AVAILABLE",
 ]
 
 

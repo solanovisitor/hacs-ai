@@ -36,9 +36,12 @@ nav:
   - How-to:
       - Authenticate an Actor: how-to/authenticate_actor.md
       - Connect to database: how-to/connect_postgres.md
+      - Connect to Supabase: how-to/supabase_connection_guide.md
       - Generate structured data: how-to/extract_annotations.md
       - Extract citations: how-to/grounded_extraction.md
+      - Facade-based extraction: how-to/facade_extraction.md
       - Validate HACS models: how-to/validate_hacs_models.md
+      - Validation results: how-to/validation_results.md
       - Visualize data: how-to/visualize_resources.md
       - Persist Resources: how-to/persist_resources.md
       - Use & Register Tools: how-to/use_register_tools.md

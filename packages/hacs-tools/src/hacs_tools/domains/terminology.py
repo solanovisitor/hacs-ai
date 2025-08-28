@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import Optional, Dict, Any, List
 
 from hacs_models import HACSResult
+from hacs_tools.common import build_error_plan
 
 
 UMLS_BASE = "https://uts-ws.nlm.nih.gov/rest"
@@ -41,11 +42,18 @@ def search_umls(term_or_code: str, *, version: str = "current", pageSize: int = 
             success=True, message=f"Found {len(results)} matches", data={"results": results}
         )
     except Exception as e:
-        return HACSResult(success=False, message="UMLS search failed", error=str(e))
+        plan = build_error_plan(None, {"term": term_or_code}, e, extra_suggestions=["Check UMLS API key configuration", "Verify UMLS connectivity"])
+        return HACSResult(success=False, message="UMLS search failed", error=str(e), data={"plan": plan})
 
 
 def get_umls_cui(cui: str, *, version: str = "current") -> HACSResult:
     """Deprecated (tool too low-level): kept for backward compatibility. Use summarize/annotate tools."""
+    import warnings as _warnings
+    _warnings.warn(
+        "get_umls_cui is deprecated. Prefer higher-level summarization/mapping tools.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     try:
         from hacs_utils.terminology.client import UMLSClient
 
@@ -57,11 +65,18 @@ def get_umls_cui(cui: str, *, version: str = "current") -> HACSResult:
             )
         return HACSResult(success=True, message="CUI content", data=res.get("data"))
     except Exception as e:
-        return HACSResult(success=False, message="UMLS CUI lookup failed", error=str(e))
+        plan = build_error_plan(None, {"cui": cui}, e, extra_suggestions=["Check UMLS API key configuration", "Verify CUI format"])
+        return HACSResult(success=False, message="UMLS CUI lookup failed", error=str(e), data={"plan": plan})
 
 
 def crosswalk_umls(source: str, code: str, *, version: str = "current") -> HACSResult:
     """Deprecated (tool too low-level): kept for backward compatibility. Use summarize/annotate tools."""
+    import warnings as _warnings
+    _warnings.warn(
+        "crosswalk_umls is deprecated. Prefer higher-level summarization/mapping tools.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     try:
         from hacs_utils.terminology.client import UMLSClient
 
@@ -73,7 +88,8 @@ def crosswalk_umls(source: str, code: str, *, version: str = "current") -> HACSR
             )
         return HACSResult(success=True, message="Crosswalk results", data=res.get("data"))
     except Exception as e:
-        return HACSResult(success=False, message="UMLS crosswalk failed", error=str(e))
+        plan = build_error_plan(None, {"source": source, "code": code}, e, extra_suggestions=["Check UMLS API key configuration", "Verify source system format"])
+        return HACSResult(success=False, message="UMLS crosswalk failed", error=str(e), data={"plan": plan})
 
 
 def suggest_resource_codings(

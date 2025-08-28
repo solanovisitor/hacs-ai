@@ -19,7 +19,7 @@ import pytest
 from hacs_utils.extraction import (
     ExtractionRunner,
     ExtractionConfig,
-    extract_hacs_resources_with_citations,
+    extract_citations,
 )
 from hacs_utils.extraction.prompt_builder import (
     get_compact_extractable_fields,
@@ -293,7 +293,7 @@ class TestPromptShapeValidation:
     async def test_extraction_prompt_contains_allowed_keys(self, mock_fast_provider, sample_transcript):
         """Test that extraction prompts contain allowed keys specification."""
         # Run extraction to capture prompts
-        await extract_hacs_resources_with_citations(
+        await extract_citations(
             mock_fast_provider,
             source_text=sample_transcript,
             resource_model=Observation,
@@ -337,11 +337,11 @@ class TestPromptShapeValidation:
     async def test_window_prompts_are_compact(self, mock_fast_provider):
         """Test that window-specific prompts are compact and focused."""
         # Use citation-guided extraction to trigger window prompts
-        from hacs_utils.extraction import extract_hacs_document_with_citation_guidance
+        from hacs_utils.extraction import extract_citations_guided
         
         sample_text = "Patient has hypertension. BP 140/90. Given lisinopril 10mg daily."
         
-        await extract_hacs_document_with_citation_guidance(
+        await extract_citations_guided(
             mock_fast_provider,
             source_text=sample_text,
             resource_models=[Observation, Condition],
