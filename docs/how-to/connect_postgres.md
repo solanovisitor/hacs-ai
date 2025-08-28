@@ -27,7 +27,7 @@ else:
 **Output:**
 ```
 Database URL configured: True
-URL preview: postgresql://hacs:hB4NrD4lF66X...
+URL preview: postgresql://hacs:...
 ```
 
 ### Production database configuration
