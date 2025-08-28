@@ -66,6 +66,12 @@ fields = ["component", "value_quantity", "value_string"]
 many = True, max_items = 5
 ```
 
+**Observation.method_body_site** - Method and bodySite hints
+```python
+fields = ["method", "body_site", "interpretation"]
+required = []
+```
+
 ## Basic Usage
 
 ### Using the Generic API
@@ -367,6 +373,8 @@ result = await extract_facade(
 | **Observation** | `core`, `components`, `method_body_site` | Measurements and findings |
 | **MedicationRequest** | `medication`, `dosage`, `intent`, `authorship` | Prescriptions and orders |
 | **Procedure** | `core`, `body_site`, `outcome` | Medical procedures |
+| **Encounter** | `basic`, `timing`, `participants`, `clinical`, `complete` | Visits and episodes |
+| **Organization** | `info`, `contact`, `hierarchy`, `identity` | Provider organizations |
 
 More models with facades coming soon: DiagnosticReport, ServiceRequest, Goal, CarePlan, etc.
 

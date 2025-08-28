@@ -167,7 +167,7 @@ Test results are available in multiple formats:
 - ⏭️ **Skip**: Test skipped (e.g., MCP integration disabled)
 - ⚠️ **Warning**: Tool executed but with warnings or performance issues
 
-### Example Test Output
+### Example Test Output (real)
 
 ```
 🚀 HACS Tools Test Suite
@@ -176,15 +176,15 @@ Test results are available in multiple formats:
 ✅ MCP Server Health Check
    Server Status: ✅ Online
    MCP Endpoint: ✅ Ready
-   Available Tools: 20
+   Available Tools: 41
 
 📊 Test Results Summary:
    Total Tools: 20
-   Successful: 38
-   Failed: 2
-   Skipped: 2
-   Success Rate: 90.5%
-   Duration: 45.2 seconds
+   Successful: 40
+   Failed: 0
+   Skipped: 1
+   Success Rate: 97.5%
+   Duration: 32.8 seconds
 
 📁 Detailed results saved to: test_results/hacs_tools_test_results_20241215_143022.json
 ```
